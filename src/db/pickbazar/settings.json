@@ -1,0 +1,150 @@
+{
+  "id": 1,
+  "options": {
+    "siteTitle": "Pickbazar",
+    "siteSubtitle": "Your next ecommerce",
+    "minimumOrderAmount": 0,
+    "currencyToWalletRatio": 3,
+    "signupPoints": 100,
+    "maximumQuestionLimit": 5,
+    "seo": {
+      "ogImage": null,
+      "ogTitle": null,
+      "metaTags": null,
+      "metaTitle": null,
+      "canonicalUrl": null,
+      "ogDescription": null,
+      "twitterHandle": null,
+      "metaDescription": null,
+      "twitterCardType": null
+    },
+    "logo": {
+      "id": "862",
+      "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/860/PickBazar.png",
+      "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/860/conversions/PickBazar-thumbnail.jpg"
+    },
+    "useAi": true,
+    "useOtp": false,
+    "currency": "USD",
+    "smsEvent": {
+      "admin": {
+        "refundOrder": true,
+        "paymentOrder": true,
+        "statusChangeOrder": true
+      },
+      "vendor": {
+        "refundOrder": true,
+        "paymentOrder": true,
+        "statusChangeOrder": true
+      },
+      "customer": {
+        "refundOrder": true,
+        "paymentOrder": true,
+        "statusChangeOrder": true
+      }
+    },
+    "taxClass": 1,
+    "defaultAi": "openai",
+    "emailEvent": {
+      "admin": {
+        "refundOrder": true,
+        "paymentOrder": true,
+        "statusChangeOrder": true
+      },
+      "vendor": {
+        "refundOrder": true,
+        "createReview": true,
+        "paymentOrder": true,
+        "createQuestion": true,
+        "statusChangeOrder": true
+      },
+      "customer": {
+        "refundOrder": true,
+        "paymentOrder": true,
+        "answerQuestion": true,
+        "statusChangeOrder": true
+      }
+    },
+    "server_info": {
+      "memory_limit": "128M",
+      "post_max_size": 8192,
+      "max_input_time": "60",
+      "max_execution_time": "30",
+      "upload_max_filesize": 2048
+    },
+    "deliveryTime": [
+      {
+        "title": "Express Delivery",
+        "description": "90 min express delivery"
+      },
+      {
+        "title": "Morning",
+        "description": "8.00 AM - 11.00 AM"
+      },
+      {
+        "title": "Noon",
+        "description": "11.00 AM - 2.00 PM"
+      },
+      {
+        "title": "Afternoon",
+        "description": "2.00 PM - 5.00 PM"
+      },
+      {
+        "title": "Evening",
+        "description": "5.00 PM - 8.00 PM"
+      }
+    ],
+    "freeShipping": false,
+    "useGoogleMap": false,
+    "guestCheckout": true,
+    "shippingClass": 1,
+    "StripeCardOnly": false,
+    "contactDetails": {
+      "contact": "+129290122122",
+      "socials": [
+        {
+          "url": "https://www.facebook.com/",
+          "icon": "FacebookIcon"
+        },
+        {
+          "url": "https://twitter.com/home",
+          "icon": "TwitterIcon"
+        }
+      ],
+      "website": "https://redq.io",
+      "location": {
+        "lat": 42.9585979,
+        "lng": -76.9087202,
+        "zip": null,
+        "city": null,
+        "state": "NY",
+        "country": "United States",
+        "formattedAddress": "NY State Thruway, New York, USA"
+      }
+    },
+    "paymentGateway": [
+      {
+        "name": "stripe",
+        "title": "Stripe"
+      },
+      {
+        "name": "paypal",
+        "title": "Paypal"
+      }
+    ],
+    "currencyOptions": {
+      "formation": "en-US",
+      "fractions": 2
+    },
+    "isProductReview": false,
+    "maxShopDistance": 20000,
+    "useEnableGateway": true,
+    "useCashOnDelivery": true,
+    "freeShippingAmount": null,
+    "useMustVerifyEmail": false,
+    "defaultPaymentGateway": "stripe"
+  },
+  "language": "en",
+  "created_at": "2023-07-20T15:33:11.000000Z",
+  "updated_at": "2023-07-26T13:22:42.000000Z"
+}
