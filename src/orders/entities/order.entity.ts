@@ -51,8 +51,9 @@ export class Order extends CoreEntity {
   customer_id: number;
   @Column()
   customer_contact: string;
-  @ManyToOne(() => User, user => user.orders)
-  @JoinColumn({ name: "customer_id" })
+  @ManyToOne(() => User, user => user.orders, {
+    eager: true,
+  })
   customer: User;
   @Column()
   parent_order?: Order;

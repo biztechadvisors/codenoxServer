@@ -18,7 +18,7 @@ export class User extends CoreEntity {
   password?: string;
   @Column()
   shop_id?: number;
-  @OneToOne(() => Profile, (profile) => profile.customer)
+  @Column()
   @JoinColumn()
   profile?: Profile;
   @OneToMany(() => Shop, (shop) => shop.owner)

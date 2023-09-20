@@ -23,7 +23,7 @@ export class Shop extends CoreEntity {
   orders_count: number;
   @Column()
   products_count: number;
-  @Column()
+  @OneToOne(() => Balance)
   balance?: Balance;
   @Column()
   name: string;
@@ -37,7 +37,7 @@ export class Shop extends CoreEntity {
   logo?: Attachment;
   @OneToOne(() => UserAddress)
   address: UserAddress;
-  @Column()
+  @OneToOne(() => ShopSettings)
   settings?: ShopSettings;
 }
 

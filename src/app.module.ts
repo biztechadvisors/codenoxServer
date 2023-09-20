@@ -1,6 +1,5 @@
 import { MessagesModule } from './messages/messages.module';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { StripeModule } from 'nestjs-stripe';
 import { AddressesModule } from './addresses/addresses.module';
 import { AnalyticsModule } from './analytics/analytics.module';
@@ -38,12 +37,11 @@ import { StoreNoticesModule } from './store-notices/store-notices.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { AiModule } from './ai/ai.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DatabaseModule } from './config/database.module';
+import { typeOrmConfig } from './config/typeorm.config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    DatabaseModule,
+    TypeOrmModule.forRoot(typeOrmConfig),
     StripeModule.forRoot({
       apiKey: process.env.STRIPE_API_KEY,
       apiVersion: '2022-11-15',

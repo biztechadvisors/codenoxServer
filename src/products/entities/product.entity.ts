@@ -7,7 +7,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
 import { Review } from '../../reviews/entities/review.entity';
-import { Column, Entity, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 enum ProductStatus {
   PUBLISH = 'publish',
@@ -39,7 +39,7 @@ export class Product extends CoreEntity {
   name: string;
   @Column()
   slug: string;
-  @OneToOne(() => Type)
+  @Column()
   type: Type;
   @Column()
   type_id: number;
@@ -49,7 +49,7 @@ export class Product extends CoreEntity {
   categories: Category[];
   @OneToMany(() => Tag, tag => tag.products)
   tags?: Tag[];
-  @ManyToMany(() => AttributeValue)
+  @Column()
   variations?: AttributeValue[];
   @OneToOne(() => Variation)
   variation_options?: Variation[];

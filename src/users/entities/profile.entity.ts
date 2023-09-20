@@ -15,7 +15,7 @@ export class Profile extends CoreEntity {
   socials?: Social[];
   @Column()
   contact?: string;
-  @OneToOne(() => User, (user) => user.profile)
+  @OneToOne(() => User)
   customer?: User;
 }
 

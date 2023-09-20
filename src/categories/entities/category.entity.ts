@@ -22,7 +22,7 @@ export class Category extends CoreEntity {
   image?: Attachment;
   @Column()
   icon?: string;
-  @OneToOne(() => Type)
+  @Column()
   type?: Type;
   @ManyToMany(() => Product, product => product.categories)
   products?: Product[];
