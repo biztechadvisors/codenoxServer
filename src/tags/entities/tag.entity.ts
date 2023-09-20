@@ -20,7 +20,7 @@ export class Tag extends CoreEntity {
   image: Attachment;
   @Column()
   icon: string;
-  @OneToOne(() => Type)
+  @Column()
   type: Type;
   @ManyToMany(() => Product, product => product.tags)
   products: Product[];
