@@ -106,3 +106,31 @@ export class UsersService {
     return user;
   }
 }
+
+// constructor(
+//   @InjectRepository(UserRepository)
+//   private userRepository: UserRepository
+// ) { }
+
+// // private users: User[] = users;
+// async getUserById(id: number): Promise<User> {
+//   const found = await this.userRepository.findOne(id);
+
+//   if (!found) {
+//     throw new NotFoundException(`User with ID "${id}" not found`);
+//   }
+
+//   return found;
+// }
+
+// async createUser(createUserDto: CreateUserDto): Promise<User> {
+//   const { name, email, password } = createUserDto;
+
+//   const user = new User();
+//   user.name = name;
+//   user.email = email;
+//   user.password = password;
+
+//   await user.save();
+//   return user;
+// }

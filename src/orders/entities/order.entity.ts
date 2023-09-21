@@ -55,11 +55,11 @@ export class Order extends CoreEntity {
     eager: true,
   })
   customer: User;
-  @Column()
-  parent_order?: Order;
-  @Column()
-  children: Order[];
-  @Column()
+  @ManyToOne(() => Order, { nullable: true })
+  parentOrder: Order;
+  @OneToMany(() => Order, order => order.parentOrder)
+  children?: Order[];
+  @OneToOne(() => OrderStatus)
   status: OrderStatus;
   @Column()
   order_status: OrderStatusType;
@@ -77,9 +77,9 @@ export class Order extends CoreEntity {
   payment_id?: string;
   @Column()
   payment_gateway: PaymentGatewayType;
-  @Column()
+  @ManyToOne(() => Coupon, coupon => coupon.orders)
   coupon?: Coupon;
-  @Column()
+  @ManyToMany(() => Shop)
   shop: Shop;
   @Column()
   discount?: number;
@@ -87,7 +87,7 @@ export class Order extends CoreEntity {
   delivery_fee: number;
   @Column()
   delivery_time: string;
-  @Column()
+  @ManyToMany(() => Product)
   products: Product[];
   @ManyToMany(() => UserAddress)
   billing_address: UserAddress;
@@ -95,9 +95,9 @@ export class Order extends CoreEntity {
   shipping_address: UserAddress;
   @Column()
   language: string;
-  @Column()
+  @Column({ type: "json" })
   translated_languages: string[];
-  @Column()
+  @OneToOne(() => PaymentIntent)
   payment_intent: PaymentIntent;
   @Column()
   altered_payment_gateway?: string;

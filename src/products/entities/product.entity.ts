@@ -21,6 +21,8 @@ enum ProductType {
 
 @Entity()
 export class OrderProductPivot {
+  @PrimaryGeneratedColumn()
+  id: number;
   @Column()
   variation_option_id?: number;
   @Column()
@@ -39,7 +41,7 @@ export class Product extends CoreEntity {
   name: string;
   @Column()
   slug: string;
-  @Column()
+  @OneToOne(() => Type)
   type: Type;
   @Column()
   type_id: number;
@@ -49,7 +51,7 @@ export class Product extends CoreEntity {
   categories: Category[];
   @OneToMany(() => Tag, tag => tag.products)
   tags?: Tag[];
-  @Column()
+  @OneToOne(() => AttributeValue)
   variations?: AttributeValue[];
   @OneToOne(() => Variation)
   variation_options?: Variation[];
@@ -77,9 +79,11 @@ export class Product extends CoreEntity {
   min_price?: number;
   @Column()
   sku?: string;
-  @OneToOne(() => Attachment)
+  @ManyToMany(() => Attachment)
+  @JoinColumn({ name: 'gallery_id' })
   gallery?: Attachment[];
-  @Column()
+  @OneToOne(() => Attachment)
+  @JoinColumn({ name: 'image_id' })
   image?: Attachment;
   @Column()
   status: ProductStatus;
@@ -103,8 +107,22 @@ export class Product extends CoreEntity {
   my_review?: Review[];
   @Column()
   language?: string;
-  @Column()
+  @Column({ type: "json" })
   translated_languages?: string[];
+  @Column()
+  manufacturer_id?: number;
+  @Column()
+  is_digital?: boolean;
+  @Column()
+  is_external?: boolean;
+  @Column()
+  external_product_url?: string;
+  @Column()
+  external_product_button_text?: string;
+  @Column({ type: "json" })
+  blocked_dates?: string[];
+  @Column({ type: 'json' })
+  author?: any;
 }
 
 @Entity()
@@ -129,6 +147,8 @@ export class Variation {
 
 @Entity()
 export class VariationOption {
+  @PrimaryGeneratedColumn()
+  id: number;
   @Column()
   name: string;
   @Column()

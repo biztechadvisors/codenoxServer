@@ -15,6 +15,6 @@ export class OrderStatus extends CoreEntity {
   slug: string;
   @Column()
   language: string;
-  @Column()
+  @Column({ type: "json" })
   translated_languages: string[];
 }

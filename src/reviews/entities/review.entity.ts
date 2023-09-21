@@ -6,7 +6,7 @@ import { Product } from 'src/products/entities/product.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Report } from './reports.entity';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
-import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Review extends CoreEntity {
@@ -30,9 +30,9 @@ export class Review extends CoreEntity {
   user: User;
   @ManyToOne(() => Product, product => product.my_review)
   product: Product;
-  @OneToOne(() => Feedback)
+  @ManyToMany(() => Feedback)
   feedbacks: Feedback[];
-  @Column()
+  @OneToOne(() => Feedback)
   my_feedback: Feedback;
   @Column()
   positive_feedbacks_count: number;

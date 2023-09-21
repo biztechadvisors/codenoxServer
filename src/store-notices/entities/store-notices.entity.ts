@@ -1,6 +1,7 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { User } from 'src/users/entities/user.entity';
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum StoreNoticePriorityType {
   High = 'high',
@@ -8,20 +9,38 @@ export enum StoreNoticePriorityType {
   Low = 'low',
 }
 
+@Entity()
 export class StoreNotice extends CoreEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column()
   priority: StoreNoticePriorityType;
+  @Column()
   notice: string;
+  @Column()
   description?: string;
+  @Column()
   effective_from?: string;
+  @Column()
   expired_at: string;
+  @Column()
   type?: string;
+  @Column()
   is_read?: boolean;
+  @ManyToMany(() => Shop)
   shops?: Shop[];
+  @ManyToMany(() => Shop)
   users?: User[];
+  @Column()
   received_by?: string;
+  @Column()
   created_by: string;
+  @Column()
   expire_at: string;
+  @Column()
   deleted_at?: string;
+  @Column()
   creator?: any;
+  @Column({ type: "json" })
   translated_languages: string[];
 }

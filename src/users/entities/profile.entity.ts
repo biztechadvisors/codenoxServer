@@ -21,6 +21,8 @@ export class Profile extends CoreEntity {
 
 @Entity()
 export class Social {
+  @PrimaryGeneratedColumn()
+  id:number;
   @Column()
   type: string;
   @Column()

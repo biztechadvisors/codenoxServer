@@ -1,27 +1,52 @@
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
+import { Column, Entity, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-export class Type extends CoreEntity {
-  name: string;
-  slug: string;
-  image: Attachment;
-  icon: string;
-  banners?: Banner[];
-  promotional_sliders?: Attachment[];
-  settings?: TypeSettings;
-  language: string;
-  translated_languages: string[];
-}
-
+@Entity()
 export class Banner {
+  @PrimaryGeneratedColumn()
   id: number;
+  @Column()
   title?: string;
+  @Column()
   description?: string;
+  @OneToOne(() => Attachment)
   image: Attachment;
 }
 
+@Entity()
 export class TypeSettings {
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column()
   isHome: boolean;
+  @Column()
   layoutType: string;
+  @Column()
   productCard: string;
+}
+
+
+@Entity()
+export class Type extends CoreEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column()
+  name: string;
+  @Column()
+  slug: string;
+  @OneToOne(() => Attachment)
+  image: Attachment;
+  @Column()
+  icon: string;
+  @ManyToMany(() => Banner)
+  banners?: Banner[];
+  @OneToOne(() => Attachment)
+  promotional_sliders?: Attachment[];
+  @OneToOne(() => TypeSettings)
+  settings?: TypeSettings;
+  @Column()
+  language: string;
+  @Column({ type: 'json' })
+  translated_languages: string[];
 }

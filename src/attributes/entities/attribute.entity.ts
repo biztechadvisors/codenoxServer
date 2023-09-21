@@ -19,6 +19,6 @@ export class Attribute extends CoreEntity {
   values: AttributeValue[];
   @Column()
   language: string;
-  @Column()
+  @Column({ type: 'json' })
   translated_languages: string[];
 }

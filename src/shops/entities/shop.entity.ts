@@ -43,6 +43,8 @@ export class Shop extends CoreEntity {
 
 @Entity()
 export class PaymentInfo {
+  @PrimaryGeneratedColumn()
+  id: number;
   @Column()
   account: string;
   @Column()
