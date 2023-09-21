@@ -12,9 +12,9 @@ export class Category extends CoreEntity {
   name: string;
   @Column()
   slug: string;
-  @Column()
+  @OneToOne(() => Category)
   parent?: Category;
-  @Column()
+  @OneToOne(() => Category)
   children?: Category[];
   @Column()
   details?: string;
@@ -22,12 +22,12 @@ export class Category extends CoreEntity {
   image?: Attachment;
   @Column()
   icon?: string;
-  @Column()
+  @OneToOne(()=>Type)
   type?: Type;
   @ManyToMany(() => Product, product => product.categories)
   products?: Product[];
   @Column()
   language: string;
-  @Column()
+  @Column({ type: 'json' })
   translated_languages: string[];
 }

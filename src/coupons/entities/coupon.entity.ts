@@ -1,7 +1,7 @@
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Order } from 'src/orders/entities/order.entity';
-import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum CouponType {
   FIXED_COUPON = 'fixed',
@@ -22,12 +22,20 @@ export class Coupon extends CoreEntity {
   minimum_cart_amount: number;
   @OneToMany(() => Order, order => order.coupon)
   orders?: Order[];
+  @Column()
   type: CouponType;
+  @OneToOne(() => Attachment)
   image: Attachment;
+  @Column()
   is_valid: boolean;
+  @Column()
   amount: number;
+  @Column()
   active_from: string;
+  @Column()
   expire_at: string;
+  @Column()
   language: string;
+  @Column({ type: "json" })
   translated_languages: string[];
 }

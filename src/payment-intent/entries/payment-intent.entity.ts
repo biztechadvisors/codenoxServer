@@ -2,6 +2,8 @@ import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class PaymentIntentInfo {
+  @PrimaryGeneratedColumn()
+  id: number; // Add this line
   @Column()
   client_secret?: string | null;
   @Column()
@@ -23,6 +25,6 @@ export class PaymentIntent {
   @Column()
   payment_gateway: string;
   @OneToOne(() => PaymentIntentInfo)
-  payment_intent_info: PaymentIntentInfo;
+  payment_intent_info: Partial<PaymentIntentInfo>; // Change this line
 }
 
