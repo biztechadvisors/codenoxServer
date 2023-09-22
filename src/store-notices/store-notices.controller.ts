@@ -32,10 +32,10 @@ export class StoreNoticesController {
     return this.storeNoticesService.getStoreNotices(query);
   }
 
-  @Get('getUsersToNotify')
-  getAllUsers(@Query() query: GetUsersDto) {
-    return this.usersService.getUsersNotify(query);
-  }
+  // @Get('getUsersToNotify')
+  // getAllUsers(@Query() query: GetUsersDto) {
+  //   return this.usersService.getUsersNotify(query);
+  // }
 
   @Get(':param')
   getStoreNotice(
