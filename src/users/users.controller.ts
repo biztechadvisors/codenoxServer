@@ -14,55 +14,61 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
+import { User } from './entities/user.entity';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Post()
-  createUser(@Body() createUserDto: CreateUserDto) {
+  async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
     return this.usersService.create(createUserDto);
   }
 
-  @Get()
-  getAllUsers(@Query() query: GetUsersDto) {
-    return this.usersService.getUsers(query);
-  }
+  // @Post()
+  // createUser(@Body() createUserDto: CreateUserDto) {
+  //   return this.usersService.create(createUserDto);
+  // }
 
-  @Get(':id')
-  getUser(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
-  }
+  // @Get()
+  // getAllUsers(@Query() query: GetUsersDto) {
+  //   return this.usersService.getUsers(query);
+  // }
 
-  @Put(':id')
-  updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
+  // @Get(':id')
+  // getUser(@Param('id') id: string) {
+  //   return this.usersService.findOne(+id);
+  // }
 
-  @Delete(':id')
-  removeUser(@Param('id') id: string) {
-    return this.usersService.remove(+id);
-  }
+  // @Put(':id')
+  // updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  //   return this.usersService.update(+id, updateUserDto);
+  // }
 
-  @Post('unblock-user')
-  activeUser(@Body('id') id: number) {
-    return this.usersService.activeUser(+id);
-  }
+  // @Delete(':id')
+  // removeUser(@Param('id') id: string) {
+  //   return this.usersService.remove(+id);
+  // }
 
-  @Post('block-user')
-  banUser(@Body('id') id: number) {
-    return this.usersService.banUser(+id);
-  }
+  // @Post('unblock-user')
+  // activeUser(@Body('id') id: number) {
+  //   return this.usersService.activeUser(+id);
+  // }
 
-  @Post('make-admin')
-  makeAdmin(@Param('user_id') id: string) {
-    return this.usersService.makeAdmin(id);
-  }
+  // @Post('block-user')
+  // banUser(@Body('id') id: number) {
+  //   return this.usersService.banUser(+id);
+  // }
+
+  // @Post('make-admin')
+  // makeAdmin(@Param('user_id') id: string) {
+  //   return this.usersService.makeAdmin(id);
+  // }
 }
 
 @Controller('profiles')
 export class ProfilesController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Post()
   createProfile(@Body() createProfileDto: CreateProfileDto) {
@@ -74,8 +80,8 @@ export class ProfilesController {
     console.log(updateProfileDto);
   }
 
-  @Delete(':id')
-  deleteProfile(@Param('id') id: number) {
-    return this.usersService.remove(id);
-  }
+  // @Delete(':id')
+  // deleteProfile(@Param('id') id: number) {
+  //   return this.usersService.remove(id);
+  // }
 }

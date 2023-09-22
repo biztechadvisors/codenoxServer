@@ -1,4 +1,5 @@
-import { TypeOrmModuleOptions } from "@nestjs/typeorm";
+import { Injectable } from "@nestjs/common";
+import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from "@nestjs/typeorm";
 import { Banner, Type, TypeSettings } from "src/types/entities/type.entity";
 import { Address, UserAddress } from "src/addresses/entities/address.entity";
 import { Category } from "src/categories/entities/category.entity";
@@ -34,27 +35,31 @@ import { PaymentMethod } from "src/payment-method/entities/payment-method.entity
 import { PaymentGateWay } from "src/payment-method/entities/payment-gateway.entity";
 import { Message } from "src/messages/entities/message.entity";
 
-export const typeOrmConfig: TypeOrmModuleOptions = {
-    type: "mysql",
-    host: "103.191.208.50",
-    port: 3306,
-    username: "pzqjchtu_remote",
-    password: "h!Ibz6eSn!-S",
-    database: "pzqjchtu_CodenoxxAdmin",
-    //   entities: ["src/**/*.entities/*.entity.ts"],
-    entities: [User, Shop, Attachment, UserAddress, Address,
-        Order, Balance, PaymentInfo, PaymentIntent, PaymentIntentInfo,
-        ShopSettings, ShopSocials, Location, Product, Category, Type,
-        Tag, Variation, OrderProductPivot, Review, Feedback, Report,
-        VariationOption, Setting, SettingsOptions, ContactDetails,
-        CurrencyOptions, DeliveryTime, EmailEvent, EmailAdmin, EmailVendor,
-        EmailCustomer, LogoSettings, PaymentGateway, SeoSettings, ServerInfo,
-        SmsAdmin, SmsVendor, SmsCustomer, Type, Social, Banner, TypeSettings,
-        AttributeValue, Attribute, OrderStatus, Coupon, SmsEvent, Profile,
-        Conversation, LatestMessage, Withdraw, Wishlist, Tax, Analytics,
-        TotalYearSaleByMonth, Manufacturer, Shipping, MyReports, Refund,
-        Question, PaymentMethod, PaymentGateWay, Message,],
-    // synchronize: true,
-    logging: true,
-};
 
+@Injectable()
+export class DatabaseOptions implements TypeOrmOptionsFactory {
+
+    public createTypeOrmOptions(): TypeOrmModuleOptions {
+        return {
+            type: "mysql",
+            host: "103.191.208.50",
+            port: 3306,
+            username: "pzqjchtu_remote",
+            password: "h!Ibz6eSn!-S",
+            database: "pzqjchtu_CodenoxxAdmin",
+            //   entities: ["src/**/*.entities/*.entity.ts"],
+            entities: [User, Shop, Attachment, UserAddress, Address,
+                Order, Balance, PaymentInfo, PaymentIntent, PaymentIntentInfo,
+                ShopSettings, ShopSocials, Location, Product, Category, Type,
+                Tag, Variation, OrderProductPivot, Review, Feedback, Report,
+                VariationOption, Setting, SettingsOptions, ContactDetails,
+                CurrencyOptions, DeliveryTime, EmailEvent, EmailAdmin, EmailVendor,
+                EmailCustomer, LogoSettings, PaymentGateway, SeoSettings, ServerInfo,
+                SmsAdmin, SmsVendor, SmsCustomer, Type, Social, Banner, TypeSettings,
+                AttributeValue, Attribute, OrderStatus, Coupon, SmsEvent, Profile,
+                Conversation, LatestMessage, Withdraw, Wishlist, Tax, Analytics,
+                TotalYearSaleByMonth, Manufacturer, Shipping, MyReports, Refund,
+                Question, PaymentMethod, PaymentGateWay, Message,],
+        };
+    }
+}
