@@ -7,6 +7,10 @@ import { Category } from './entities/category.entity';
 import Fuse from 'fuse.js';
 import categoriesJson from '@db/categories.json';
 import { paginate } from 'src/common/pagination/paginate';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CategoryRepository } from './categories.repository';
+import { AttachmentRepository } from 'src/common/common.repository';
+import { Attachment } from 'src/common/entities/attachment.entity';
 
 const categories = plainToClass(Category, categoriesJson);
 const options = {
@@ -17,12 +21,44 @@ const fuse = new Fuse(categories, options);
 
 @Injectable()
 export class CategoriesService {
+
+  constructor(
+    @InjectRepository(CategoryRepository) private categoryRepository: CategoryRepository,
+    @InjectRepository(AttachmentRepository) private attachmentRepository: AttachmentRepository,
+
+  ) { }
+
   private categories: Category[] = categories;
 
-  create(createCategoryDto: CreateCategoryDto) {
-    return this.categories[0];
-  }
+  async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
+    // Create a new Attachment instance
+    const attachment = new Attachment();
 
+    // Set the Attachment properties from the CreateCategoryDto
+    attachment.thumbnail = createCategoryDto.image.thumbnail;
+    attachment.original = createCategoryDto.image.original;
+
+    // Save the Attachment instance to the database
+    await this.attachmentRepository.save(attachment);
+
+    // Create a new Category instance
+    const category = new Category();
+
+    // Set the Category properties from the CreateCategoryDto
+    category.name = createCategoryDto.name;
+    category.type = createCategoryDto.type;
+    category.details = createCategoryDto.details;
+    category.parent = createCategoryDto.parent;
+    category.image = attachment;
+    category.icon = createCategoryDto.icon;
+    category.language = createCategoryDto.language;
+
+    // Save the Category instance to the database
+    await this.categoryRepository.save(category);
+
+    // Return the saved Category instance
+    return category;
+  }
   getCategories({ limit, page, search, parent }: GetCategoriesDto) {
     if (!page) page = 1;
     const startIndex = (page - 1) * limit;
@@ -60,8 +96,33 @@ export class CategoriesService {
     );
   }
 
-  update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    return this.categories[0];
+  async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
+    // Find the Category instance to be updated
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+    });
+
+    // If the Category instance is not found, throw an error
+    if (!category) {
+      throw new Error('Category not found');
+    }
+
+    // Set the Category properties from the UpdateCategoryDto
+    category.name = updateCategoryDto.name;
+    category.type = updateCategoryDto.type;
+    category.details = updateCategoryDto.details;
+    category.parent = updateCategoryDto.parent;
+    category.image = updateCategoryDto.image;
+    category.icon = updateCategoryDto.icon;
+    category.language = updateCategoryDto.language;
+
+    // Save the Category instance to the database
+    await this.categoryRepository.save(category);
+
+    // Return the saved Category instance
+    // return this.categories[0];
+
+    return category;
   }
 
   remove(id: number) {

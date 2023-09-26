@@ -14,56 +14,50 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
-import { User } from './entities/user.entity';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
   @Post()
-  async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
+  createUser(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  // @Post()
-  // createUser(@Body() createUserDto: CreateUserDto) {
-  //   return this.usersService.create(createUserDto);
-  // }
+  @Get()
+  getAllUsers(@Query() query: GetUsersDto) {
+    return this.usersService.getUsers(query);
+  }
 
-  // @Get()
-  // getAllUsers(@Query() query: GetUsersDto) {
-  //   return this.usersService.getUsers(query);
-  // }
+  @Get(':id')
+  getUser(@Param('id') id: string) {
+    return this.usersService.findOne(+id);
+  }
 
-  // @Get(':id')
-  // getUser(@Param('id') id: string) {
-  //   return this.usersService.findOne(+id);
-  // }
+  @Put(':id')
+  updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(+id, updateUserDto);
+  }
 
-  // @Put(':id')
-  // updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-  //   return this.usersService.update(+id, updateUserDto);
-  // }
+  @Delete(':id')
+  removeUser(@Param('id') id: string) {
+    return this.usersService.remove(+id);
+  }
 
-  // @Delete(':id')
-  // removeUser(@Param('id') id: string) {
-  //   return this.usersService.remove(+id);
-  // }
+  @Post('unblock-user')
+  activeUser(@Body('id') id: number) {
+    return this.usersService.activeUser(+id);
+  }
 
-  // @Post('unblock-user')
-  // activeUser(@Body('id') id: number) {
-  //   return this.usersService.activeUser(+id);
-  // }
+  @Post('block-user')
+  banUser(@Body('id') id: number) {
+    return this.usersService.banUser(+id);
+  }
 
-  // @Post('block-user')
-  // banUser(@Body('id') id: number) {
-  //   return this.usersService.banUser(+id);
-  // }
-
-  // @Post('make-admin')
-  // makeAdmin(@Param('user_id') id: string) {
-  //   return this.usersService.makeAdmin(id);
-  // }
+  @Post('make-admin')
+  makeAdmin(@Param('user_id') id: string) {
+    return this.usersService.makeAdmin(id);
+  }
 }
 
 @Controller('profiles')
@@ -80,8 +74,8 @@ export class ProfilesController {
     console.log(updateProfileDto);
   }
 
-  // @Delete(':id')
-  // deleteProfile(@Param('id') id: number) {
-  //   return this.usersService.remove(id);
-  // }
+  @Delete(':id')
+  deleteProfile(@Param('id') id: number) {
+    return this.usersService.remove(id);
+  }
 }

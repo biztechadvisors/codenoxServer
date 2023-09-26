@@ -47,7 +47,8 @@ export class Product extends CoreEntity {
   type_id: number;
   @Column()
   product_type: ProductType;
-  @OneToMany(() => Category, category => category.products)
+  @OneToOne(() => Category, category => category.products)
+  @JoinColumn()
   categories: Category[];
   @OneToMany(() => Tag, tag => tag.products)
   tags?: Tag[];
@@ -109,20 +110,6 @@ export class Product extends CoreEntity {
   language?: string;
   @Column({ type: "json" })
   translated_languages?: string[];
-  @Column()
-  manufacturer_id?: number;
-  @Column()
-  is_digital?: boolean;
-  @Column()
-  is_external?: boolean;
-  @Column()
-  external_product_url?: string;
-  @Column()
-  external_product_button_text?: string;
-  @Column({ type: "json" })
-  blocked_dates?: string[];
-  @Column({ type: 'json' })
-  author?: any;
 }
 
 @Entity()

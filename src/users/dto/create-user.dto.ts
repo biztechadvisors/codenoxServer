@@ -3,7 +3,7 @@ import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { User } from '../entities/user.entity';
 import { CreateProfileDto } from './create-profile.dto';
 
-export enum Permission {
+enum Permission {
   SUPER_ADMIN = 'Super admin',
   STORE_OWNER = 'Store owner',
   STAFF = 'Staff',
