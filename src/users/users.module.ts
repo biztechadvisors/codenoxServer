@@ -6,12 +6,13 @@ import { UserRepository } from './users.repository';
 import { AddressRepository } from 'src/addresses/addresses.repository';
 import { ProfileRepository } from './profile.repository';
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
+import { AttachmentRepository } from 'src/common/common.repository';
 
 @Module({
   // imports: [
   //   TypeOrmModule.forFeature([UserRepository, AddressRepository, ProfileRepository]),
   // ],
-  imports: [TypeOrmExModule.forCustomRepository([UserRepository, AddressRepository, ProfileRepository])],
+  imports: [TypeOrmExModule.forCustomRepository([UserRepository, AddressRepository, ProfileRepository, AttachmentRepository])],
   controllers: [UsersController, ProfilesController],
   providers: [UsersService],
   exports: [UsersService],

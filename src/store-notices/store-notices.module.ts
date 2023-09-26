@@ -7,9 +7,10 @@ import { UserRepository } from 'src/users/users.repository';
 import { AddressesModule } from 'src/addresses/addresses.module';
 import { AddressRepository } from 'src/addresses/addresses.repository';
 import { ProfileRepository } from 'src/users/profile.repository';
+import { AttachmentRepository } from 'src/common/common.repository';
 
 @Module({
   imports: [AddressesModule],
-  providers: [UsersService, UserRepository, AddressRepository, ProfileRepository],
+  providers: [UsersService, UserRepository, AddressRepository, ProfileRepository, AttachmentRepository],
 })
-export class StoreNoticesModule {}
+export class StoreNoticesModule { }

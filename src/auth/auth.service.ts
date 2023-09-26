@@ -18,21 +18,33 @@ import { v4 as uuidv4 } from 'uuid';
 import { plainToClass } from 'class-transformer';
 import { User } from 'src/users/entities/user.entity';
 import usersJson from '@db/users.json';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserRepository } from 'src/users/users.repository';
 const users = plainToClass(User, usersJson);
 
 @Injectable()
 export class AuthService {
+
+  constructor(
+    @InjectRepository(UserRepository) private userRepository: UserRepository,
+  ) { }
+
   private users: User[] = users;
   async register(createUserInput: RegisterDto): Promise<AuthResponse> {
-    const user: User = {
-      id: uuidv4(),
-      ...users[0],
-      ...createUserInput,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
+    const userData = new User()
+    userData.name = createUserInput.name;
+    userData.email = createUserInput.email;
+    userData.password = createUserInput.password;
 
-    this.users.push(user);
+    await this.userRepository.save(userData)
+    // const user: User = {
+    //   id: uuidv4(),
+    //   ...users[0],
+    //   ...createUserInput,
+    //   created_at: new Date(),
+    //   updated_at: new Date(),
+    // };
+    // this.users.push(user);
     return {
       token: 'jwt token',
       permissions: ['super_admin', 'customer'],

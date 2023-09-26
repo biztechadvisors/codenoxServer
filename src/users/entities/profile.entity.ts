@@ -1,31 +1,40 @@
-import { Attachment } from 'src/common/entities/attachment.entity';
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { User } from './user.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "./user.entity";
+import { Attachment } from "src/common/entities/attachment.entity";
+import { CoreEntity } from "src/common/entities/core.entity";
 
 @Entity()
 export class Social {
-  @PrimaryGeneratedColumn()
-  id: number;
-  @Column()
-  type: string;
-  @Column()
-  link: string;
+@PrimaryGeneratedColumn()
+id: number;
+
+@Column()
+type: string;
+
+@Column()
+link: string;
 }
 
 @Entity()
 export class Profile extends CoreEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-  @ManyToOne(() => Attachment, { cascade: ['insert', 'update'] })
-  avatar?: Attachment;
-  @Column()
-  bio?: string;
-  @ManyToOne(() => Social)
-  socials?: Social;
-  @Column()
-  contact?: string;
-  @ManyToOne(() => User)
-  customer?: User;
-}
+@PrimaryGeneratedColumn()
+id: number;
 
+@ManyToOne(() => Attachment, { cascade: true })
+@JoinColumn({ name: 'avatarId' })
+avatar: Attachment;
+
+@Column()
+bio?: string;
+
+@OneToOne(() => Social, { cascade: true })
+@JoinColumn()
+socials?: Social;
+
+@Column()
+contact?: string;
+
+@OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
+@JoinColumn()
+customer?: User;
+}
