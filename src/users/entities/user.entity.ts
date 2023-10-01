@@ -8,40 +8,39 @@ import { Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany
 
 @Entity()
 export class User extends CoreEntity {
-@PrimaryGeneratedColumn()
-id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-@Column()
-name: string;
+    @Column()
+    name: string;
 
-@Column()
-email: string;
+    @Column()
+    email: string;
 
-@Column()
-password?: string;
+    @Column()
+    password?: string;
 
-@Column()
-shop_id?: number;
+    @Column()
+    shop_id?: number;
 
-@OneToOne(() => Profile, (profile) => profile.customer)
-@JoinColumn()
-profile?: Profile;
+    @OneToOne(() => Profile, (profile) => profile.customer)
+    @JoinColumn()
+    profile?: Profile;
 
-@OneToMany(() => Shop, (shop) => shop.owner, { cascade: true })
-shops?: Shop[];
+    @OneToMany(() => Shop, (shop) => shop.owner, { cascade: true })
+    shops?: Shop[];
 
-@ManyToOne(() => Shop, (shop) => shop.staffs, { cascade: true })
-@JoinColumn()
-managed_shop?: Shop;
+    @ManyToOne(() => Shop, (shop) => shop.staffs, { cascade: true })
+    @JoinColumn()
+    managed_shop?: Shop;
 
-@Column()
-is_active?: boolean = true;
+    @Column()
+    is_active?: boolean = true;
 
-@OneToMany(() => Address, (address) => address.customer)
-@JoinColumn()
-address?: Address[];
+    @OneToMany(() => Address, (address) => address.customer)
+    address?: Address[];
 
-@OneToMany(() => Order, (order) => order.customer)
-@JoinColumn()
-orders: Order[];
+    @OneToMany(() => Order, (order) => order.customer)
+    @JoinColumn()
+    orders: Order[];
 }

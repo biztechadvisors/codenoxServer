@@ -38,6 +38,7 @@ import { ConversationsModule } from './conversations/conversations.module';
 import { AiModule } from './ai/ai.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './config/typeorm.config';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
@@ -82,6 +83,9 @@ import { typeOrmConfig } from './config/typeorm.config';
     ConversationsModule,
     MessagesModule,
     AiModule,
+    ServeStaticModule.forRoot({
+      rootPath: './uploads',
+    }),
   ],
   controllers: [],
   providers: [],

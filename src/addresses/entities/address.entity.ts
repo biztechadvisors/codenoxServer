@@ -1,6 +1,6 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn, ManyToOne, ManyToMany, JoinTable } from 'typeorm';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn, ManyToOne, ManyToMany, JoinTable, JoinColumn } from 'typeorm';
 
 export enum AddressType {
   BILLING = 'billing',
@@ -31,10 +31,11 @@ export class Address extends CoreEntity {
   title: string;
   @Column()
   default: boolean;
-  @ManyToMany(() => UserAddress, { cascade: true })
+  @OneToOne(() => UserAddress)
+  @JoinColumn()
   address: UserAddress;
   @Column()
   type: AddressType;
-  @ManyToOne(() => User, user => user.address)
+  @ManyToOne(() => User, (user) => user.address)
   customer: User;
 }
