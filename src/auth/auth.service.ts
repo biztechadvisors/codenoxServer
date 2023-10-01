@@ -30,26 +30,29 @@ export class AuthService {
   ) { }
 
   private users: User[] = users;
+
   async register(createUserInput: RegisterDto): Promise<AuthResponse> {
-    const userData = new User()
+    const emailExist = await this.userRepository.findOne({
+      where: { email: createUserInput.email },
+    });
+
+    if (emailExist) {
+      throw new Error('Email is already registered');
+    }
+
+    const userData = new User();
     userData.name = createUserInput.name;
     userData.email = createUserInput.email;
     userData.password = createUserInput.password;
 
-    await this.userRepository.save(userData)
-    // const user: User = {
-    //   id: uuidv4(),
-    //   ...users[0],
-    //   ...createUserInput,
-    //   created_at: new Date(),
-    //   updated_at: new Date(),
-    // };
-    // this.users.push(user);
+    await this.userRepository.save(userData);
+
     return {
       token: 'jwt token',
       permissions: ['super_admin', 'customer'],
     };
   }
+
   async login(loginInput: LoginDto): Promise<AuthResponse> {
     console.log(loginInput);
     if (loginInput.email === 'store_owner@demo.com') {
@@ -64,6 +67,7 @@ export class AuthService {
       };
     }
   }
+  
   async changePassword(
     changePasswordInput: ChangePasswordDto,
   ): Promise<CoreResponse> {

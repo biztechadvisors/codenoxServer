@@ -40,6 +40,8 @@ export class ResetPasswordDto {
 export class AuthResponse {
   token: string;
   permissions: string[];
+  success?: boolean;
+  message?: string;
 }
 export class CoreResponse extends CoreMutationOutput {}
 export class VerifyOtpDto {

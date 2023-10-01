@@ -8,29 +8,41 @@ import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne,
 export class Category extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   name: string;
+
   @Column()
   slug: string;
-  @ManyToMany(() => Category)
+
+  @OneToOne(() => Category, { nullable: true })
   @JoinColumn()
   parent?: Category;
-  @OneToOne(() => Category)
+
+  @OneToMany(() => Category, category => category.parent)
   children?: Category[];
+
   @Column()
   details?: string;
+
   @ManyToOne(() => Attachment)
   @JoinColumn()
   image?: Attachment;
+
   @Column()
   icon?: string;
-  @OneToOne(() => Type)
+
+  @ManyToOne(() => Type)
+  @JoinColumn()
   type?: Type;
-  @OneToOne(() => Product,product=>product.categories)
+
+  @OneToOne(() => Product, product => product.categories)
   @JoinColumn()
   products: Product[];
+
   @Column()
   language: string;
+
   @Column({ type: 'json' })
   translated_languages: string[];
 }

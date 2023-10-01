@@ -26,6 +26,7 @@
     "@nestjs/core": "^9.0.11",
     "@nestjs/mapped-types": "1.1.0",
     "@nestjs/platform-express": "^9.0.11",
+    "@nestjs/serve-static": "^4.0.0",
     "@nestjs/swagger": "^6.0.5",
     "@nestjs/typeorm": "^10.0.0",
     "@paypal/checkout-server-sdk": "^1.0.3",

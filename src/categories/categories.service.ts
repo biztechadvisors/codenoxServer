@@ -53,6 +53,11 @@ export class CategoriesService {
     category.icon = createCategoryDto.icon;
     category.language = createCategoryDto.language;
 
+    // If the parent ID is not set, set it to null
+    if (!category.parent) {
+      category.parent = null;
+    }
+
     // Save the Category instance to the database
     await this.categoryRepository.save(category);
 
