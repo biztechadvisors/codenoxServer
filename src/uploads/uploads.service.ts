@@ -14,8 +14,10 @@ export class UploadsService {
 
 
   async uploadFile(attachment: Array<Express.Multer.File>): Promise<AttachmentDTO> {
+    console.log("Attachment-Ram", attachment[0])
+
     const attachmentData = new Attachment();
-    attachmentData.original = attachment[0].originalname;
+    attachmentData.original = attachment[0].filename;
     attachmentData.thumbnail = attachment[0].path;
 
     await this.attachmentRepository.save(attachmentData);

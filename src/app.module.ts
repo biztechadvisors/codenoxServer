@@ -39,6 +39,7 @@ import { AiModule } from './ai/ai.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './config/typeorm.config';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
@@ -83,9 +84,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     ConversationsModule,
     MessagesModule,
     AiModule,
-    ServeStaticModule.forRoot({
-      rootPath: './uploads',
-    }),
+    MulterModule.register({dest: './uploads'})
   ],
   controllers: [],
   providers: [],
