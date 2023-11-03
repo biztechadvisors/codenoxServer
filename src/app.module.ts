@@ -37,18 +37,41 @@ import { StoreNoticesModule } from './store-notices/store-notices.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { AiModule } from './ai/ai.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { typeOrmConfig } from './config/typeorm.config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { MulterModule } from '@nestjs/platform-express';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot(typeOrmConfig),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule.forRoot({
+        isGlobal: true,
+        envFilePath: ".env"
+      })],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get('DB_HOST'),
+        port: +configService.get('DB_PORT'),
+        username: configService.get('DB_USERNAME'),
+        password: configService.get('DB_PASSWORD'),
+        database: configService.get('DB_DATABASE'),
+        synchronize: configService.get<boolean>('DB_SYNC'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        logging: true
+      }),
+      inject: [ConfigService],
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     StripeModule.forRoot({
       apiKey: process.env.STRIPE_API_KEY,
       apiVersion: '2022-11-15',
     }),
     UsersModule,
+    MailModule,
     CommonModule,
     ProductsModule,
     OrdersModule,
@@ -84,7 +107,7 @@ import { MulterModule } from '@nestjs/platform-express';
     ConversationsModule,
     MessagesModule,
     AiModule,
-    MulterModule.register({dest: './uploads'})
+    MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],
   providers: [],

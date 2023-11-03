@@ -1,6 +1,6 @@
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Banner {
@@ -10,7 +10,7 @@ export class Banner {
   title?: string;
   @Column()
   description?: string;
-  @OneToOne(() => Attachment)
+  @ManyToOne(() => Attachment)
   image: Attachment;
 }
 
@@ -35,15 +35,15 @@ export class Type extends CoreEntity {
   name: string;
   @Column()
   slug: string;
-  @OneToOne(() => Attachment)
+  @ManyToOne(() => Attachment)
   image: Attachment;
   @Column()
   icon: string;
-  @ManyToMany(() => Banner)
+  @ManyToOne(() => Banner)
   banners?: Banner[];
-  @OneToOne(() => Attachment)
+  @ManyToOne(() => Attachment)
   promotional_sliders?: Attachment[];
-  @OneToOne(() => TypeSettings)
+  @ManyToOne(() => TypeSettings)
   settings?: TypeSettings;
   @Column()
   language: string;

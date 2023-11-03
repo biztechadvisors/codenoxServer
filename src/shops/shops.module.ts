@@ -6,8 +6,12 @@ import {
   ShopsController,
   StaffsController,
 } from './shops.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Shop } from './entities/shop.entity';
+import { Balance } from './entities/balance.entity';
 
 @Module({
+  imports: [TypeOrmModule.forFeature([Shop, Balance])],
   controllers: [
     ShopsController,
     StaffsController,
@@ -16,4 +20,4 @@ import {
   ],
   providers: [ShopsService],
 })
-export class ShopsModule {}
+export class ShopsModule { }

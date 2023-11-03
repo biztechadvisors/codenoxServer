@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Request,
+  UseGuards
+} from '@nestjs/common';
+import { AuthGuard } from './auth.guards';
 import { AuthService } from './auth.service';
 import {
   ChangePasswordDto,
@@ -9,22 +19,37 @@ import {
   RegisterDto,
   ResetPasswordDto,
   SocialLoginDto,
+  UpdateOtpDto,
   VerifyForgetPasswordDto,
   VerifyOtpDto,
 } from './dto/create-auth.dto';
+import { JwtService } from '@nestjs/jwt';
+import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 
 @Controller()
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    // private jwtService: JwtService
+
+  ) { }
 
   @Post('register')
   createAccount(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
+
+  @Post('verifyOtp')
+  async verifyOtp(@Body() updateOtpDto: UpdateOtpDto) {
+    return this.authService.verifyOtp(updateOtpDto.otp);
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Post('token')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
+
   @Post('social-login-token')
   socialLogin(@Body() socialLoginDto: SocialLoginDto) {
     return this.authService.socialLogin(socialLoginDto);
@@ -53,10 +78,12 @@ export class AuthController {
   changePassword(@Body() changePasswordDto: ChangePasswordDto) {
     return this.authService.changePassword(changePasswordDto);
   }
+
   @Post('logout')
   async logout(): Promise<boolean> {
     return true;
   }
+  
   @Post('verify-forget-password-token')
   verifyForgetPassword(
     @Body() verifyForgetPasswordDto: VerifyForgetPasswordDto,

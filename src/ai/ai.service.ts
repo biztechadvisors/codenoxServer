@@ -6,6 +6,7 @@ import { Ai } from './entities/ai.entity';
 export class AiService {
   create(createAiDto: CreateAiDto): Ai {
     return {
+      id: 1,
       status: 'success',
       result: 'This a dummy response for dummy api.',
     };

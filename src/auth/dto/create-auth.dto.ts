@@ -14,13 +14,14 @@ export class RegisterDto extends PickType(User, ['name', 'email', 'password']) {
 
 export class LoginDto extends PartialType(
   PickType(User, ['email', 'password']),
-) {}
+) { }
 
 export class SocialLoginDto {
   provider: string;
   access_token: string;
 }
 export class ChangePasswordDto {
+  email: string;
   oldPassword: string;
   newPassword: string;
 }
@@ -43,7 +44,7 @@ export class AuthResponse {
   success?: boolean;
   message?: string;
 }
-export class CoreResponse extends CoreMutationOutput {}
+export class CoreResponse extends CoreMutationOutput { }
 export class VerifyOtpDto {
   otp_id: string;
   code: string;
@@ -60,6 +61,11 @@ export class OtpResponse {
 export class OtpDto {
   phone_number: string;
 }
+
+export class UpdateOtpDto {
+  otp: number;
+}
+
 export class OtpLoginDto {
   otp_id: string;
   code: string;

@@ -58,6 +58,7 @@ export class UsersService {
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
     let data: User[] = this.users;
+    // let data = await this.userRepository.find()
     if (text?.replace(/%/g, '')) {
       data = fuse.search(text)?.map(({ item }) => item);
     }

@@ -7,6 +7,8 @@ import { Type } from './entities/type.entity';
 import typesJson from '@db/types.json';
 import Fuse from 'fuse.js';
 import { GetTypesDto } from './dto/get-types.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { TypeRepository } from './types.repository';
 
 const types = plainToClass(Type, typesJson);
 const options = {
@@ -17,6 +19,10 @@ const fuse = new Fuse(types, options);
 
 @Injectable()
 export class TypesService {
+  constructor(
+    @InjectRepository(TypeRepository) private typeRepository: TypeRepository,
+  ) { }
+  
   private types: Type[] = types;
 
   getTypes({ text, search }: GetTypesDto) {
@@ -53,7 +59,7 @@ export class TypesService {
   }
 
   create(createTypeDto: CreateTypeDto) {
-    return this.types[0];
+
   }
 
   findAll() {
