@@ -8,9 +8,12 @@ import {
   SetDefaultCartController,
 } from './payment-method.controller';
 import { PaymentMethodService } from './payment-method.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PaymentMethod } from './entities/payment-method.entity';
+import { PaymentGateWay } from './entities/payment-gateway.entity';
 
 @Module({
-  imports: [AuthModule, PaymentModule, SettingsModule],
+  imports: [AuthModule, PaymentModule, SettingsModule, TypeOrmModule.forFeature([PaymentMethod, PaymentGateWay])],
   controllers: [
     PaymentMethodController,
     SetDefaultCartController,
@@ -18,4 +21,4 @@ import { PaymentMethodService } from './payment-method.service';
   ],
   providers: [PaymentMethodService],
 })
-export class PaymentMethodModule {}
+export class PaymentMethodModule { }

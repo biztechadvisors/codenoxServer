@@ -7,18 +7,28 @@ import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typ
 export class Attribute extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   name: string;
+
   @Column()
   shop_id: string;
+
   @OneToOne(() => Shop)
   shop: Shop;
+
   @Column()
   slug: string;
-  @OneToMany(() => AttributeValue, attributeValue => attributeValue.attribute)
+
+  @OneToMany(() => AttributeValue, attributeValue => attributeValue.attribute, {
+    onDelete: 'CASCADE',
+  })
   values: AttributeValue[];
+
   @Column()
   language: string;
+
   @Column({ type: 'json' })
   translated_languages: string[];
 }
+

@@ -8,9 +8,12 @@ import { AddressesModule } from 'src/addresses/addresses.module';
 import { AddressRepository } from 'src/addresses/addresses.repository';
 import { ProfileRepository } from 'src/users/profile.repository';
 import { AttachmentRepository } from 'src/common/common.repository';
+import { StoreNotice } from './entities/store-notices.entity';
 
 @Module({
-  imports: [AddressesModule],
-  providers: [UsersService, UserRepository, AddressRepository, ProfileRepository, AttachmentRepository],
+  imports: [AddressesModule, TypeOrmModule.forFeature([StoreNotice])],
+  providers: [
+    UsersService,
+    UserRepository, AddressRepository, ProfileRepository, AttachmentRepository],
 })
 export class StoreNoticesModule { }

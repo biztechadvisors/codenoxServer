@@ -10,10 +10,12 @@ import {
 import { AttributesService } from './attributes.service';
 import { CreateAttributeDto } from './dto/create-attribute.dto';
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
+import { GetAttributeArgs } from './dto/get-attribute.dto';
+import { Attribute } from './entities/attribute.entity';
 
 @Controller('attributes')
 export class AttributesController {
-  constructor(private readonly attributesService: AttributesService) {}
+  constructor(private readonly attributesService: AttributesService) { }
 
   @Post()
   create(@Body() createAttributeDto: CreateAttributeDto) {
@@ -25,9 +27,15 @@ export class AttributesController {
     return this.attributesService.findAll();
   }
 
-  @Get(':param')
-  findOne(@Param('param') param: string) {
-    return this.attributesService.findOne(param);
+  // @Get(':param')
+  // findOne(@Param('param') param: string) {
+  //   return this.attributesService.findOne(param);
+  // }
+
+  @Get('/:id/:slug')
+  async findOne(@Param() param: GetAttributeArgs): Promise<{ message: string } | Attribute | undefined> {
+    const attribute = await this.attributesService.findOne(param);
+    return attribute;
   }
 
   @Put(':id')
@@ -39,7 +47,9 @@ export class AttributesController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.attributesService.remove(+id);
+  async delete(@Param('id') id: number): Promise<{ message: string; status: boolean }> {
+    await this.attributesService.delete(id);
+    return { message: 'Attribute deleted successfully', status: true };
   }
+
 }

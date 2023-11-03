@@ -3,7 +3,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-export enum StoreNoticePriorityType {
+enum StoreNoticePriorityType {
   High = 'high',
   Medium = 'medium',
   Low = 'low',
@@ -39,8 +39,8 @@ export class StoreNotice extends CoreEntity {
   expire_at: string;
   @Column()
   deleted_at?: string;
-  @Column()
-  creator?: any;
   @Column({ type: "json" })
   translated_languages: string[];
+  @Column({ type: "varchar" })
+  creator?: string;
 }

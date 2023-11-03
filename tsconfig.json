@@ -13,11 +13,9 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@db/*": [
-        "./src/db/pickbazar/*"
-      ]
+      "@db/*": ["./src/db/pickbazar/*"]
     },
     "incremental": true,
     "skipLibCheck": true
-  },
+  }
 }

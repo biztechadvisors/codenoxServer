@@ -21,6 +21,12 @@ export class User extends CoreEntity {
     password?: string;
 
     @Column()
+    otp: number;
+
+    @Column({ default: false })
+    isVerified: boolean;
+
+    @Column()
     shop_id?: number;
 
     @OneToOne(() => Profile, (profile) => profile.customer)
@@ -43,4 +49,7 @@ export class User extends CoreEntity {
     @OneToMany(() => Order, (order) => order.customer)
     @JoinColumn()
     orders: Order[];
+
+    @Column({ type: 'timestamp' })
+    createdAt: Date;
 }

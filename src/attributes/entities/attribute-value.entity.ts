@@ -6,12 +6,16 @@ import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 export class AttributeValue extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   shop_id: number;
+
   @Column()
   value: string;
+
   @Column()
   meta?: string;
+
   @ManyToOne(() => Attribute, attribute => attribute.values)
   attribute: Attribute;
 }

@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CategoryRepository } from './categories.repository';
 import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
+import { convertToSlug } from 'src/helpers';
 
 const categories = plainToClass(Category, categoriesJson);
 const options = {
@@ -28,6 +29,11 @@ export class CategoriesService {
 
   ) { }
 
+
+  async convertToSlug(text) {
+    return await convertToSlug(text);
+  }
+
   private categories: Category[] = categories;
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
@@ -38,17 +44,22 @@ export class CategoriesService {
     attachment.thumbnail = createCategoryDto.image.thumbnail;
     attachment.original = createCategoryDto.image.original;
 
+    const parent = await this.categoryRepository.findOne({ where: { name: createCategoryDto.name } });
+
+    console.log("Parent", parent)
     // Save the Attachment instance to the database
     await this.attachmentRepository.save(attachment);
 
+    let slug = await this.convertToSlug(createCategoryDto.name)
     // Create a new Category instance
     const category = new Category();
 
     // Set the Category properties from the CreateCategoryDto
     category.name = createCategoryDto.name;
+    category.slug = slug;
     category.type = createCategoryDto.type;
     category.details = createCategoryDto.details;
-    category.parent = createCategoryDto.parent;
+    // category.parent = await this.categoryRepository.findOne({ where: { name: createCategoryDto.name } });
     category.image = attachment;
     category.icon = createCategoryDto.icon;
     category.language = createCategoryDto.language;
@@ -64,6 +75,7 @@ export class CategoriesService {
     // Return the saved Category instance
     return category;
   }
+
   getCategories({ limit, page, search, parent }: GetCategoriesDto) {
     if (!page) page = 1;
     const startIndex = (page - 1) * limit;

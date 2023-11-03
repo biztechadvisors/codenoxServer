@@ -19,7 +19,7 @@ export class Category extends CoreEntity {
   @JoinColumn()
   parent?: Category;
 
-  @OneToMany(() => Category, category => category.parent)
+  @ManyToOne(() => Category)
   children?: Category[];
 
   @Column()
@@ -36,7 +36,7 @@ export class Category extends CoreEntity {
   @JoinColumn()
   type?: Type;
 
-  @OneToOne(() => Product, product => product.categories)
+  @ManyToMany(() => Product, product => product.categories)
   @JoinColumn()
   products: Product[];
 
@@ -45,4 +45,7 @@ export class Category extends CoreEntity {
 
   @Column({ type: 'json' })
   translated_languages: string[];
+
+  @Column()
+  products_count: number;
 }
