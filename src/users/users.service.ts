@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto, UserPaginator } from './dto/get-users.dto';
@@ -30,16 +34,17 @@ const fuse = new Fuse(users, options);
 
 @Injectable()
 export class UsersService {
-
   constructor(
     @InjectRepository(UserRepository) private userRepository: UserRepository,
-    @InjectRepository(AddressRepository) private addressesRepository: AddressRepository,
-    @InjectRepository(ProfileRepository) private profilesRepository: ProfileRepository,
-    @InjectRepository(AttachmentRepository) private attachmentRepository: AttachmentRepository,
+    @InjectRepository(AddressRepository)
+    private addressesRepository: AddressRepository,
+    @InjectRepository(ProfileRepository)
+    private profilesRepository: ProfileRepository,
+    @InjectRepository(AttachmentRepository)
+    private attachmentRepository: AttachmentRepository,
+  ) {}
 
-  ) { }
-
-  //-------------------------------------------------------- 
+  //--------------------------------------------------------
 
   private users: User[] = users;
 

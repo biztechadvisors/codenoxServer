@@ -1,14 +1,14 @@
-import { Module } from '@nestjs/common';
-import { ShopsService } from './shops.service';
+import { Module } from '@nestjs/common'
+import { ShopsService } from './shops.service'
 import {
   ApproveShopController,
   DisapproveShopController,
   ShopsController,
   StaffsController,
-} from './shops.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Shop } from './entities/shop.entity';
-import { Balance } from './entities/balance.entity';
+} from './shops.controller'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { Shop } from './entities/shop.entity'
+import { Balance } from './entities/balance.entity'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Shop, Balance])],
@@ -20,4 +20,4 @@ import { Balance } from './entities/balance.entity';
   ],
   providers: [ShopsService],
 })
-export class ShopsModule { }
+export class ShopsModule {}

@@ -1,37 +1,37 @@
-import { CoreEntity } from '../../common/entities/core.entity';
-import { Attachment } from '../../common/entities/attachment.entity';
-import { ShopSocials } from '../../settings/entities/setting.entity';
-import { Type } from '../../types/entities/type.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { CoreEntity } from '../../common/entities/core.entity'
+import { Attachment } from '../../common/entities/attachment.entity'
+import { ShopSocials } from '../../settings/entities/setting.entity'
+import { Type } from '../../types/entities/type.entity'
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class Manufacturer extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @OneToOne(() => Attachment)
-  cover_image?: Attachment;
+  cover_image?: Attachment
   @Column()
-  description?: string;
+  description?: string
   @OneToOne(() => Attachment)
-  image?: Attachment;
+  image?: Attachment
   @Column()
-  is_approved?: boolean;
+  is_approved?: boolean
   @Column()
-  name: string;
+  name: string
   @Column()
-  products_count?: number;
+  products_count?: number
   @Column()
-  slug?: string;
+  slug?: string
   @OneToOne(() => ShopSocials)
-  socials?: ShopSocials;
+  socials?: ShopSocials
   @OneToOne(() => Type)
-  type: Type;
+  type: Type
   @Column()
-  type_id?: string;
+  type_id?: string
   @Column()
-  website?: string;
+  website?: string
   @Column()
-  language?: string;
-  @Column({ type: "json" })
-  translated_languages?: string[];
+  language?: string
+  @Column({ type: 'json' })
+  translated_languages?: string[]
 }

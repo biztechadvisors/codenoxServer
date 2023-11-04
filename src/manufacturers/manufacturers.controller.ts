@@ -7,16 +7,16 @@ import {
   Post,
   Put,
   Query,
-} from '@nestjs/common';
-import { ManufacturersService } from './manufacturers.service';
-import { GetTopManufacturersDto } from './dto/get-top-manufacturers.dto';
-import { Manufacturer } from './entities/manufacturer.entity';
+} from '@nestjs/common'
+import { ManufacturersService } from './manufacturers.service'
+import { GetTopManufacturersDto } from './dto/get-top-manufacturers.dto'
+import { Manufacturer } from './entities/manufacturer.entity'
 import {
   GetManufacturersDto,
   ManufacturerPaginator,
-} from './dto/get-manufactures.dto';
-import { CreateManufacturerDto } from './dto/create-manufacturer.dto';
-import { UpdateManufacturerDto } from './dto/update-manufacturer.dto';
+} from './dto/get-manufactures.dto'
+import { CreateManufacturerDto } from './dto/create-manufacturer.dto'
+import { UpdateManufacturerDto } from './dto/update-manufacturer.dto'
 
 @Controller('manufacturers')
 export class ManufacturersController {
@@ -24,21 +24,21 @@ export class ManufacturersController {
 
   @Post()
   createProduct(@Body() createManufactureDto: CreateManufacturerDto) {
-    return this.manufacturersService.create(createManufactureDto);
+    return this.manufacturersService.create(createManufactureDto)
   }
 
   @Get()
   async getManufactures(
     @Query() query: GetManufacturersDto,
   ): Promise<ManufacturerPaginator> {
-    return this.manufacturersService.getManufactures(query);
+    return this.manufacturersService.getManufactures(query)
   }
 
   @Get(':slug')
   async getManufactureBySlug(
     @Param('slug') slug: string,
   ): Promise<Manufacturer> {
-    return this.manufacturersService.getManufacturesBySlug(slug);
+    return this.manufacturersService.getManufacturesBySlug(slug)
   }
 
   @Put(':id')
@@ -46,12 +46,12 @@ export class ManufacturersController {
     @Param('id') id: string,
     @Body() updateManufacturerDto: UpdateManufacturerDto,
   ) {
-    return this.manufacturersService.update(+id, updateManufacturerDto);
+    return this.manufacturersService.update(+id, updateManufacturerDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.manufacturersService.remove(+id);
+    return this.manufacturersService.remove(+id)
   }
 }
 
@@ -63,6 +63,6 @@ export class TopManufacturersController {
   async getTopManufactures(
     @Query() query: GetTopManufacturersDto,
   ): Promise<Manufacturer[]> {
-    return this.manufacturersService.getTopManufactures(query);
+    return this.manufacturersService.getTopManufactures(query)
   }
 }

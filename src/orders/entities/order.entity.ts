@@ -1,12 +1,21 @@
-import { UserAddress } from 'src/addresses/entities/address.entity';
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Coupon } from 'src/coupons/entities/coupon.entity';
-import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
-import { File, Product } from 'src/products/entities/product.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
-import { User } from 'src/users/entities/user.entity';
-import { OrderStatus } from './order-status.entity';
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { UserAddress } from 'src/addresses/entities/address.entity'
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Coupon } from 'src/coupons/entities/coupon.entity'
+import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity'
+import { File, Product } from 'src/products/entities/product.entity'
+import { Shop } from 'src/shops/entities/shop.entity'
+import { User } from 'src/users/entities/user.entity'
+import { OrderStatus } from './order-status.entity'
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
 
 export enum PaymentGatewayType {
   STRIPE = 'STRIPE',
@@ -44,79 +53,79 @@ export enum PaymentStatusType {
 @Entity()
 export class Order extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  tracking_number: string;
+  tracking_number: string
   @Column()
-  customer_id: number;
+  customer_id: number
   @Column()
-  customer_contact: string;
-  @ManyToOne(() => User, user => user.orders, {
+  customer_contact: string
+  @ManyToOne(() => User, (user) => user.orders, {
     eager: true,
   })
-  customer: User;
+  customer: User
   @ManyToOne(() => Order, { nullable: true })
-  parentOrder: Order;
-  @OneToMany(() => Order, order => order.parentOrder)
-  children?: Order[];
+  parentOrder: Order
+  @OneToMany(() => Order, (order) => order.parentOrder)
+  children?: Order[]
   @OneToOne(() => OrderStatus)
-  status: OrderStatus;
+  status: OrderStatus
   @Column()
-  order_status: OrderStatusType;
+  order_status: OrderStatusType
   @Column()
-  payment_status: PaymentStatusType;
+  payment_status: PaymentStatusType
   @Column()
-  amount: number;
+  amount: number
   @Column()
-  sales_tax: number;
+  sales_tax: number
   @Column()
-  total: number;
+  total: number
   @Column()
-  paid_total: number;
+  paid_total: number
   @Column()
-  payment_id?: string;
+  payment_id?: string
   @Column()
-  payment_gateway: PaymentGatewayType;
-  @ManyToOne(() => Coupon, coupon => coupon.orders)
-  coupon?: Coupon;
+  payment_gateway: PaymentGatewayType
+  @ManyToOne(() => Coupon, (coupon) => coupon.orders)
+  coupon?: Coupon
   @ManyToMany(() => Shop)
-  shop: Shop;
+  shop: Shop
   @Column()
-  discount?: number;
+  discount?: number
   @Column()
-  delivery_fee: number;
+  delivery_fee: number
   @Column()
-  delivery_time: string;
+  delivery_time: string
   @ManyToMany(() => Product)
-  products: Product[];
+  products: Product[]
   @ManyToMany(() => UserAddress)
-  billing_address: UserAddress;
+  billing_address: UserAddress
   @ManyToMany(() => UserAddress)
-  shipping_address: UserAddress;
+  shipping_address: UserAddress
   @Column()
-  language: string;
-  @Column({ type: "json" })
-  translated_languages: string[];
+  language: string
+  @Column({ type: 'json' })
+  translated_languages: string[]
   @OneToOne(() => PaymentIntent)
-  payment_intent: PaymentIntent;
+  payment_intent: PaymentIntent
   @Column()
-  altered_payment_gateway?: string;
+  altered_payment_gateway?: string
 }
 
 @Entity()
 export class OrderFiles extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  purchase_key: string;
+  purchase_key: string
   @Column()
-  digital_file_id: number;
+  digital_file_id: number
   @Column()
-  order_id?: number;
+  order_id?: number
   @Column()
-  customer_id: number;
+  customer_id: number
   @OneToOne(() => File)
-  file: File;
+  file: File
   @OneToOne(() => Product)
-  fileable: Product;
+  fileable: Product
 }

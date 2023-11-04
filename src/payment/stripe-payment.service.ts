@@ -1,30 +1,30 @@
-import { Injectable } from '@nestjs/common';
-import settingJson from '@db/settings.json';
-import { Setting } from 'src/settings/entities/setting.entity';
-import { plainToClass } from 'class-transformer';
-import { InjectStripe } from 'nestjs-stripe';
-import paymentGatewayJson from 'src/db/pickbazar/payment-gateway.json';
-import { Order } from 'src/orders/entities/order.entity';
-import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.entity';
-import { User } from 'src/users/entities/user.entity';
-import Stripe from 'stripe';
+import { Injectable } from '@nestjs/common'
+import settingJson from '@db/settings.json'
+import { Setting } from 'src/settings/entities/setting.entity'
+import { plainToClass } from 'class-transformer'
+import { InjectStripe } from 'nestjs-stripe'
+import paymentGatewayJson from 'src/db/pickbazar/payment-gateway.json'
+import { Order } from 'src/orders/entities/order.entity'
+import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.entity'
+import { User } from 'src/users/entities/user.entity'
+import Stripe from 'stripe'
 import {
   CardElementDto,
   CreatePaymentIntentDto,
   StripeCreateCustomerDto,
-} from './dto/stripe.dto';
+} from './dto/stripe.dto'
 import {
   StripeCustomer,
   StripeCustomerList,
   StripePaymentIntent,
   StripePaymentMethod,
-} from './entity/stripe.entity';
+} from './entity/stripe.entity'
 
-const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson);
-const setting = plainToClass(Setting, settingJson);
+const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson)
+const setting = plainToClass(Setting, settingJson)
 @Injectable()
 export class StripePaymentService {
-  private paymentGateways: PaymentGateWay[] = paymentGateways;
+  private paymentGateways: PaymentGateWay[] = paymentGateways
 
   constructor(@InjectStripe() private readonly stripeClient: Stripe) {}
 
@@ -36,9 +36,9 @@ export class StripePaymentService {
     createCustomerDto?: StripeCreateCustomerDto,
   ): Promise<StripeCustomer> {
     try {
-      return await this.stripeClient.customers.create(createCustomerDto);
+      return await this.stripeClient.customers.create(createCustomerDto)
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
 
@@ -48,9 +48,9 @@ export class StripePaymentService {
    */
   async retrieveCustomer(id: string): Promise<StripeCustomer> {
     try {
-      return await this.stripeClient.customers.retrieve(id);
+      return await this.stripeClient.customers.retrieve(id)
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
 
@@ -59,9 +59,9 @@ export class StripePaymentService {
    */
   async listAllCustomer(): Promise<StripeCustomerList> {
     try {
-      return await this.stripeClient.customers.list();
+      return await this.stripeClient.customers.list()
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
 
@@ -77,11 +77,11 @@ export class StripePaymentService {
       const paymentMethod = await this.stripeClient.paymentMethods.create({
         type: 'card',
         card: cardElementDto,
-      });
-      const { ...newPaymentMethod }: StripePaymentMethod = paymentMethod;
-      return newPaymentMethod;
+      })
+      const { ...newPaymentMethod }: StripePaymentMethod = paymentMethod
+      return newPaymentMethod
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
 
@@ -93,9 +93,9 @@ export class StripePaymentService {
     method_key: string,
   ): Promise<StripePaymentMethod> {
     try {
-      return await this.stripeClient.paymentMethods.retrieve(method_key);
+      return await this.stripeClient.paymentMethods.retrieve(method_key)
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
 
@@ -112,10 +112,10 @@ export class StripePaymentService {
         {
           type: 'card',
         },
-      );
-      return data;
+      )
+      return data
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
 
@@ -132,9 +132,9 @@ export class StripePaymentService {
     try {
       return await this.stripeClient.paymentMethods.attach(method_id, {
         customer: customer_id,
-      });
+      })
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
 
@@ -146,9 +146,9 @@ export class StripePaymentService {
     method_id: string,
   ): Promise<StripePaymentMethod> {
     try {
-      return await this.stripeClient.paymentMethods.detach(method_id);
+      return await this.stripeClient.paymentMethods.detach(method_id)
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
 
@@ -162,11 +162,11 @@ export class StripePaymentService {
     try {
       const paymentIntent = await this.stripeClient.paymentIntents.create(
         createPaymentIntentDto,
-      );
-      const { ...newIntent }: StripePaymentIntent = paymentIntent;
-      return newIntent;
+      )
+      const { ...newIntent }: StripePaymentIntent = paymentIntent
+      return newIntent
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
 
@@ -178,23 +178,23 @@ export class StripePaymentService {
     payment_id: string,
   ): Promise<StripePaymentIntent> {
     try {
-      return await this.stripeClient.paymentIntents.retrieve(payment_id);
+      return await this.stripeClient.paymentIntents.retrieve(payment_id)
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
 
   async makePaymentIntentParam(order: Order, me: User) {
-    const customerList = await this.listAllCustomer();
+    const customerList = await this.listAllCustomer()
     const currentCustomer = customerList.data.find(
       (customer: StripeCustomer) => customer.email === me.email,
-    );
+    )
     if (!currentCustomer) {
       const newCustomer = await this.createCustomer({
         name: me.name,
         email: me.email,
-      });
-      currentCustomer.id = newCustomer.id;
+      })
+      currentCustomer.id = newCustomer.id
     }
     return {
       customer: currentCustomer.id,
@@ -204,6 +204,6 @@ export class StripePaymentService {
       metadata: {
         order_tracking_number: order.tracking_number,
       },
-    };
+    }
   }
 }

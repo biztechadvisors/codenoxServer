@@ -7,12 +7,12 @@ import {
   Post,
   Put,
   Query,
-} from '@nestjs/common';
-import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
-import { GetPaymentMethodsDto } from './dto/get-payment-methods.dto';
-import { DefaultCart } from './dto/set-default-card.dto';
-import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto';
-import { PaymentMethodService } from './payment-method.service';
+} from '@nestjs/common'
+import { CreatePaymentMethodDto } from './dto/create-payment-method.dto'
+import { GetPaymentMethodsDto } from './dto/get-payment-methods.dto'
+import { DefaultCart } from './dto/set-default-card.dto'
+import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto'
+import { PaymentMethodService } from './payment-method.service'
 
 @Controller('cards')
 export class PaymentMethodController {
@@ -20,17 +20,17 @@ export class PaymentMethodController {
 
   @Post()
   create(@Body() createPaymentMethodDto: CreatePaymentMethodDto) {
-    return this.paymentMethodService.create(createPaymentMethodDto);
+    return this.paymentMethodService.create(createPaymentMethodDto)
   }
 
   @Get()
   findAll(@Query() getTaxesDto: GetPaymentMethodsDto) {
-    return this.paymentMethodService.findAll();
+    return this.paymentMethodService.findAll()
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.paymentMethodService.findOne(+id);
+    return this.paymentMethodService.findOne(+id)
   }
 
   @Put(':id')
@@ -38,12 +38,12 @@ export class PaymentMethodController {
     @Param('id') id: string,
     @Body() updateTaxDto: UpdatePaymentMethodDto,
   ) {
-    return this.paymentMethodService.update(+id, updateTaxDto);
+    return this.paymentMethodService.update(+id, updateTaxDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.paymentMethodService.remove(+id);
+    return this.paymentMethodService.remove(+id)
   }
 }
 
@@ -52,8 +52,8 @@ export class SavePaymentMethodController {
   constructor(private readonly paymentMethodService: PaymentMethodService) {}
   @Post()
   savePaymentMethod(@Body() createPaymentMethodDto: CreatePaymentMethodDto) {
-    createPaymentMethodDto.default_card = false;
-    return this.paymentMethodService.savePaymentMethod(createPaymentMethodDto);
+    createPaymentMethodDto.default_card = false
+    return this.paymentMethodService.savePaymentMethod(createPaymentMethodDto)
   }
 }
 
@@ -62,6 +62,6 @@ export class SetDefaultCartController {
   constructor(private readonly paymentMethodService: PaymentMethodService) {}
   @Post()
   setDefaultCart(@Body() defaultCart: DefaultCart) {
-    return this.paymentMethodService.saveDefaultCart(defaultCart);
+    return this.paymentMethodService.saveDefaultCart(defaultCart)
   }
 }

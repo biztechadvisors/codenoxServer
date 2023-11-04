@@ -1,14 +1,14 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class Attachment extends CoreEntity {
-@PrimaryGeneratedColumn()
-id: number;
+  @PrimaryGeneratedColumn()
+  id: number
 
-@Column()
-thumbnail: string;
+  @Column()
+  thumbnail: string
 
-@Column()
-original: string;
+  @Column()
+  original: string
 }

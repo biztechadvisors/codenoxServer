@@ -1,18 +1,18 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
+import { SortOrder } from 'src/common/dto/generic-conditions.dto'
+import { PaginationArgs } from 'src/common/dto/pagination-args.dto'
+import { Paginator } from 'src/common/dto/paginator.dto'
 
-import { User } from '../entities/user.entity';
+import { User } from '../entities/user.entity'
 
 export class UserPaginator extends Paginator<User> {
-  data: User[];
+  data: User[]
 }
 
 export class GetUsersDto extends PaginationArgs {
-  orderBy?: QueryUsersOrderByColumn;
-  sortedBy?: SortOrder;
-  text?: string;
-  search?: string;
+  orderBy?: QueryUsersOrderByColumn
+  sortedBy?: SortOrder
+  text?: string
+  search?: string
 }
 
 export enum QueryUsersOrderByColumn {

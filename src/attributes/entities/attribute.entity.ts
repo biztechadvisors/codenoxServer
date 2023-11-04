@@ -1,34 +1,43 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
-import { AttributeValue } from './attribute-value.entity';
-import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Shop } from 'src/shops/entities/shop.entity'
+import { AttributeValue } from './attribute-value.entity'
+import {
+  Column,
+  Entity,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
 
 @Entity()
 export class Attribute extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
   @Column()
-  name: string;
+  name: string
 
   @Column()
-  shop_id: string;
+  shop_id: string
 
   @OneToOne(() => Shop)
-  shop: Shop;
+  shop: Shop
 
   @Column()
-  slug: string;
+  slug: string
 
-  @OneToMany(() => AttributeValue, attributeValue => attributeValue.attribute, {
-    onDelete: 'CASCADE',
-  })
-  values: AttributeValue[];
+  @OneToMany(
+    () => AttributeValue,
+    (attributeValue) => attributeValue.attribute,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
+  values: AttributeValue[]
 
   @Column()
-  language: string;
+  language: string
 
   @Column({ type: 'json' })
-  translated_languages: string[];
+  translated_languages: string[]
 }
-

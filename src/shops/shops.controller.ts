@@ -7,13 +7,13 @@ import {
   Param,
   Delete,
   Query,
-} from '@nestjs/common';
-import { ShopsService } from './shops.service';
-import { CreateShopDto } from './dto/create-shop.dto';
-import { UpdateShopDto } from './dto/update-shop.dto';
-import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto';
-import { GetStaffsDto } from './dto/get-staffs.dto';
-import { UserPaginator } from 'src/users/dto/get-users.dto';
+} from '@nestjs/common'
+import { ShopsService } from './shops.service'
+import { CreateShopDto } from './dto/create-shop.dto'
+import { UpdateShopDto } from './dto/update-shop.dto'
+import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto'
+import { GetStaffsDto } from './dto/get-staffs.dto'
+import { UserPaginator } from 'src/users/dto/get-users.dto'
 
 @Controller('shops')
 export class ShopsController {
@@ -21,37 +21,37 @@ export class ShopsController {
 
   @Post()
   create(@Body() createShopDto: CreateShopDto) {
-    return this.shopsService.create(createShopDto);
+    return this.shopsService.create(createShopDto)
   }
 
   @Get()
   async getShops(@Query() query: GetShopsDto): Promise<ShopPaginator> {
-    return this.shopsService.getShops(query);
+    return this.shopsService.getShops(query)
   }
 
   @Get(':slug')
   async getShop(@Param('slug') slug: string) {
-    return this.shopsService.getShop(slug);
+    return this.shopsService.getShop(slug)
   }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
-    return this.shopsService.update(+id, updateShopDto);
+    return this.shopsService.update(+id, updateShopDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.shopsService.remove(+id);
+    return this.shopsService.remove(+id)
   }
 
   @Post('approve')
   approveShop(@Param('id') id: string) {
-    return this.shopsService.approve(+id);
+    return this.shopsService.approve(+id)
   }
 
   @Post('disapprove')
   disapproveShop(@Param('id') id: string) {
-    return this.shopsService.approve(+id);
+    return this.shopsService.approve(+id)
   }
 }
 
@@ -61,27 +61,27 @@ export class StaffsController {
 
   @Post()
   create(@Body() createShopDto: CreateShopDto) {
-    return this.shopsService.create(createShopDto);
+    return this.shopsService.create(createShopDto)
   }
 
   @Get()
   async getStaffs(@Query() query: GetStaffsDto): Promise<UserPaginator> {
-    return this.shopsService.getStaffs(query);
+    return this.shopsService.getStaffs(query)
   }
 
   @Get(':slug')
   async getShop(@Param('slug') slug: string) {
-    return this.shopsService.getShop(slug);
+    return this.shopsService.getShop(slug)
   }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
-    return this.shopsService.update(+id, updateShopDto);
+    return this.shopsService.update(+id, updateShopDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.shopsService.remove(+id);
+    return this.shopsService.remove(+id)
   }
 }
 
@@ -91,7 +91,7 @@ export class DisapproveShopController {
 
   @Post()
   async disapproveShop(@Body('id') id) {
-    return this.shopsService.disapproveShop(id);
+    return this.shopsService.disapproveShop(id)
   }
 }
 
@@ -101,6 +101,6 @@ export class ApproveShopController {
 
   @Post()
   async approveShop(@Body('id') id) {
-    return this.shopsService.approveShop(id);
+    return this.shopsService.approveShop(id)
   }
 }

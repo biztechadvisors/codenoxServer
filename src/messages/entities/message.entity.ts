@@ -1,13 +1,13 @@
 import {
   Conversation,
   LatestMessage,
-} from 'src/conversations/entities/conversation.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+} from 'src/conversations/entities/conversation.entity'
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class Message extends LatestMessage {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @OneToOne(() => Conversation)
-  conversation: Conversation;
+  conversation: Conversation
 }

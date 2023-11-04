@@ -1,48 +1,48 @@
-import { Injectable } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
-import { CreateCouponDto } from './dto/create-coupon.dto';
-import { UpdateCouponDto } from './dto/update-coupon.dto';
-import { Coupon } from './entities/coupon.entity';
-import couponsJson from '@db/coupons.json';
-import Fuse from 'fuse.js';
-import { GetCouponsDto } from './dto/get-coupons.dto';
-import { paginate } from 'src/common/pagination/paginate';
+import { Injectable } from '@nestjs/common'
+import { plainToClass } from 'class-transformer'
+import { CreateCouponDto } from './dto/create-coupon.dto'
+import { UpdateCouponDto } from './dto/update-coupon.dto'
+import { Coupon } from './entities/coupon.entity'
+import couponsJson from '@db/coupons.json'
+import Fuse from 'fuse.js'
+import { GetCouponsDto } from './dto/get-coupons.dto'
+import { paginate } from 'src/common/pagination/paginate'
 
-const coupons = plainToClass(Coupon, couponsJson);
+const coupons = plainToClass(Coupon, couponsJson)
 const options = {
   keys: ['code'],
   threshold: 0.3,
-};
-const fuse = new Fuse(coupons, options);
+}
+const fuse = new Fuse(coupons, options)
 
 @Injectable()
 export class CouponsService {
-  private coupons: Coupon[] = coupons;
+  private coupons: Coupon[] = coupons
 
   create(createCouponDto: CreateCouponDto) {
-    return this.coupons[0];
+    return this.coupons[0]
   }
 
   getCoupons({ search, limit, page }: GetCouponsDto) {
-    if (!page) page = 1;
-    if (!limit) limit = 12;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let data: Coupon[] = this.coupons;
+    if (!page) page = 1
+    if (!limit) limit = 12
+    const startIndex = (page - 1) * limit
+    const endIndex = page * limit
+    let data: Coupon[] = this.coupons
     // if (text?.replace(/%/g, '')) {
     //   data = fuse.search(text)?.map(({ item }) => item);
     // }
 
     if (search) {
-      const parseSearchParams = search.split(';');
-      const searchText: any = [];
+      const parseSearchParams = search.split(';')
+      const searchText: any = []
       for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
+        const [key, value] = searchParam.split(':')
         // TODO: Temp Solution
         if (key !== 'slug') {
           searchText.push({
             [key]: value,
-          });
+          })
         }
       }
 
@@ -50,27 +50,27 @@ export class CouponsService {
         .search({
           $and: searchText,
         })
-        ?.map(({ item }) => item);
+        ?.map(({ item }) => item)
     }
 
-    const results = data.slice(startIndex, endIndex);
-    const url = `/coupons?search=${search}&limit=${limit}`;
+    const results = data.slice(startIndex, endIndex)
+    const url = `/coupons?search=${search}&limit=${limit}`
     return {
       data: results,
       ...paginate(data.length, page, limit, results.length, url),
-    };
+    }
   }
 
   getCoupon(param: string, language: string): Coupon {
-    return this.coupons.find((p) => p.code === param);
+    return this.coupons.find((p) => p.code === param)
   }
 
   update(id: number, updateCouponDto: UpdateCouponDto) {
-    return this.coupons[0];
+    return this.coupons[0]
   }
 
   remove(id: number) {
-    return `This action removes a #${id} coupon`;
+    return `This action removes a #${id} coupon`
   }
 
   verifyCoupon(code: string) {
@@ -96,6 +96,6 @@ export class CouponsService {
         deleted_at: null,
         is_valid: true,
       },
-    };
+    }
   }
 }

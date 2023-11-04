@@ -1,19 +1,19 @@
-import { Module } from '@nestjs/common';
-import { AuthModule } from 'src/auth/auth.module';
-import { PaymentModule } from 'src/payment/payment.module';
+import { Module } from '@nestjs/common'
+import { AuthModule } from 'src/auth/auth.module'
+import { PaymentModule } from 'src/payment/payment.module'
 import {
   DownloadInvoiceController,
   OrderExportController,
   OrderFilesController,
   OrdersController,
   OrderStatusController,
-} from './orders.controller';
-import { OrdersService } from './orders.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Order } from './entities/order.entity';
+} from './orders.controller'
+import { OrdersService } from './orders.service'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { Order } from './entities/order.entity'
 
 @Module({
-  imports: [AuthModule, PaymentModule,TypeOrmModule.forFeature([Order])],
+  imports: [AuthModule, PaymentModule, TypeOrmModule.forFeature([Order])],
   controllers: [
     OrdersController,
     OrderStatusController,

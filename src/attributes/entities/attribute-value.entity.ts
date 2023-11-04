@@ -1,21 +1,21 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Attribute } from './attribute.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Attribute } from './attribute.entity'
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class AttributeValue extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
   @Column()
-  shop_id: number;
+  shop_id: number
 
   @Column()
-  value: string;
+  value: string
 
   @Column()
-  meta?: string;
+  meta?: string
 
-  @ManyToOne(() => Attribute, attribute => attribute.values)
-  attribute: Attribute;
+  @ManyToOne(() => Attribute, (attribute) => attribute.values)
+  attribute: Attribute
 }

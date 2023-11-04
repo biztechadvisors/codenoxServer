@@ -1,4 +1,4 @@
 export class ImportDto {
-  shop_id: number;
+  shop_id: number
   // csv: Upload;
 }

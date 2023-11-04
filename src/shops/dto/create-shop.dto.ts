@@ -1,5 +1,5 @@
-import { PickType } from '@nestjs/swagger';
-import { Shop } from '../entities/shop.entity';
+import { PickType } from '@nestjs/swagger'
+import { Shop } from '../entities/shop.entity'
 
 export class CreateShopDto extends PickType(Shop, [
   'name',
@@ -10,10 +10,10 @@ export class CreateShopDto extends PickType(Shop, [
   'settings',
   'balance',
 ]) {
-  categories: number[];
+  categories: number[]
 }
 
 export class ApproveShopDto {
-  id: number;
-  admin_commission_rate: number;
+  id: number
+  admin_commission_rate: number
 }

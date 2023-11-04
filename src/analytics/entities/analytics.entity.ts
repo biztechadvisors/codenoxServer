@@ -1,31 +1,30 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class TotalYearSaleByMonth {
   @PrimaryGeneratedColumn()
   id: number
   @Column()
-  total?: number;
+  total?: number
   @Column()
-  month?: string;
+  month?: string
 }
 
 @Entity()
 export class Analytics extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  totalRevenue?: number;
+  totalRevenue?: number
   @Column()
-  totalShops?: number;
+  totalShops?: number
   @Column()
-  todaysRevenue?: number;
+  todaysRevenue?: number
   @Column()
-  totalOrders?: number;
+  totalOrders?: number
   @Column()
-  newCustomers?: number;
+  newCustomers?: number
   @OneToOne(() => TotalYearSaleByMonth)
-  totalYearSaleByMonth?: TotalYearSaleByMonth[];
+  totalYearSaleByMonth?: TotalYearSaleByMonth[]
 }
-
