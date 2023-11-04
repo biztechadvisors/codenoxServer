@@ -10,4 +10,4 @@ import { TypeRepository } from './types.repository';
   controllers: [TypesController],
   providers: [TypesService, TypeRepository],
 })
-export class TypesModule { }
+export class TypesModule {}

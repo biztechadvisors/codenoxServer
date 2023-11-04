@@ -1,5 +1,5 @@
-import { OmitType } from '@nestjs/swagger';
-import { Product } from '../entities/product.entity';
+import { OmitType } from '@nestjs/swagger'
+import { Product } from '../entities/product.entity'
 
 export class CreateProductDto extends OmitType(Product, [
   'id',
@@ -16,6 +16,6 @@ export class CreateProductDto extends OmitType(Product, [
   // 'variation_options',
   'translated_languages',
 ]) {
-  categories: number[];
-  tags: number[];
+  categories: number[]
+  tags: number[]
 }

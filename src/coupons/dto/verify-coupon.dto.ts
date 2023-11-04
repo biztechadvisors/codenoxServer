@@ -1,9 +1,9 @@
-import { Coupon } from '../entities/coupon.entity';
+import { Coupon } from '../entities/coupon.entity'
 
 export class VerifyCouponInput {
-  code: string;
+  code: string
 }
 export class VerifyCouponResponse {
-  is_valid: boolean;
-  coupon: Coupon;
+  is_valid: boolean
+  coupon: Coupon
 }

@@ -7,7 +7,15 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
 import { Review } from '../../reviews/entities/review.entity';
-import { Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToMany,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 enum ProductStatus {
   PUBLISH = 'publish',
@@ -47,10 +55,10 @@ export class Product extends CoreEntity {
   type_id: number;
   @Column()
   product_type: ProductType;
-  @OneToOne(() => Category, category => category.products)
+  @OneToOne(() => Category, (category) => category.products)
   @JoinColumn()
   categories: Category[];
-  @OneToMany(() => Tag, tag => tag.products)
+  @OneToMany(() => Tag, (tag) => tag.products)
   tags?: Tag[];
   @OneToOne(() => AttributeValue)
   variations?: AttributeValue[];
@@ -58,7 +66,7 @@ export class Product extends CoreEntity {
   variation_options?: Variation[];
   @OneToOne(() => OrderProductPivot)
   pivot?: OrderProductPivot;
-  @OneToMany(() => Order, order => order.products)
+  @OneToMany(() => Order, (order) => order.products)
   orders?: Order[];
   @OneToOne(() => Shop)
   shop: Shop;
@@ -104,11 +112,11 @@ export class Product extends CoreEntity {
   ratings: number;
   @Column()
   in_wishlist: boolean;
-  @OneToMany(() => Review, review => review.product)
+  @OneToMany(() => Review, (review) => review.product)
   my_review?: Review[];
   @Column()
   language?: string;
-  @Column({ type: "json" })
+  @Column({ type: 'json' })
   translated_languages?: string[];
 }
 

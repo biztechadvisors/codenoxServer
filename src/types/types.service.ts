@@ -21,8 +21,8 @@ const fuse = new Fuse(types, options);
 export class TypesService {
   constructor(
     @InjectRepository(TypeRepository) private typeRepository: TypeRepository,
-  ) { }
-  
+  ) {}
+
   private types: Type[] = types;
 
   getTypes({ text, search }: GetTypesDto) {
@@ -58,9 +58,7 @@ export class TypesService {
     return this.types.find((p) => p.slug === slug);
   }
 
-  create(createTypeDto: CreateTypeDto) {
-
-  }
+  create(createTypeDto: CreateTypeDto) {}
 
   findAll() {
     return `This action returns all types`;

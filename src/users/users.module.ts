@@ -11,9 +11,17 @@ import { User } from './entities/user.entity';
 import { Profile } from './entities/profile.entity';
 
 @Module({
-  imports: [TypeOrmExModule.forCustomRepository([UserRepository, AddressRepository, ProfileRepository, AttachmentRepository]), TypeOrmModule.forFeature([User, Profile])],
+  imports: [
+    TypeOrmExModule.forCustomRepository([
+      UserRepository,
+      AddressRepository,
+      ProfileRepository,
+      AttachmentRepository,
+    ]),
+    TypeOrmModule.forFeature([User, Profile]),
+  ],
   controllers: [UsersController, ProfilesController],
   providers: [UsersService],
   exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}

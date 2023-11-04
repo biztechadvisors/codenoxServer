@@ -1,26 +1,26 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class Tax extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  name: string;
+  name: string
   @Column()
-  rate: number;
+  rate: number
   @Column()
-  is_global: boolean;
+  is_global: boolean
   @Column()
-  country?: string;
+  country?: string
   @Column()
-  state?: string;
+  state?: string
   @Column()
-  zip?: string;
+  zip?: string
   @Column()
-  city?: string;
+  city?: string
   @Column()
-  priority?: number;
+  priority?: number
   @Column()
-  on_shipping: boolean;
+  on_shipping: boolean
 }

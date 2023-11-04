@@ -1,31 +1,38 @@
-import { Attachment } from 'src/common/entities/attachment.entity';
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Product } from 'src/products/entities/product.entity';
-import { Type } from 'src/types/entities/type.entity';
-import { Column, Entity, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Attachment } from 'src/common/entities/attachment.entity'
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Product } from 'src/products/entities/product.entity'
+import { Type } from 'src/types/entities/type.entity'
+import {
+  Column,
+  Entity,
+  ManyToMany,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
 
 @Entity()
 export class Tag extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  name: string;
+  name: string
   @Column()
-  slug: string;
+  slug: string
   @Column()
-  parent: number;
+  parent: number
   @Column()
-  details: string;
+  details: string
   @OneToOne(() => Attachment)
-  image: Attachment;
+  image: Attachment
   @Column()
-  icon: string;
+  icon: string
   @OneToOne(() => Type)
-  type: Type;
-  @ManyToMany(() => Product, product => product.tags)
-  products: Product[];
+  type: Type
+  @ManyToMany(() => Product, (product) => product.tags)
+  products: Product[]
   @Column()
-  language: string;
+  language: string
   @Column({ type: 'json' })
-  translated_languages: string[];
+  translated_languages: string[]
 }

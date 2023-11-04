@@ -1,16 +1,16 @@
-import { Location, ShopSocials } from 'src/settings/entities/setting.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class ShopSettings {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @OneToOne(() => ShopSocials)
-  socials: ShopSocials[];
+  socials: ShopSocials[]
   @Column()
-  contact: string;
+  contact: string
   @OneToOne(() => Location)
-  location: Location;
+  location: Location
   @Column()
-  website: string;
+  website: string
 }

@@ -7,11 +7,11 @@ import {
   Post,
   Put,
   Query,
-} from '@nestjs/common';
-import { CreateWishlistDto } from './dto/create-wishlists.dto';
-import { GetWishlistDto } from './dto/get-wishlists.dto';
-import { UpdateWishlistDto } from './dto/update-wishlists.dto';
-import { MyWishlistService } from './my-wishlists.service';
+} from '@nestjs/common'
+import { CreateWishlistDto } from './dto/create-wishlists.dto'
+import { GetWishlistDto } from './dto/get-wishlists.dto'
+import { UpdateWishlistDto } from './dto/update-wishlists.dto'
+import { MyWishlistService } from './my-wishlists.service'
 
 @Controller('my-wishlists')
 export class MyWishlistsController {
@@ -20,18 +20,18 @@ export class MyWishlistsController {
   // Get All
   @Get()
   findAll(@Query() query: GetWishlistDto) {
-    return this.myWishlistService.findAMyWishlists(query);
+    return this.myWishlistService.findAMyWishlists(query)
   }
   // Get single
   @Get(':id')
   find(@Param('id') id: string) {
-    return this.myWishlistService.findAMyWishlist(+id);
+    return this.myWishlistService.findAMyWishlist(+id)
   }
 
   // create
   @Post()
   create(@Body() createWishlistDto: CreateWishlistDto) {
-    return this.myWishlistService.create(createWishlistDto);
+    return this.myWishlistService.create(createWishlistDto)
   }
 
   // update
@@ -40,12 +40,12 @@ export class MyWishlistsController {
     @Param('id') id: string,
     @Body() updateWishlistDto: UpdateWishlistDto,
   ) {
-    return this.myWishlistService.update(+id, updateWishlistDto);
+    return this.myWishlistService.update(+id, updateWishlistDto)
   }
 
   // delete
   @Delete(':id')
   delete(@Param('id') id: string) {
-    return this.myWishlistService.delete(+id);
+    return this.myWishlistService.delete(+id)
   }
 }

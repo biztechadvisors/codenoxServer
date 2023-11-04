@@ -1,5 +1,5 @@
 export class GetAttributeArgs {
-  id?: number;
-  slug?: string;
-  language?: string;
+  id?: number
+  slug?: string
+  language?: string
 }

@@ -1,18 +1,18 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class Feedback extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  user_id: string;
+  user_id: string
   @Column()
-  model_type: string;
+  model_type: string
   @Column()
-  model_id: string;
+  model_id: string
   @Column()
-  positive?: boolean;
+  positive?: boolean
   @Column()
-  negative?: boolean;
+  negative?: boolean
 }
