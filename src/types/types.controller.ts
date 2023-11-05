@@ -19,6 +19,7 @@ export class TypesController {
 
   @Post()
   create(@Body() createTypeDto: CreateTypeDto) {
+    console.log("Types", createTypeDto)
     return this.typesService.create(createTypeDto);
   }
 

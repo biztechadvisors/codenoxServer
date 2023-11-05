@@ -8,22 +8,25 @@ export class CreateTypeDto extends PickType(Type, [
     'icon',
     'language',
     'translated_languages'
-]) {
-    imageId: number;
+  ]) {
+    imageId: number | null;
     bannerIds: number[];
-    promotionalSliderIds: number[];
-    settingsId: number;
-}
-
-export class BannerDto extends PickType(Banner, [
+    promotionalSliderIds: BannerDto[];
+    settings: TypeSettingsDto;
+  }
+  
+  export class BannerDto extends PickType(Banner, [
+    "id",
     "title",
     "description"
-]) {
+  ]) {
     imageId: number;
-}
-
-export class TypeSettingsDto extends PickType(TypeSettings, [
+  }
+  
+  export class TypeSettingsDto extends PickType(TypeSettings, [
+    "id",
     "isHome",
     "layoutType",
     "productCard"
-]) { }
+  ]) { }
+  

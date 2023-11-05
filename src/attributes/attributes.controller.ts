@@ -19,6 +19,7 @@ export class AttributesController {
 
   @Post()
   create(@Body() createAttributeDto: CreateAttributeDto) {
+    console.log("Data", createAttributeDto)
     return this.attributesService.create(createAttributeDto);
   }
 

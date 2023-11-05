@@ -38,6 +38,8 @@ export class CategoriesService {
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     // Create a new Attachment instance
+
+    console.log("Data", createCategoryDto)
     const attachment = new Attachment();
 
     // Set the Attachment properties from the CreateCategoryDto
