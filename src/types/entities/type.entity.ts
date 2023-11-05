@@ -26,7 +26,6 @@ export class TypeSettings {
   productCard: string;
 }
 
-
 @Entity()
 export class Type extends CoreEntity {
   @PrimaryGeneratedColumn()

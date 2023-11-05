@@ -13,17 +13,21 @@ export class UploadsService {
   ) { }
 
 
-  async uploadFile(attachment: Array<Express.Multer.File>): Promise<AttachmentDTO> {
-    console.log("Attachment-Ram", attachment[0])
+  async uploadFile(attachment: Array<Express.Multer.File>): Promise<AttachmentDTO[]> {
+    const attachmentData = [];
+    for (const file of attachment) {
+      const attachmentDTO = new AttachmentDTO();
+      attachmentDTO.original = file.filename;
+      attachmentDTO.thumbnail = file.path;
 
-    const attachmentData = new Attachment();
-    attachmentData.original = attachment[0].filename;
-    attachmentData.thumbnail = attachment[0].path;
+      attachmentData.push(attachmentDTO);
+    }
 
     await this.attachmentRepository.save(attachmentData);
 
     return attachmentData;
   }
+
 
 
   findAll() {

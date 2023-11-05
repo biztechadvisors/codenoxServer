@@ -8,6 +8,8 @@ import { paginate } from 'src/common/pagination/paginate';
 import productsJson from '@db/products.json';
 import Fuse from 'fuse.js';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ProductRepository } from './products.repository';
 
 const products = plainToClass(Product, productsJson);
 
@@ -28,6 +30,11 @@ const fuse = new Fuse(products, options);
 
 @Injectable()
 export class ProductsService {
+
+  // constructor(
+  //   @InjectRepository(ProductRepository) private productRepository: ProductRepository,
+  // ) { }
+
   private products: any = products;
 
   create(createProductDto: CreateProductDto) {
