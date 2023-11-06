@@ -6,11 +6,11 @@ import { WishlistsService } from './wishlists.service'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Wishlist } from './entities/wishlist.entity'
 import { WishlistRepository } from './wishlists.repository'
-import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
+// import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
 
 @Module({
   imports: [
-    TypeOrmExModule.forCustomRepository([WishlistRepository]),
+    // TypeOrmExModule.forCustomRepository([WishlistRepository]),
     TypeOrmModule.forFeature([Wishlist]),
   ],
   controllers: [WishlistsController, MyWishlistsController],
