@@ -24,13 +24,13 @@ const fuse = new Fuse(wishlists, options)
 export class WishlistsService {
   private wishlist: Wishlist[] = wishlists
   private products: any = products
-
   constructor(
     @InjectRepository(WishlistRepository)
-    private wishlistRepository: WishlistRepository,
+    private readonly wishlistRepository: WishlistRepository,
   ) {}
+  // constructor(private wishlistRepository: WishlistRepository) {}
 
-  findAllWishlists({ limit, page, search }: GetWishlistDto) {
+  async findAllWishlists({ limit, page, search }: GetWishlistDto) {
     if (!page) page = 1
     if (!limit) limit = 30
     const startIndex = (page - 1) * limit
@@ -57,11 +57,24 @@ export class WishlistsService {
     return this.wishlist.find((p) => p.id === id)
   }
 
-  async create(createWishlistDto: CreateWishlistDto) {
+  async create(createWishlistDto: CreateWishlistDto): Promise<Wishlist> {
     const wishlist = new Wishlist()
     wishlist.user_id = createWishlistDto.user_id
+    console.log('first', wishlist.user_id)
     wishlist.product_id = createWishlistDto.product_id
-    return await this.wishlistRepository.save(wishlist)
+    console.log('first', wishlist.product_id)
+    wishlist.product = createWishlistDto.product
+    console.log('first', wishlist.product)
+    wishlist.created_at = createWishlistDto.created_at
+    console.log('first', wishlist.created_at)
+    wishlist.updated_at = createWishlistDto.updated_at
+    console.log('first', wishlist.updated_at)
+
+    await this.wishlistRepository.save(wishlist)
+
+    console.log(wishlist)
+
+    return wishlist
   }
 
   update(_id: number, _updateWishlistDto: UpdateWishlistDto) {
