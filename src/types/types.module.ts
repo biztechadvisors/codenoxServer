@@ -2,15 +2,16 @@ import { Module } from '@nestjs/common';
 import { TypesService } from './types.service';
 import { TypesController } from './types.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Type } from './entities/type.entity';
-import { BannerRepoditory, TypeRepository, TypeSettingsRepository } from './types.repository';
-import { AttachmentRepository } from 'src/common/common.repository';
+import { Banner, Type, TypeSettings } from './entities/type.entity';
+import { BannerRepository, TypeRepository, TypeSettingsRepository } from './types.repository';
 import { UploadsService } from 'src/uploads/uploads.service';
+import { AttachmentRepository } from 'src/common/common.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Type])],
+  imports: [
+    TypeOrmModule.forFeature([Type, TypeSettings, Banner]), // Make sure to include TypeSettings and Banner in forFeature
+  ],
   controllers: [TypesController],
-  providers: [TypesService, AttachmentRepository, TypeRepository, TypeSettingsRepository, BannerRepoditory, UploadsService],
+  providers: [TypesService, UploadsService, TypeRepository, TypeSettingsRepository, BannerRepository, AttachmentRepository],
 })
-
 export class TypesModule { }

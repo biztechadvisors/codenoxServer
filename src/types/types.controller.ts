@@ -19,7 +19,9 @@ export class TypesController {
 
   @Post()
   create(@Body() createTypeDto: CreateTypeDto) {
-    console.log("Types", createTypeDto)
+    console.log("Types", createTypeDto.bannerIds)
+    console.log("banners", createTypeDto.promotionalSliderIds)
+    console.log("promotionalSliderIds", createTypeDto.image)
     return this.typesService.create(createTypeDto);
   }
 
