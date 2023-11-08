@@ -1,35 +1,29 @@
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-// entities.ts
 @Entity()
 export class Banner {
   @PrimaryGeneratedColumn()
   id: number;
-
   @Column()
   title?: string;
-
   @Column()
   description?: string;
-
-  @ManyToOne(() => Attachment)
-  image: Attachment;
+  @OneToOne(() => Attachment, { nullable: true })
+  image?: Attachment; // Use an optional '?' to indicate nullable
 }
+
 
 
 @Entity()
 export class TypeSettings {
   @PrimaryGeneratedColumn()
   id: number;
-
   @Column()
   isHome: boolean;
-
   @Column()
   layoutType: string;
-
   @Column()
   productCard: string;
 }
@@ -38,31 +32,30 @@ export class TypeSettings {
 export class Type extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
-
   @Column()
   name: string;
-
   @Column()
   slug: string;
-
-  @ManyToOne(() => Attachment)
+  @OneToOne(() => Attachment)
+  @JoinColumn()
   image: Attachment;
-
   @Column()
   icon: string;
-
-  @ManyToOne(() => Banner)
+  @ManyToMany((type) => Banner, (banner) => banner.id, {
+    cascade: true,
+  })
+  @JoinTable()
   banners?: Banner[];
-
-  @ManyToOne(() => Attachment)
+  @ManyToMany((type) => Attachment, (attachment) => attachment.id, {
+    cascade: true,
+  })
+  @JoinTable()
   promotional_sliders?: Attachment[];
-
-  @ManyToOne(() => TypeSettings)
+  @OneToOne(() => TypeSettings)
+  @JoinColumn()
   settings?: TypeSettings;
-
   @Column()
   language: string;
-
   @Column({ type: 'json' })
   translated_languages: string[];
 }
