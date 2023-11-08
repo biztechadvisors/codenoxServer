@@ -9,7 +9,6 @@ export class UploadsService {
 
   constructor(
     @InjectRepository(AttachmentRepository) private attachmentRepository: AttachmentRepository,
-
   ) { }
 
 
@@ -19,12 +18,9 @@ export class UploadsService {
       const attachmentDTO = new AttachmentDTO();
       attachmentDTO.original = file.filename;
       attachmentDTO.thumbnail = file.path;
-
       attachmentData.push(attachmentDTO);
     }
-
     await this.attachmentRepository.save(attachmentData);
-
     return attachmentData;
   }
 
