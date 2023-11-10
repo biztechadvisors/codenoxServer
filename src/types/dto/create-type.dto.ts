@@ -10,8 +10,6 @@ export class TypeSettingsDTO {
   layoutType?: string;
   productCard?: string;
 }
-
-
 // banner.dto.ts
 export class BannerDTO {
   id?: number;
@@ -19,9 +17,6 @@ export class BannerDTO {
   description?: string;
   image?: AttachmentDTO;
 }
-
-
-
 // type.dto.ts
 export class CreateTypeDto {
   id?: number;

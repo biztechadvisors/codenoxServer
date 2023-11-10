@@ -14,8 +14,6 @@ export class Banner {
   image?: Attachment; // Use an optional '?' to indicate nullable
 }
 
-
-
 @Entity()
 export class TypeSettings {
   @PrimaryGeneratedColumn()
@@ -36,7 +34,7 @@ export class Type extends CoreEntity {
   name: string;
   @Column()
   slug: string;
-  @OneToOne(() => Attachment)
+  @OneToOne(() => Attachment, { nullable: true, eager: true })
   @JoinColumn()
   image: Attachment;
   @Column()
@@ -51,9 +49,9 @@ export class Type extends CoreEntity {
   })
   @JoinTable()
   promotional_sliders?: Attachment[];
-  @OneToOne(() => TypeSettings)
+  @OneToOne(() => TypeSettings, { nullable: true, eager: true })
   @JoinColumn()
-  settings?: TypeSettings;
+  settings: TypeSettings;
   @Column()
   language: string;
   @Column({ type: 'json' })
