@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { BannerDTO, CreateTypeDto } from './dto/create-type.dto';
 import { UpdateTypeDto } from './dto/update-type.dto';
@@ -72,76 +72,60 @@ export class TypesService {
     return this.types.find((p) => p.slug === slug);
   }
 
-  async create(createTypeDto: CreateTypeDto): Promise<Type | { bannerId: number }> {
+  async create(createTypeDto: CreateTypeDto): Promise<Type> {
     try {
-      // Validate and create TypeSettings object
       const typeSettingsDTO = createTypeDto.settings;
       const typeSettings = new TypeSettings();
       typeSettings.isHome = typeSettingsDTO.isHome;
       typeSettings.layoutType = typeSettingsDTO.layoutType;
       typeSettings.productCard = typeSettingsDTO.productCard;
-
-      // Save the TypeSettings object
       await this.typeSettingsRepository.save(typeSettings);
 
-      // Get valid banner IDs and validate banner attachments
-      const validBannerIds: number[] = [];
-      const bannerAttachments: AttachmentDTO[] = [];
-
+      console.log("first")
+      const validBanners: Banner[] = [];
       if (createTypeDto.banners) {
         for (const bannerDTO of createTypeDto.banners) {
-          // Check if the banner is already associated with the type
-          const existingBanner = await this.bannerRepository.findOne({
-            where: { id: bannerDTO.image.id },
-          });
-
-          if (!existingBanner) {
-            throw new Error(`Banner with ID ${bannerDTO.image.id} does not exist.`);
+          try {
+            const newBanner = new Banner();
+            newBanner.title = bannerDTO.title;
+            newBanner.description = bannerDTO.description;
+            const existingImage = await this.attachmentRepository.findOne({
+              where: { id: bannerDTO.image.id },
+            });
+            if (!existingImage) {
+              throw new Error(`Image with ID ${bannerDTO.image.id} does not exist.`);
+            }
+            newBanner.image = existingImage;
+            await this.bannerRepository.manager.save(newBanner);
+            validBanners.push(newBanner);
+          } catch (error) {
+            console.error('Error saving banner:', error);
+            // handle the error appropriately
           }
-
-          // Check if the banner is already associated with the type
-          // const existingTypeBanner = await this.bannerRepository.findOne({
-          //   where: {  bannerId: existingBanner.id },
-          // });
-
-          // if (existingTypeBanner) {
-          //   // Skip insertion if the banner already exists
-          //   continue;
-          // }
-
-          // Save the banner if it's not already associated with the type
-          validBannerIds.push(existingBanner.id);
-          const bannerAttachment = await this.uploadsService.uploadFile(bannerDTO.image[0]);
-          bannerAttachments.push(bannerAttachment[0]);
         }
       }
 
-      // Get valid promotional slider IDs and validate promotional slider attachments
-      const validPromotionalSliderIds: number[] = [];
-      const promotionalSliderAttachments: AttachmentDTO[] = [];
+      console.log("four")
 
+      const validPromotionalSliders: Attachment[] = [];
       if (createTypeDto.promotionalSliders) {
+        console.log("five")
         for (const attachmentDTO of createTypeDto.promotionalSliders) {
+          console.log("six")
           const existingAttachment = await this.attachmentRepository.findOne({
             where: {
               id: attachmentDTO.id,
             },
           });
-
           if (!existingAttachment) {
             throw new Error(`Attachment with ID ${attachmentDTO.id} does not exist.`);
           }
-
-          validPromotionalSliderIds.push(existingAttachment.id);
-
-          if (attachmentDTO) {
-            const promotionalSliderAttachment = await this.uploadsService.uploadFile(attachmentDTO[0]);
-            promotionalSliderAttachments.push(promotionalSliderAttachment[0]);
+          if (!validPromotionalSliders.find(slider => slider.id === existingAttachment.id)) {
+            validPromotionalSliders.push(existingAttachment);
           }
         }
       }
-
-      // Create a new Type object
+      console.log("seven")
       const type = new Type();
       type.name = createTypeDto.name;
       type.slug = createTypeDto.slug;
@@ -149,32 +133,22 @@ export class TypesService {
       type.language = createTypeDto.language;
       type.translated_languages = createTypeDto.translatedLanguages;
       type.settings = typeSettings;
-
-      // Set banners if provided
-      if (validBannerIds.length > 0) {
-        type.banners = validBannerIds.map((bannerId) => {
-          return bannerId[0];
-        });
+      console.log("eight")
+      const existingImage = await this.attachmentRepository.findOne({
+        where: { id: createTypeDto.image.id },
+      });
+      console.log("nine")
+      if (!existingImage) {
+        throw new Error(`Image with ID ${createTypeDto.image.id} does not exist.`);
       }
-
-      // Set promotional sliders if provided
-      if (validPromotionalSliderIds.length > 0) {
-        type.promotional_sliders = validPromotionalSliderIds.map((attachmentId) => {
-          return attachmentId[0];
-        });
-      }
-
-      // Save the Type object
-      await this.typeRepository.save(type);
-
-      // Return the saved Type object
-      return type;
+      console.log("ten-10")
+      type.image = existingImage;
+      console.log("Type-Data", type);
+      return await this.typeRepository.save(type);
     } catch (error) {
-      // Handle and log any errors here
-      throw error;
+      throw new InternalServerErrorException(error);
     }
   }
-
 
   findAll() {
     return `This action returns all types`;
