@@ -74,29 +74,31 @@ export class TypesService {
 
   async create(createTypeDto: CreateTypeDto): Promise<Type> {
     try {
-      const typeSettingsDTO = createTypeDto.settings;
+      // Save TypeSettings first
       const typeSettings = new TypeSettings();
-      typeSettings.isHome = typeSettingsDTO.isHome;
-      typeSettings.layoutType = typeSettingsDTO.layoutType;
-      typeSettings.productCard = typeSettingsDTO.productCard;
+      typeSettings.isHome = createTypeDto.settings.isHome;
+      typeSettings.layoutType = createTypeDto.settings.layoutType;
+      typeSettings.productCard = createTypeDto.settings.productCard;
       await this.typeSettingsRepository.save(typeSettings);
 
-      console.log("first")
+      // Save valid Banners
       const validBanners: Banner[] = [];
       if (createTypeDto.banners) {
         for (const bannerDTO of createTypeDto.banners) {
           try {
-            const newBanner = new Banner();
-            newBanner.title = bannerDTO.title;
-            newBanner.description = bannerDTO.description;
             const existingImage = await this.attachmentRepository.findOne({
               where: { id: bannerDTO.image.id },
             });
+
             if (!existingImage) {
               throw new Error(`Image with ID ${bannerDTO.image.id} does not exist.`);
             }
+
+            const newBanner = new Banner();
+            newBanner.title = bannerDTO.title;
+            newBanner.description = bannerDTO.description;
             newBanner.image = existingImage;
-            await this.bannerRepository.manager.save(newBanner);
+            await this.bannerRepository.save(newBanner);
             validBanners.push(newBanner);
           } catch (error) {
             console.error('Error saving banner:', error);
@@ -105,48 +107,45 @@ export class TypesService {
         }
       }
 
-      console.log("four")
-
+      // Save valid Promotional Sliders
       const validPromotionalSliders: Attachment[] = [];
       if (createTypeDto.promotionalSliders) {
-        console.log("five")
-        for (const attachmentDTO of createTypeDto.promotionalSliders) {
-          console.log("six")
-          const existingAttachment = await this.attachmentRepository.findOne({
-            where: {
-              id: attachmentDTO.id,
-            },
-          });
-          if (!existingAttachment) {
-            throw new Error(`Attachment with ID ${attachmentDTO.id} does not exist.`);
-          }
-          if (!validPromotionalSliders.find(slider => slider.id === existingAttachment.id)) {
-            validPromotionalSliders.push(existingAttachment);
+        const seenPromotionalSliderIds: Set<number> = new Set();
+        for (const promotionalSliderDTO of createTypeDto.promotionalSliders) {
+          if (!seenPromotionalSliderIds.has(promotionalSliderDTO.id)) {
+            const existingImage = await this.attachmentRepository.findOne({
+              where: { id: promotionalSliderDTO.id },
+            });
+
+            if (!existingImage) {
+              throw new Error(`Image with ID ${promotionalSliderDTO.id} does not exist.`);
+            }
+
+            validPromotionalSliders.push(existingImage);
+            seenPromotionalSliderIds.add(promotionalSliderDTO.id);
           }
         }
       }
-      console.log("seven")
-      const type = new Type();
-      type.name = createTypeDto.name;
-      type.slug = createTypeDto.slug;
-      type.icon = createTypeDto.icon;
-      type.language = createTypeDto.language;
-      type.translated_languages = createTypeDto.translatedLanguages;
-      type.settings = typeSettings;
-      console.log("eight")
-      const existingImage = await this.attachmentRepository.findOne({
-        where: { id: createTypeDto.image.id },
-      });
-      console.log("nine")
-      if (!existingImage) {
-        throw new Error(`Image with ID ${createTypeDto.image.id} does not exist.`);
-      }
-      console.log("ten-10")
-      type.image = existingImage;
-      console.log("Type-Data", type);
-      return await this.typeRepository.save(type);
+
+      // Create and save the new Type
+      const newType = new Type();
+      newType.name = createTypeDto.name;
+      newType.slug = createTypeDto.slug;
+      // newType.image = await this.attachmentRepository.findOne({
+      //   where: { id: createTypeDto.image.id },
+      // });
+      newType.icon = createTypeDto.icon;
+      newType.banners = validBanners;
+      newType.promotional_sliders = validPromotionalSliders;
+      newType.settings = typeSettings;
+      newType.language = createTypeDto.language;
+      newType.translated_languages = createTypeDto.translatedLanguages;
+
+      await this.typeRepository.save(newType);
+      return newType;
     } catch (error) {
-      throw new InternalServerErrorException(error);
+      console.error('Error creating type:', error);
+      throw error;
     }
   }
 

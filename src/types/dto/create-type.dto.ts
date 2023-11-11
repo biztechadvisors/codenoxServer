@@ -1,35 +1,31 @@
-import { PickType } from "@nestjs/swagger";
-import { Type, TypeSettings, Banner } from "../entities/type.entity";
-import { AttachmentDTO } from "src/common/dto/attachment.dto";
-import { CoreEntity } from "src/common/entities/core.entity";
+import { IsString, IsBoolean, IsArray, IsOptional } from 'class-validator';
+import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 
-// type-settings.dto.ts
 export class TypeSettingsDTO {
-  id?: number;
-  isHome?: boolean;
-  layoutType?: string;
-  productCard?: string;
+  id: number;
+  isHome: boolean;
+  layoutType: string;
+  productCard: string;
+  types: CreateTypeDto[];
 }
-// banner.dto.ts
+
 export class BannerDTO {
-  id?: number;
+  id: number;
   title?: string;
   description?: string;
-  image?: AttachmentDTO;
+  image: AttachmentDTO;
+  types: CreateTypeDto[];
 }
-// type.dto.ts
+
 export class CreateTypeDto {
-  id?: number;
-  name?: string;
-  slug?: string;
-  image?: AttachmentDTO;
-  icon?: string;
-  banners?: BannerDTO[];
-  promotionalSliders?: AttachmentDTO[];
-  settings?: TypeSettingsDTO;
-  language?: string;
-  translatedLanguages?: string[];
+  id: number;
+  name: string;
+  slug: string;
+  image: AttachmentDTO;
+  icon: string;
+  banners: BannerDTO[];
+  promotionalSliders: AttachmentDTO[];
+  settings: TypeSettingsDTO;
+  language: string;
+  translatedLanguages: string[];
 }
-
-
-
