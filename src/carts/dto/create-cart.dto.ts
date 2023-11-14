@@ -8,10 +8,14 @@ export class CreateCartDto extends PickType(Cart, [
   'phone',
   'cartData',
   'cartQuantity',
+  'created_at',
+  'updated_at',
 ]) {
   customerId: number
   email: string
-  phone: number
+  phone: string
   cartData: string
   cartQuantity: number
+  created_at: Date
+  updated_at: Date
 }
