@@ -3,7 +3,9 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Cart } from './entities/cart.entity'
 import { CreateCartDto } from './dto/create-cart.dto'
+// import { GetCartQuantityDto } from './dto/get-cart.dto'
 import { CartRepository } from './carts.repository'
+// import { UpdateCartDto } from './dto/update-cart.dto'
 
 
 @Injectable()
@@ -13,53 +15,67 @@ export class AbandonedCartService {
     private cartRepository: CartRepository,
   ) {}
 
-  async create(createCartDto: CreateCartDto, ): Promise<Cart> {
-    // const cartItems = createCartDto.cartData.map((item) => item.quantity)
-    // const totalQuantity = cartItems.reduce((acc, item) => acc + item, 0)
+  async create(createCartDto: CreateCartDto ): Promise<Cart> {
+
+    const cartItems = JSON.stringify(createCartDto.cartData)
+    const cartIT = JSON.parse(cartItems)
+    const totalQuantity = cartIT.reduce((acc: any, item: any) => {
+    const quantity= item.quantity
+        acc += quantity;
+          return acc}, 0)
+
+    const existingCart = await this.cartRepository.findOne({ where: { 
+        email: createCartDto.email }})
+
+        console.log("first", existingCart.cartQuantity)
+        console.log("first", existingCart.cartData)
 
 
-    // const existingCart = await this.cartRepository.findOne({ where: { 
-    //     email: createCartDto.email } })
+        if (existingCart) {
+      
+          const mergedCartData = this.mergeCarts(existingCart, createCartDto.cartData)
+          console.log("mergedDAta", mergedCartData)
 
-    // if (existingCart) {
-    //   const existingCartData = JSON.parse(existingCart.cartData)
-    //   const mergedCartData = mergeCarts(existingCartData, createCartDto.cartData)
+          await this.cartRepository.update(
+            { id: existingCart.id },
+            { cartData: JSON.stringify(mergedCartData), cartQuantity: totalQuantity },
+          );
 
-    //   await this.cartRepository.update(
-    //     { id: existingCart.id },
-    //     {
-    //       cartData: JSON.stringify(mergedCartData),
-    //       cartQuantity: existingCart.cartQuantity + totalQuantity,
-    //     },
-    //   );
-    //   return existingCart;
-    // } else {
+      console.log("user exist")
+    } else {
       const newCart = new Cart()
       newCart.customerId = createCartDto.customerId
       newCart.email = createCartDto.email
       newCart.phone = createCartDto.phone
       newCart.cartData = JSON.stringify(createCartDto.cartData)
-      newCart.cartQuantity = createCartDto.cartQuantity
+      newCart.cartQuantity = totalQuantity
 
       await this.cartRepository.save(newCart)
-      return newCart;
-    // }
+      return newCart
+    }
+
+    return existingCart
   }
-}
+
 
 // Helper function to merge two carts
-// function mergeCarts(existingCart: any, newCart: any): any {
-//   const mergedCart = { ...existingCart }
-//   Object.entries(newCart).forEach(([productId, productData]) => {
-//     if (!mergedCart[productId]) {
-//       mergedCart[productId] = productData
-//     } else {
-//       mergedCart[productId].quantity += productData.quantity
-//     }
-//   })
-//   return mergedCart
-// }
-
+async mergeCarts(existingCart: any, newCart: any): Promise<Cart> {
+  const mergedCart = { ...existingCart }
+  Object.entries(newCart).forEach(([productId, cartData]) => {
+    if (!mergedCart[productId]) {
+      mergedCart[productId] = cartData
+    } else {
+      const cart = JSON.stringify(existingCart.cartData)
+      console.log("cart", cart)
+      const cartData = JSON.parse(cart)
+      console.log("cartData", cartData)
+      // Sum up the quantity of all products in the cart
+      mergedCart[productId].quantity += cartData.quantity
+    }
+  })
+  return mergedCart
+}
+}
 // function mergeCarts(existingCartData: CartData[], newCartData: CartData[]): CartData[] {
 //   const mergedCartData = [...existingCartData];
 
@@ -73,4 +89,33 @@ export class AbandonedCartService {
 //   }
 
 //   return mergedCartData;
+// }
+
+
+          // Get the cart quantity from the existing cart data
+      //     const existingCartQuantity = await this.getCartQuantity(existingCart)
+      // console.log("existingcartQuantity", existingCartQuantity)
+      //     // Sum up the existing cart quantity and the new cart quantity
+      //     const newCartQuantity = existingCart.cartQuantity + existingCartQuantity
+      // console.log("newCartQuantity", newCartQuantity)
+      //     // Update the cart quantity in the existing cart data
+      //     existingCart.cartQuantity = newCartQuantity
+      
+      //     // Save the existing cart data
+      //     await this.cartRepository.save(existingCart)
+
+
+      // Get the cart quantity from the existing cart data
+// async getCartQuantity(existingCart: GetCartQuantityDto): Promise<number> {
+//   // Get the cart data from the existing cart
+//   const cart = JSON.stringify(existingCart.cartData)
+//   console.log("cart", cart)
+//   const cartData = JSON.parse(cart)
+//   console.log("cartData", cartData)
+//   // Sum up the quantity of all products in the cart
+//   const cartQuantity = cartData.reduce((totalQuantity: number, product: { quantity: number }) => {
+//     return totalQuantity + product.quantity
+//   }, 0)
+// console.log("cartQuantity", cartQuantity)
+//   return cartQuantity
 // }

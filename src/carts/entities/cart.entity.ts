@@ -9,10 +9,14 @@ export class Cart extends CoreEntity {
   customerId: number
   @Column({ type: 'varchar'})
   email: string
-  @Column('integer')
-  phone: number
+  @Column({ type: 'varchar'})
+  phone: string
   @Column({ type: 'json' })
   cartData: string
   @Column('integer')
   cartQuantity: number
+  @Column('datetime')
+  created_at: Date
+  @Column('datetime')
+  updated_at: Date
 }
