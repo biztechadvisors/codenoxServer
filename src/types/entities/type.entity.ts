@@ -1,9 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 
+// TypeSettings entity
 @Entity()
-export class TypeSettings extends CoreEntity {
+export class TypeSettings {
   @PrimaryGeneratedColumn()
   id: number;
   @Column()
@@ -12,25 +13,9 @@ export class TypeSettings extends CoreEntity {
   layoutType: string;
   @Column()
   productCard: string;
-  @OneToMany(() => Type, type => type.settings)
-  types: Type[];
 }
 
-@Entity()
-export class Banner extends CoreEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-  @Column({ nullable: true })
-  title?: string;
-  @Column({ nullable: true })
-  description?: string;
-  @ManyToOne(() => Attachment)
-  @JoinColumn()
-  image: Attachment;
-  @OneToMany(() => Type, type => type.banners)
-  types: Type[];
-}
-
+// Type entity
 @Entity()
 export class Type extends CoreEntity {
   @PrimaryGeneratedColumn()
@@ -44,16 +29,34 @@ export class Type extends CoreEntity {
   image: Attachment;
   @Column()
   icon: string;
-  @OneToMany(() => Banner, banner => banner.types)
+  @OneToMany(() => Banner, banner => banner.type, {
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+  })
   banners: Banner[];
-  @ManyToOne(() => Attachment)
-  @JoinColumn()
+  @OneToMany(() => Attachment, () => Type, { eager: true })
   promotional_sliders: Attachment[];
-  @ManyToOne(() => TypeSettings, settings => settings.types)
+  @OneToOne(() => TypeSettings)
   @JoinColumn()
   settings: TypeSettings;
   @Column()
   language: string;
   @Column({ type: 'json' })
   translated_languages: string[];
+}
+
+// Banner entity
+@Entity()
+export class Banner {
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column({ nullable: true })
+  title: string;
+  @Column({ nullable: true })
+  description: string;
+  @ManyToOne(() => Attachment)
+  @JoinColumn()
+  image: Attachment;
+  @ManyToOne(() => Type, type => type.banners)
+  type: Type;
 }
