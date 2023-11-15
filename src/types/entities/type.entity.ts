@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, OneToOne, ManyToMany, JoinTable } from 'typeorm';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 
@@ -24,21 +24,23 @@ export class Type extends CoreEntity {
   name: string;
   @Column()
   slug: string;
-  @ManyToOne(() => Attachment)
+  @OneToOne(() => Attachment)
   @JoinColumn()
   image: Attachment;
   @Column()
   icon: string;
-  @OneToMany(() => Banner, banner => banner.type, {
-    onUpdate: 'CASCADE',
-    onDelete: 'CASCADE',
+  @OneToMany(() => Banner, banner => banner.type, { cascade: true })
+  banners?: Banner[];
+  @ManyToMany(() => Attachment) // Replace @OneToMany with @ManyToMany
+  @JoinTable({ // Create a join table between Type and Attachment
+    name: 'type_promotional_sliders',
+    joinColumn: { name: 'typeId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'attachmentId', referencedColumnName: 'id' }
   })
-  banners: Banner[];
-  @OneToMany(() => Attachment, () => Type, { eager: true })
-  promotional_sliders: Attachment[];
+  promotional_sliders?: Attachment[];
   @OneToOne(() => TypeSettings)
   @JoinColumn()
-  settings: TypeSettings;
+  settings?: TypeSettings;
   @Column()
   language: string;
   @Column({ type: 'json' })
@@ -51,11 +53,11 @@ export class Banner {
   @PrimaryGeneratedColumn()
   id: number;
   @Column({ nullable: true })
-  title: string;
+  title?: string;
   @Column({ nullable: true })
-  description: string;
-  @ManyToOne(() => Attachment)
-  @JoinColumn()
+  description?: string;
+  @OneToOne(() => Attachment)
+  @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
   image: Attachment;
   @ManyToOne(() => Type, type => type.banners)
   type: Type;
