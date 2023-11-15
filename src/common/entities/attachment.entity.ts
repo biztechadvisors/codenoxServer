@@ -11,4 +11,5 @@ thumbnail: string;
 
 @Column()
 original: string;
+  type: any;
 }
