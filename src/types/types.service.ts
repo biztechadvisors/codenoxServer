@@ -48,13 +48,10 @@ export class TypesService {
 
   async getTypes({ text, search }: GetTypesDto) {
     let data: Type[] = await this.findAll({});
-
     const fuse = new Fuse(data, { keys: ['name', 'slug'] }); // adjust this according to your needs
-
     if (text?.replace(/%/g, '')) {
       data = fuse.search(text)?.map(({ item }) => item);
     }
-
     if (search) {
       const parseSearchParams = search.split(';');
       const searchText: any = [];
@@ -67,23 +64,22 @@ export class TypesService {
           });
         }
       }
-
       data = fuse
         .search({
           $and: searchText,
         })
         ?.map(({ item }) => item);
     }
-
     return data;
   }
 
-  getTypeBySlug(slug: string): Type {
-    return this.types.find((p) => p.slug === slug);
+  async getTypeBySlug(slug: string): Promise<Type> {
+    return await this.typeRepository.findOne({ where: { slug }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
   }
 
+
   async create(data: CreateTypeDto) {
-    console.log("Data", data.banners)
+    console.log("Data-Type")
     const typeSettings = this.typeSettingsRepository.create(data.settings);
     await this.typeSettingsRepository.save(typeSettings);
 
@@ -92,21 +88,16 @@ export class TypesService {
     const banners = await Promise.all(data.banners.map(async (bannerData) => {
       if (bannerData.image && bannerData.image.length > 0) {
         const image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id } });
-        console.log("Image*****", image)
         const { image: _, ...bannerDataWithoutImage } = bannerData;
         const banner = this.bannerRepository.create({ ...bannerDataWithoutImage, image });
         return this.bannerRepository.save(banner);
       }
     }));
 
-
     const type = this.typeRepository.create({ ...data, settings: typeSettings, promotional_sliders: promotionalSliders, banners });
     return this.typeRepository.save(type);
   }
 
-  findOne(id: number) {
-    return this.typeRepository.findOne({ where: { id }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
-  }
 
   update(id: number, updateTypeDto: UpdateTypeDto) {
     return this.types[0];
