@@ -1,15 +1,14 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+// attachment.entity.ts
 @Entity()
-export class Attachment extends CoreEntity {
-@PrimaryGeneratedColumn()
-id: number;
-
-@Column()
-thumbnail: string;
-
-@Column()
-original: string;
-  type: any;
+export class Attachment {
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column({ nullable: true }) // make the column nullable
+  thumbnail?: string;
+  @Column({ nullable: true }) // make the column nullable
+  original?: string;
 }
+

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateTypeDto } from './dto/create-type.dto';
 import { UpdateTypeDto } from './dto/update-type.dto';
@@ -13,6 +13,8 @@ import { convertToSlug } from 'src/helpers';
 import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { UploadsService } from 'src/uploads/uploads.service';
+import { error } from 'console';
+import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 
 const types = plainToClass(Type, typesJson);
 const options = {
@@ -27,6 +29,8 @@ export class TypesService {
     @InjectRepository(Type) private readonly typeRepository: TypeRepository,
     @InjectRepository(TypeSettings) private readonly typeSettingsRepository: TypeSettingsRepository,
     @InjectRepository(Banner) private readonly bannerRepository: BannerRepository,
+    @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
+    private readonly uploadsService: UploadsService,
   ) { }
 
   private types: Type[] = types;
@@ -69,51 +73,44 @@ export class TypesService {
   }
 
   async create(createTypeDto: CreateTypeDto): Promise<Type> {
-    // Validate and create TypeSettings object
-    const typeSettings = new TypeSettings();
-    if (createTypeDto.settings) {
-      typeSettings.isHome = createTypeDto.settings.isHome;
-      typeSettings.layoutType = createTypeDto.settings.layoutType;
-      typeSettings.productCard = createTypeDto.settings.productCard;
-    }
-    // Save the TypeSettings object
-    await this.typeSettingsRepository.save(typeSettings);
-    // Validate and collect valid banner IDs
-    const validBannerIds = [];
-    console.log("banners", createTypeDto.bannerIds)
-    console.log("promotionalSliderIds", createTypeDto.promotionalSliderIds)
-    console.log("image", createTypeDto.image)
+    try {
+      const newSettings = new TypeSettings();
+      Object.assign(newSettings, createTypeDto.settings);
+      const savedSettings = await this.typeSettingsRepository.save(newSettings);
 
+      const newType = new Type();
+      Object.assign(newType, createTypeDto, { settings: savedSettings });
 
-    if (createTypeDto.promotionalSliderIds) {
-      for (const bannerId of createTypeDto.promotionalSliderIds) {
-        console.log("bannersId", bannerId)
-        const banner = await this.bannerRepository.findOne({
-          where: { id: bannerId },
-        });
-        if (!banner) {
-          throw new Error(`Banner with ID ${bannerId} does not exist.`);
-        }
-        validBannerIds.push(banner.id);
+      if (createTypeDto.image) {
+        newType.image = await this.attachmentRepository.findOne({ where: { id: createTypeDto.image.id } });
       }
+
+      if (createTypeDto.promotional_sliders) {
+        newType.promotional_sliders = await this.attachmentRepository.findByIds(createTypeDto.promotional_sliders.map(slider => slider.id));
+      }
+
+      const savedType = await this.typeRepository.save(newType);
+
+      if (createTypeDto.banners) {
+        for (const bannerDto of createTypeDto.banners) {
+          const banner = new Banner();
+          banner.title = bannerDto.title;
+          banner.description = bannerDto.description;
+          banner.image = await this.attachmentRepository.findOne({ where: { id: bannerDto.image[0].id } });
+          banner.type = savedType; // Set the type of the banner here
+          await this.bannerRepository.save(banner);
+        }
+      }
+
+      console.log("Ram***")
+      return savedType;
+
+    } catch (error) {
+      console.error('Error creating type:', error);
+      throw error;
     }
-    // Create a new Type object
-    const type = new Type();
-    type.name = createTypeDto.name;
-    type.slug = createTypeDto.slug;
-    type.icon = createTypeDto.icon;
-    type.language = createTypeDto.language;
-    type.translated_languages = createTypeDto.translated_languages;
-    type.settings = typeSettings;
-    // Set promotional sliders if provided
-    if (validBannerIds.length > 0) {
-      type.promotional_sliders = validBannerIds;
-    }
-    // Save the Type object
-    await this.typeRepository.save(type);
-    // Return the saved Type object
-    return type;
   }
+
 
   findAll() {
     return `This action returns all types`;
