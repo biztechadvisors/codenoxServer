@@ -82,28 +82,99 @@ export class TypesService {
     console.log("Data-Type")
     const typeSettings = this.typeSettingsRepository.create(data.settings);
     await this.typeSettingsRepository.save(typeSettings);
-
-    const promotionalSliders = await this.attachmentRepository.findByIds(data.promotional_sliders.map(slider => slider.id));
-
-    const banners = await Promise.all(data.banners.map(async (bannerData) => {
-      if (bannerData.image && bannerData.image.length > 0) {
-        const image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id } });
-        const { image: _, ...bannerDataWithoutImage } = bannerData;
-        const banner = this.bannerRepository.create({ ...bannerDataWithoutImage, image });
-        return this.bannerRepository.save(banner);
-      }
-    }));
-
+    let promotionalSliders = [];
+    if (data.promotional_sliders && Array.isArray(data.promotional_sliders)) {
+      promotionalSliders = await this.attachmentRepository.findByIds(data.promotional_sliders.map(slider => slider.id));
+    }
+    let banners = [];
+    if (data.banners && Array.isArray(data.banners)) {
+      banners = await Promise.all(data.banners.map(async (bannerData) => {
+        if (bannerData.image && bannerData.image.length > 0) {
+          const image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id } });
+          const { image: _, ...bannerDataWithoutImage } = bannerData;
+          const banner = this.bannerRepository.create({ ...bannerDataWithoutImage, image });
+          return this.bannerRepository.save(banner);
+        }
+      }));
+    }
+    if (data.name) {
+      data.slug = await this.convertToSlug(data.name);
+    }
     const type = this.typeRepository.create({ ...data, settings: typeSettings, promotional_sliders: promotionalSliders, banners });
     return this.typeRepository.save(type);
   }
 
+  async update(id: number, updateTypeDto: UpdateTypeDto): Promise<Type> {
+    console.log("ID***", id)
+    console.log("updateTypeDto", updateTypeDto)
+    const type = await this.typeRepository.findOne({ where: { id }, relations: ['settings', 'promotional_sliders', 'banners'] });
+    if (!type) {
+      throw new Error('Type not found');
+    }
+    // Update TypeSettings
+    if (updateTypeDto.settings) {
+      type.settings.isHome = updateTypeDto.settings.isHome;
+      type.settings.layoutType = updateTypeDto.settings.layoutType;
+      type.settings.productCard = updateTypeDto.settings.productCard;
+      await this.typeSettingsRepository.save(type.settings);
+    }
+    // Update promotional_sliders
+    if (updateTypeDto.promotional_sliders) {
+      type.promotional_sliders = await this.attachmentRepository.findByIds(updateTypeDto.promotional_sliders.map(slider => slider.id));
+    }
+    // Update banners
+    if (updateTypeDto.banners) {
+      for (const bannerData of updateTypeDto.banners) {
+        let banner = type.banners.find(banner => banner.id === bannerData.image[0].id);
+        if (!banner) {
+          banner = new Banner();
+          type.banners.push(banner);
+        }
+        banner.title = bannerData.title;
+        banner.description = bannerData.description;
+        if (bannerData.image && bannerData.image.length > 0) {
+          banner.image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id } });
+        }
+        console.log("Banner*****", banner)
+        await this.bannerRepository.save(banner);
+      }
+    }
+    // Update other Type properties
+    type.name = updateTypeDto.name;
+    type.slug = await this.convertToSlug(updateTypeDto.name);
+    type.icon = updateTypeDto.icon;
+    type.language = updateTypeDto.language;
+    type.translated_languages = updateTypeDto.translated_languages;
 
-  update(id: number, updateTypeDto: UpdateTypeDto) {
-    return this.types[0];
+    return this.typeRepository.save(type);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} type`;
+  async remove(id: number): Promise<void> {
+    const type = await this.typeRepository.findOne({ where: { id }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
+    if (!type) {
+      throw new Error(`Type with ID ${id} not found`);
+    }
+
+    // Remove banners and their images
+    if (type.banners) {
+      await Promise.all(type.banners.map(async (banner) => {
+        if (banner.image) {
+          await this.bannerRepository.delete(banner.id);
+        }
+      }));
+    }
+
+    // Remove promotional_sliders
+    if (type.promotional_sliders) {
+      await Promise.all(type.promotional_sliders.map(slider => this.attachmentRepository.delete(slider.id)));
+    }
+
+    // Remove Type
+    await this.typeRepository.remove(type);
+
+    // Remove TypeSettings
+    if (type.settings) {
+      await this.typeSettingsRepository.delete(type.settings.id);
+    }
   }
 }
