@@ -32,10 +32,18 @@ export class AbandonedCartService {
 
 
         if (existingCart) {
-      
-          const mergedCartData = this.mergeCarts(existingCart, createCartDto.cartData)
+console.log("dadta",existingCart)
+          // const short = JSON.stringify(existingCart.cartData)
+          // console.log("short", short)
+          // const existingCartData = JSON.parse(short)
+          // console.log("existing", existingCartData)
+          //  const carts = JSON.stringify(createCartDto.cartData)
+          //  const newCart = JSON.parse(carts)
+          const mergedCartData = this.mergeCarts(existingCart.cartData, createCartDto.cartData)
           console.log("mergedDAta", mergedCartData)
+          // console.log("mergedDAta", existingCartData)
 
+console.log("createCartDto", createCartDto.cartData)
           await this.cartRepository.update(
             { id: existingCart.id },
             { cartData: JSON.stringify(mergedCartData), cartQuantity: totalQuantity },
@@ -59,7 +67,7 @@ export class AbandonedCartService {
 
 
 // Helper function to merge two carts
-async mergeCarts(existingCart: any, newCart: any): Promise<Cart> {
+async mergeCarts(existingCart, newCart): Promise<Cart> {
   const mergedCart = { ...existingCart }
   Object.entries(newCart).forEach(([productId, cartData]) => {
     if (!mergedCart[productId]) {
