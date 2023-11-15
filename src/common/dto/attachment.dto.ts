@@ -1,6 +1,9 @@
 import { Attachment } from '../entities/attachment.entity';
 
-export class AttachmentDTO extends Attachment {
-    thumbnail: string;
-    original: string;
-}
+// attachment.dto.ts
+export class AttachmentDTO {
+    id?: number;
+    thumbnail: string = ''; // provide a default value
+    original: string = ''; // provide a default value
+  }
+  

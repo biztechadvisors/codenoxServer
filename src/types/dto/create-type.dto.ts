@@ -1,32 +1,28 @@
-import { PickType } from "@nestjs/swagger";
-import { Type, TypeSettings, Banner } from "../entities/type.entity";
-import { AttachmentDTO } from "src/common/dto/attachment.dto";
+import { IsString, IsBoolean, IsArray, IsOptional } from 'class-validator';
+import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 
-export class CreateTypeDto extends PickType(Type, [
-  'name',
-  'slug',
-  'icon',
-  'language',
-  'translated_languages',
-]) {
-  image?: AttachmentDTO[] | null;
-  bannerIds: BannerDto[];
-  promotionalSliderIds: number[];
-  settings: TypeSettingsDto;
+export class BannerDto {
+  title?: string;
+  description?: string;
+  image: AttachmentDTO[];
 }
 
+export class TypeSettingsDto {
+  id?: number;
+  isHome: boolean;
+  layoutType: string;
+  productCard: string;
+}
 
-export class TypeSettingsDto extends PickType(TypeSettings, [
-  'isHome',
-  'layoutType',
-  'productCard',
-]) { }
-
-
-export class BannerDto extends PickType(Banner, [
-  'id',
-  'title',
-  'description',
-]) {
+export class CreateTypeDto {
+  language: string;
+  name: string;
+  icon: string;
   image: AttachmentDTO;
+  slug: string;
+  settings: TypeSettingsDto;
+  promotional_sliders: AttachmentDTO[];
+  banners: BannerDto[];
+  translated_languages: string[];
 }
+
