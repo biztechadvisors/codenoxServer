@@ -39,8 +39,18 @@ export class TypesService {
     return await convertToSlug(text);
   }
 
-  getTypes({ text, search }: GetTypesDto) {
-    let data: Type[] = this.types;
+  async findAll(query: any) {
+    return this.typeRepository.find({
+      where: query,
+      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image']
+    });
+  }
+
+  async getTypes({ text, search }: GetTypesDto) {
+    let data: Type[] = await this.findAll({});
+
+    const fuse = new Fuse(data, { keys: ['name', 'slug'] }); // adjust this according to your needs
+
     if (text?.replace(/%/g, '')) {
       data = fuse.search(text)?.map(({ item }) => item);
     }
@@ -72,52 +82,30 @@ export class TypesService {
     return this.types.find((p) => p.slug === slug);
   }
 
-  async create(createTypeDto: CreateTypeDto): Promise<Type> {
-    try {
-      const newSettings = new TypeSettings();
-      Object.assign(newSettings, createTypeDto.settings);
-      const savedSettings = await this.typeSettingsRepository.save(newSettings);
+  async create(data: CreateTypeDto) {
+    console.log("Data", data.banners)
+    const typeSettings = this.typeSettingsRepository.create(data.settings);
+    await this.typeSettingsRepository.save(typeSettings);
 
-      const newType = new Type();
-      Object.assign(newType, createTypeDto, { settings: savedSettings });
+    const promotionalSliders = await this.attachmentRepository.findByIds(data.promotional_sliders.map(slider => slider.id));
 
-      if (createTypeDto.image) {
-        newType.image = await this.attachmentRepository.findOne({ where: { id: createTypeDto.image.id } });
+    const banners = await Promise.all(data.banners.map(async (bannerData) => {
+      if (bannerData.image && bannerData.image.length > 0) {
+        const image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id } });
+        console.log("Image*****", image)
+        const { image: _, ...bannerDataWithoutImage } = bannerData;
+        const banner = this.bannerRepository.create({ ...bannerDataWithoutImage, image });
+        return this.bannerRepository.save(banner);
       }
-
-      if (createTypeDto.promotional_sliders) {
-        newType.promotional_sliders = await this.attachmentRepository.findByIds(createTypeDto.promotional_sliders.map(slider => slider.id));
-      }
-
-      const savedType = await this.typeRepository.save(newType);
-
-      if (createTypeDto.banners) {
-        for (const bannerDto of createTypeDto.banners) {
-          const banner = new Banner();
-          banner.title = bannerDto.title;
-          banner.description = bannerDto.description;
-          banner.image = await this.attachmentRepository.findOne({ where: { id: bannerDto.image[0].id } });
-          banner.type = savedType; // Set the type of the banner here
-          await this.bannerRepository.save(banner);
-        }
-      }
-
-      console.log("Ram***")
-      return savedType;
-
-    } catch (error) {
-      console.error('Error creating type:', error);
-      throw error;
-    }
-  }
+    }));
 
 
-  findAll() {
-    return `This action returns all types`;
+    const type = this.typeRepository.create({ ...data, settings: typeSettings, promotional_sliders: promotionalSliders, banners });
+    return this.typeRepository.save(type);
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} type`;
+    return this.typeRepository.findOne({ where: { id }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
   }
 
   update(id: number, updateTypeDto: UpdateTypeDto) {
