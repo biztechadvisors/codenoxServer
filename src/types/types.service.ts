@@ -77,9 +77,8 @@ export class TypesService {
     return await this.typeRepository.findOne({ where: { slug }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
   }
 
-
   async create(data: CreateTypeDto) {
-    console.log("Data-Type")
+    console.log("Data-Type", data)
     const typeSettings = this.typeSettingsRepository.create(data.settings);
     await this.typeSettingsRepository.save(typeSettings);
     let promotionalSliders = [];
@@ -90,7 +89,7 @@ export class TypesService {
     if (data.banners && Array.isArray(data.banners)) {
       banners = await Promise.all(data.banners.map(async (bannerData) => {
         if (bannerData.image && bannerData.image.length > 0) {
-          const image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id } });
+          const image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id, thumbnail: bannerData.image[0].thumbnail, original: bannerData.image[0].original } });
           const { image: _, ...bannerDataWithoutImage } = bannerData;
           const banner = this.bannerRepository.create({ ...bannerDataWithoutImage, image });
           return this.bannerRepository.save(banner);
@@ -104,50 +103,64 @@ export class TypesService {
     return this.typeRepository.save(type);
   }
 
+
   async update(id: number, updateTypeDto: UpdateTypeDto): Promise<Type> {
-    console.log("ID***", id)
-    console.log("updateTypeDto", updateTypeDto)
     const type = await this.typeRepository.findOne({ where: { id }, relations: ['settings', 'promotional_sliders', 'banners'] });
     if (!type) {
       throw new Error('Type not found');
     }
-    // Update TypeSettings
+
+    // Update settings
     if (updateTypeDto.settings) {
-      type.settings.isHome = updateTypeDto.settings.isHome;
-      type.settings.layoutType = updateTypeDto.settings.layoutType;
-      type.settings.productCard = updateTypeDto.settings.productCard;
+      type.settings = this.typeSettingsRepository.merge(type.settings, updateTypeDto.settings);
       await this.typeSettingsRepository.save(type.settings);
     }
+
     // Update promotional_sliders
     if (updateTypeDto.promotional_sliders) {
-      type.promotional_sliders = await this.attachmentRepository.findByIds(updateTypeDto.promotional_sliders.map(slider => slider.id));
+      type.promotional_sliders = await Promise.all(updateTypeDto.promotional_sliders.map(async (sliderData) => {
+        let slider = await this.attachmentRepository.findOne({ where: { id: sliderData.id } });
+        if (!slider) {
+          slider = new Attachment();
+        }
+        slider = this.attachmentRepository.merge(slider, sliderData);
+        return this.attachmentRepository.save(slider);
+      }));
     }
+
     // Update banners
     if (updateTypeDto.banners) {
-      for (const bannerData of updateTypeDto.banners) {
-        let banner = type.banners.find(banner => banner.id === bannerData.image[0].id);
+      type.banners = await Promise.all(updateTypeDto.banners.map(async (bannerData) => {
+        let banner = await this.bannerRepository.findOne({ where: { id: bannerData.id } });
         if (!banner) {
           banner = new Banner();
-          type.banners.push(banner);
         }
         banner.title = bannerData.title;
         banner.description = bannerData.description;
-        if (bannerData.image && bannerData.image.length > 0) {
-          banner.image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id } });
+        if (bannerData.image && bannerData.image[0]) {
+          let image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id } });
+          if (!image) {
+            image = new Attachment();
+          }
+          image = this.attachmentRepository.merge(image, bannerData.image[0]);
+          banner.image = await this.attachmentRepository.save(image);
         }
-        console.log("Banner*****", banner)
-        await this.bannerRepository.save(banner);
-      }
+        return this.bannerRepository.save(banner);
+      }));
     }
-    // Update other Type properties
+
+    // Update other properties
     type.name = updateTypeDto.name;
-    type.slug = await this.convertToSlug(updateTypeDto.name);
     type.icon = updateTypeDto.icon;
     type.language = updateTypeDto.language;
     type.translated_languages = updateTypeDto.translated_languages;
 
-    return this.typeRepository.save(type);
+    // Save the updated type
+    await this.typeRepository.save(type);
+
+    return type;
   }
+
 
   async remove(id: number): Promise<void> {
     const type = await this.typeRepository.findOne({ where: { id }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
@@ -157,11 +170,10 @@ export class TypesService {
 
     // Remove banners and their images
     if (type.banners) {
-      await Promise.all(type.banners.map(async (banner) => {
-        if (banner.image) {
-          await this.bannerRepository.delete(banner.id);
-        }
-      }));
+      const bannerIds = type.banners.map(banner => banner.id);
+      const imageIds = type.banners.filter(banner => banner.image).map(banner => banner.image.id);
+      await this.bannerRepository.delete(bannerIds);
+      await this.attachmentRepository.delete(imageIds);
     }
 
     // Remove promotional_sliders
@@ -177,4 +189,8 @@ export class TypesService {
       await this.typeSettingsRepository.delete(type.settings.id);
     }
   }
+
 }
+
+
+
