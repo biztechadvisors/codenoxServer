@@ -1,6 +1,7 @@
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 
 export class BannerDto {
+  id: number;
   title?: string;
   description?: string;
   image: AttachmentDTO[];
