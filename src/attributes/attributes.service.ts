@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common'
 import {
   // AttributeValueDto,
@@ -35,80 +36,65 @@ export class AttributesService {
     createAttributeDto: CreateAttributeDto,
   ): Promise<{ message: string; status: boolean } | Attribute> {
     // Check if the attribute exists
-    const existingAttribute = await this.attributeRepository.find({
-      where: {
-        name: createAttributeDto.name,
-        shop_id: createAttributeDto.shop_id,
-      },
-    })
+    const existingAttribute = await this.attributeRepository.findOne({
+      where: { name: createAttributeDto.name, shop_id: createAttributeDto.shop_id },
+      relations: ['values',
+        // 'shop'
+      ],
+    });
 
-    if (existingAttribute && existingAttribute.length > 0) {
-      // Save the attribute values to the existing attribute
-      const attributeValues = createAttributeDto.values.map(
-        (attributeValueDto) => {
-          const attributeValue = new AttributeValue()
-          attributeValue.attribute = existingAttribute[0]
-          attributeValue.value = attributeValueDto.value
-          attributeValue.meta = attributeValueDto.meta
+    // If the attribute does not exist, create a new attribute
+    if (!existingAttribute) {
+      const newAttribute = new Attribute();
+      newAttribute.name = createAttributeDto.name;
+      newAttribute.slug = await this.convertToSlug(createAttributeDto.name);
+      newAttribute.shop_id = createAttributeDto.shop_id;
+      newAttribute.language = createAttributeDto.language;
 
-          return attributeValue
-        },
-      )
+      const savedAttribute = await this.attributeRepository.save(newAttribute);
+      const attributeValues = createAttributeDto.values.map((attributeValueDto) => {
+        const attributeValue = new AttributeValue();
+        attributeValue.attribute = savedAttribute;
+        attributeValue.value = attributeValueDto.value;
+        attributeValue.meta = attributeValueDto.meta;
 
-      await this.attributeValueRepository.save(attributeValues)
+        return attributeValue;
+      });
 
-      return {
-        status: true,
-        message: 'Inserted Succesfully',
-      }
-    } else {
-      // Create a new attribute and save the attribute values
-      try {
-        const attribute = new Attribute()
-        attribute.name = createAttributeDto.name
-        attribute.slug = await this.convertToSlug(createAttributeDto.name)
-        attribute.shop_id = createAttributeDto.shop_id
-        attribute.language = createAttributeDto.language
-
-        const savedAttribute = await this.attributeRepository.save(attribute)
-
-        const attributeValues = createAttributeDto.values.map(
-          (attributeValueDto) => {
-            const attributeValue = new AttributeValue()
-            attributeValue.attribute = savedAttribute
-            attributeValue.value = attributeValueDto.value
-            attributeValue.meta = attributeValueDto.meta
-
-            return attributeValue
-          },
-        )
-
-        await this.attributeValueRepository.save(attributeValues)
-
-        return savedAttribute
-      } catch (error) {
-        console.error(error)
-        return {
-          status: false,
-          message: 'Error creating attribute: ' + error.message,
-        }
+      await this.attributeValueRepository.save(attributeValues);
+      return savedAttribute;
+    }
+    // Otherwise, update the existing attribute values
+    const existingAttributeValues = existingAttribute.values;
+    console.log("existingAttribute", existingAttribute)
+    for (const newAttributeValue of createAttributeDto.values) {
+      console.log("newAttributeValues", newAttributeValue)
+      const existingAttributeValue = existingAttributeValues.find((atValue) => atValue.value === newAttributeValue.value);
+      if (existingAttributeValue) {
+        existingAttributeValue.meta = newAttributeValue.meta;
+      } else {
+        const newAttributeValueEntity = new AttributeValue();
+        newAttributeValueEntity.attribute = existingAttribute;
+        newAttributeValueEntity.value = newAttributeValue.value;
+        newAttributeValueEntity.meta = newAttributeValue.meta;
+        existingAttributeValues.push(newAttributeValueEntity);
       }
     }
+    await this.attributeValueRepository.save(existingAttributeValues);
+    return existingAttribute;
   }
 
-  async findAll(): Promise<
-    {
-      id: number
-      name: string
-      slug: string
-      values: {
-        id: number
-        value: string
-        meta?: string
-        language?: string
-      }[]
-    }[]
-  > {
+  async findAll(): Promise<{
+    id: number;
+    name: string;
+    slug: string;
+    values: {
+      id: number;
+      value: string;
+      meta?: string;
+      language?: string;
+    }[];
+  }[]> {
     const attributes = await this.attributeRepository.find({
       relations: [
         'values',
@@ -178,39 +164,46 @@ export class AttributesService {
     // Check if the attribute exists
     const attribute = await this.attributeRepository.findOne({
       where: { id },
-    })
-
+    });
+  
     if (!attribute) {
       return {
         status: false,
-        message: 'Attribute Not Found',
+        message: 'Attribute not found',
+      };
+    }
+  
+    // Update the attribute values
+    attribute.name = updateAttributeDto.name;
+    attribute.slug = await this.convertToSlug(updateAttributeDto.name);
+    attribute.shop_id = updateAttributeDto.shop_id;
+    attribute.language = updateAttributeDto.language;
+  
+    // Check for existing attribute values before saving
+    const existingAttributeValues = await this.attributeValueRepository.find({
+      where: { attribute: { id: attribute.id } }, // Use the attribute's ID to filter attribute values
+    });
+  
+    const updatedAttributeValues = [];
+  
+    for (const updateAttributeValueDto of updateAttributeDto.values) {
+      const existingAttributeValue = existingAttributeValues.find((atValue) => atValue.value === updateAttributeValueDto.value);
+  
+      if (!existingAttributeValue) {
+        // Create a new attribute value if it doesn't exist
+        const newAttributeValue = new AttributeValue();
+        newAttributeValue.attribute = attribute; // Set the attribute reference
+        newAttributeValue.value = updateAttributeValueDto.value;
+        newAttributeValue.meta = updateAttributeValueDto.meta;
+        updatedAttributeValues.push(newAttributeValue);
       }
     }
-
-    // Update the attribute values
-    attribute.name = updateAttributeDto.name
-    attribute.slug = await this.convertToSlug(updateAttributeDto.name)
-    attribute.shop_id = updateAttributeDto.shop_id
-    attribute.language = updateAttributeDto.language
-
-    // Update the attribute in the database
-    await this.attributeRepository.save(attribute)
-
-    // Update the attribute values in the database
-    const attributeValues = updateAttributeDto.values.map(
-      (attributeValueDto) => {
-        const attributeValue = new AttributeValue()
-        attributeValue.attribute = attribute
-        attributeValue.value = attributeValueDto.value
-        attributeValue.meta = attributeValueDto.meta
-
-        return attributeValue
-      },
-    )
-
-    await this.attributeValueRepository.save(attributeValues)
-
-    return attribute
+  
+    // Update the attribute and attribute values in the database
+    await this.attributeRepository.save(attribute);
+    await this.attributeValueRepository.save(updatedAttributeValues);
+  
+    return attribute;
   }
 
   async delete(id: number) {

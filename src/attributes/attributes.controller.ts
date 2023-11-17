@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Controller, Get, Post, Body, Put, Param, Delete } from '@nestjs/common'
 import { AttributesService } from './attributes.service'
 import { CreateAttributeDto } from './dto/create-attribute.dto'
@@ -11,7 +12,8 @@ export class AttributesController {
 
   @Post()
   create(@Body() createAttributeDto: CreateAttributeDto) {
-    return this.attributesService.create(createAttributeDto)
+    console.log("Data", createAttributeDto)
+    return this.attributesService.create(createAttributeDto);
   }
 
   @Get()
