@@ -147,7 +147,6 @@ export class TypesService {
       }));
     }
 
-    // Update banners
     if (updateTypeDto.banners) {
       type.banners = await Promise.all(updateTypeDto.banners.map(async (bannerData) => {
         let banner = await this.bannerRepository.findOne({ where: { id: bannerData.id } });
@@ -156,17 +155,16 @@ export class TypesService {
         }
         banner.title = bannerData.title;
         banner.description = bannerData.description;
-        if (bannerData.image && bannerData.image[0]) {
-          let image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id } });
-          if (!image) {
-            image = new Attachment();
-          }
-          image = this.attachmentRepository.merge(image, bannerData.image[0]);
+        if (bannerData.image && bannerData.image) {
+          // Create a new image record for each banner
+          let image = new Attachment();
+          image = this.attachmentRepository.merge(image, bannerData.image);
           banner.image = await this.attachmentRepository.save(image);
         }
         return this.bannerRepository.save(banner);
       }));
     }
+    
 
     // Update other properties
     type.name = updateTypeDto.name;
@@ -179,7 +177,6 @@ export class TypesService {
 
     return type;
   }
-
 
   async remove(id: number): Promise<void> {
     const type = await this.typeRepository.findOne({ where: { id }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
@@ -212,6 +209,7 @@ export class TypesService {
       await this.typeSettingsRepository.delete(type.settings.id);
     }
   }
+
 
 }
 
