@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common'
 import { plainToClass } from 'class-transformer'
 import { CreateCategoryDto } from './dto/create-category.dto'
@@ -37,7 +38,9 @@ export class CategoriesService {
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     // Create a new Attachment instance
-    const attachment = new Attachment()
+
+    console.log("Data", createCategoryDto)
+    const attachment = new Attachment();
 
     // Set the Attachment properties from the CreateCategoryDto
     attachment.thumbnail = createCategoryDto.image.thumbnail

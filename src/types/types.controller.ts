@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -19,7 +20,8 @@ export class TypesController {
 
   @Post()
   create(@Body() createTypeDto: CreateTypeDto) {
-    return this.typesService.create(createTypeDto)
+    // console.log("createTypeDto", createTypeDto)
+    return this.typesService.create(createTypeDto);
   }
 
   @Get()
