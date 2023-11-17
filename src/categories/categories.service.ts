@@ -12,6 +12,7 @@ import { CategoryRepository } from './categories.repository';
 import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { convertToSlug } from 'src/helpers';
+import { TypeRepository } from 'src/types/types.repository';
 
 const categories = plainToClass(Category, categoriesJson);
 const options = {
@@ -26,6 +27,7 @@ export class CategoriesService {
   constructor(
     @InjectRepository(CategoryRepository) private categoryRepository: CategoryRepository,
     @InjectRepository(AttachmentRepository) private attachmentRepository: AttachmentRepository,
+    @InjectRepository(TypeRepository) private typeRepository: TypeRepository,
 
   ) { }
 
@@ -38,38 +40,35 @@ export class CategoriesService {
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     // Create a new Attachment instance
-
-    console.log("Data", createCategoryDto)
-    const attachment = new Attachment();
+    const attachment = this.attachmentRepository.create();
 
     // Set the Attachment properties from the CreateCategoryDto
     attachment.thumbnail = createCategoryDto.image.thumbnail;
     attachment.original = createCategoryDto.image.original;
 
-    const parent = await this.categoryRepository.findOne({ where: { name: createCategoryDto.name } });
-
-    console.log("Parent", parent)
     // Save the Attachment instance to the database
     await this.attachmentRepository.save(attachment);
 
-    let slug = await this.convertToSlug(createCategoryDto.name)
+    // Get the Type entity by name
+    const type = await this.typeRepository.findOne({ where: { name: createCategoryDto.type_name } });
+
+    if (!type) {
+      // Handle the case when the type is not found
+      throw new Error(`Type with name '${createCategoryDto.type_name}' not found`);
+    }
+
     // Create a new Category instance
-    const category = new Category();
+    const category = this.categoryRepository.create();
 
     // Set the Category properties from the CreateCategoryDto
-    category.name = createCategoryDto.name;
-    category.slug = slug;
-    category.type = createCategoryDto.type;
+    category.name = createCategoryDto.name as string; // Explicitly type name as a string
+    category.slug = await this.convertToSlug(createCategoryDto.name);
+    category.type = type;
     category.details = createCategoryDto.details;
-    // category.parent = await this.categoryRepository.findOne({ where: { name: createCategoryDto.name } });
+    category.parent = null; // or set it to the appropriate parent
     category.image = attachment;
     category.icon = createCategoryDto.icon;
     category.language = createCategoryDto.language;
-
-    // If the parent ID is not set, set it to null
-    if (!category.parent) {
-      category.parent = null;
-    }
 
     // Save the Category instance to the database
     await this.categoryRepository.save(category);
