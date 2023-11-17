@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateCategoryDto } from './dto/create-category.dto';
-import { GetCategoriesDto } from './dto/get-categories.dto';
+import { CategoryPaginator, GetCategoriesDto } from './dto/get-categories.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
 import Fuse from 'fuse.js';
@@ -13,6 +13,7 @@ import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { convertToSlug } from 'src/helpers';
 import { TypeRepository } from 'src/types/types.repository';
+import { ILike, IsNull } from 'typeorm';
 
 const categories = plainToClass(Category, categoriesJson);
 const options = {
@@ -41,25 +42,19 @@ export class CategoriesService {
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     // Create a new Attachment instance
     const attachment = this.attachmentRepository.create();
-
     // Set the Attachment properties from the CreateCategoryDto
     attachment.thumbnail = createCategoryDto.image.thumbnail;
     attachment.original = createCategoryDto.image.original;
-
     // Save the Attachment instance to the database
     await this.attachmentRepository.save(attachment);
-
     // Get the Type entity by name
     const type = await this.typeRepository.findOne({ where: { name: createCategoryDto.type_name } });
-
     if (!type) {
       // Handle the case when the type is not found
       throw new Error(`Type with name '${createCategoryDto.type_name}' not found`);
     }
-
     // Create a new Category instance
     const category = this.categoryRepository.create();
-
     // Set the Category properties from the CreateCategoryDto
     category.name = createCategoryDto.name as string; // Explicitly type name as a string
     category.slug = await this.convertToSlug(createCategoryDto.name);
@@ -69,55 +64,54 @@ export class CategoriesService {
     category.image = attachment;
     category.icon = createCategoryDto.icon;
     category.language = createCategoryDto.language;
-
     // Save the Category instance to the database
     await this.categoryRepository.save(category);
-
     // Return the saved Category instance
     return category;
   }
 
-  getCategories({ limit, page, search, parent }: GetCategoriesDto) {
-    if (!page) page = 1;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    let data: Category[] = this.categories;
+  async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
+    const { limit, page, search, parent } = query;
+    const skip = (Number(page) - 1) * limit;
+    const where: { [key: string]: any } = {};
     if (search) {
-      const parseSearchParams = search.split(';');
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        // data = data.filter((item) => item[key] === value);
-        data = fuse.search(value)?.map(({ item }) => item);
-      }
+      where['name'] = ILike(`%${search}%`);
     }
     if (parent === 'null') {
-      data = data.filter((item) => item.parent === null);
+      where['parent'] = IsNull();
+    } else if (parent) {
+      where['parent'] = parent;
     }
-    // if (text?.replace(/%/g, '')) {
-    //   data = fuse.search(text)?.map(({ item }) => item);
-    // }
-    // if (hasType) {
-    //   data = fuse.search(hasType)?.map(({ item }) => item);
-    // }
-
-    const results = data.slice(startIndex, endIndex);
+    const [data, total] = await this.categoryRepository.findAndCount({
+      where,
+      take: limit,
+      skip,
+      relations: ['type']
+    });
     const url = `/categories?search=${search}&limit=${limit}&parent=${parent}`;
     return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
+      data,
+      ...paginate(total, page, limit, data.length, url),
     };
   }
 
-  getCategory(param: string, language: string): Category {
-    return this.categories.find(
-      (p) => p.id === Number(param) || p.slug === param,
-    );
+  async getCategory(param: string, language: string): Promise<Category> {
+    // Try to parse the param as a number to see if it's an id
+    const id = Number(param);
+    if (!isNaN(id)) {
+      // If it's an id, find the category by id
+      return this.categoryRepository.findOne({ where: { id: id, language: language }, relations: ['type', 'image'] });
+    } else {
+      // If it's not an id, find the category by slug
+      return this.categoryRepository.findOne({ where: { slug: param, language: language }, relations: ['type', 'image'] });
+    }
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
     // Find the Category instance to be updated
     const category = await this.categoryRepository.findOne({
       where: { id },
+      relations: ['type', 'image'],
     });
 
     // If the Category instance is not found, throw an error
@@ -138,12 +132,27 @@ export class CategoriesService {
     await this.categoryRepository.save(category);
 
     // Return the saved Category instance
-    // return this.categories[0];
-
     return category;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} category`;
+  async remove(id: number): Promise<void> {
+    // Find the Category instance to be removed
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+      relations: ['type', 'image', 'products'],
+    });
+
+    // If the Category instance is not found, throw an error
+    if (!category) {
+      throw new Error('Category not found');
+    }
+
+    // If the Category has an image, remove it
+    if (category.image) {
+      await this.attachmentRepository.remove(category.image);
+    }
+
+    // Remove the Category instance from the database
+    await this.categoryRepository.remove(category);
   }
 }
