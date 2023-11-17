@@ -78,30 +78,49 @@ export class TypesService {
   }
 
   async create(data: CreateTypeDto) {
-    console.log("Data-Type", data)
+    console.log("Data-Type", data);
+
+    // Create and save TypeSettings
     const typeSettings = this.typeSettingsRepository.create(data.settings);
     await this.typeSettingsRepository.save(typeSettings);
+
+    // Fetch promotional sliders
     let promotionalSliders = [];
     if (data.promotional_sliders && Array.isArray(data.promotional_sliders)) {
       promotionalSliders = await this.attachmentRepository.findByIds(data.promotional_sliders.map(slider => slider.id));
     }
+
+    // Create and save banners with associated images
     let banners = [];
     if (data.banners && Array.isArray(data.banners)) {
       banners = await Promise.all(data.banners.map(async (bannerData) => {
-        if (bannerData.image && bannerData.image.length > 0) {
-          const image = await this.attachmentRepository.findOne({ where: { id: bannerData.image[0].id, thumbnail: bannerData.image[0].thumbnail, original: bannerData.image[0].original } });
-          const { image: _, ...bannerDataWithoutImage } = bannerData;
-          const banner = this.bannerRepository.create({ ...bannerDataWithoutImage, image });
+        if (bannerData.image && bannerData.image.id) {
+          const image = await this.attachmentRepository.findOne({
+            where: { id: bannerData.image.id, thumbnail: bannerData.image.thumbnail, original: bannerData.image.original }
+          });
+
+          // Create banner entity with the correct title, description, and related image
+          const banner = this.bannerRepository.create({
+            title: bannerData.title,
+            description: bannerData.description,
+            image: image,
+          });
+
           return this.bannerRepository.save(banner);
         }
       }));
     }
+
+    // Convert name to slug if present
     if (data.name) {
       data.slug = await this.convertToSlug(data.name);
     }
+
+    // Create and save Type entity
     const type = this.typeRepository.create({ ...data, settings: typeSettings, promotional_sliders: promotionalSliders, banners });
     return this.typeRepository.save(type);
   }
+
 
 
   async update(id: number, updateTypeDto: UpdateTypeDto): Promise<Type> {
@@ -172,8 +191,12 @@ export class TypesService {
     if (type.banners) {
       const bannerIds = type.banners.map(banner => banner.id);
       const imageIds = type.banners.filter(banner => banner.image).map(banner => banner.image.id);
-      await this.bannerRepository.delete(bannerIds);
-      await this.attachmentRepository.delete(imageIds);
+      if (bannerIds.length > 0) {
+        await this.bannerRepository.delete(bannerIds);
+      }
+      if (imageIds.length > 0) {
+        await this.attachmentRepository.delete(imageIds);
+      }
     }
 
     // Remove promotional_sliders
