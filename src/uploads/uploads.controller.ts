@@ -23,7 +23,6 @@ export class UploadsController {
     }),
   }))
   async uploadFile(@UploadedFiles() attachment: Array<Express.Multer.File>) {
-    console.log("first", attachment)
     try {
       return await this.uploadsService.uploadFile(attachment);
     } catch (err) {
