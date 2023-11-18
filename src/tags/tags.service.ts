@@ -21,6 +21,7 @@ export class TagsService {
   private tags: Tag[] = tags;
 
   create(createTagDto: CreateTagDto) {
+    console.log("Data", createTagDto)
     return {
       id: this.tags.length + 1,
       ...createTagDto,
