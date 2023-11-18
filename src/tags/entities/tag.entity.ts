@@ -8,26 +8,37 @@ import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany
 export class Tag extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   name: string;
+
   @Column()
   slug: string;
+
   @Column()
-  parent: number;
+  parent: number | null;
+
   @Column()
   details: string;
+
   @OneToOne(() => Attachment)
   @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
-  image: Attachment;
+  image: Attachment | null;
+
   @Column()
   icon: string;
-  @ManyToOne(() => Type, { eager: true })
-  type: Type;
+
+  @ManyToOne(() => Type, { nullable: true, eager: true })
+  @JoinColumn()
+  type: Type | null;
+
   @ManyToMany(() => Product, product => product.tags)
   @JoinTable()
   products: Product[];
+
   @Column()
   language: string;
+
   @Column({ type: 'json' })
-  translated_languages: string[];
+  translatedLanguages: string[];
 }
