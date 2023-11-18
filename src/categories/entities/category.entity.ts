@@ -15,8 +15,7 @@ export class Category extends CoreEntity {
   @Column()
   slug: string;
 
-  @OneToOne(() => Category, { nullable: true })
-  @JoinColumn()
+  @ManyToOne(() => Category, { nullable: true })
   parent?: Category;
 
   @OneToMany(() => Category, category => category.parent)
@@ -31,7 +30,7 @@ export class Category extends CoreEntity {
   @Column()
   icon?: string;
 
-  @ManyToOne(() => Type)
+  @ManyToOne(() => Type, { eager: true })
   type?: Type;
 
   @ManyToMany(() => Product, product => product.categories)
