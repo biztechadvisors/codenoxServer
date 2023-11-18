@@ -17,19 +17,15 @@ export class Tag extends CoreEntity {
   @Column()
   details: string;
   @OneToOne(() => Attachment)
-  @JoinColumn()
+  @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
   image: Attachment;
   @Column()
   icon: string;
   @OneToOne(() => Type)
-  @JoinColumn()
+  @JoinColumn({ name: 'typeId', referencedColumnName: 'id' })
   type: Type;
   @ManyToMany(() => Product, product => product.tags)
-  @JoinTable({ // Create a join table between Type and Attachment
-    name: 'tag_product',
-    joinColumn: { name: 'tagId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'productId', referencedColumnName: 'id' }
-  })
+  @JoinTable()
   products: Product[];
   @Column()
   language: string;
