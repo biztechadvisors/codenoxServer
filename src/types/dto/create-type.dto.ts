@@ -1,19 +1,21 @@
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 
+// banner.dto.ts
 export class BannerDto {
   id: number;
   title?: string;
   description?: string;
-  image: AttachmentDTO[];
+  image: AttachmentDTO;
 }
 
+// type-settings.dto.ts
 export class TypeSettingsDto {
-  id?: number;
   isHome: boolean;
-  layoutType: string;
   productCard: string;
+  layoutType: string;
 }
 
+// create-type.dto.ts
 export class CreateTypeDto {
   language: string;
   name: string;
