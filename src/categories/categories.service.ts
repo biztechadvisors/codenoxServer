@@ -113,14 +113,26 @@ export class CategoriesService {
       where: { id },
       relations: ['type', 'image'],
     });
-
     // If the Category instance is not found, throw an error
     if (!category) {
       throw new Error('Category not found');
     }
 
+    if (updateCategoryDto.image !== category.image) {
+      // Find categories that reference the image to be deleted
+      const referencingCategories = await this.categoryRepository.find({ where: { image: category.image } });
+      // If the image is only referenced by the current category, it's safe to delete
+      if (referencingCategories.length === 1) {
+        const image = category.image;
+        // Set the imageId to null in the category table before deleting the attachment
+        category.image = null;
+        await this.categoryRepository.save(category);
+        await this.attachmentRepository.remove(image);
+      }
+    }
     // Set the Category properties from the UpdateCategoryDto
     category.name = updateCategoryDto.name;
+    category.slug = await this.convertToSlug(updateCategoryDto.name);
     category.type = updateCategoryDto.type;
     category.details = updateCategoryDto.details;
     category.parent = updateCategoryDto.parent;
@@ -129,30 +141,32 @@ export class CategoriesService {
     category.language = updateCategoryDto.language;
 
     // Save the Category instance to the database
-    await this.categoryRepository.save(category);
-
+    const cat = await this.categoryRepository.save(category);
     // Return the saved Category instance
-    return category;
+    return cat;
   }
 
   async remove(id: number): Promise<void> {
     // Find the Category instance to be removed
     const category = await this.categoryRepository.findOne({
       where: { id },
-      relations: ['type', 'image', 'products'],
+      relations: ['image'],
     });
-
     // If the Category instance is not found, throw an error
     if (!category) {
       throw new Error('Category not found');
     }
-
-    // If the Category has an image, remove it
+    // If the Category has an image, remove it first
     if (category.image) {
-      await this.attachmentRepository.remove(category.image);
+      const image = category.image;
+      // Set the imageId to null in the category table before deleting the attachment
+      category.image = null;
+      await this.categoryRepository.save(category);
+      // Now, delete the image (attachment)
+      await this.attachmentRepository.remove(image);
     }
-
     // Remove the Category instance from the database
     await this.categoryRepository.remove(category);
   }
+
 }

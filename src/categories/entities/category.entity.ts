@@ -26,7 +26,7 @@ export class Category extends CoreEntity {
   @Column()
   details?: string;
 
-  @ManyToOne(() => Attachment, { eager: true }) // assuming you want to eagerly load the image
+  @OneToOne(() => Attachment, { eager: true }) // assuming you want to eagerly load the image
   @JoinColumn()
   image?: Attachment;
 
