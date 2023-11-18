@@ -26,12 +26,10 @@ export class AttributesController {
   //   return this.attributesService.findOne(param);
   // }
 
-  @Get('/:id/:slug')
-  async findOne(
-    @Param() param: GetAttributeArgs,
-  ): Promise<{ message: string } | Attribute | undefined> {
-    const attribute = await this.attributesService.findOne(param)
-    return attribute
+  @Get(':slug')
+  async findOne(@Param() param: GetAttributeArgs): Promise<{ message: string } | Attribute | undefined> {
+    const attribute = await this.attributesService.findOne(param);
+    return attribute;
   }
 
   @Put(':id')

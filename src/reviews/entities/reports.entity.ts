@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity'
 import { User } from 'src/users/entities/user.entity'
 import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'

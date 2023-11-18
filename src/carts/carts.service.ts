@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Cart } from './entities/cart.entity'
 import { CreateCartDto } from './dto/create-cart.dto'
@@ -17,11 +17,12 @@ export class AbandonedCartService {
     private cartRepository: CartRepository,
   ) {}
 
+  // -------------------------------CREATE CART------------------------------------------------
+
   async create(createCartDto: CreateCartDto ): Promise<Cart> {
 
-    const cartItems = JSON.stringify(createCartDto.cartData)
-    const cartIT = JSON.parse(cartItems)
-    const totalQuantity = cartIT.reduce((acc: any, item: any) => {
+    const cartItems = Object.values(createCartDto.cartData)
+    const totalQuantity = cartItems.reduce((acc: any, item: any) => {
     const quantity= item.quantity
         acc += quantity;
           return acc}, 0)
@@ -32,23 +33,11 @@ export class AbandonedCartService {
 
         if (existingCart) {
          console.log("dadta",existingCart)
-          // const short = JSON.stringify(existingCart.cartData)
-          // console.log("short", short)
-          // const existingCartData = JSON.parse(short)
-          // console.log("existing", existingCartData)
-          //  const carts = JSON.stringify(createCartDto.cartData)
-          //  const newCart = JSON.parse(carts)
-          // const mergedCartData = this.mergeCarts(existingCart.cartData, createCartDto.cartData)
-          // console.log("mergedDAta", mergedCartData)
-          // console.log("mergedDAta", existingCartData)
-          // const tryy = JSON.stringify(mergedCartData)
-          // console.log("tryy", tryy)
-          // console.log("createCartDto", createCartDto.cartData)
-          // const Data = JSON.stringify(createCartDto.cartData)
+
           await this.cartRepository.update(
             { id: existingCart.id },
-            { cartData: JSON.stringify(createCartDto.cartData), cartQuantity: totalQuantity },
-           
+            { cartData: JSON.stringify(createCartDto.cartData), 
+              cartQuantity: totalQuantity },
           );
 
       console.log("user exist")
@@ -62,12 +51,15 @@ export class AbandonedCartService {
       newCart.created_at = createCartDto.created_at
       newCart.updated_at = createCartDto.updated_at
 
+
       await this.cartRepository.save(newCart)
       return newCart
     }
 
     return existingCart
   }
+
+  // ---------------------------------GET CART-----------------------------------------------------------
 
   async getCartData(param: GetCartData): Promise<{ products: any[]; totalCount: number }> {
     const existingCart = await this.cartRepository.findOne({ where: { customerId: param.customerId, email: param.email } });
@@ -101,23 +93,29 @@ export class AbandonedCartService {
   }
 
 
-  async delete(productId: number, query: any): Promise<any> {
-    console.log("productId", productId)
-    // console.log("query", query.quantity)
+  // -----------------------------------DELETE----------------------------------------------------
+
+  async delete(itemId: string, query?: any): Promise<any> {
+    const itemsId = parseInt(itemId)
+
+
     const existingCart = await this.cartRepository.findOne({ where: { email: query.email } });
 
-    // console.log("email", existingCart, productId, query.quantity, query.email)
     if (!existingCart) {
       return { error: 'Cart not found for the provided email' }; // Handle non-existent cart
     }
   
-    const quantity = query.quantity;
+    const quantity = query.quantity; 
     let existingCartData: any = {};
+
     try {
-      const get = JSON.stringify(existingCart.cartData);
-      existingCartData = JSON.parse(get);
+  
+      if (typeof existingCart.cartData === 'object') {
+        existingCartData = existingCart.cartData;
+      } else {
+        existingCartData = JSON.parse(existingCart.cartData);
+      }
       
-      // console.log("data", existingCartData)
     } catch (err) {
       console.error(`Error parsing cart data: ${err.message}`);
       return null; // Handle error parsing cart data
@@ -125,51 +123,67 @@ export class AbandonedCartService {
   
     let itemRemoved = false;
     let cartQuantity = existingCart.cartQuantity;
-    console.log("existingItem", existingCartData)
 
+    if(quantity){
+      for(let i=0; i < quantity; i++) {
 
-    // for (const productId in existingCartData) {
-    //   const productData = existingCartData[productId];
-    //   // Access and process productData here
-    //   console.log(`Product ID: ${productId}`);
-    //   console.log(`Product Data: ${JSON.stringify(productData)}`);
-      
-    //   return productData
-      
-    // }
-
-    for (let i = 0; i < quantity; i++) {
-
-      console.log("first", productId, existingCartData[0].productId)
-      if (existingCartData[productId]) {
-        console.log("carts", existingCartData[productId])
-        // console.log("set",existingCartData[productId])
-        if (existingCartData[productId].quantity > 1) {
-        existingCartData[productId].quantity -= 1;
-          cartQuantity -= 1;
-        } else {
-         this.cartRepository.delete(existingCartData[productId]);
-          cartQuantity -= 1;
-          console.log("Item deleted successfully")
+          if (existingCartData[itemsId]) {
+            if (existingCartData[itemsId].quantity > 1) {
+              existingCartData[itemsId].quantity -= 1;
+              cartQuantity -= 1;
+              console.log("cartQuantity", cartQuantity)
+            } else {
+              delete existingCartData[itemsId];
+              cartQuantity -= 1;
+            }
+            itemRemoved = true;
+          }
         }
-        itemRemoved = true;
+       }
+
+
+       if (!quantity) {
+        if (existingCartData[itemsId]) {
+          if (existingCartData[itemsId].quantity > 1) {
+            existingCartData[itemsId].quantity -= 1;
+            cartQuantity -= 1;
+            // console.log("Quantity", quantity)
+          } else {
+            delete existingCartData[itemsId];
+            cartQuantity -= 1;
+          }
+          itemRemoved = true;
+        }
       }
-    }
-  
+    
     if (!itemRemoved) {
       return { error: 'Item not found in cart' }; // Handle item not found
     }
-  
+    
     await this.cartRepository.update({ email: query.email }, {
       cartData: JSON.stringify(existingCartData),
       cartQuantity: cartQuantity,
     });
-  
+    
     return { updatedCart: existingCartData }; // Return updated cart data
+  }    
+  
+// -----------------------------------------CLREA CART -------------------------------------------------
+
+  async clearCart(email: string): Promise<string> {
+    const updatedRows = await this.cartRepository.update(
+      { email: email },
+      { cartData: "{}", cartQuantity: null },
+    );
+
+    if (updatedRows.affected > 0) {
+      return 'Cart cleared successfully';
+    } else {
+      throw new NotFoundException('Cart not found');
+    }
   }
   
-  
-
+// ----------------------------ABANDONED CART REMINDER------------------------------------
 
 
 

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { UserAddress } from 'src/addresses/entities/address.entity'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { CoreEntity } from 'src/common/entities/core.entity'
