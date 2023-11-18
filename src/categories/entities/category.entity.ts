@@ -16,21 +16,25 @@ export class Category extends CoreEntity {
   slug: string;
 
   @ManyToOne(() => Category, { nullable: true })
+  @JoinColumn()
   parent?: Category;
 
   @OneToMany(() => Category, category => category.parent)
+  @JoinColumn()
   children?: Category[];
 
   @Column()
   details?: string;
 
-  @ManyToOne(() => Attachment, { eager: true }) // assuming you want to eagerly load the image
-  image?: Attachment;
+  @OneToOne(() => Attachment)
+  @JoinColumn()
+  image: Attachment;
 
   @Column()
   icon?: string;
 
-  @ManyToOne(() => Type, { eager: true })
+  @ManyToOne(() => Type)
+  @JoinColumn()
   type?: Type;
 
   @ManyToMany(() => Product, product => product.categories)
