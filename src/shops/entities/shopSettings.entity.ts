@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
 import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
 

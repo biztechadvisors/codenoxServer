@@ -1,17 +1,9 @@
-import { Attachment } from 'src/common/entities/attachment.entity'
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { Product } from 'src/products/entities/product.entity'
-import { Type } from 'src/types/entities/type.entity'
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToMany,
-  ManyToOne,
-  OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm'
+/* eslint-disable prettier/prettier */
+import { Attachment } from 'src/common/entities/attachment.entity';
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { Type } from 'src/types/entities/type.entity';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Category extends CoreEntity {
@@ -28,13 +20,14 @@ export class Category extends CoreEntity {
   @JoinColumn()
   parent?: Category
 
-  @ManyToOne(() => Category)
-  children?: Category[]
+  @OneToMany(() => Category, category => category.parent)
+  @JoinColumn()
+  children?: Category[];
 
   @Column()
   details?: string
 
-  @ManyToOne(() => Attachment)
+  @OneToOne(() => Attachment, { eager: true }) // assuming you want to eagerly load the image
   @JoinColumn()
   image?: Attachment
 
@@ -45,9 +38,9 @@ export class Category extends CoreEntity {
   @JoinColumn()
   type?: Type
 
-  @ManyToMany(() => Product, (product) => product.categories)
-  @JoinColumn()
-  products: Product[]
+  @ManyToMany(() => Product, product => product.categories)
+  @JoinTable()
+  products: Product[];
 
   @Column()
   language: string
