@@ -36,8 +36,7 @@ export class User extends CoreEntity {
     @OneToMany(() => Shop, (shop) => shop.owner, { cascade: true })
     shops?: Shop[];
 
-    @ManyToOne(() => Shop, (shop) => shop.staffs, { cascade: true })
-    @JoinColumn()
+    @ManyToOne(() => Shop, (shop) => shop.staffs)
     managed_shop?: Shop;
 
     @Column()

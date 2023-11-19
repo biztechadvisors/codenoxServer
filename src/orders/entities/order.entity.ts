@@ -6,7 +6,7 @@ import { File, Product } from 'src/products/entities/product.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { User } from 'src/users/entities/user.entity';
 import { OrderStatus } from './order-status.entity';
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum PaymentGatewayType {
   STRIPE = 'STRIPE',
@@ -51,16 +51,21 @@ export class Order extends CoreEntity {
   customer_id: number;
   @Column()
   customer_contact: string;
+
   @ManyToOne(() => User, user => user.orders, {
     eager: true,
   })
   customer: User;
+
   @ManyToOne(() => Order, { nullable: true })
   parentOrder: Order;
+
   @OneToMany(() => Order, order => order.parentOrder)
   children?: Order[];
+
   @OneToOne(() => OrderStatus)
   status: OrderStatus;
+
   @Column()
   order_status: OrderStatusType;
   @Column()
@@ -77,28 +82,38 @@ export class Order extends CoreEntity {
   payment_id?: string;
   @Column()
   payment_gateway: PaymentGatewayType;
+
   @ManyToOne(() => Coupon, coupon => coupon.orders)
   coupon?: Coupon;
+
   @ManyToMany(() => Shop)
   shop: Shop;
+
   @Column()
   discount?: number;
   @Column()
   delivery_fee: number;
   @Column()
   delivery_time: string;
-  @ManyToMany(() => Product)
+
+  @ManyToMany(() => Product, product => product.orders)
+  @JoinTable()
   products: Product[];
+
   @ManyToMany(() => UserAddress)
   billing_address: UserAddress;
+
   @ManyToMany(() => UserAddress)
   shipping_address: UserAddress;
+
   @Column()
   language: string;
   @Column({ type: "json" })
   translated_languages: string[];
+
   @OneToOne(() => PaymentIntent)
   payment_intent: PaymentIntent;
+
   @Column()
   altered_payment_gateway?: string;
 }
@@ -115,8 +130,10 @@ export class OrderFiles extends CoreEntity {
   order_id?: number;
   @Column()
   customer_id: number;
+
   @OneToOne(() => File)
   file: File;
+
   @OneToOne(() => Product)
   fileable: Product;
 }

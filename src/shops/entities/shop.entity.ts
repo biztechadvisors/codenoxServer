@@ -16,11 +16,9 @@ id: number;
 owner_id: number;
 
 @ManyToOne(() => User, (user) => user.shops)
-@JoinColumn()
 owner: User;
 
 @OneToMany(() => User, (user) => user.managed_shop)
-@JoinColumn()
 staffs?: User[];
 
 @Column()
