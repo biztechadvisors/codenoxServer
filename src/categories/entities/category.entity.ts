@@ -38,7 +38,6 @@ export class Category extends CoreEntity {
   type?: Type;
 
   @ManyToMany(() => Product, product => product.categories)
-  @JoinTable()
   products: Product[];
 
   @Column()
