@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CategoryPaginator, GetCategoriesDto } from './dto/get-categories.dto';
@@ -40,21 +40,21 @@ export class CategoriesService {
   private categories: Category[] = categories;
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-    // Create a new Attachment instance
-    const attachment = this.attachmentRepository.create();
-    // Set the Attachment properties from the CreateCategoryDto
-    attachment.thumbnail = createCategoryDto.image.thumbnail;
-    attachment.original = createCategoryDto.image.original;
     // Save the Attachment instance to the database
-    await this.attachmentRepository.save(attachment);
+    const attachment = await this.attachmentRepository.findOne({ where: { id: createCategoryDto.image_id } });
+    if (!attachment) {
+      // Handle the case when the type is not found
+      throw new Error(`Type with name '${createCategoryDto.image_id}' not found`);
+    }
     // Get the Type entity by name
     const type = await this.typeRepository.findOne({ where: { name: createCategoryDto.type_name } });
     if (!type) {
       // Handle the case when the type is not found
       throw new Error(`Type with name '${createCategoryDto.type_name}' not found`);
     }
+
     // Create a new Category instance
-    const category = this.categoryRepository.create();
+    const category = new Category();
     // Set the Category properties from the CreateCategoryDto
     category.name = createCategoryDto.name as string; // Explicitly type name as a string
     category.slug = await this.convertToSlug(createCategoryDto.name);
@@ -64,10 +64,9 @@ export class CategoriesService {
     category.image = attachment;
     category.icon = createCategoryDto.icon;
     category.language = createCategoryDto.language;
+
     // Save the Category instance to the database
-    await this.categoryRepository.save(category);
-    // Return the saved Category instance
-    return category;
+    return await this.categoryRepository.save(category);
   }
 
   async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
@@ -86,7 +85,7 @@ export class CategoriesService {
       where,
       take: limit,
       skip,
-      relations: ['type']
+      relations: ['type'],
     });
     const url = `/categories?search=${search}&limit=${limit}&parent=${parent}`;
     return {
@@ -108,29 +107,26 @@ export class CategoriesService {
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
-    // Find the Category instance to be updated
     const category = await this.categoryRepository.findOne({
       where: { id },
       relations: ['type', 'image'],
     });
-    // If the Category instance is not found, throw an error
+
     if (!category) {
-      throw new Error('Category not found');
+      throw new NotFoundException('Category not found');
     }
 
-    if (updateCategoryDto.image !== category.image) {
-      // Find categories that reference the image to be deleted
+    if (updateCategoryDto.image && updateCategoryDto.image !== category.image) {
       const referencingCategories = await this.categoryRepository.find({ where: { image: category.image } });
-      // If the image is only referenced by the current category, it's safe to delete
+
       if (referencingCategories.length === 1) {
         const image = category.image;
-        // Set the imageId to null in the category table before deleting the attachment
         category.image = null;
         await this.categoryRepository.save(category);
         await this.attachmentRepository.remove(image);
       }
     }
-    // Set the Category properties from the UpdateCategoryDto
+
     category.name = updateCategoryDto.name;
     category.slug = await this.convertToSlug(updateCategoryDto.name);
     category.type = updateCategoryDto.type;
@@ -140,10 +136,7 @@ export class CategoriesService {
     category.icon = updateCategoryDto.icon;
     category.language = updateCategoryDto.language;
 
-    // Save the Category instance to the database
-    const cat = await this.categoryRepository.save(category);
-    // Return the saved Category instance
-    return cat;
+    return this.categoryRepository.save(category);
   }
 
   async remove(id: number): Promise<void> {
