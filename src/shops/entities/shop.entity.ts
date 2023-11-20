@@ -24,13 +24,11 @@ export class Shop extends CoreEntity {
   @Column()
   owner_id: number
 
-  @ManyToOne(() => User, (user) => user.shops)
-  @JoinColumn()
-  owner: User
+@ManyToOne(() => User, (user) => user.shops)
+owner: User;
 
-  @OneToMany(() => User, (user) => user.managed_shop)
-  @JoinColumn()
-  staffs?: User[]
+@OneToMany(() => User, (user) => user.managed_shop)
+staffs?: User[];
 
   @Column()
   is_active: boolean

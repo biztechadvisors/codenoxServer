@@ -9,7 +9,7 @@ import Fuse from 'fuse.js'
 import { GetShopsDto } from './dto/get-shops.dto'
 import { paginate } from 'src/common/pagination/paginate'
 import { GetStaffsDto } from './dto/get-staffs.dto'
-import { ShopRepository } from './shops.repository'
+import { BalanceRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository } from './shops.repository'
 import { InjectRepository } from '@nestjs/typeorm'
 
 const shops = plainToClass(Shop, shopsJson)
@@ -24,20 +24,29 @@ export class ShopsService {
   constructor(
     @InjectRepository(ShopRepository)
     private shopRepository: ShopRepository,
+    @InjectRepository(BalanceRepository)
+    private balanceRepository: BalanceRepository,
+    @InjectRepository(ShopSettingsRepository)
+    private shopsettingRepository: ShopSettingsRepository,
+    @InjectRepository(PaymentInfoRepository)
+    private paymentInfoRepository: PaymentInfoRepository,
   ) {}
   private shops: Shop[] = []
 
 
   async create(createShopDto: CreateShopDto): Promise<Shop> {
+    if(createShopDto.balance){
+
+    }
     console.log("CreateShop-Data",createShopDto)
     const newShop = new Shop();
     newShop.name = createShopDto.name;
-    newShop.address = createShopDto.address;
+    // newShop.address = createShopDto.address;
     newShop.description = createShopDto.description;
-    newShop.cover_image = createShopDto.cover_image;
-    newShop.logo = createShopDto.logo;
-    newShop.settings = createShopDto.settings;
-    newShop.balance = createShopDto.balance;
+    // newShop.cover_image = createShopDto.cover_image;
+    // newShop.logo = createShopDto.logo;
+    // newShop.settings = createShopDto.settings;
+    // newShop.balance = createShopDto.balance;
     // newShop.categories = createShopDto.categories;
     console.log("first", newShop)
    console.log("first+++++++++++", await this.shopRepository.save(newShop))
