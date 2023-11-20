@@ -24,13 +24,11 @@ export class CategoriesController {
 
   @Get()
   findAll(@Query() query: GetCategoriesDto) {
-    console.log("*************************Category******************")
     return this.categoriesService.getCategories(query);
   }
 
   @Get(':param')
   findOne(@Param('param') param: string, @Query('language') language: string) {
-    console.log("*************************CategoryBySlug******************")
     return this.categoriesService.getCategory(param, language);
   }
 

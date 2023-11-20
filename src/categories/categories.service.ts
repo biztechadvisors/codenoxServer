@@ -69,9 +69,10 @@ export class CategoriesService {
     return await this.categoryRepository.save(category);
   }
 
-  async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
-    let { limit = '10', page = '1', search, parent } = query;
-
+  async getCategories({ limit, page, search, parent }: GetCategoriesDto): Promise<CategoryPaginator> {
+    if (!page) page = 1;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
     // Convert to numbers
     const numericPage = Number(page);
     const numericLimit = Number(limit);
@@ -101,27 +102,34 @@ export class CategoriesService {
       where,
       take: numericLimit,
       skip,
-      relations: ['type', 'image'],
+      relations: ['type', 'image', 'children', 'parent'],
     });
 
+    // Add type_id field to each item in the data array
+    const formattedData = data.map(item => ({ ...item, type_id: item.type.id }));
+    const results = formattedData.slice(startIndex, endIndex);
     const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}`;
-
-    console.log("first*********************", data)
+    console.log("Category-Data-All", results)
     return {
-      data,
-      ...paginate(total, numericPage, numericLimit, data.length, url),
+      data: results,
+      ...paginate(total, numericPage, numericLimit, formattedData.length, url),
     };
   }
+
 
   async getCategory(param: string, language: string): Promise<Category> {
     // Try to parse the param as a number to see if it's an id
     const id = Number(param);
     if (!isNaN(id)) {
       // If it's an id, find the category by id
-      return this.categoryRepository.findOne({ where: { id: id, language: language }, relations: ['type', 'image'] });
+      const cat = this.categoryRepository.findOne({ where: { id: id, language: language }, relations: ['type', 'image'] });
+      console.log("One-Category**", cat)
+      return cat;
     } else {
       // If it's not an id, find the category by slug
-      return this.categoryRepository.findOne({ where: { slug: param, language: language }, relations: ['type', 'image'] });
+      const cat = this.categoryRepository.findOne({ where: { slug: param, language: language }, relations: ['type', 'image'] });
+      console.log("One-Category**", cat)
+      return cat;
     }
   }
 
