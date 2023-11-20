@@ -6,6 +6,7 @@ import {
   // OneToMany,
   // ManyToOne,
   OneToOne,
+  JoinColumn,
 } from 'typeorm'
 import { PaymentInfo, Shop } from './shop.entity'
 
@@ -24,5 +25,6 @@ export class Balance {
   @Column()
   current_balance: number
   @OneToOne(() => PaymentInfo)
+  @JoinColumn()
   payment_info: PaymentInfo
 }
