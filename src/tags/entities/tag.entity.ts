@@ -33,7 +33,6 @@ export class Tag extends CoreEntity {
   type: Type | null;
 
   @ManyToMany(() => Product, product => product.tags)
-  @JoinTable()
   products: Product[];
 
   @Column()

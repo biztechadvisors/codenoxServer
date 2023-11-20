@@ -164,7 +164,7 @@ export class TypesService {
         return this.bannerRepository.save(banner);
       }));
     }
-    
+
 
     // Update other properties
     type.name = updateTypeDto.name;

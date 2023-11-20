@@ -7,7 +7,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
 import { Review } from '../../reviews/entities/review.entity';
-import { Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 enum ProductStatus {
   PUBLISH = 'publish',
@@ -41,31 +41,48 @@ export class Product extends CoreEntity {
   name: string;
   @Column()
   slug: string;
-  @OneToOne(() => Type)
+  @OneToOne(() => Type, { eager: true })
+  @JoinColumn()
   type: Type;
   @Column()
   type_id: number;
   @Column()
   product_type: ProductType;
-  @OneToOne(() => Category, category => category.products)
-  @JoinColumn()
+
+  @ManyToMany(() => Category, category => category.products)
+  @JoinTable()
   categories: Category[];
-  @OneToMany(() => Tag, tag => tag.products)
-  tags?: Tag[];
-  @OneToOne(() => AttributeValue)
+
+  @ManyToMany(() => Tag, tag => tag.products)
+  @JoinTable()
+  tags: Tag[];
+
+  @ManyToMany(() => AttributeValue)
+  @JoinTable()
   variations?: AttributeValue[];
-  @OneToOne(() => Variation)
+
+  @ManyToMany(() => Variation)
+  @JoinTable()
   variation_options?: Variation[];
+
   @OneToOne(() => OrderProductPivot)
+  @JoinColumn()
   pivot?: OrderProductPivot;
-  @OneToMany(() => Order, order => order.products)
-  orders?: Order[];
+
+  @ManyToMany(() => Order, order => order.products)
+  orders: Order[];
+
   @OneToOne(() => Shop)
+  @JoinColumn()
   shop: Shop;
+
   @Column()
   shop_id: number;
+
   @ManyToMany(() => Product)
+  @JoinTable()
   related_products?: Product[];
+
   @Column()
   description: string;
   @Column()
@@ -80,12 +97,15 @@ export class Product extends CoreEntity {
   min_price?: number;
   @Column()
   sku?: string;
+
   @ManyToMany(() => Attachment)
-  @JoinColumn({ name: 'gallery_id' })
+  @JoinTable({ name: 'gallery' })
   gallery?: Attachment[];
+
   @OneToOne(() => Attachment)
   @JoinColumn({ name: 'image_id' })
   image?: Attachment;
+
   @Column()
   status: ProductStatus;
   @Column()
@@ -104,8 +124,10 @@ export class Product extends CoreEntity {
   ratings: number;
   @Column()
   in_wishlist: boolean;
+
   @OneToMany(() => Review, review => review.product)
   my_review?: Review[];
+
   @Column()
   language?: string;
   @Column({ type: "json" })
@@ -128,8 +150,11 @@ export class Variation {
   sale_price?: number;
   @Column()
   quantity: number;
-  @OneToOne(() => VariationOption)
+
+  @ManyToMany(() => VariationOption)
+  @JoinTable()
   options: VariationOption[];
+
 }
 
 @Entity()

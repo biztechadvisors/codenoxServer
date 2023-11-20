@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CategoryPaginator, GetCategoriesDto } from './dto/get-categories.dto';
@@ -70,27 +70,46 @@ export class CategoriesService {
   }
 
   async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
-    const { limit, page, search, parent } = query;
-    const skip = (Number(page) - 1) * limit;
+    let { limit = '10', page = '1', search, parent } = query;
+
+    // Convert to numbers
+    const numericPage = Number(page);
+    const numericLimit = Number(limit);
+
+    // Handle invalid values
+    if (isNaN(numericPage) || isNaN(numericLimit)) {
+      throw new BadRequestException('Page and limit values must be numbers');
+    }
+
+    const skip = (numericPage - 1) * numericLimit;
     const where: { [key: string]: any } = {};
+
     if (search) {
       where['name'] = ILike(`%${search}%`);
     }
-    if (parent === 'null') {
-      where['parent'] = IsNull();
-    } else if (parent) {
-      where['parent'] = parent;
+
+    if (parent) {
+      const parentID = Number(parent);
+      if (!isNaN(parentID)) {
+        where['parent'] = parentID;
+      } else {
+        where['parent'] = { id: parent };
+      }
     }
+
     const [data, total] = await this.categoryRepository.findAndCount({
       where,
-      take: limit,
+      take: numericLimit,
       skip,
-      relations: ['type'],
+      relations: ['type', 'image'],
     });
-    const url = `/categories?search=${search}&limit=${limit}&parent=${parent}`;
+
+    const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}`;
+
+    console.log("first*********************", data)
     return {
       data,
-      ...paginate(total, page, limit, data.length, url),
+      ...paginate(total, numericPage, numericLimit, data.length, url),
     };
   }
 
