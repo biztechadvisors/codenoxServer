@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PartialType } from '@nestjs/swagger'
 import { CreateShopDto } from './create-shop.dto'
 
