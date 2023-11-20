@@ -46,12 +46,14 @@ export class TypesService {
     });
   }
 
+
   async getTypes({ text, search }: GetTypesDto) {
     let data: Type[] = await this.findAll({});
-    const fuse = new Fuse(data, { keys: ['name', 'slug'] }); // adjust this according to your needs
+    const fuse = new Fuse(data, { keys: ['name', 'slug'] });
     if (text?.replace(/%/g, '')) {
       data = fuse.search(text)?.map(({ item }) => item);
     }
+
     if (search) {
       const parseSearchParams = search.split(';');
       const searchText: any = [];
@@ -70,15 +72,18 @@ export class TypesService {
         })
         ?.map(({ item }) => item);
     }
+    console.log("*All-Type*", data)
     return data;
   }
 
+
   async getTypeBySlug(slug: string): Promise<Type> {
-    return await this.typeRepository.findOne({ where: { slug }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
+    const type = await this.typeRepository.findOne({ where: { slug }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
+    console.log("One-Type", type)
+    return type;
   }
 
   async create(data: CreateTypeDto) {
-    console.log("Data-Type", data);
 
     // Create and save TypeSettings
     const typeSettings = this.typeSettingsRepository.create(data.settings);
