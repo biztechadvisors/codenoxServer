@@ -57,12 +57,12 @@ export class Product extends CoreEntity {
   @JoinTable()
   tags: Tag[];
 
-  @OneToOne(() => AttributeValue)
-  @JoinColumn()
+  @ManyToMany(() => AttributeValue)
+  @JoinTable()
   variations?: AttributeValue[];
 
-  @OneToOne(() => Variation)
-  @JoinColumn()
+  @ManyToMany(() => Variation)
+  @JoinTable()
   variation_options?: Variation[];
 
   @OneToOne(() => OrderProductPivot)
