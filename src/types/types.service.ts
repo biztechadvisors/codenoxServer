@@ -42,7 +42,7 @@ export class TypesService {
   async findAll(query: any) {
     return this.typeRepository.find({
       where: query,
-      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image']
+      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'category']
     });
   }
 
@@ -164,7 +164,7 @@ export class TypesService {
         return this.bannerRepository.save(banner);
       }));
     }
-    
+
 
     // Update other properties
     type.name = updateTypeDto.name;

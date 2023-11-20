@@ -31,7 +31,7 @@ export class TypesController {
 
   @Get(':slug')
   getTypeBySlug(@Param('slug') slug: string) {
-    console.log("*************************getTypeBySlug******************")
+    console.log("********************getTypeBySlug******************")
     return this.typesService.getTypeBySlug(slug);
   }
 
