@@ -39,8 +39,10 @@ export class Review extends CoreEntity {
   @JoinColumn()
   user: User;
 
+
   @ManyToOne(() => Product, product => product.my_review)
   product: Product;
+
 
   @ManyToMany(() => Feedback)
   @JoinTable()
