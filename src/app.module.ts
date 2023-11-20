@@ -42,6 +42,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from './mail/mail.module';
+import { Review } from './reviews/entities/review.entity';
 
 @Module({
   imports: [
@@ -112,4 +113,20 @@ import { MailModule } from './mail/mail.module';
   controllers: [],
   providers: [],
 })
-export class AppModule { }
+export class AppModule {
+  updateReview(id: number, updatedReview: Review) {
+    throw new Error('Method not implemented.');
+  }
+  deleteReview(id: number) {
+    throw new Error('Method not implemented.');
+  }
+  createReview(newReview: Review) {
+    throw new Error('Method not implemented.');
+  }
+  getReviewById(id: number) {
+    throw new Error('Method not implemented.');
+  }
+  getAllReviews(): import("./reviews/entities/review.entity").Review[] | PromiseLike<import("./reviews/entities/review.entity").Review[]> {
+    throw new Error('Method not implemented.');
+  }
+}

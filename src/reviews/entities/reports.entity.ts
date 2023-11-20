@@ -1,6 +1,6 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Report extends CoreEntity {
@@ -8,7 +8,8 @@ export class Report extends CoreEntity {
   id: number;
   @Column()
   user_id?: number;
-  @OneToOne(() => User)
+  @ManyToMany(() => User)
+  @JoinTable()
   user: User[];
   @Column()
   model_id: number;

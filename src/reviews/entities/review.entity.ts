@@ -6,7 +6,7 @@ import { Product } from 'src/products/entities/product.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Report } from './reports.entity';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
-import { Column, Entity, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Review extends CoreEntity {
@@ -18,22 +18,38 @@ export class Review extends CoreEntity {
   name: string;
   @Column()
   comment: string;
+
   @OneToOne(() => Shop)
+  @JoinColumn()
   shop: Shop;
+
   @OneToOne(() => Order)
+  @JoinColumn()
   order: Order;
+
   @OneToOne(() => User)
+  @JoinColumn()
   customer: User;
-  @OneToOne(() => Attachment)
+
+  @ManyToMany(() => Attachment)
+  @JoinTable()
   photos: Attachment[];
+
   @OneToOne(() => User)
+  @JoinColumn()
   user: User;
+
   @ManyToOne(() => Product, product => product.my_review)
   product: Product;
+
   @ManyToMany(() => Feedback)
+  @JoinTable()
   feedbacks: Feedback[];
+
   @OneToOne(() => Feedback)
+  @JoinColumn()
   my_feedback: Feedback;
+
   @Column()
   positive_feedbacks_count: number;
   @Column()
@@ -42,8 +58,11 @@ export class Review extends CoreEntity {
   user_id: number;
   @Column()
   product_id: number;
-  @OneToOne(() => Report)
+
+  @ManyToMany(() => Report)
+  @JoinTable()
   abusive_reports: Report[];
+
   @Column()
   shop_id: string;
   @Column()
