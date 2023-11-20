@@ -42,7 +42,7 @@ export class TypesService {
   async findAll(query: any) {
     return this.typeRepository.find({
       where: query,
-      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'category']
+      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image']
     });
   }
 
