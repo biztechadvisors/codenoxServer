@@ -26,12 +26,14 @@ export class TypesController {
 
   @Get()
   findAll(@Query() query: GetTypesDto) {
-    return this.typesService.getTypes(query)
+    console.log("*************************Type******************")
+    return this.typesService.getTypes(query);
   }
 
   @Get(':slug')
   getTypeBySlug(@Param('slug') slug: string) {
-    return this.typesService.getTypeBySlug(slug)
+    console.log("********************getTypeBySlug******************")
+    return this.typesService.getTypeBySlug(slug);
   }
 
   @Put(':id')

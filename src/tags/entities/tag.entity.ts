@@ -1,49 +1,44 @@
 /* eslint-disable prettier/prettier */
-import { Attachment } from 'src/common/entities/attachment.entity'
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { Product } from 'src/products/entities/product.entity'
-import { Type } from 'src/types/entities/type.entity'
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm'
+import { Attachment } from 'src/common/entities/attachment.entity';
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { Type } from 'src/types/entities/type.entity';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Tag extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  name: string
+  name: string;
+
   @Column()
-  slug: string
+  slug: string;
+
   @Column()
-  parent: number
+  parent: number | null;
+
   @Column()
-  details: string
+  details: string;
+
   @OneToOne(() => Attachment)
-  @JoinColumn()
-  image: Attachment
+  @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
+  image: Attachment | null;
+
   @Column()
-  icon: string
-  @OneToOne(() => Type)
+  icon: string;
+
+  @ManyToOne(() => Type, { nullable: true, eager: true })
   @JoinColumn()
-  type: Type
-  @ManyToMany(() => Product, (product) => product.tags)
-  @JoinTable({
-    // Create a join table between Type and Attachment
-    name: 'tag_product',
-    joinColumn: { name: 'tagId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'productId', referencedColumnName: 'id' },
-  })
-  products: Product[]
+  type: Type | null;
+
+  @ManyToMany(() => Product, product => product.tags)
+  products: Product[];
+
   @Column()
-  language: string
+  language: string;
+
   @Column({ type: 'json' })
-  translated_languages: string[]
+  translatedLanguages: string[];
 }

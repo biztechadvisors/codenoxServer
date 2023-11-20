@@ -1,13 +1,8 @@
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { Shop } from 'src/shops/entities/shop.entity'
-import { AttributeValue } from './attribute-value.entity'
-import {
-  Column,
-  Entity,
-  OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm'
+/* eslint-disable prettier/prettier */
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { Shop } from 'src/shops/entities/shop.entity';
+import { AttributeValue } from './attribute-value.entity';
+import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Attribute extends CoreEntity {
@@ -21,7 +16,8 @@ export class Attribute extends CoreEntity {
   shop_id: string
 
   @OneToOne(() => Shop)
-  shop: Shop
+  @JoinColumn()
+  shop: Shop;
 
   @Column()
   slug: string

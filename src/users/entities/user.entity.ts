@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Address } from 'src/addresses/entities/address.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
@@ -44,9 +45,8 @@ export class User extends CoreEntity {
   @OneToMany(() => Shop, (shop) => shop.owner, { cascade: true })
   shops?: Shop[];
 
-  @ManyToOne(() => Shop, (shop) => shop.staffs, { cascade: true })
-  @JoinColumn()
-  managed_shop?: Shop;
+    @ManyToOne(() => Shop, (shop) => shop.staffs)
+    managed_shop?: Shop;
 
   @Column()
   is_active?: boolean = true;

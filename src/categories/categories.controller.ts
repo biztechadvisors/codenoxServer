@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -19,18 +20,19 @@ export class CategoriesController {
 
   @Post()
   create(@Body() createCategoryDto: CreateCategoryDto) {
-    console.log('Body', createCategoryDto)
-    return this.categoriesService.create(createCategoryDto)
+    return this.categoriesService.create(createCategoryDto);
   }
 
   @Get()
   findAll(@Query() query: GetCategoriesDto) {
-    return this.categoriesService.getCategories(query)
+    console.log("*************************Category******************")
+    return this.categoriesService.getCategories(query);
   }
 
   @Get(':param')
   findOne(@Param('param') param: string, @Query('language') language: string) {
-    return this.categoriesService.getCategory(param, language)
+    console.log("*************************CategoryBySlug******************")
+    return this.categoriesService.getCategory(param, language);
   }
 
   @Put(':id')
