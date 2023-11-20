@@ -1,9 +1,10 @@
+/* eslint-disable prettier/prettier */
 import {
   Column,
   Entity,
   PrimaryGeneratedColumn,
-  OneToMany,
-  ManyToOne,
+  // OneToMany,
+  // ManyToOne,
   OneToOne,
 } from 'typeorm'
 import { PaymentInfo, Shop } from './shop.entity'

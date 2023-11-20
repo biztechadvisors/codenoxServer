@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PickType } from '@nestjs/swagger'
 import { Attribute } from '../entities/attribute.entity'
 

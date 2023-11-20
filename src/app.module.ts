@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { MessagesModule } from './messages/messages.module'
 import { Module } from '@nestjs/common'
 import { StripeModule } from 'nestjs-stripe'
