@@ -15,18 +15,20 @@ export class Category extends CoreEntity {
   @Column()
   slug: string;
 
-  @ManyToOne(() => Category, category => category.children)
+  @ManyToOne(() => Category, { nullable: true })
+  @JoinColumn()
   parent?: Category;
 
   @OneToMany(() => Category, category => category.parent)
+  @JoinColumn()
   children?: Category[];
 
   @Column()
   details?: string;
 
-  @ManyToOne(() => Attachment)
+  @OneToOne(() => Attachment)
   @JoinColumn()
-  image?: Attachment;
+  image: Attachment;
 
   @Column()
   icon?: string;
@@ -35,7 +37,7 @@ export class Category extends CoreEntity {
   @JoinColumn()
   type?: Type;
 
-  @OneToMany(() => Product, product => product.categories)
+  @ManyToMany(() => Product, product => product.categories)
   products: Product[];
 
   @Column()
