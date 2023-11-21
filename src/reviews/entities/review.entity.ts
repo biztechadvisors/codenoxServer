@@ -35,8 +35,12 @@ export class Review extends CoreEntity {
   @JoinTable()
   photos: Attachment[];
 
-  @OneToOne(() => User)
-  @JoinColumn()
+  // @OneToOne(() => User)
+  // @JoinColumn()
+  // user: User;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 
 
