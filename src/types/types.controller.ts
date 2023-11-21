@@ -19,19 +19,16 @@ export class TypesController {
 
   @Post()
   create(@Body() createTypeDto: CreateTypeDto) {
-    // console.log("createTypeDto", createTypeDto)
     return this.typesService.create(createTypeDto);
   }
 
   @Get()
   findAll(@Query() query: GetTypesDto) {
-    console.log("*************************Type******************")
     return this.typesService.getTypes(query);
   }
 
   @Get(':slug')
   getTypeBySlug(@Param('slug') slug: string) {
-    console.log("********************getTypeBySlug******************")
     return this.typesService.getTypeBySlug(slug);
   }
 
