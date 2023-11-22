@@ -7,8 +7,8 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
   ManyToOne,
-  ManyToMany,
-  JoinTable,
+  // ManyToMany,
+  // JoinTable,
   JoinColumn,
 } from 'typeorm'
 

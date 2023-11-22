@@ -7,7 +7,7 @@ export class ShopSettings {
   @PrimaryGeneratedColumn()
   id: number
   @OneToOne(() => ShopSocials)
-  socials: ShopSocials[]
+  socials: ShopSocials
   @Column()
   contact: string
   @OneToOne(() => Location)

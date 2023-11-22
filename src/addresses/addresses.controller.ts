@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Controller, Get, Post, Body, Put, Param, Delete } from '@nestjs/common'
 import { AddressesService } from './addresses.service'
 import { CreateAddressDto } from './dto/create-address.dto'
