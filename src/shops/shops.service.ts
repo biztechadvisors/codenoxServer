@@ -9,9 +9,10 @@ import Fuse from 'fuse.js'
 import { GetShopsDto } from './dto/get-shops.dto'
 import { paginate } from 'src/common/pagination/paginate'
 import { GetStaffsDto } from './dto/get-staffs.dto'
-import { BalanceRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository } from './shops.repository'
+import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository, ShopShocialRepository } from './shops.repository'
 import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
+
 
 const shops = plainToClass(Shop, shopsJson)
 const options = {
@@ -31,6 +32,12 @@ export class ShopsService {
     private shopsettingRepository: ShopSettingsRepository,
     @InjectRepository(PaymentInfoRepository)
     private paymentInfoRepository: PaymentInfoRepository,
+    @InjectRepository(AddressRepository)
+    private addressRepository: AddressRepository,
+    @InjectRepository(ShopShocialRepository)
+    private shopSocialRepository: ShopShocialRepository,
+    @InjectRepository(LocationRepository)
+    private locationRepository: LocationRepository,
   ) {}
   private shops: Shop[] = []
 
@@ -40,82 +47,71 @@ export class ShopsService {
   }
 
   async create(createShopDto: CreateShopDto): Promise<Shop> {
-      const newShop = this.shopRepository.create(createShopDto);
-  
 
-    //   if (createShopDto.balance) {
-    //     const newBalance = this.balanceRepository.create(createShopDto.balance);
-    //     const savedBalance = await this.balanceRepository.save(newBalance);
-    
-    //     if (savedBalance && createShopDto.balance.payment_info) {
-    //       const newPaymentInfo = this.paymentInfoRepository.create(createShopDto.balance.payment_info);
-    //       const savedPaymentInfo = await this.paymentInfoRepository.save(newPaymentInfo);
-    //       if (savedPaymentInfo) {
-    //         savedBalance.payment_info = savedPaymentInfo;
-    //         await this.balanceRepository.save(savedBalance);  // Update the balance with the new payment_info
-    //       }
-    //     }
-    // console.log("first", newShop.balance)
-    //     newShop.balance = savedBalance;
-    //   }
-    
-    //   // ... rest of your code
-    //     newShop.name = createShopDto.name;
-    //     newShop.slug = await this.convertToSlug(createShopDto.name);
-    
-    //   const savedShop = await this.shopRepository.save(newShop);
-    
-    //   return savedShop;
-    // }
-    
+      let value: any
+      let value1: any
+      let value2: any
+      const newShop = new Shop()
+      const newshopss = this.shopRepository.create(createShopDto)
 
-
-  //   const newShop = new Shop();
-    
     if (createShopDto.balance) {
-      // newBalance.admin_commission_rate = createBalanceDto.admin_commission_rate
-      // newBalance.total_earnings = createBalanceDto.total_earnings
-      // newBalance.withdrawn_amount = createBalanceDto.withdrawn_amount
-      // newBalance.current_balance = createBalanceDto.current_balance
 
-      //    this.balanceRepository.create(newBalance)
-      console.log("third", createShopDto.balance)
-      const newBalance = this.balanceRepository.create(createShopDto.balance);
-      console.log("forth", newBalance)
-      console.log("fifth", await this.balanceRepository.save(newBalance))
-      // newShop.balance = await this.balanceRepository.save(newBalance);
+       const newBalance = this.balanceRepository.create(createShopDto.balance);
+       const balanceId = await this.balanceRepository.save(newBalance);
+       value = balanceId.id
+
+        if (createShopDto.balance.payment_info) {
+
+          const newPaymentInfo = this.paymentInfoRepository.create(createShopDto.balance.payment_info);
+          newshopss.balance.payment_info = await this.paymentInfoRepository.save(newPaymentInfo);
+         
+        }
+    
     }
 
-   console.log("error")
-    if (createShopDto.balance.payment_info) {
-      console.log("working", createShopDto.balance.payment_info)
-      const newPaymentInfo = this.paymentInfoRepository.create(createShopDto.balance.payment_info);
-      console.log("first", newPaymentInfo)
-      console.log("second", await this.paymentInfoRepository.save(newPaymentInfo))
-      newShop.balance.payment_info = await this.paymentInfoRepository.save(newPaymentInfo);
-     
-      console.log("second", newShop.balance.payment_info)
+    if(createShopDto.address) {
+
+      const newAddress = this.addressRepository.create(createShopDto.address)
+      const addressId = await this.addressRepository.save(newAddress);
+      value1 = addressId
     }
 
+    if(createShopDto.settings) {
 
-   
+      if(createShopDto.settings.socials){
+        const newSocial = this.shopSocialRepository.create(createShopDto.settings.socials)
+        newshopss.settings.socials = await this.shopSocialRepository.save(newSocial)
+        console.log("NewSocial", newSocial)
+        console.log("final submmission", newshopss.settings.socials)
+      }
+       if(createShopDto.settings.location){
+        const newLocation = this.locationRepository.create(createShopDto.settings.location)
+        newshopss.settings.location = await this.locationRepository.save(newLocation)
+        console.log("NewSocial", newLocation)
+        console.log("final submmission", newshopss.settings.location)
+       }
 
-    console.log("CreateShop-Data",createShopDto)
-    // const newShop = new Shop();
+       const newSettings = this.shopsettingRepository.create(createShopDto.settings)
+       console.log("second", newSettings)
+       const settingId = await this.shopsettingRepository.save(newSettings)
+       value2 = settingId.id;
+       console.log("value2", value2)
+       console.log("settingId", settingId, "createShopDto&settings", createShopDto.settings)
+      
+    }
+
     newShop.name = createShopDto.name;
     newShop.slug = await this.convertToSlug(createShopDto.name);
-    // newShop.address = createShopDto.address;
+    newShop.balance = value
     newShop.description = createShopDto.description;
-    // newShop.cover_image = createShopDto.cover_image;
-    // newShop.logo = createShopDto.logo;
-    // newShop.settings = createShopDto.settings;
-    newShop.balance = createShopDto.balance;
-    // newShop.categories = createShopDto.categories;
-    console.log("first", newShop)
-   console.log("first+++++++++++", await this.shopRepository.save(newShop))
+    newShop.cover_image = createShopDto.cover_image
+    newShop.logo = createShopDto.logo
+    newShop.address = value1
+    newShop.settings = value2
+    console.log("create", createShopDto)
+  
+  return await this.shopRepository.save(newShop)
 
-    return newShop;
-    // return this.shops[0]
   }
 
 
