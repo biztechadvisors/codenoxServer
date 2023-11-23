@@ -59,7 +59,7 @@ export class Product extends CoreEntity {
 
   @ManyToMany(() => AttributeValue)
   @JoinTable()
-  variations?: AttributeValue[];
+   variations?: AttributeValue[];
 
   @ManyToMany(() => Variation)
   @JoinTable()
