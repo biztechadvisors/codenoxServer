@@ -36,7 +36,7 @@ export class ShopsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
+  update(@Param('id') id: number, @Body() updateShopDto: UpdateShopDto) {
     return this.shopsService.update(+id, updateShopDto)
   }
 

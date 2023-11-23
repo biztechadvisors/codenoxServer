@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { plainToClass } from 'class-transformer'
 import { CreateShopDto } from './dto/create-shop.dto'
 import { UpdateShopDto } from './dto/update-shop.dto'
@@ -12,6 +12,7 @@ import { GetStaffsDto } from './dto/get-staffs.dto'
 import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository, ShopShocialRepository } from './shops.repository'
 import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
+import { Balance } from './entities/balance.entity'
 
 
 const shops = plainToClass(Shop, shopsJson)
@@ -51,23 +52,11 @@ export class ShopsService {
       let value: any
       let value1: any
       let value2: any
+      let saved: any
+
       const newShop = new Shop()
+      const newBalance = new Balance()
       const newshopss = this.shopRepository.create(createShopDto)
-
-    if (createShopDto.balance) {
-
-       const newBalance = this.balanceRepository.create(createShopDto.balance);
-       const balanceId = await this.balanceRepository.save(newBalance);
-       value = balanceId.id
-
-        if (createShopDto.balance.payment_info) {
-
-          const newPaymentInfo = this.paymentInfoRepository.create(createShopDto.balance.payment_info);
-          newshopss.balance.payment_info = await this.paymentInfoRepository.save(newPaymentInfo);
-         
-        }
-    
-    }
 
     if(createShopDto.address) {
 
@@ -81,36 +70,58 @@ export class ShopsService {
       if(createShopDto.settings.socials){
         const newSocial = this.shopSocialRepository.create(createShopDto.settings.socials)
         newshopss.settings.socials = await this.shopSocialRepository.save(newSocial)
-        console.log("NewSocial", newSocial)
-        console.log("final submmission", newshopss.settings.socials)
+
       }
        if(createShopDto.settings.location){
         const newLocation = this.locationRepository.create(createShopDto.settings.location)
         newshopss.settings.location = await this.locationRepository.save(newLocation)
-        console.log("NewSocial", newLocation)
-        console.log("final submmission", newshopss.settings.location)
+
        }
 
        const newSettings = this.shopsettingRepository.create(createShopDto.settings)
-       console.log("second", newSettings)
        const settingId = await this.shopsettingRepository.save(newSettings)
        value2 = settingId.id;
-       console.log("value2", value2)
-       console.log("settingId", settingId, "createShopDto&settings", createShopDto.settings)
-      
+         
     }
+    
 
     newShop.name = createShopDto.name;
     newShop.slug = await this.convertToSlug(createShopDto.name);
-    newShop.balance = value
     newShop.description = createShopDto.description;
     newShop.cover_image = createShopDto.cover_image
     newShop.logo = createShopDto.logo
     newShop.address = value1
     newShop.settings = value2
-    console.log("create", createShopDto)
   
-  return await this.shopRepository.save(newShop)
+    const shop = await this.shopRepository.save(newShop)
+    
+
+    if (createShopDto.balance) {
+
+
+      if (createShopDto.balance.payment_info) {
+
+        const newPaymentInfo = this.paymentInfoRepository.create(createShopDto.balance.payment_info);
+         saved = await this.paymentInfoRepository.save(newPaymentInfo);
+      }
+
+      newBalance.admin_commission_rate = createShopDto.balance.admin_commission_rate
+      newBalance.current_balance= createShopDto.balance.current_balance
+      newBalance.payment_info = saved.id
+      newBalance.total_earnings =createShopDto.balance.total_earnings
+      newBalance.withdrawn_amount= createShopDto.balance.withdrawn_amount
+      newBalance.shop = shop
+    
+      const balanceId = await this.balanceRepository.save(newBalance);
+      value = balanceId.id
+      console.log(value)
+  }
+    
+
+     newShop.balance = value
+     await this.shopRepository.save(newShop) 
+
+    return shop
 
   }
 
@@ -162,9 +173,91 @@ export class ShopsService {
     return this.shops.find((p) => p.slug === slug)
   }
 
-  update(id: number, updateShopDto: UpdateShopDto) {
-    return this.shops[0]
+  async update(id: number, updateShopDto: UpdateShopDto): Promise<Shop> {
+  console.log("id and data", id, updateShopDto)
+   
+    const existingShop = await this.shopRepository.findOne({ 
+      where: { id: id }, 
+      relations: ["balance", "address", "settings"] 
+    });
+    console.log("existingShop", existingShop)
+    if (existingShop) {
+      // Update existing shop
+      existingShop.name = updateShopDto.name;
+      existingShop.slug = await this.convertToSlug(updateShopDto.name);
+      existingShop.description = updateShopDto.description;
+      existingShop.cover_image = updateShopDto.cover_image;
+      existingShop.logo = updateShopDto.logo;
+      
+       console.log("data", existingShop)
+      // Update related entities
+      if (updateShopDto.balance) {
+
+        const balance = await this.balanceRepository.findOne({where: {id: updateShopDto.balance.id}});
+        console.log("updateBalance++++", balance);
+        if (balance) {
+
+          const updatedBalance = this.balanceRepository.create(updateShopDto.balance);
+          console.log("updateBalance---------", balance.id);
+
+          existingShop.balance = balance;
+          console.log("tryy++++++++++", existingShop.balance, "try-----------", balance)
+          existingShop.balance = await this.balanceRepository.save({ ...existingShop.balance, ...updatedBalance });
+          console.log("balance111", existingShop.balance);
+          
+          if (updateShopDto.balance.payment_info) {
+            const updatedPaymentInfo = this.paymentInfoRepository.create(updateShopDto.balance.payment_info);
+            existingShop.balance.payment_info = await this.paymentInfoRepository.save({ ...existingShop.balance.payment_info, ...updatedPaymentInfo });
+            console.log("payment", existingShop.balance.payment_info);
+          }
+        } else {
+          console.error(`Balance with id ${updateShopDto.balance.id} not found`);
+        }
+      }
+      
+      
+      if (updateShopDto.address) {
+        const updatedAddress = this.addressRepository.create(updateShopDto.address);
+        existingShop.address = await this.addressRepository.save({ ...existingShop.address, ...updatedAddress });
+      console.log("address", existingShop.address)
+      }
+
+      if (updateShopDto.settings) {
+        
+        const setting = await this.shopsettingRepository.findOne({where: {id: updateShopDto.settings.id}});
+ 
+        if(setting) {
+
+          const updatedSettings = this.shopsettingRepository.create(updateShopDto.settings);
+          existingShop.settings = setting
+          existingShop.settings = await this.shopsettingRepository.save({ ...existingShop.settings, ...updatedSettings });
+          console.log("setting", existingShop.settings)
+
+
+          if (updateShopDto.settings.socials) {
+            const updatedSocials = this.shopSocialRepository.create(updateShopDto.settings.socials);
+            existingShop.settings.socials = await this.shopSocialRepository.save({ ...existingShop.settings.socials, ...updatedSocials });
+         console.log("social", existingShop.settings.socials)
+          }
+        
+          if (updateShopDto.settings.location) {
+            const updatedLocation = this.locationRepository.create(updateShopDto.settings.location);
+            existingShop.settings.location = await this.locationRepository.save({ ...existingShop.settings.location, ...updatedLocation });
+          console.log("location", updateShopDto.settings.location)
+          }
+        } else {
+          console.error(`Balance with id ${updateShopDto.settings.id} not found`);
+        }
+      }
+      
+     console.log("final data", existingShop)  
+      return await this.shopRepository.save(existingShop);
+    } else {
+      throw new NotFoundException(`Shop with ID ${id} not found`);
+    }
   }
+  
+  
 
   approve(id: number) {
     return `This action removes a #${id} shop`
