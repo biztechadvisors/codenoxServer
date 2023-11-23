@@ -11,9 +11,14 @@ import {
 import { OrdersService } from './orders.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
+import { OrderStatus } from './entities/order-status.entity'; // Import OrderStatus entity
 
 @Module({
-  imports: [AuthModule, PaymentModule,TypeOrmModule.forFeature([Order])],
+  imports: [
+    AuthModule,
+    PaymentModule,
+    TypeOrmModule.forFeature([Order, OrderStatus]), // Include Order and OrderStatus here
+  ],
   controllers: [
     OrdersController,
     OrderStatusController,

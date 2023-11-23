@@ -116,6 +116,7 @@ export class Order extends CoreEntity {
 
   @Column()
   altered_payment_gateway?: string;
+  customerId: any;
 }
 
 @Entity()
