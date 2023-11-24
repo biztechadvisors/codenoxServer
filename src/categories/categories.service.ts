@@ -80,12 +80,17 @@ export class CategoriesService {
     if (isNaN(numericPage) || isNaN(numericLimit)) {
       throw new BadRequestException('Page and limit values must be numbers');
     }
-
+    
     const skip = (numericPage - 1) * numericLimit;
     const where: { [key: string]: any } = {};
 
     if (search) {
-      where['name'] = ILike(`%${search}%`);
+      // where.typeId = search.split(':')[1];
+      // where['slug'] = ILike(`%${search.split(':')[1]}%`);
+      const type = await this.typeRepository.findOne({ where: { slug: search.split(':')[1] } });
+      if (type) {
+        where['type'] = ILike(`%${type.id}%`);
+      }
     }
 
     if (parent) {
