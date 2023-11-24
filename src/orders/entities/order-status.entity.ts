@@ -1,5 +1,6 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Order } from './order.entity';
 
 @Entity()
 export class OrderStatus extends CoreEntity {
@@ -17,4 +18,7 @@ export class OrderStatus extends CoreEntity {
   language: string;
   @Column({ type: "json" })
   translated_languages: string[];
+  @OneToOne(() => Order, order => order.status)
+  order: Order;
+
 }

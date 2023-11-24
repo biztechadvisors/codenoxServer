@@ -64,6 +64,7 @@ export class Order extends CoreEntity {
   children?: Order[];
 
   @OneToOne(() => OrderStatus)
+  @JoinColumn()
   status: OrderStatus;
 
   @Column()
