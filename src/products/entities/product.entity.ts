@@ -7,18 +7,15 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
 import { Review } from '../../reviews/entities/review.entity';
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
-
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 enum ProductStatus {
   PUBLISH = 'publish',
   DRAFT = 'draft',
 }
-
-enum ProductType {
+export enum ProductType {
   SIMPLE = 'simple',
   VARIABLE = 'variable',
 }
-
 @Entity()
 export class OrderProductPivot {
   @PrimaryGeneratedColumn()
@@ -32,7 +29,6 @@ export class OrderProductPivot {
   @Column()
   subtotal: number;
 }
-
 @Entity()
 export class Product extends CoreEntity {
   @PrimaryGeneratedColumn()
@@ -41,9 +37,11 @@ export class Product extends CoreEntity {
   name: string;
   @Column()
   slug: string;
-  @OneToOne(() => Type, { eager: true })
+
+  @ManyToOne(() => Type, { eager: true })
   @JoinColumn()
   type: Type;
+
   @Column()
   type_id: number;
   @Column()
@@ -53,26 +51,26 @@ export class Product extends CoreEntity {
   @JoinTable()
   categories: Category[];
 
-  @ManyToMany(() => Tag, tag => tag.products)
+  @ManyToMany(() => Tag, tag => tag.products, { cascade: true })
   @JoinTable()
   tags: Tag[];
 
-  @ManyToMany(() => AttributeValue)
+  @ManyToMany(() => AttributeValue, { eager: true })
   @JoinTable()
   variations?: AttributeValue[];
 
-  @ManyToMany(() => Variation)
+  @ManyToMany(() => Variation, { cascade: true })
   @JoinTable()
   variation_options?: Variation[];
 
-  @OneToOne(() => OrderProductPivot)
+  @ManyToOne(() => OrderProductPivot)
   @JoinColumn()
   pivot?: OrderProductPivot;
 
-  @ManyToMany(() => Order, order => order.products)
+  @ManyToMany(() => Order, order => order.products, { eager: true })
   orders: Order[];
 
-  @OneToOne(() => Shop)
+  @ManyToOne(() => Shop, { eager: true })
   @JoinColumn()
   shop: Shop;
 
@@ -133,7 +131,6 @@ export class Product extends CoreEntity {
   @Column({ type: "json" })
   translated_languages?: string[];
 }
-
 @Entity()
 export class Variation {
   @PrimaryGeneratedColumn()
@@ -156,7 +153,6 @@ export class Variation {
   options: VariationOption[];
 
 }
-
 @Entity()
 export class VariationOption {
   @PrimaryGeneratedColumn()
@@ -166,7 +162,6 @@ export class VariationOption {
   @Column()
   value: string;
 }
-
 @Entity()
 export class File extends CoreEntity {
   @PrimaryGeneratedColumn()
