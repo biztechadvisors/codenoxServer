@@ -128,46 +128,53 @@ export class OrdersService {
   }
 
   async getOrders({
-    limit,
-    page,
-    customer_id,
-    tracking_number,
-    search,
-    shop_id,
-  }: GetOrdersDto): Promise<OrderPaginator> {
+  limit,
+  page,
+  customer_id,
+  tracking_number,
+  search,
+  shop_id,
+}: GetOrdersDto): Promise<OrderPaginator> {
+  try {
     if (!page) page = 1;
     if (!limit) limit = 15;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-  
+
     let query = this.orderRepository.createQueryBuilder('order');
-  
+
     // Join OrderStatus entity
     query = query.leftJoinAndSelect('order.status', 'status');
-  
+
     if (shop_id && shop_id !== 'undefined') {
+      // Use the correct column name in the WHERE clause
       query = query.where('order.shop_id = :shopId', { shopId: Number(shop_id) });
     }
-  
+
     if (search) {
       // Add your search conditions based on your entity fields
+      query = query.andWhere('status.statusId = :searchValue', { searchValue: search });
       query = query.andWhere('order.fieldName = :searchValue', { searchValue: search });
     }
-  
+
     const [data, totalCount] = await query
-      // .orderBy('order.created_at', 'DESC')
       .skip(startIndex)
       .take(limit)
       .getManyAndCount();
-  
+
     const results = data.slice(0, endIndex);
     const url = `/orders?search=${search}&limit=${limit}`;
-  
+
     return {
       data: results,
       ...paginate(totalCount, page, limit, results.length, url),
     };
+  } catch (error) {
+    console.error('Error in getOrders:', error);
+    throw error; // rethrow the error for further analysis
   }
+}
+
   
 
   private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
