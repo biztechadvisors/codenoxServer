@@ -102,9 +102,10 @@ export class OrdersService {
         order.payment_status = PaymentStatusType.PENDING;
         break;
     }
-
-    order.children = this.processChildrenOrder(order) || [];
-
+    const initialOrderStatus = await this.createInitialOrderStatus();
+    order.status = initialOrderStatus;
+    order.children = this.processChildrenOrder(order);
+    
     try {
       if (
         [
@@ -138,69 +139,46 @@ export class OrdersService {
     if (!limit) limit = 15;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-
+  
     let query = this.orderRepository.createQueryBuilder('order');
-
+  
+    // Join OrderStatus entity
+    query = query.leftJoinAndSelect('order.status', 'status');
+  
     if (shop_id && shop_id !== 'undefined') {
       query = query.where('order.shop_id = :shopId', { shopId: Number(shop_id) });
     }
-
+  
     if (search) {
       // Add your search conditions based on your entity fields
       query = query.andWhere('order.fieldName = :searchValue', { searchValue: search });
     }
-
+  
     const [data, totalCount] = await query
       // .orderBy('order.created_at', 'DESC')
       .skip(startIndex)
       .take(limit)
       .getManyAndCount();
-
+  
     const results = data.slice(0, endIndex);
     const url = `/orders?search=${search}&limit=${limit}`;
-
+  
     return {
       data: results,
       ...paginate(totalCount, page, limit, results.length, url),
     };
   }
-
-
-  // private async findOrderInDatabase(id: number): Promise<Order> {
-  //   const orderget = await this.orderRepository.findOne({ where: { id: id } });
-  //   if (!orderget) {
-  //     throw new NotFoundException(`Order with ID ${id} not found`);
-  //   }
-  //   return orderget;
-  // }
-
-  // private async findOrderStatusInDatabase(id: number): Promise<OrderStatus> {
-  //   const ordergetStatus = await this.orderStatusRepository.findOne({ where: { id: id } });
-
-  //   if (!ordergetStatus) {
-  //     throw new NotFoundException(`OrderStatus with ID ${id} not found`);
-  //   }
-
-  //   return ordergetStatus;
-  // }
+  
 
   private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
-    const review = await this.findOrderInDatabase(id); // Ensure the review exists
+    const updateOrder = await this.findOrderInDatabase(id); // Ensure the review exists
 
     // Update the review entity with the new data
-    Object.assign(review, updateOrderDto);
+    Object.assign(updateOrder, updateOrderDto);
 
     // Save the updated review to the database
-    return await this.orderRepository.save(review);
+    return await this.orderRepository.save(updateOrder);
   }
-
-  // private async deleteOrderInDatabase(id: number): Promise<void> {
-  //   const delorder = await this.findOrderInDatabase(id);
-  //   await this.orderRepository.remove(delorder);
-  //   const orderStatusDel = await this.findOrderStatusInDatabase(id);
-  //   await this.orderStatusRepository.remove([orderStatusDel])
-  // }
-
 
   async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
     try {
@@ -306,6 +284,21 @@ export class OrdersService {
     return await this.orderStatusRepository.save(orderStatus);
   }
 
+  private async createInitialOrderStatus(): Promise<OrderStatus> {
+    // You can customize this method to create the initial order status as needed
+    const initialStatusData = {
+        name: 'Created',
+        color: '#FFFFFF', // Set the color as needed
+        serial: 1, // Set the serial as needed
+        slug: 'created',
+        language: 'en', // Set the language as needed
+        translated_languages: ['en'], // Set the translated languages as needed
+    };
+
+    const initialOrderStatus = this.orderStatusRepository.create(initialStatusData);
+    return await this.orderStatusRepository.save(initialOrderStatus);
+}
+
   async createOrderStatus(createOrderStatusInput: CreateOrderStatusDto): Promise<OrderStatus> {
     const orderStatus = this.orderStatusRepository.create(createOrderStatusInput);
     return await this.orderStatusRepository.save(orderStatus);
@@ -356,11 +349,15 @@ export class OrdersService {
    * @returns Children[]
    */
   processChildrenOrder(order: Order) {
-    return [...order.children].map((child) => {
-      child.order_status = order.order_status;
-      child.payment_status = order.payment_status;
-      return child;
-    });
+    if (order.children && Array.isArray(order.children)) {
+      return [...order.children].map((child) => {
+        child.order_status = order.order_status;
+        child.payment_status = order.payment_status;
+        return child;
+      });
+    } else {
+      return [];
+    }
   }
   /**
    * This action will return Payment Intent
