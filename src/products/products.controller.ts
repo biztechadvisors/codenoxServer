@@ -17,11 +17,11 @@ import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(private readonly productsService: ProductsService) { }
 
   @Post()
   createProduct(@Body() createProductDto: CreateProductDto) {
-    
+    console.log("****Data-Product****", createProductDto)
     return this.productsService.create(createProductDto);
   }
 
@@ -48,7 +48,7 @@ export class ProductsController {
 
 @Controller('popular-products')
 export class PopularProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(private readonly productsService: ProductsService) { }
   @Get()
   async getProducts(@Query() query: GetPopularProductsDto): Promise<Product[]> {
     return this.productsService.getPopularProducts(query);

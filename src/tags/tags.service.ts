@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { paginate } from 'src/common/pagination/paginate';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { GetTagsDto } from './dto/get-tags.dto';
@@ -8,7 +8,7 @@ import tagsJson from '@db/tags.json';
 import { plainToClass } from 'class-transformer';
 import Fuse from 'fuse.js';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOneOptions, Repository } from 'typeorm';
+import { FindOneOptions, ILike, Repository } from 'typeorm';
 import { TypeRepository } from 'src/types/types.repository';
 import { Type } from 'src/types/entities/type.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
@@ -69,38 +69,52 @@ export class TagsService {
     return await this.tagRepository.save(tag);
   }
 
-  async findAll({ page, limit, search }: GetTagsDto) {
-    let data: Tag[] = await this.tagRepository.find({
+  async findAll(query: GetTagsDto) {
+    let { limit = '10', page = '1', search } = query;
+
+    // Convert to numbers
+    const numericPage = Number(page);
+    const numericLimit = Number(limit);
+
+    // Handle invalid values
+    if (isNaN(numericPage) || isNaN(numericLimit)) {
+      throw new BadRequestException('Page and limit values must be numbers');
+    }
+
+    const skip = (numericPage - 1) * numericLimit;
+    const where: { [key: string]: any } = {};
+
+    if (search) {
+      const type = await this.typeRepository.findOne({ where: { slug: search } });
+      if (type) {
+        where['type'] = ILike(`%${type.id}%`);
+      }
+    }
+
+    const [data, total] = await this.tagRepository.findAndCount({
+      where,
+      take: numericLimit,
+      skip,
       relations: ['image', 'type'],
     });
 
-    if (search) {
-      const parseSearchParams = search.split(';');
-      const searchText: any = [];
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        console.log(value, 'value');
-        // TODO: Temp Solution
-        if (key !== 'slug') {
-          searchText.push({
-            [key]: value,
-          });
-        }
+    // Add type_id field to each item in the data array
+    const formattedData = data.map(item => {
+      let type_id = null;
+      if (item.type) {
+        type_id = item.type.id;
       }
+      return { ...item, type_id: type_id };
+    });
 
-      data = fuse
-        .search({
-          $and: searchText,
-        })
-        ?.map(({ item }) => item);
-    }
-
-    const url = `/tags?limit=${limit}`;
+    const url = `/tags?search=${search}&limit=${numericLimit}`;
+    // console.log("****search-Tag****", formattedData)
     return {
-      data,
-      ...paginate(this.tags.length, page, limit, this.tags.length, url),
+      data: formattedData,
+      ...paginate(total, numericPage, numericLimit, formattedData.length, url),
     };
   }
+
 
   async findOne(param: string, language: string): Promise<Tag> {
     const isNumeric = !isNaN(parseFloat(param)) && isFinite(Number(param));
@@ -121,7 +135,7 @@ export class TagsService {
 
   async update(id: number, updateTagDto: UpdateTagDto): Promise<Tag> {
     const tag = await this.tagRepository.findOne({ where: { id }, relations: ['image', 'type'] });
-    console.log("Ram********************", tag)
+    // console.log("Ram********************", tag)
     if (!tag) {
       throw new Error(`Tag with ID ${id} not found`);
     }

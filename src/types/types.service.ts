@@ -71,7 +71,7 @@ export class TypesService {
         })
         ?.map(({ item }) => item);
     }
-    console.log("*All-Type*", data)
+    // console.log("*All-Type*", data)
     return data;
   }
 
