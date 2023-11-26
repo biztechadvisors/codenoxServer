@@ -13,6 +13,7 @@ import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRe
 import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
 import { Balance } from './entities/balance.entity'
+import { ShopSettings } from './entities/shopSettings.entity'
 
 
 const shops = plainToClass(Shop, shopsJson)
@@ -53,11 +54,16 @@ export class ShopsService {
       let value1: any
       let value2: any
       let saved: any
+      let locationId:any
+      let socialId:any
 
       const newShop = new Shop()
       const newBalance = new Balance()
+      const newSetting = new ShopSettings()
+
       const newshopss = this.shopRepository.create(createShopDto)
 
+ try{
     if(createShopDto.address) {
 
       const newAddress = this.addressRepository.create(createShopDto.address)
@@ -67,20 +73,41 @@ export class ShopsService {
 
     if(createShopDto.settings) {
 
-      if(createShopDto.settings.socials){
-        const newSocial = this.shopSocialRepository.create(createShopDto.settings.socials)
-        newshopss.settings.socials = await this.shopSocialRepository.save(newSocial)
-
-      }
-       if(createShopDto.settings.location){
-        const newLocation = this.locationRepository.create(createShopDto.settings.location)
-        newshopss.settings.location = await this.locationRepository.save(newLocation)
-
-       }
-
        const newSettings = this.shopsettingRepository.create(createShopDto.settings)
-       const settingId = await this.shopsettingRepository.save(newSettings)
+       console.log("newSettings", newSettings.id)
+
+      if(createShopDto.settings.socials){
+    console.log("createShopDto", createShopDto.settings.socials)
+    const socialIds = [];
+    for(const social of createShopDto.settings.socials) {
+        const newSocial = this.shopSocialRepository.create(social)
+        console.log("newsocial", newSocial)
+        socialId = await this.shopSocialRepository.save(newSocial)
+        console.log("newShopSocial", socialId)
+        socialIds.push(socialId.id);
+    }
+    console.log("All socials saved with ids: ", socialIds);
+}
+
+      console.log("chalo")
+       if(createShopDto.settings.location){
+        console.log("createShopDto Setting", createShopDto.settings.location)
+        const newLocation = this.locationRepository.create(createShopDto.settings.location)
+        console.log("newLocation", newLocation)
+        locationId = await this.locationRepository.save(newLocation)
+         console.log("newShop LOcation", locationId)
+       }
+       console.log("working good")
+       
+       newSetting.contact = createShopDto.settings.contact
+       newSetting.website = createShopDto.settings.website
+       newSetting.socials = socialId.id
+       newSetting.location = locationId.id
+
+       const settingId = await this.shopsettingRepository.save(newSetting)
+       console.log("settingId",settingId)
        value2 = settingId.id;
+       console.log("value2", value2)
          
     }
     
@@ -122,6 +149,10 @@ export class ShopsService {
      await this.shopRepository.save(newShop) 
 
     return shop
+
+} catch(error){
+  console.error(error)
+}
 
   }
 
@@ -257,20 +288,20 @@ export class ShopsService {
           console.log("setting++++++++++++++++++++++++++", existingShop.settings)
 
 
-          if (updateShopDto.settings.socials) {
-            console.log("socail+++++++++")
-            const Social = await this.shopSocialRepository.findOne({where: {id: existingShop.settings.socials.id}});
-               console.log("social", Social)
+          // if (updateShopDto.settings.socials) {
+          //   console.log("socail+++++++++")
+          //   const Social = await this.shopSocialRepository.findOne({where: {id: existingShop.settings.socials.id}});
+          //      console.log("social", Social)
 
-            if(Social){
+          //   if(Social){
 
-              const updatedSocials = this.shopSocialRepository.create(updateShopDto.settings.socials);
-              existingShop.settings.socials = Social
-              existingShop.settings.socials = await this.shopSocialRepository.save({ ...existingShop.settings.socials, ...updatedSocials });
-              console.log("social", existingShop.settings.socials)
+          //     const updatedSocials = this.shopSocialRepository.create(updateShopDto.settings.socials);
+          //     existingShop.settings.socials = Social[]
+          //     existingShop.settings.socials = await this.shopSocialRepository.save({ ...existingShop.settings.socials, ...updatedSocials });
+          //     console.log("social", existingShop.settings.socials)
 
-            }
-          }
+          //   }
+          // }
         
           if (updateShopDto.settings.location) {
 
