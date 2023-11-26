@@ -10,7 +10,7 @@ export class ShopSettings {
   website: string
   @OneToOne(() => ShopSocials)
   @JoinColumn()
-  socials: ShopSocials
+  socials: ShopSocials[]
   @Column()
   contact: string
   @OneToOne(() => Location)
