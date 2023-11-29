@@ -15,7 +15,8 @@ export class Category extends CoreEntity {
   @Column()
   slug: string;
 
-  @ManyToOne(() => Category, category => category.children)
+  @OneToOne(() => Category, { nullable: true })
+  @JoinColumn()
   parent?: Category;
 
   @OneToMany(() => Category, category => category.parent)
@@ -24,7 +25,7 @@ export class Category extends CoreEntity {
   @Column()
   details?: string;
 
-  @ManyToOne(() => Attachment)
+  @ManyToOne(() => Attachment, { eager: true }) // assuming you want to eagerly load the image
   @JoinColumn()
   image?: Attachment;
 
@@ -35,7 +36,8 @@ export class Category extends CoreEntity {
   @JoinColumn()
   type?: Type;
 
-  @OneToMany(() => Product, product => product.categories)
+  @ManyToMany(() => Product, product => product.categories)
+  @JoinTable()
   products: Product[];
 
   @Column()

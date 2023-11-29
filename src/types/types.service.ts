@@ -47,7 +47,6 @@ export class TypesService {
     });
   }
 
-
   async getTypes({ text, search }: GetTypesDto) {
     let data: Type[] = await this.findAll({});
     const fuse = new Fuse(data, { keys: ['name', 'slug'] });
@@ -73,14 +72,14 @@ export class TypesService {
         })
         ?.map(({ item }) => item);
     }
-    console.log("*All-Type*", data)
+    // console.log("*All-Type*", data)
     return data;
   }
 
 
   async getTypeBySlug(slug: string): Promise<Type> {
     const type = await this.typeRepository.findOne({ where: { slug }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
-    console.log("One-Type", type)
+    // console.log("One-Type", type)
     return type;
   }
 
