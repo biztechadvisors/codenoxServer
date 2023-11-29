@@ -1,5 +1,6 @@
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+/* eslint-disable prettier/prettier */
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class TotalYearSaleByMonth {
@@ -24,7 +25,8 @@ export class Analytics extends CoreEntity {
   @Column()
   totalOrders?: number
   @Column()
-  newCustomers?: number
-  @OneToOne(() => TotalYearSaleByMonth)
-  totalYearSaleByMonth?: TotalYearSaleByMonth[]
+  newCustomers?: number;
+  @ManyToMany(() => TotalYearSaleByMonth)
+  @JoinTable()
+  totalYearSaleByMonth?: TotalYearSaleByMonth[];
 }

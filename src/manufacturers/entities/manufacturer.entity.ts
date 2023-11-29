@@ -1,19 +1,26 @@
-import { CoreEntity } from '../../common/entities/core.entity'
-import { Attachment } from '../../common/entities/attachment.entity'
-import { ShopSocials } from '../../settings/entities/setting.entity'
-import { Type } from '../../types/entities/type.entity'
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+/* eslint-disable prettier/prettier */
+import { CoreEntity } from '../../common/entities/core.entity';
+import { Attachment } from '../../common/entities/attachment.entity';
+import { ShopSocials } from '../../settings/entities/setting.entity';
+import { Type } from '../../types/entities/type.entity';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Manufacturer extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @OneToOne(() => Attachment)
-  cover_image?: Attachment
+  @JoinColumn()
+  cover_image?: Attachment;
+
   @Column()
-  description?: string
+  description?: string;
+
   @OneToOne(() => Attachment)
-  image?: Attachment
+  @JoinColumn()
+  image?: Attachment;
+
   @Column()
   is_approved?: boolean
   @Column()
@@ -21,11 +28,15 @@ export class Manufacturer extends CoreEntity {
   @Column()
   products_count?: number
   @Column()
-  slug?: string
-  @OneToOne(() => ShopSocials)
-  socials?: ShopSocials
+  slug?: string;
+
+  @ManyToOne(() => ShopSocials)
+  socials?: ShopSocials;
+
   @OneToOne(() => Type)
-  type: Type
+  @JoinColumn()
+  type: Type;
+  
   @Column()
   type_id?: string
   @Column()

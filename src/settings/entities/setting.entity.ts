@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
-import { Attachment } from 'src/common/entities/attachment.entity'
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Attachment } from 'src/common/entities/attachment.entity';
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class SmsAdmin {
@@ -28,7 +28,8 @@ export class SeoSettings {
   @Column()
   ogDescription?: string
   @OneToOne(() => Attachment)
-  ogImage?: Attachment
+  @JoinColumn()
+  ogImage?: Attachment;
   @Column()
   twitterHandle?: string
   @Column()
@@ -186,25 +187,25 @@ export class PaymentGateway {
 @Entity()
 export class SmsEvent {
   @PrimaryGeneratedColumn()
-  id: number
-  @OneToOne(() => SmsAdmin)
-  admin: SmsAdmin
-  @OneToOne(() => SmsVendor)
-  vendor: SmsVendor
-  @OneToOne(() => SmsCustomer)
-  customer: SmsCustomer
+  id: number;
+  @ManyToOne(() => SmsAdmin)
+  admin: SmsAdmin;
+  @ManyToOne(() => SmsVendor)
+  vendor: SmsVendor;
+  @ManyToOne(() => SmsCustomer)
+  customer: SmsCustomer;
 }
 
 @Entity()
 export class EmailEvent {
   @PrimaryGeneratedColumn()
-  id: number
-  @OneToOne(() => EmailAdmin)
-  admin: EmailAdmin
-  @OneToOne(() => EmailVendor)
-  vendor: EmailVendor
-  @OneToOne(() => EmailCustomer)
-  customer: EmailCustomer
+  id: number;
+  @ManyToOne(() => EmailAdmin)
+  admin: EmailAdmin;
+  @ManyToOne(() => EmailVendor)
+  vendor: EmailVendor;
+  @ManyToOne(() => EmailCustomer)
+  customer: EmailCustomer;
 }
 
 @Entity()
@@ -240,13 +241,14 @@ export class Location {
 @Entity()
 export class ContactDetails {
   @PrimaryGeneratedColumn()
-  id: number
-  @OneToOne(() => ShopSocials)
-  socials: ShopSocials[]
+  id: number;
+  @ManyToMany(() => ShopSocials)
+  @JoinTable()
+  socials: ShopSocials[];
   @Column()
-  contact: string
-  @OneToOne(() => Location)
-  location: Location
+  contact: string;
+  @ManyToOne(() => Location)
+  location: Location;
   @Column()
   website: string
 }
@@ -254,23 +256,24 @@ export class ContactDetails {
 @Entity()
 export class SettingsOptions {
   @PrimaryGeneratedColumn()
-  id: number
-  @OneToOne(() => ContactDetails)
-  contactDetails: ContactDetails
+  id: number;
+  @ManyToOne(() => ContactDetails)
+  contactDetails: ContactDetails;
   @Column()
-  currency: string
-  @OneToOne(() => CurrencyOptions)
-  currencyOptions: CurrencyOptions
+  currency: string;
+  @ManyToOne(() => CurrencyOptions)
+  currencyOptions: CurrencyOptions;
   @Column()
   currencyToWalletRatio: number
   @Column()
   defaultAi: string
   @Column()
-  defaultPaymentGateway: string
-  @OneToOne(() => DeliveryTime)
-  deliveryTime: DeliveryTime[]
-  @OneToOne(() => EmailEvent)
-  emailEvent: EmailEvent
+  defaultPaymentGateway: string;
+  @ManyToMany(() => DeliveryTime)
+  @JoinTable()
+  deliveryTime: DeliveryTime[];
+  @ManyToOne(() => EmailEvent)
+  emailEvent: EmailEvent;
   @Column()
   freeShipping: boolean
   @Column({ type: 'float' })
@@ -278,21 +281,22 @@ export class SettingsOptions {
   @Column()
   guestCheckout: boolean
   @Column()
-  isProductReview: boolean
-  @OneToOne(() => LogoSettings)
-  logo: LogoSettings
+  isProductReview: boolean;
+  @ManyToOne(() => LogoSettings)
+  logo: LogoSettings;
   @Column()
   maximumQuestionLimit: number
   @Column()
   maxShopDistance: number
   @Column()
-  minimumOrderAmount: number
-  @OneToOne(() => PaymentGateway)
-  paymentGateway: PaymentGateway[]
-  @OneToOne(() => SeoSettings)
-  seo: SeoSettings
-  @OneToOne(() => ServerInfo)
-  server_info: ServerInfo
+  minimumOrderAmount: number;
+  @ManyToMany(() => PaymentGateway)
+  @JoinTable()
+  paymentGateway: PaymentGateway[];
+  @ManyToOne(() => SeoSettings)
+  seo: SeoSettings;
+  @ManyToOne(() => ServerInfo)
+  server_info: ServerInfo;
   @Column()
   shippingClass: number
   @Column()
@@ -300,9 +304,9 @@ export class SettingsOptions {
   @Column()
   siteSubtitle: string
   @Column()
-  siteTitle: string
-  @OneToOne(() => SmsEvent)
-  smsEvent: SmsEvent
+  siteTitle: string;
+  @ManyToOne(() => SmsEvent)
+  smsEvent: SmsEvent;
   @Column()
   StripeCardOnly: boolean
   @Column()
@@ -324,9 +328,9 @@ export class SettingsOptions {
 @Entity()
 export class Setting extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
-  @OneToOne(() => SettingsOptions)
-  options: SettingsOptions
+  id: number;
+  @ManyToOne(() => SettingsOptions)
+  options: SettingsOptions;
   @Column()
   language: string
   @Column({ type: 'json' })

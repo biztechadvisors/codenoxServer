@@ -55,7 +55,7 @@ export class ShopsService {
       let value2: any
       let saved: any
       let locationId:any
-      let socialId:any
+      const socialIds = [];
 
       const newShop = new Shop()
       const newBalance = new Balance()
@@ -78,17 +78,20 @@ export class ShopsService {
 
       if(createShopDto.settings.socials){
     console.log("createShopDto", createShopDto.settings.socials)
-    const socialIds = [];
+   
     for(const social of createShopDto.settings.socials) {
         const newSocial = this.shopSocialRepository.create(social)
         console.log("newsocial", newSocial)
-        socialId = await this.shopSocialRepository.save(newSocial)
+      const  socialId = await this.shopSocialRepository.save(newSocial)
         console.log("newShopSocial", socialId)
+       
         socialIds.push(socialId.id);
+        newSetting.socials = socialIds
+        console.log("dekjoo", newSetting.socials )
     }
     console.log("All socials saved with ids: ", socialIds);
 }
-
+      
       console.log("chalo")
        if(createShopDto.settings.location){
         console.log("createShopDto Setting", createShopDto.settings.location)
@@ -97,17 +100,19 @@ export class ShopsService {
         locationId = await this.locationRepository.save(newLocation)
          console.log("newShop LOcation", locationId)
        }
-       console.log("working good")
+       console.log("working good", socialIds)
        
        newSetting.contact = createShopDto.settings.contact
        newSetting.website = createShopDto.settings.website
-       newSetting.socials = socialId.id
+       newSetting.socials = socialIds
        newSetting.location = locationId.id
 
        const settingId = await this.shopsettingRepository.save(newSetting)
        console.log("settingId",settingId)
        value2 = settingId.id;
        console.log("value2", value2)
+
+       
          
     }
     
@@ -119,6 +124,7 @@ export class ShopsService {
     newShop.logo = createShopDto.logo
     newShop.address = value1
     newShop.settings = value2
+
   
     const shop = await this.shopRepository.save(newShop)
     

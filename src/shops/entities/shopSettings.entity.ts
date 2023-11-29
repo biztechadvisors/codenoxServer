@@ -1,20 +1,25 @@
 /* eslint-disable prettier/prettier */
 import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
-import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
 
 @Entity()
 export class ShopSettings {
   @PrimaryGeneratedColumn()
   id: number
-  @Column()
-  website: string
-  @OneToOne(() => ShopSocials)
-  @JoinColumn()
+  @ManyToMany(() => ShopSocials)
+  @JoinTable()
   socials: ShopSocials[]
   @Column()
   contact: string
-  @OneToOne(() => Location)
-  @JoinColumn()
+  @ManyToOne(() => Location)
   location: Location
-
+  @Column()
+  website: string
 }
