@@ -42,6 +42,8 @@ import {
 } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, UpdateResult } from 'typeorm';
+import { AddressRepository } from 'src/addresses/addresses.repository';
+import { Address } from 'src/addresses/entities/address.entity';
 
 const orders = plainToClass(Order, ordersJson);
 const paymentIntents = plainToClass(PaymentIntent, paymentIntentJson);
@@ -72,8 +74,11 @@ export class OrdersService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderStatus)
     private readonly orderStatusRepository: Repository<OrderStatus>,
+    // @InjectRepository(AddressRepository)
+    // private readonly AddressRepository: Repository<Address>,
   ) { }
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
+    console.log("first", createOrderInput)
     const order = plainToClass(Order, createOrderInput);
 
     // Set the order type and payment type
@@ -102,17 +107,14 @@ export class OrdersService {
         order.payment_status = PaymentStatusType.PENDING;
         break;
     }
+
     const initialOrderStatus = await this.createInitialOrderStatus();
     order.status = initialOrderStatus;
     order.children = this.processChildrenOrder(order);
-    
+
     try {
       if (
-        [
-          PaymentGatewayType.STRIPE,
-          PaymentGatewayType.PAYPAL,
-          PaymentGatewayType.RAZORPAY,
-        ].includes(paymentGatewayType)
+        [PaymentGatewayType.STRIPE, PaymentGatewayType.PAYPAL, PaymentGatewayType.RAZORPAY].includes(paymentGatewayType)
       ) {
         const paymentIntent = await this.processPaymentIntent(order, this.setting);
         order.payment_intent = paymentIntent;
@@ -128,54 +130,54 @@ export class OrdersService {
   }
 
   async getOrders({
-  limit,
-  page,
-  customer_id,
-  tracking_number,
-  search,
-  shop_id,
-}: GetOrdersDto): Promise<OrderPaginator> {
-  try {
-    if (!page) page = 1;
-    if (!limit) limit = 15;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
+    limit,
+    page,
+    customer_id,
+    tracking_number,
+    search,
+    shop_id,
+  }: GetOrdersDto): Promise<OrderPaginator> {
+    try {
+      if (!page) page = 1;
+      if (!limit) limit = 15;
+      const startIndex = (page - 1) * limit;
+      const endIndex = page * limit;
 
-    let query = this.orderRepository.createQueryBuilder('order');
+      let query = this.orderRepository.createQueryBuilder('order');
 
-    // Join OrderStatus entity
-    query = query.leftJoinAndSelect('order.status', 'status');
+      // Join OrderStatus entity
+      query = query.leftJoinAndSelect('order.status', 'status');
 
-    if (shop_id && shop_id !== 'undefined') {
-      // Use the correct column name in the WHERE clause
-      query = query.where('order.shop_id = :shopId', { shopId: Number(shop_id) });
+      if (shop_id && shop_id !== 'undefined') {
+        // Use the correct column name in the WHERE clause
+        query = query.where('order.shop_id = :shopId', { shopId: Number(shop_id) });
+      }
+
+      if (search) {
+        // Add your search conditions based on your entity fields
+        query = query.andWhere('status.statusId = :searchValue', { searchValue: search });
+        query = query.andWhere('order.fieldName = :searchValue', { searchValue: search });
+      }
+
+      const [data, totalCount] = await query
+        .skip(startIndex)
+        .take(limit)
+        .getManyAndCount();
+
+      const results = data.slice(0, endIndex);
+      const url = `/orders?search=${search}&limit=${limit}`;
+
+      return {
+        data: results,
+        ...paginate(totalCount, page, limit, results.length, url),
+      };
+    } catch (error) {
+      console.error('Error in getOrders:', error);
+      throw error; // rethrow the error for further analysis
     }
-
-    if (search) {
-      // Add your search conditions based on your entity fields
-      query = query.andWhere('status.statusId = :searchValue', { searchValue: search });
-      query = query.andWhere('order.fieldName = :searchValue', { searchValue: search });
-    }
-
-    const [data, totalCount] = await query
-      .skip(startIndex)
-      .take(limit)
-      .getManyAndCount();
-
-    const results = data.slice(0, endIndex);
-    const url = `/orders?search=${search}&limit=${limit}`;
-
-    return {
-      data: results,
-      ...paginate(totalCount, page, limit, results.length, url),
-    };
-  } catch (error) {
-    console.error('Error in getOrders:', error);
-    throw error; // rethrow the error for further analysis
   }
-}
 
-  
+
 
   private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
     const updateOrder = await this.findOrderInDatabase(id); // Ensure the review exists
@@ -218,7 +220,7 @@ export class OrdersService {
       for (const searchParam of parseSearchParams) {
         const [key, value] = searchParam.split(':');
         // Update the query conditions based on your entity fields
-        query = query.andWhere(`orderStatus.${key} = :value`, { value });
+        // query = query.andWhere(`orderStatus.${key} = :value`, { value });
       }
     }
 
@@ -236,11 +238,9 @@ export class OrdersService {
     };
   }
 
-
   async getOrderStatus(param: string, language: string): Promise<OrderStatus> {
     return this.orderStatusRepository.findOne({ where: { slug: param } });
   }
-
 
   async update(id: number, updateOrderInput: UpdateOrderDto): Promise<Order> {
     return await this.updateOrderInDatabase(id, updateOrderInput);
@@ -260,7 +260,7 @@ export class OrdersService {
     }
 
   }
-  
+
 
   private async findOrderInDatabase(id: number): Promise<Order | undefined> {
     return this.orderRepository.findOne({ where: { id: id } });
@@ -294,17 +294,17 @@ export class OrdersService {
   private async createInitialOrderStatus(): Promise<OrderStatus> {
     // You can customize this method to create the initial order status as needed
     const initialStatusData = {
-        name: 'Created',
-        color: '#FFFFFF', // Set the color as needed
-        serial: 1, // Set the serial as needed
-        slug: 'created',
-        language: 'en', // Set the language as needed
-        translated_languages: ['en'], // Set the translated languages as needed
+      name: 'Created',
+      color: '#FFFFFF', // Set the color as needed
+      serial: 1, // Set the serial as needed
+      slug: 'created',
+      language: 'en', // Set the language as needed
+      translated_languages: ['en'], // Set the translated languages as needed
     };
 
     const initialOrderStatus = this.orderStatusRepository.create(initialStatusData);
     return await this.orderStatusRepository.save(initialOrderStatus);
-}
+  }
 
   async createOrderStatus(createOrderStatusInput: CreateOrderStatusDto): Promise<OrderStatus> {
     const orderStatus = this.orderStatusRepository.create(createOrderStatusInput);
