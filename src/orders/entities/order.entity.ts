@@ -64,6 +64,7 @@ export class Order extends CoreEntity {
   children?: Order[];
 
   @OneToOne(() => OrderStatus)
+  @JoinColumn()
   status: OrderStatus;
 
   @Column()
@@ -86,7 +87,7 @@ export class Order extends CoreEntity {
   @ManyToOne(() => Coupon, coupon => coupon.orders)
   coupon?: Coupon;
 
-  @ManyToMany(() => Shop)
+  @ManyToOne(() => Shop)
   shop: Shop;
 
   @Column()
@@ -100,10 +101,10 @@ export class Order extends CoreEntity {
   @JoinTable()
   products: Product[];
 
-  @ManyToMany(() => UserAddress)
+  @ManyToOne(() => UserAddress)
   billing_address: UserAddress;
 
-  @ManyToMany(() => UserAddress)
+  @ManyToOne(() => UserAddress)
   shipping_address: UserAddress;
 
   @Column()
@@ -111,7 +112,7 @@ export class Order extends CoreEntity {
   @Column({ type: "json" })
   translated_languages: string[];
 
-  @OneToOne(() => PaymentIntent)
+  @ManyToOne(() => PaymentIntent)
   payment_intent: PaymentIntent;
 
   @Column()
@@ -131,9 +132,9 @@ export class OrderFiles extends CoreEntity {
   @Column()
   customer_id: number;
 
-  @OneToOne(() => File)
+  @ManyToOne(() => File)
   file: File;
 
-  @OneToOne(() => Product)
+  @ManyToOne(() => Product)
   fileable: Product;
 }

@@ -1,7 +1,7 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class LatestMessage extends CoreEntity {
@@ -25,10 +25,10 @@ export class Conversation extends CoreEntity {
   unseen: boolean;
   @Column()
   user_id: string;
-  @OneToOne(() => User)
+  @ManyToOne(() => User)
   user: User;
-  @OneToOne(() => Shop)
+  @ManyToOne(() => Shop)
   shop: Shop;
-  @OneToOne(() => LatestMessage)
+  @ManyToOne(() => LatestMessage)
   latest_message: LatestMessage;
 }
