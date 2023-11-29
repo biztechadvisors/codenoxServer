@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Coupon } from '../entities/coupon.entity';
 
 export class VerifyCouponInput {
