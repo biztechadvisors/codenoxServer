@@ -1,6 +1,7 @@
+/* eslint-disable prettier/prettier */
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class SmsAdmin {
@@ -186,11 +187,11 @@ export class PaymentGateway {
 export class SmsEvent {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => SmsAdmin)
+  @ManyToOne(() => SmsAdmin)
   admin: SmsAdmin;
-  @OneToOne(() => SmsVendor)
+  @ManyToOne(() => SmsVendor)
   vendor: SmsVendor;
-  @OneToOne(() => SmsCustomer)
+  @ManyToOne(() => SmsCustomer)
   customer: SmsCustomer;
 }
 
@@ -199,11 +200,11 @@ export class SmsEvent {
 export class EmailEvent {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => EmailAdmin)
+  @ManyToOne(() => EmailAdmin)
   admin: EmailAdmin;
-  @OneToOne(() => EmailVendor)
+  @ManyToOne(() => EmailVendor)
   vendor: EmailVendor;
-  @OneToOne(() => EmailCustomer)
+  @ManyToOne(() => EmailCustomer)
   customer: EmailCustomer;
 }
 
@@ -287,11 +288,13 @@ export class SettingsOptions {
   maxShopDistance: number;
   @Column()
   minimumOrderAmount: number;
-  @OneToOne(() => PaymentGateway)
+  @ManyToMany(() => PaymentGateway)
+  @JoinTable()
   paymentGateway: PaymentGateway[];
-  @OneToOne(() => SeoSettings)
+  @ManyToOne(() => SeoSettings)
   seo: SeoSettings;
   @OneToOne(() => ServerInfo)
+  @JoinColumn()
   server_info: ServerInfo;
   @Column()
   shippingClass: number;
@@ -302,6 +305,7 @@ export class SettingsOptions {
   @Column()
   siteTitle: string;
   @OneToOne(() => SmsEvent)
+  @JoinColumn()
   smsEvent: SmsEvent;
   @Column()
   StripeCardOnly: boolean;
@@ -325,7 +329,8 @@ export class SettingsOptions {
 export class Setting extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => SettingsOptions)
+  @ManyToOne(() => SettingsOptions)
+  @JoinTable()
   options: SettingsOptions;
   @Column()
   language: string;

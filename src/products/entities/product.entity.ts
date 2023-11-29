@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
@@ -9,12 +10,12 @@ import { Type } from 'src/types/entities/type.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-enum ProductStatus {
+export enum ProductStatus {
   PUBLISH = 'publish',
   DRAFT = 'draft',
 }
 
-enum ProductType {
+export enum ProductType {
   SIMPLE = 'simple',
   VARIABLE = 'variable',
 }
@@ -59,7 +60,7 @@ export class Product extends CoreEntity {
 
   @ManyToMany(() => AttributeValue)
   @JoinTable()
-  variations?: AttributeValue[];
+  variations?: AttributeValue;
 
   @ManyToMany(() => Variation)
   @JoinTable()
@@ -150,11 +151,9 @@ export class Variation {
   sale_price?: number;
   @Column()
   quantity: number;
-
   @ManyToMany(() => VariationOption)
   @JoinTable()
   options: VariationOption[];
-
 }
 
 @Entity()
@@ -165,6 +164,8 @@ export class VariationOption {
   name: string;
   @Column()
   value: string;
+  // product: Product;
+  // variation: Variation;
 }
 
 @Entity()
