@@ -1,4 +1,5 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+/* eslint-disable prettier/prettier */
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class PaymentIntentInfo {
@@ -23,7 +24,7 @@ export class PaymentIntent {
   @Column()
   tracking_number: string
   @Column()
-  payment_gateway: string
-  @OneToOne(() => PaymentIntentInfo)
-  payment_intent_info: Partial<PaymentIntentInfo> // Change this line
+  payment_gateway: string;
+  @ManyToOne(() => PaymentIntentInfo)
+  payment_intent_info: Partial<PaymentIntentInfo>; // Change this line
 }

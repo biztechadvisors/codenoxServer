@@ -3,8 +3,6 @@ import {
   Column,
   Entity,
   PrimaryGeneratedColumn,
-  // OneToMany,
-  // ManyToOne,
   OneToOne,
   JoinColumn,
 } from 'typeorm'
@@ -17,7 +15,6 @@ export class Balance {
   @Column()
   admin_commission_rate: number
   @OneToOne(() => Shop, shop => shop.balance)
-  @JoinColumn()
   shop: Shop
   @Column()
   total_earnings: number

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common'
 import { plainToClass } from 'class-transformer'
 import Fuse from 'fuse.js'
@@ -59,8 +60,8 @@ export class WishlistsService {
 
   async create(createWishlistDto: CreateWishlistDto): Promise<Wishlist> {
     const wishlist = new Wishlist()
-    wishlist.user_id = createWishlistDto.user_id
-    console.log('first', wishlist.user_id)
+    // wishlist.user_id = createWishlistDto.user_id
+    // console.log('first', wishlist.user_id)
     wishlist.product_id = createWishlistDto.product_id
     console.log('first', wishlist.product_id)
     wishlist.product = createWishlistDto.product

@@ -1,7 +1,8 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { PaymentGateWay } from './payment-gateway.entity'
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+/* eslint-disable prettier/prettier */
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { PaymentGateWay } from './payment-gateway.entity';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class PaymentMethod extends CoreEntity {
@@ -32,7 +33,7 @@ export class PaymentMethod extends CoreEntity {
   @Column()
   origin?: string
   @Column()
-  verification_check?: string
-  @OneToOne(() => PaymentGateWay)
-  payment_gateways?: PaymentGateWay
+  verification_check?: string;
+  @ManyToOne(() => PaymentGateWay)
+  payment_gateways?: PaymentGateWay;
 }

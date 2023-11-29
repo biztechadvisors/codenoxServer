@@ -1,18 +1,20 @@
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { Product } from 'src/products/entities/product.entity'
-// import { User } from 'src/users/entities/user.entity'
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+/* eslint-disable prettier/prettier */
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { User } from 'src/users/entities/user.entity';
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Wishlist extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
   @Column()
-  user_id: string
+  product_id: string;
 
-  @Column()
-  product_id: string
+  @ManyToMany(() => User)
+  @JoinTable()
+  user: User[];
 
   @ManyToOne(() => Product, (product) => product.in_wishlist)
   product: Product

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Column,
   Entity,
@@ -12,36 +13,34 @@ import { CoreEntity } from 'src/common/entities/core.entity';
 
 @Entity()
 export class Social {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column()
-  type: string;
+    @Column()
+    type: string;
 
-  @Column()
-  link: string;
+    @Column()
+    link: string;
 }
 
 @Entity()
 export class Profile extends CoreEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @ManyToOne(() => Attachment, { cascade: true })
-  @JoinColumn({ name: 'avatarId' })
-  avatar: Attachment;
+    @ManyToOne(() => Attachment, { cascade: true })
+    @JoinColumn({ name: 'avatarId' })
+    avatar: Attachment;
 
-  @Column()
-  bio?: string;
+    @Column()
+    bio?: string;
 
-  @OneToOne(() => Social, { cascade: true })
-  @JoinColumn()
-  socials?: Social;
+    @ManyToOne(() => Social, { cascade: true })
+    socials?: Social;
 
-  @Column()
-  contact?: string;
+    @Column()
+    contact?: string;
 
-  @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
-  @JoinColumn()
-  customer?: User;
+    @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
+    customer?: User;
 }
