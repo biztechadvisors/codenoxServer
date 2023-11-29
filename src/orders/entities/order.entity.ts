@@ -102,17 +102,21 @@ export class Order extends CoreEntity {
   products: Product[];
 
   @ManyToMany(() => UserAddress)
+  @JoinColumn()
   billing_address: UserAddress;
 
   @ManyToMany(() => UserAddress)
+  @JoinColumn()
   shipping_address: UserAddress;
 
   @Column()
   language: string;
+
   @Column({ type: "json" })
   translated_languages: string[];
 
   @OneToOne(() => PaymentIntent)
+  @JoinColumn()
   payment_intent: PaymentIntent;
 
   @Column()
