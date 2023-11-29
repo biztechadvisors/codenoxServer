@@ -105,19 +105,19 @@ export class ProductsService {
       product.gallery = galleryAttachments;
     }
 
-    if (createProductDto.variations) {
-      const attributeValues: AttributeValue[] = [];
+    // if (createProductDto.variations) {
+    //   const attributeValues: AttributeValue[] = [];
 
-      for (const variation of createProductDto.variations) {
-        const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attributeValueId } });
+    //   for (const variation of createProductDto.variations) {
+    //     const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attributeValueId } });
 
-        if (attributeValue) {
-          attributeValues.push(attributeValue);
-        }
-      }
+    //     if (attributeValue) {
+    //       attributeValues.push(attributeValue);
+    //     }
+    //   }
 
-      product.attributeValues = attributeValues;
-    }
+    //   product.attributeValues = attributeValues;
+    // }
 
     if (createProductDto.product_type === 'variable' && createProductDto.variation_options && createProductDto.variation_options.upsert) {
       const variationOPt = [];

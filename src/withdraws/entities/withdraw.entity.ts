@@ -1,6 +1,6 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Withdraw extends CoreEntity {
@@ -12,7 +12,7 @@ export class Withdraw extends CoreEntity {
   status: WithdrawStatus;
   @Column()
   shop_id: number;
-  @OneToOne(() => Shop)
+  @ManyToOne(() => Shop)
   shop: Shop;
   @Column()
   payment_method: string;
