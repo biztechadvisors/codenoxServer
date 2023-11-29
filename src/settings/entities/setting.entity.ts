@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class SmsAdmin {
@@ -28,6 +28,7 @@ export class SeoSettings {
   @Column()
   ogDescription?: string;
   @OneToOne(() => Attachment)
+  @JoinColumn()
   ogImage?: Attachment;
   @Column()
   twitterHandle?: string;
@@ -242,11 +243,12 @@ export class Location {
 export class ContactDetails {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => ShopSocials)
+  @ManyToMany(() => ShopSocials)
+  @JoinTable()
   socials: ShopSocials[];
   @Column()
   contact: string;
-  @OneToOne(() => Location)
+  @ManyToOne(() => Location)
   location: Location;
   @Column()
   website: string;
@@ -256,11 +258,11 @@ export class ContactDetails {
 export class SettingsOptions {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => ContactDetails)
+  @ManyToOne(() => ContactDetails)
   contactDetails: ContactDetails;
   @Column()
   currency: string;
-  @OneToOne(() => CurrencyOptions)
+  @ManyToOne(() => CurrencyOptions)
   currencyOptions: CurrencyOptions;
   @Column()
   currencyToWalletRatio: number;
@@ -268,9 +270,10 @@ export class SettingsOptions {
   defaultAi: string;
   @Column()
   defaultPaymentGateway: string;
-  @OneToOne(() => DeliveryTime)
+  @ManyToMany(() => DeliveryTime)
+  @JoinTable()
   deliveryTime: DeliveryTime[];
-  @OneToOne(() => EmailEvent)
+  @ManyToOne(() => EmailEvent)
   emailEvent: EmailEvent;
   @Column()
   freeShipping: boolean;
@@ -280,7 +283,7 @@ export class SettingsOptions {
   guestCheckout: boolean;
   @Column()
   isProductReview: boolean;
-  @OneToOne(() => LogoSettings)
+  @ManyToOne(() => LogoSettings)
   logo: LogoSettings;
   @Column()
   maximumQuestionLimit: number;
@@ -293,8 +296,7 @@ export class SettingsOptions {
   paymentGateway: PaymentGateway[];
   @ManyToOne(() => SeoSettings)
   seo: SeoSettings;
-  @OneToOne(() => ServerInfo)
-  @JoinColumn()
+  @ManyToOne(() => ServerInfo)
   server_info: ServerInfo;
   @Column()
   shippingClass: number;
@@ -304,8 +306,7 @@ export class SettingsOptions {
   siteSubtitle: string;
   @Column()
   siteTitle: string;
-  @OneToOne(() => SmsEvent)
-  @JoinColumn()
+  @ManyToOne(() => SmsEvent)
   smsEvent: SmsEvent;
   @Column()
   StripeCardOnly: boolean;
@@ -330,7 +331,6 @@ export class Setting extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
   @ManyToOne(() => SettingsOptions)
-  @JoinTable()
   options: SettingsOptions;
   @Column()
   language: string;

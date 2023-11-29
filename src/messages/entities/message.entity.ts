@@ -2,12 +2,12 @@ import {
   Conversation,
   LatestMessage,
 } from 'src/conversations/entities/conversation.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Message extends LatestMessage {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => Conversation)
+  @ManyToOne(() => Conversation)
   conversation: Conversation;
 }
