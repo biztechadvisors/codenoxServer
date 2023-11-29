@@ -1,6 +1,6 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Attribute } from './attribute.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, FindOperator, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class AttributeValue extends CoreEntity {
@@ -16,6 +16,7 @@ export class AttributeValue extends CoreEntity {
   @Column()
   meta?: string;
 
-  @ManyToOne(() => Attribute, attribute => attribute.values)
+  @ManyToOne(() => Attribute, (attribute) => attribute.values, { onDelete: 'CASCADE' })
   attribute: Attribute;
+  attribute_value_id: number | FindOperator<number>;
 }

@@ -44,6 +44,7 @@ export class Product extends CoreEntity {
 
   @Column()
   type_id: number;
+
   @Column()
   product_type: ProductType;
 
@@ -55,7 +56,7 @@ export class Product extends CoreEntity {
   @JoinTable()
   tags: Tag[];
 
-  @ManyToMany(() => AttributeValue, { eager: true })
+  @ManyToMany(() => AttributeValue, { eager: true, cascade: true })
   @JoinTable()
   variations?: AttributeValue[];
 
@@ -64,21 +65,19 @@ export class Product extends CoreEntity {
   variation_options?: Variation[];
 
   @ManyToOne(() => OrderProductPivot)
-  @JoinColumn()
   pivot?: OrderProductPivot;
 
-  @ManyToMany(() => Order, order => order.products, { eager: true })
+  @ManyToMany(() => Order, order => order.products, { eager: true, cascade: true })
   @JoinTable()
   orders: Order[];
 
   @ManyToOne(() => Shop, { eager: true })
-  @JoinColumn()
   shop: Shop;
 
   @Column()
   shop_id: number;
 
-  @ManyToMany(() => Product)
+  @ManyToMany(() => Product, { cascade: true })
   @JoinTable()
   related_products?: Product[];
 
@@ -97,11 +96,11 @@ export class Product extends CoreEntity {
   @Column()
   sku?: string;
 
-  @ManyToMany(() => Attachment)
+  @ManyToMany(() => Attachment, { cascade: true })
   @JoinTable({ name: 'gallery' })
   gallery?: Attachment[];
 
-  @OneToOne(() => Attachment)
+  @OneToOne(() => Attachment, { cascade: true })
   @JoinColumn({ name: 'image_id' })
   image?: Attachment;
 
@@ -132,6 +131,20 @@ export class Product extends CoreEntity {
   @Column({ type: "json" })
   translated_languages?: string[];
 }
+
+@Entity()
+export class File extends CoreEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column()
+  attachment_id: number;
+  @Column()
+  url: string;
+  @Column()
+  fileable_id: number;
+}
+
+
 @Entity()
 export class Variation {
   @PrimaryGeneratedColumn()
@@ -149,11 +162,15 @@ export class Variation {
   @Column()
   quantity: number;
 
-  @ManyToMany(() => VariationOption)
+  @ManyToMany(() => VariationOption, { cascade: true })
   @JoinTable()
   options: VariationOption[];
 
+  @ManyToOne(() => File)
+  @JoinColumn({ name: 'image_id' })
+  image: File;
 }
+
 @Entity()
 export class VariationOption {
   @PrimaryGeneratedColumn()
@@ -162,15 +179,4 @@ export class VariationOption {
   name: string;
   @Column()
   value: string;
-}
-@Entity()
-export class File extends CoreEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-  @Column()
-  attachment_id: number;
-  @Column()
-  url: string;
-  @Column()
-  fileable_id: number;
 }
