@@ -13,8 +13,6 @@ import {
   JoinColumn,
   OneToMany,
   ManyToOne,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
@@ -60,12 +58,6 @@ export class User extends CoreEntity {
   @JoinColumn()
   orders: Order[];
 
-  // @Column({ type: 'timestamp' })
-  // createdAt: Date;
-
-  @CreateDateColumn()
+  @Column({ type: 'timestamp' })
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updateAt: Date;
 }

@@ -14,6 +14,9 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
 import { Balance } from './entities/balance.entity'
 import { ShopSettings } from './entities/shopSettings.entity'
+import { Settings } from 'http2'
+import { ShopSocials } from 'src/settings/entities/setting.entity'
+import { clearConfigCache } from 'prettier'
 
 
 const shops = plainToClass(Shop, shopsJson)
@@ -55,7 +58,7 @@ export class ShopsService {
       let value2: any
       let saved: any
       let locationId:any
-      const socialIds = [];
+     
 
       const newShop = new Shop()
       const newBalance = new Balance()
@@ -78,18 +81,21 @@ export class ShopsService {
 
       if(createShopDto.settings.socials){
     console.log("createShopDto", createShopDto.settings.socials)
-   
+    const socials: ShopSocials[] = [];
+
     for(const social of createShopDto.settings.socials) {
+
         const newSocial = this.shopSocialRepository.create(social)
         console.log("newsocial", newSocial)
-      const  socialId = await this.shopSocialRepository.save(newSocial)
+        const  socialId = await this.shopSocialRepository.save(newSocial)
         console.log("newShopSocial", socialId)
        
-        socialIds.push(socialId.id);
-        newSetting.socials = socialIds
+        socials.push(socialId);
+       
         console.log("dekjoo", newSetting.socials )
     }
-    console.log("All socials saved with ids: ", socialIds);
+       newSetting.socials = socials
+    console.log("All socials saved with ids: ", socials);
 }
       
       console.log("chalo")
@@ -98,22 +104,22 @@ export class ShopsService {
         const newLocation = this.locationRepository.create(createShopDto.settings.location)
         console.log("newLocation", newLocation)
         locationId = await this.locationRepository.save(newLocation)
-         console.log("newShop LOcation", locationId)
+         console.log("newShop Location", locationId)
        }
-       console.log("working good", socialIds)
+       console.log("working good", newSetting.socials)
        
        newSetting.contact = createShopDto.settings.contact
        newSetting.website = createShopDto.settings.website
-       newSetting.socials = socialIds
+      //  newSetting.socials = socialIds
        newSetting.location = locationId.id
 
        const settingId = await this.shopsettingRepository.save(newSetting)
        console.log("settingId",settingId)
+       const socialIds = settingId.socials.map((social) => social.id);
+      
+       console.log("Array Id", socialIds)
        value2 = settingId.id;
        console.log("value2", value2)
-
-       
-         
     }
     
 
@@ -211,13 +217,13 @@ export class ShopsService {
   }
 
   async update(id: number, updateShopDto: UpdateShopDto): Promise<Shop> {
-  console.log("id and data", id, updateShopDto)
+  // console.log("id and data", id, updateShopDto)
    
     const existingShop = await this.shopRepository.findOne({ 
       where: { id: id }, 
       relations: ["balance", "address", "settings"] 
     });
-    console.log("existingShop", existingShop)
+    // console.log("existingShop", existingShop)
     if (existingShop) {
       // Update existing shop
       existingShop.name = updateShopDto.name;
@@ -225,10 +231,7 @@ export class ShopsService {
       existingShop.description = updateShopDto.description;
       existingShop.cover_image = updateShopDto.cover_image;
       existingShop.logo = updateShopDto.logo;
-      
-       console.log("data", existingShop)
-      // Update related entities
-
+   
 
       if (updateShopDto.address) {
         const updatedAddress = this.addressRepository.create(updateShopDto.address);
@@ -236,9 +239,132 @@ export class ShopsService {
         console.log("address", existingShop.address)
       }
 
+      // if (updateShopDto.balance) {
+      //   try {
+      //     const balance = await this.balanceRepository.findOne({
+      //       where: { id: existingShop.balance.id },
+      //       relations: ['payment_info'],
+      //     });
+      
+      //     console.log("balance Id", balance)
+      //     if (balance) {
+      //       const updatedBalance = this.balanceRepository.create(updateShopDto.balance);
+      
+      //       // Compare properties of balance
+      //       const isBalanceChanged =
+      //         balance.admin_commission_rate !== updatedBalance.admin_commission_rate ||
+      //         balance.total_earnings !== updatedBalance.total_earnings ||
+      //         balance.withdrawn_amount !== updatedBalance.withdrawn_amount ||
+      //         balance.current_balance !== updatedBalance.current_balance;
+      
+      //         console.log("isBalanced", isBalanceChanged)
+      //       if (isBalanceChanged === true) {
+      //         console.log("Balance has changed. Updating...");
+      
+      //         existingShop.balance = await this.balanceRepository.save(updatedBalance);
+      
+      //         console.log("Updated Balance:", existingShop.balance);
+              
+      //       } else {
+      //         console.log("Balance data is the same. No update needed.");
+      //       }
+     
+      //       // Check payment_info
+      //       if (updateShopDto.balance.payment_info) {
+      //         console.log("working")
+      //         const payment = await this.paymentInfoRepository.findOne({
+      //           where: { id: existingShop.balance.payment_info.id },
+      //         });
+      //           console.log("payment id", payment.id)
+      //         if (payment) {
+      //           const updatedPaymentInfo = this.paymentInfoRepository.create(updateShopDto.balance.payment_info);
+      
+      //           console.log("updatedPaymentINFO", updatedPaymentInfo)
+      //           // Compare properties of payment_info
+      //           const isPaymentInfoChanged =
+      //             payment.account !== updatedPaymentInfo.account ||
+      //             payment.email !== updatedPaymentInfo.email ||
+      //             payment.name !== updatedPaymentInfo.name ||
+      //             payment.bank !== updatedPaymentInfo.bank;
+      
+      //           if (isPaymentInfoChanged === true) {
+      //             console.log("PaymentInfo has changed. Updating...");
+      
+      //             existingShop.balance.payment_info = await this.paymentInfoRepository.save(...existingShop.balance.payment_info, ...updatedPaymentInfo);
+      
+      //             console.log("Updated PaymentInfo:", balance.payment_info);
+      //           } else {
+      //             console.log("PaymentInfo data is the same. No update needed.");
+      //           }
+      //         }
+      //       }
+      //     } else {
+      //       console.error(`Balance with id ${updateShopDto.balance.id} not found or Data Already Up to Date`);
+      //     }
+      //   } catch (error) {
+      //     console.error('Error during balance query:', error);
+      //   }
+      // }
+      
+      
+      
+      // if (updateShopDto.settings) {
+
+      //   const setting = await this.shopsettingRepository.findOne({where: {id: existingShop.settings.id}});
+      //    console.log("settingsssssss", setting)
+      //   if(setting) {
+          
+      //     try {
+
+      //     const updatedSettings = this.shopsettingRepository.create(updateShopDto.settings);
+      //     console.log("setting_____________", updatedSettings)
+      //     existingShop.settings = setting
+      //     console.log("+++++++++++++++++++++++", existingShop.settings, setting)
+      //     existingShop.settings = await this.shopsettingRepository.save({ ...existingShop.settings, ...updatedSettings });
+      //     console.log("setting++++++++++++++++++++++++++", existingShop.settings)
+
+
+      //     // if (updateShopDto.settings.socials) {
+      //     //   console.log("socail+++++++++")
+      //     //   const Social = await this.shopSocialRepository.findOne({where: {id: existingShop.settings.socials.id}});
+      //     //      console.log("social", Social)
+
+      //     //   if(Social){
+
+      //     //     const updatedSocials = this.shopSocialRepository.create(updateShopDto.settings.socials);
+      //     //     existingShop.settings.socials = Social[]
+      //     //     existingShop.settings.socials = await this.shopSocialRepository.save({ ...existingShop.settings.socials, ...updatedSocials });
+      //     //     console.log("social", existingShop.settings.socials)
+
+      //     //   }
+      //     // }
+        
+      //     if (updateShopDto.settings.location) {
+
+      //       const Location = await this.locationRepository.findOne({where: {id: existingShop.settings.location.id}});
+      //       console.log("location", Location)
+      //       if(Location){
+
+      //          const updatedLocation = this.locationRepository.create(updateShopDto.settings.location);
+      //          existingShop.settings.location = Location
+      //          existingShop.settings.location = await this.locationRepository.save({ ...existingShop.settings.location, ...updatedLocation });
+      //          console.log("location", updateShopDto.settings.location)
+      //       }
+      //   }
+      //   } catch(error) {
+      //     console.log("Data Already Up to Date.")
+      //   }
+      //   } else {
+      //     console.error(`Setting with id ${updateShopDto.settings.id} not found`);
+      //   }
+      // }
+      
       if (updateShopDto.balance) {
 
-        const balance = await this.balanceRepository.findOne({where: {id: existingShop.balance.id}});
+        const balance = await this.balanceRepository.findOne({
+          where: {id: existingShop.balance.id},
+          relations: ["payment_info"]
+        });
         console.log("updateBalance++++", balance);
 
         if (balance) {
@@ -254,12 +380,19 @@ export class ShopsService {
             existingShop.balance = await this.balanceRepository.save({ ...existingShop.balance, ...updatedBalance });
             console.log("balance111", existingShop.balance);        
           
+          } catch(error) {
+            console.error('Data Already Up to Date')
+          }
+
           if (updateShopDto.balance.payment_info) {
 
-            const payment = await this.paymentInfoRepository.findOne({where: {id: existingShop.balance.payment_info.id}});
-             
+            const payment = await this.paymentInfoRepository.findOne({
+              where: {id: existingShop.balance.payment_info.id}
+            });
+             console.log("burrhhhhh", payment)
             if(payment) {
-
+          
+              try{
               const updatedPaymentInfo = this.paymentInfoRepository.create(updateShopDto.balance.payment_info);
               console.log("paymentUpdate", updatedPaymentInfo)
               existingShop.balance.payment_info = payment
@@ -268,67 +401,15 @@ export class ShopsService {
 
               console.log("payment", existingShop.balance.payment_info);
 
-            }
-          }
-          } catch(error) {
-            console.error('Data Already Up to Date')
-          } 
+              }catch(error){
+                console.log("Data is already up to date.")
+              }
+            }        
+        } 
         } else {
           console.error(`Balance with id ${updateShopDto.balance.id} not found or Data Already Up to Date`);
         }
       }
-      
-      if (updateShopDto.settings) {
-
-        const setting = await this.shopsettingRepository.findOne({where: {id: existingShop.settings.id}});
-         console.log("settingsssssss", setting)
-        if(setting) {
-          
-          try {
-
-          const updatedSettings = this.shopsettingRepository.create(updateShopDto.settings);
-          console.log("setting_____________", updatedSettings)
-          existingShop.settings = setting
-          console.log("+++++++++++++++++++++++", existingShop.settings, setting)
-          existingShop.settings = await this.shopsettingRepository.save({ ...existingShop.settings, ...updatedSettings });
-          console.log("setting++++++++++++++++++++++++++", existingShop.settings)
-
-
-          // if (updateShopDto.settings.socials) {
-          //   console.log("socail+++++++++")
-          //   const Social = await this.shopSocialRepository.findOne({where: {id: existingShop.settings.socials.id}});
-          //      console.log("social", Social)
-
-          //   if(Social){
-
-          //     const updatedSocials = this.shopSocialRepository.create(updateShopDto.settings.socials);
-          //     existingShop.settings.socials = Social[]
-          //     existingShop.settings.socials = await this.shopSocialRepository.save({ ...existingShop.settings.socials, ...updatedSocials });
-          //     console.log("social", existingShop.settings.socials)
-
-          //   }
-          // }
-        
-          if (updateShopDto.settings.location) {
-
-            const Location = await this.locationRepository.findOne({where: {id: existingShop.settings.location.id}});
-            console.log("location", Location)
-            if(Location){
-
-               const updatedLocation = this.locationRepository.create(updateShopDto.settings.location);
-               existingShop.settings.location = Location
-               existingShop.settings.location = await this.locationRepository.save({ ...existingShop.settings.location, ...updatedLocation });
-               console.log("location", updateShopDto.settings.location)
-            }
-        }
-        } catch(error) {
-          console.log("Data Already Up to Date.")
-        }
-        } else {
-          console.error(`Setting with id ${updateShopDto.settings.id} not found`);
-        }
-      }
-      
      console.log("final data", existingShop)  
       return await this.shopRepository.save(existingShop);
     } else {

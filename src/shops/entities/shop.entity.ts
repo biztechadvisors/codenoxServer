@@ -12,8 +12,6 @@ import {
   ManyToOne,
   OneToOne,
   JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm'
 import { Balance } from './balance.entity'
 import { ShopSettings } from './shopSettings.entity'
@@ -69,13 +67,6 @@ export class Shop extends CoreEntity {
     @OneToOne(() => ShopSettings)
     @JoinColumn()
     settings?: ShopSettings;
-
-    @CreateDateColumn()
-     createdAt: Date;
-    
-    @UpdateDateColumn()
-    updateAt: Date;
-    
 }
 
 @Entity()
