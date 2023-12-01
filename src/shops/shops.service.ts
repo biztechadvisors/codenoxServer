@@ -14,9 +14,9 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
 import { Balance } from './entities/balance.entity'
 import { ShopSettings } from './entities/shopSettings.entity'
-import { Settings } from 'http2'
-import { ShopSocials } from 'src/settings/entities/setting.entity'
-import { clearConfigCache } from 'prettier'
+import { Setting, ShopSocials } from 'src/settings/entities/setting.entity'
+import { Social } from 'src/users/entities/profile.entity'
+
 
 
 const shops = plainToClass(Shop, shopsJson)
@@ -80,8 +80,8 @@ export class ShopsService {
        console.log("newSettings", newSettings.id)
 
       if(createShopDto.settings.socials){
-    console.log("createShopDto", createShopDto.settings.socials)
-    const socials: ShopSocials[] = [];
+        console.log("createShopDto", createShopDto.settings.socials)
+        const socials: ShopSocials[] = [];
 
     for(const social of createShopDto.settings.socials) {
 
@@ -91,7 +91,7 @@ export class ShopsService {
         console.log("newShopSocial", socialId)
        
         socials.push(socialId);
-       
+        
         console.log("dekjoo", newSetting.socials )
     }
        newSetting.socials = socials
@@ -238,126 +238,104 @@ export class ShopsService {
         existingShop.address = await this.addressRepository.save({ ...existingShop.address, ...updatedAddress });
         console.log("address", existingShop.address)
       }
+            
+      
+      if (updateShopDto.settings) {
 
-      // if (updateShopDto.balance) {
-      //   try {
-      //     const balance = await this.balanceRepository.findOne({
-      //       where: { id: existingShop.balance.id },
-      //       relations: ['payment_info'],
-      //     });
-      
-      //     console.log("balance Id", balance)
-      //     if (balance) {
-      //       const updatedBalance = this.balanceRepository.create(updateShopDto.balance);
-      
-      //       // Compare properties of balance
-      //       const isBalanceChanged =
-      //         balance.admin_commission_rate !== updatedBalance.admin_commission_rate ||
-      //         balance.total_earnings !== updatedBalance.total_earnings ||
-      //         balance.withdrawn_amount !== updatedBalance.withdrawn_amount ||
-      //         balance.current_balance !== updatedBalance.current_balance;
-      
-      //         console.log("isBalanced", isBalanceChanged)
-      //       if (isBalanceChanged === true) {
-      //         console.log("Balance has changed. Updating...");
-      
-      //         existingShop.balance = await this.balanceRepository.save(updatedBalance);
-      
-      //         console.log("Updated Balance:", existingShop.balance);
-              
-      //       } else {
-      //         console.log("Balance data is the same. No update needed.");
-      //       }
-     
-      //       // Check payment_info
-      //       if (updateShopDto.balance.payment_info) {
-      //         console.log("working")
-      //         const payment = await this.paymentInfoRepository.findOne({
-      //           where: { id: existingShop.balance.payment_info.id },
-      //         });
-      //           console.log("payment id", payment.id)
-      //         if (payment) {
-      //           const updatedPaymentInfo = this.paymentInfoRepository.create(updateShopDto.balance.payment_info);
-      
-      //           console.log("updatedPaymentINFO", updatedPaymentInfo)
-      //           // Compare properties of payment_info
-      //           const isPaymentInfoChanged =
-      //             payment.account !== updatedPaymentInfo.account ||
-      //             payment.email !== updatedPaymentInfo.email ||
-      //             payment.name !== updatedPaymentInfo.name ||
-      //             payment.bank !== updatedPaymentInfo.bank;
-      
-      //           if (isPaymentInfoChanged === true) {
-      //             console.log("PaymentInfo has changed. Updating...");
-      
-      //             existingShop.balance.payment_info = await this.paymentInfoRepository.save(...existingShop.balance.payment_info, ...updatedPaymentInfo);
-      
-      //             console.log("Updated PaymentInfo:", balance.payment_info);
-      //           } else {
-      //             console.log("PaymentInfo data is the same. No update needed.");
-      //           }
-      //         }
-      //       }
-      //     } else {
-      //       console.error(`Balance with id ${updateShopDto.balance.id} not found or Data Already Up to Date`);
-      //     }
-      //   } catch (error) {
-      //     console.error('Error during balance query:', error);
-      //   }
-      // }
-      
-      
-      
-      // if (updateShopDto.settings) {
+        const setting = await this.shopsettingRepository.findOne({
+          where: {id: existingShop.settings.id},
+          relations: ["socials", "location"]
+        });
+         console.log("settingsssssss", setting)
 
-      //   const setting = await this.shopsettingRepository.findOne({where: {id: existingShop.settings.id}});
-      //    console.log("settingsssssss", setting)
-      //   if(setting) {
+        if(setting) {
           
-      //     try {
+          try {
 
-      //     const updatedSettings = this.shopsettingRepository.create(updateShopDto.settings);
-      //     console.log("setting_____________", updatedSettings)
-      //     existingShop.settings = setting
-      //     console.log("+++++++++++++++++++++++", existingShop.settings, setting)
-      //     existingShop.settings = await this.shopsettingRepository.save({ ...existingShop.settings, ...updatedSettings });
-      //     console.log("setting++++++++++++++++++++++++++", existingShop.settings)
+          const updatedSettings = this.shopsettingRepository.create(updateShopDto.settings);
+          console.log("setting_____________", updatedSettings)
+          existingShop.settings = setting
+          console.log("+++++++++++++++++++++++", existingShop.settings, setting)
+          existingShop.settings = await this.shopsettingRepository.save({ ...existingShop.settings, ...updatedSettings });
+          console.log("setting++++++++++++++++++++++++++", existingShop.settings)
 
+        } catch(error) {
+          console.log("ShopSetting Data Already Up to Date.")
+        }
+          if (updateShopDto.settings.socials) {
+            const socials: ShopSocials[] = [];
+            console.log("socail+++++++++")
+            // const existingSocials = await this.shopSocialRepository.findAll({
+            //   where: {
+            //     id: setting.socials,
+            //   },
+            // });
+           
+            for (const updateSocial of updateShopDto.settings.socials) {
+              // Find existing social object by id (if any)
+              const existingSocial = setting.socials.find(
+                (social) => social.id === updateSocial.id
+              );
+                 console.log("newdata", existingSocial)
+              // Update existing social or create new one
+              if (existingSocial) {
+                console.log("existingSocial************", existingSocial)
+                // existingSocial.update(updateSocial);
+               const up = await this.shopSocialRepository.save(existingSocial);
+                console.log("updated", up)
+              } else {
+                // Create new social object
+                const newSocial = this.shopSocialRepository.create({ ...updateSocial });
+                console.log("newSocial???????????", newSocial)
+                const socialId = await this.shopSocialRepository.save(newSocial);
+                console.log("socialID>>>>>>>>>>>>>>>>>>>>>", socialId)
+                socials.push(socialId);
+                console.log("valuessssss", socials)
+                console.log("result", existingShop.settings.socials)
+              }
+            }
+            
+            // const Social = await this.shopSocialRepository.findOne({where: {id: existingShop.settings.socials.id}});
+            //    console.log("social", Social)
 
-      //     // if (updateShopDto.settings.socials) {
-      //     //   console.log("socail+++++++++")
-      //     //   const Social = await this.shopSocialRepository.findOne({where: {id: existingShop.settings.socials.id}});
-      //     //      console.log("social", Social)
+            // if(Social){
 
-      //     //   if(Social){
+            //   const updatedSocials = this.shopSocialRepository.create(updateShopDto.settings.socials);
+            //   existingShop.settings.socials = Social[]
+            //   existingShop.settings.socials = await this.shopSocialRepository.save({ ...existingShop.settings.socials, ...updatedSocials });
+            //   console.log("social", existingShop.settings.socials)
 
-      //     //     const updatedSocials = this.shopSocialRepository.create(updateShopDto.settings.socials);
-      //     //     existingShop.settings.socials = Social[]
-      //     //     existingShop.settings.socials = await this.shopSocialRepository.save({ ...existingShop.settings.socials, ...updatedSocials });
-      //     //     console.log("social", existingShop.settings.socials)
-
-      //     //   }
-      //     // }
+            // }
+          }
+          
         
-      //     if (updateShopDto.settings.location) {
+          if (updateShopDto.settings.location) {
+            
+            const Location = await this.locationRepository.findOne({
+              where: {id: setting.location.id}
+            });
+            console.log("locationPPPPPPPPP", Location.id)
 
-      //       const Location = await this.locationRepository.findOne({where: {id: existingShop.settings.location.id}});
-      //       console.log("location", Location)
-      //       if(Location){
+            if(Location){
 
-      //          const updatedLocation = this.locationRepository.create(updateShopDto.settings.location);
-      //          existingShop.settings.location = Location
-      //          existingShop.settings.location = await this.locationRepository.save({ ...existingShop.settings.location, ...updatedLocation });
-      //          console.log("location", updateShopDto.settings.location)
-      //       }
-      //   }
-      //   } catch(error) {
-      //     console.log("Data Already Up to Date.")
-      //   }
-      //   } else {
-      //     console.error(`Setting with id ${updateShopDto.settings.id} not found`);
-      //   }
-      // }
+               try{
+               console.log("crubbbbbbb", Location)
+               const updatedLocation = this.locationRepository.create(updateShopDto.settings.location);
+               existingShop.settings.location = Location
+               existingShop.settings.location = await this.locationRepository.save({ ...existingShop.settings.location, ...updatedLocation });
+               console.log("location", updateShopDto.settings.location)
+
+            }catch(error){
+
+              console.log("Location Data Already Up to Date")
+            }
+            }
+        }
+        
+        } else {
+          console.error(`Setting with id ${updateShopDto.settings.id} not found`);
+        }
+      }
       
       if (updateShopDto.balance) {
 
@@ -381,13 +359,13 @@ export class ShopsService {
             console.log("balance111", existingShop.balance);        
           
           } catch(error) {
-            console.error('Data Already Up to Date')
+            console.error('Balance Data Already Up to Date')
           }
 
           if (updateShopDto.balance.payment_info) {
 
             const payment = await this.paymentInfoRepository.findOne({
-              where: {id: existingShop.balance.payment_info.id}
+              where: {id: balance.payment_info.id}
             });
              console.log("burrhhhhh", payment)
             if(payment) {
@@ -402,7 +380,7 @@ export class ShopsService {
               console.log("payment", existingShop.balance.payment_info);
 
               }catch(error){
-                console.log("Data is already up to date.")
+                console.log("Payment Data is already up to date.")
               }
             }        
         } 
