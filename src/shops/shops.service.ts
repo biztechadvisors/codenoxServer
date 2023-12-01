@@ -262,52 +262,55 @@ export class ShopsService {
         } catch(error) {
           console.log("ShopSetting Data Already Up to Date.")
         }
+
           if (updateShopDto.settings.socials) {
             const socials: ShopSocials[] = [];
-            console.log("socail+++++++++")
-            // const existingSocials = await this.shopSocialRepository.findAll({
-            //   where: {
-            //     id: setting.socials,
-            //   },
-            // });
-           
+          
             for (const updateSocial of updateShopDto.settings.socials) {
               // Find existing social object by id (if any)
+              console.log("user inserted data", updateShopDto.settings.socials)
               const existingSocial = setting.socials.find(
-                (social) => social.id === updateSocial.id
+                (social) => social.icon === updateSocial.icon
               );
-                 console.log("newdata", existingSocial)
-              // Update existing social or create new one
+              console.log("*******", existingSocial)
+              // Update existing social or create a new one
               if (existingSocial) {
-                console.log("existingSocial************", existingSocial)
-                // existingSocial.update(updateSocial);
-               const up = await this.shopSocialRepository.save(existingSocial);
-                console.log("updated", up)
+                // Update existing social object with new data
+                Object.assign(existingSocial, updateSocial);
+                
+                // Save the updated social object in the database
+                const updatedSocial = await this.shopSocialRepository.save(existingSocial);
+                console.log("Updated Social:", updatedSocial);
+                
+                socials.push(updatedSocial); // Add the updated social object to the array
               } else {
-                // Create new social object
+                // Create a new social object
                 const newSocial = this.shopSocialRepository.create({ ...updateSocial });
-                console.log("newSocial???????????", newSocial)
-                const socialId = await this.shopSocialRepository.save(newSocial);
-                console.log("socialID>>>>>>>>>>>>>>>>>>>>>", socialId)
-                socials.push(socialId);
-                console.log("valuessssss", socials)
-                console.log("result", existingShop.settings.socials)
+          
+                // Save the new social object in the database
+                const savedSocial = await this.shopSocialRepository.save(newSocial);
+                console.log("New Social:", savedSocial);
+          
+                socials.push(savedSocial); // Add the newly created social object to the array
+                console.log("new element",socials)
               }
             }
+          
+            // Update the existingShop settings with the updated socials array
+            existingShop.settings.socials = socials;
+          
+            // Save the updated existingShop in the database
             
-            // const Social = await this.shopSocialRepository.findOne({where: {id: existingShop.settings.socials.id}});
-            //    console.log("social", Social)
-
-            // if(Social){
-
-            //   const updatedSocials = this.shopSocialRepository.create(updateShopDto.settings.socials);
-            //   existingShop.settings.socials = Social[]
-            //   existingShop.settings.socials = await this.shopSocialRepository.save({ ...existingShop.settings.socials, ...updatedSocials });
-            //   console.log("social", existingShop.settings.socials)
-
-            // }
+           
           }
           
+
+          const updatedShop = await this.shopsettingRepository.save(existingShop);
+            console.log("Updated Shop:", updatedShop);
+         
+              const socialIds = updatedShop.settings.socials.map((social) => social.id);
+              console.log("Social IDs:", socialIds);
+
         
           if (updateShopDto.settings.location) {
             

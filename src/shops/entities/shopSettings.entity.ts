@@ -13,7 +13,7 @@ import {
 export class ShopSettings {
   @PrimaryGeneratedColumn()
   id: number
-  @ManyToMany(() => ShopSocials)
+  @ManyToMany(() => ShopSocials, { cascade: true })
   @JoinTable()
   socials: ShopSocials[]
   @Column()
