@@ -14,9 +14,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
 import { Balance } from './entities/balance.entity'
 import { ShopSettings } from './entities/shopSettings.entity'
-import { Setting, ShopSocials } from 'src/settings/entities/setting.entity'
-import { Social } from 'src/users/entities/profile.entity'
-
+import { ShopSocials } from 'src/settings/entities/setting.entity'
 
 
 const shops = plainToClass(Shop, shopsJson)
@@ -212,8 +210,24 @@ export class ShopsService {
     }
   }
 
-  getShop(slug: string): Shop {
-    return this.shops.find((p) => p.slug === slug)
+  async getShop(slug: string ): Promise<Shop | null> {
+
+     try {
+     const existShop = await this.shopRepository.find({
+      where: {slug: slug},
+      relations: ["balance", "address", "settings", "cover_image", "logo"]
+    })
+
+      if(!existShop){
+        return null
+      }
+      console.log("first", existShop)
+      const shop = existShop[0]
+        return shop
+     }catch(error){
+      console.error("Shop Not Found")
+     }
+   
   }
 
   async update(id: number, updateShopDto: UpdateShopDto): Promise<Shop> {
@@ -264,43 +278,38 @@ export class ShopsService {
         }
 
           if (updateShopDto.settings.socials) {
+
             const socials: ShopSocials[] = [];
           
             for (const updateSocial of updateShopDto.settings.socials) {
-              // Find existing social object by id (if any)
+          
               console.log("user inserted data", updateShopDto.settings.socials)
               const existingSocial = setting.socials.find(
                 (social) => social.icon === updateSocial.icon
               );
               console.log("*******", existingSocial)
-              // Update existing social or create a new one
+            
               if (existingSocial) {
-                // Update existing social object with new data
+
                 Object.assign(existingSocial, updateSocial);
                 
-                // Save the updated social object in the database
+
                 const updatedSocial = await this.shopSocialRepository.save(existingSocial);
                 console.log("Updated Social:", updatedSocial);
                 
-                socials.push(updatedSocial); // Add the updated social object to the array
+                socials.push(updatedSocial); 
               } else {
-                // Create a new social object
+               
                 const newSocial = this.shopSocialRepository.create({ ...updateSocial });
-          
-                // Save the new social object in the database
                 const savedSocial = await this.shopSocialRepository.save(newSocial);
                 console.log("New Social:", savedSocial);
           
-                socials.push(savedSocial); // Add the newly created social object to the array
+                socials.push(savedSocial); 
                 console.log("new element",socials)
               }
             }
-          
-            // Update the existingShop settings with the updated socials array
-            existingShop.settings.socials = socials;
-          
-            // Save the updated existingShop in the database
-            
+
+            existingShop.settings.socials = socials;           
            
           }
           

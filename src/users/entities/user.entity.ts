@@ -45,8 +45,8 @@ export class User extends CoreEntity {
   @OneToMany(() => Shop, (shop) => shop.owner, { cascade: true })
   shops?: Shop[];
 
-    @ManyToOne(() => Shop, (shop) => shop.staffs)
-    managed_shop?: Shop;
+  @ManyToOne(() => Shop, (shop) => shop.staffs)
+  managed_shop?: Shop;
 
   @Column()
   is_active?: boolean = true;
@@ -55,7 +55,6 @@ export class User extends CoreEntity {
   address?: Address[];
 
   @OneToMany(() => Order, (order) => order.customer)
-  @JoinColumn()
   orders: Order[];
 
   @Column({ type: 'timestamp' })
