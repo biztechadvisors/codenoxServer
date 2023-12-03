@@ -7,7 +7,7 @@ export class Balance {
     id: number;
     @Column()
     admin_commission_rate: number;
-    @OneToOne(() => Shop)
+    @ManyToOne(() => Shop)
     shop: Shop;
     @Column()
     total_earnings: number;
@@ -15,6 +15,6 @@ export class Balance {
     withdrawn_amount: number;
     @Column()
     current_balance: number;
-    @OneToOne(() => PaymentInfo)
+    @ManyToOne(() => PaymentInfo)
     payment_info: PaymentInfo;
 }

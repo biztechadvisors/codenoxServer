@@ -68,6 +68,7 @@ export class Product extends CoreEntity {
   pivot?: OrderProductPivot;
 
   @ManyToMany(() => Order, order => order.products, { eager: true })
+  @JoinTable()
   orders: Order[];
 
   @ManyToOne(() => Shop, { eager: true })

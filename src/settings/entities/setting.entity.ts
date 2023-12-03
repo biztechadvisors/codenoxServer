@@ -1,6 +1,6 @@
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class SmsAdmin {
@@ -27,6 +27,7 @@ export class SeoSettings {
   @Column()
   ogDescription?: string;
   @OneToOne(() => Attachment)
+  @JoinColumn()
   ogImage?: Attachment;
   @Column()
   twitterHandle?: string;
@@ -186,11 +187,11 @@ export class PaymentGateway {
 export class SmsEvent {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => SmsAdmin)
+  @ManyToOne(() => SmsAdmin)
   admin: SmsAdmin;
-  @OneToOne(() => SmsVendor)
+  @ManyToOne(() => SmsVendor)
   vendor: SmsVendor;
-  @OneToOne(() => SmsCustomer)
+  @ManyToOne(() => SmsCustomer)
   customer: SmsCustomer;
 }
 
@@ -199,11 +200,11 @@ export class SmsEvent {
 export class EmailEvent {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => EmailAdmin)
+  @ManyToOne(() => EmailAdmin)
   admin: EmailAdmin;
-  @OneToOne(() => EmailVendor)
+  @ManyToOne(() => EmailVendor)
   vendor: EmailVendor;
-  @OneToOne(() => EmailCustomer)
+  @ManyToOne(() => EmailCustomer)
   customer: EmailCustomer;
 }
 
@@ -241,11 +242,12 @@ export class Location {
 export class ContactDetails {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => ShopSocials)
+  @ManyToMany(() => ShopSocials)
+  @JoinTable()
   socials: ShopSocials[];
   @Column()
   contact: string;
-  @OneToOne(() => Location)
+  @ManyToOne(() => Location)
   location: Location;
   @Column()
   website: string;
@@ -255,11 +257,11 @@ export class ContactDetails {
 export class SettingsOptions {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => ContactDetails)
+  @ManyToOne(() => ContactDetails)
   contactDetails: ContactDetails;
   @Column()
   currency: string;
-  @OneToOne(() => CurrencyOptions)
+  @ManyToOne(() => CurrencyOptions)
   currencyOptions: CurrencyOptions;
   @Column()
   currencyToWalletRatio: number;
@@ -267,9 +269,10 @@ export class SettingsOptions {
   defaultAi: string;
   @Column()
   defaultPaymentGateway: string;
-  @OneToOne(() => DeliveryTime)
+  @ManyToMany(() => DeliveryTime)
+  @JoinTable()
   deliveryTime: DeliveryTime[];
-  @OneToOne(() => EmailEvent)
+  @ManyToOne(() => EmailEvent)
   emailEvent: EmailEvent;
   @Column()
   freeShipping: boolean;
@@ -279,7 +282,7 @@ export class SettingsOptions {
   guestCheckout: boolean;
   @Column()
   isProductReview: boolean;
-  @OneToOne(() => LogoSettings)
+  @ManyToOne(() => LogoSettings)
   logo: LogoSettings;
   @Column()
   maximumQuestionLimit: number;
@@ -287,11 +290,12 @@ export class SettingsOptions {
   maxShopDistance: number;
   @Column()
   minimumOrderAmount: number;
-  @OneToOne(() => PaymentGateway)
+  @ManyToMany(() => PaymentGateway)
+  @JoinTable()
   paymentGateway: PaymentGateway[];
-  @OneToOne(() => SeoSettings)
+  @ManyToOne(() => SeoSettings)
   seo: SeoSettings;
-  @OneToOne(() => ServerInfo)
+  @ManyToOne(() => ServerInfo)
   server_info: ServerInfo;
   @Column()
   shippingClass: number;
@@ -301,7 +305,7 @@ export class SettingsOptions {
   siteSubtitle: string;
   @Column()
   siteTitle: string;
-  @OneToOne(() => SmsEvent)
+  @ManyToOne(() => SmsEvent)
   smsEvent: SmsEvent;
   @Column()
   StripeCardOnly: boolean;
@@ -325,7 +329,7 @@ export class SettingsOptions {
 export class Setting extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => SettingsOptions)
+  @ManyToOne(() => SettingsOptions)
   options: SettingsOptions;
   @Column()
   language: string;
