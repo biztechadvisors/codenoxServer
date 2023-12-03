@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateTypeDto } from './dto/create-type.dto';
