@@ -31,7 +31,7 @@ export class ShopsController {
   }
 
   @Get(':slug')
-  async getShop(@Param('slug') slug: string) {
+  async getShop(@Param('slug') slug: string ) {
     return this.shopsService.getShop(slug)
   }
 

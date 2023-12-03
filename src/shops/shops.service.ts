@@ -215,15 +215,26 @@ export class ShopsService {
      try {
      const existShop = await this.shopRepository.find({
       where: {slug: slug},
-      relations: ["balance", "address", "settings", "cover_image", "logo"]
+      relations: [
+         "balance",
+         "address",
+         "settings",
+         "cover_image",
+         "logo",
+         "balance.payment_info",
+         "settings.socials",
+         "settings.location"
+        ]
     })
 
       if(!existShop){
-        return null
-      }
-      console.log("first", existShop)
-      const shop = existShop[0]
+       return null        
+      } else {
+        console.log("first", existShop)
+        const shop = existShop[0]
+        console.log("shop data", shop)
         return shop
+      }
      }catch(error){
       console.error("Shop Not Found")
      }
@@ -285,7 +296,7 @@ export class ShopsService {
           
               console.log("user inserted data", updateShopDto.settings.socials)
               const existingSocial = setting.socials.find(
-                (social) => social.icon === updateSocial.icon
+                (social) => social.icon === updateSocial.icon                        
               );
               console.log("*******", existingSocial)
             

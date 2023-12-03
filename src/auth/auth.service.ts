@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import {
   AuthResponse,
@@ -105,6 +106,7 @@ export class AuthService {
   async register(
     createUserInput: RegisterDto,
   ): Promise<{ message: string } | AuthResponse> {
+    
     const emailExist = await this.userRepository.findOne({
       where: { email: createUserInput.email },
     })
