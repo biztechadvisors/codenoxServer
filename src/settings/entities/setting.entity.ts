@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
@@ -295,7 +296,7 @@ export class SettingsOptions {
   paymentGateway: PaymentGateway[];
   @ManyToOne(() => SeoSettings)
   seo: SeoSettings;
-  @ManyToOne(() => ServerInfo)
+  @OneToOne(() => ServerInfo)
   server_info: ServerInfo;
   @Column()
   shippingClass: number;
@@ -305,7 +306,7 @@ export class SettingsOptions {
   siteSubtitle: string;
   @Column()
   siteTitle: string;
-  @ManyToOne(() => SmsEvent)
+  @OneToOne(() => SmsEvent)
   smsEvent: SmsEvent;
   @Column()
   StripeCardOnly: boolean;
@@ -329,7 +330,7 @@ export class SettingsOptions {
 export class Setting extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
-  @ManyToOne(() => SettingsOptions)
+  @OneToOne(() => SettingsOptions)
   options: SettingsOptions;
   @Column()
   language: string;

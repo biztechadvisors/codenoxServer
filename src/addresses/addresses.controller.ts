@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -17,6 +18,7 @@ export class AddressesController {
 
   @Post()
   createAddress(@Body() createAddressDto: CreateAddressDto) {
+    console.log(createAddressDto)
     return this.addressesService.create(createAddressDto);
   }
 
