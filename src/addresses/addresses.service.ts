@@ -1,27 +1,47 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
+import { Address } from './entities/address.entity';
 
 @Injectable()
 export class AddressesService {
-  
-  create(createAddressDto: CreateAddressDto) {
-    return 'This action adds a new address';
+  constructor(
+    @InjectRepository(Address)
+    private readonly addressRepository: Repository<Address>,
+  ) {}
+
+  async create(createAddressDto: CreateAddressDto): Promise<Address> {
+    const address = this.addressRepository.create(createAddressDto);
+    return await this.addressRepository.save(address);
   }
 
-  findAll() {
-    return `This action returns all addresses`;
+  async findAll(): Promise<Address[]> {
+    return await this.addressRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} address`;
+  async findOne(id: number): Promise<Address> {
+    const address = await this.addressRepository.findOne({where:{id}});
+
+    if (!address) {
+      throw new NotFoundException(`Address with ID ${id} not found`);
+    }
+
+    return address;
   }
 
-  update(id: number, updateAddressDto: UpdateAddressDto) {
-    return `This action updates a #${id} address`;
+  async update(id: number, updateAddressDto: UpdateAddressDto): Promise<Address> {
+    await this.findOne(id); // Check if the address exists
+
+    await this.addressRepository.update(id, updateAddressDto);
+
+    return await this.findOne(id); // Return the updated address
   }
 
-  remove(id: number) {
-    return [];
+  async remove(id: number): Promise<void> {
+    await this.findOne(id); // Check if the address exists
+
+    await this.addressRepository.delete(id);
   }
 }
