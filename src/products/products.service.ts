@@ -1,12 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { File, OrderProductPivot, Product, ProductType, Variation, VariationOption } from './entities/product.entity';
 import { paginate } from 'src/common/pagination/paginate';
-import productsJson from '@db/products.json';
-import Fuse from 'fuse.js';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FileRepository, OrderProductPivotRepository, ProductRepository, VariationOptionRepository, VariationRepository } from './products.repository';
@@ -23,8 +21,6 @@ import { Category } from 'src/categories/entities/category.entity';
 import { AttributeValueRepository } from 'src/attributes/attribute.repository';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 
-const products: Product[] = plainToClass(Product, productsJson);
-
 const options = {
   keys: [
     'name',
@@ -38,8 +34,6 @@ const options = {
   ],
   threshold: 0.3,
 };
-
-const fuse = new Fuse(products, options);
 
 @Injectable()
 export class ProductsService {
@@ -58,8 +52,6 @@ export class ProductsService {
     @InjectRepository(File) private readonly fileRepository: FileRepository,
 
   ) { }
-
-  private products: any = products;
 
   async create(createProductDto: CreateProductDto) {
 
@@ -172,7 +164,6 @@ export class ProductsService {
       await this.productRepository.save(product);
     }
 
-
     return product;
   }
 
@@ -218,8 +209,8 @@ export class ProductsService {
       .leftJoinAndSelect('product.tags', 'tags')
       .leftJoinAndSelect('product.related_products', 'related_products')
       .leftJoinAndSelect('product.variations', 'variations')
-      .leftJoinAndSelect('product.variation_options', 'variation_options');
-
+      .leftJoinAndSelect('product.variation_options', 'variation_options')
+      .leftJoinAndSelect('product.gallery', 'gallery');
 
     // Apply pagination limits
     productQueryBuilder.skip(startIndex).take(limit);
@@ -239,14 +230,40 @@ export class ProductsService {
   }
 
   async getProductBySlug(slug: string): Promise<Product | undefined> {
-    // Construct the query builder
-    const productQueryBuilder = this.productRepository.createQueryBuilder('product');
+    // Fetch the product using the slug
+    const product = await this.productRepository.findOne({
+      where: { slug },
+      relations: ['type', 'shop', 'image', 'categories', 'tags', 'gallery', 'related_products', 'variations', 'variation_options'],
+    });
 
-    // Add where condition for slug
-    productQueryBuilder.where('product.slug = :slug', { slug });
+    // Fetch related products using type_id
+    if (product) {
+      const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
+        .where('related_products.type_id = :type_id', { type_id: product.type.id }) // Use related_products.type_id instead of relatedProduct.type.slug
+        .andWhere('related_products.id != :productId', { productId: product.id })
+        .limit(20)
+        .getMany();
 
-    // Set the desired relations to fetch
-    productQueryBuilder
+      product.related_products = relatedProducts;
+    }
+
+    return product;
+  }
+
+  async getPopularProducts(query: GetPopularProductsDto): Promise<Product[]> {
+    const { limit = 10, type_slug, shop_id } = query;
+
+    let productsQueryBuilder = this.productRepository.createQueryBuilder('product');
+
+    if (type_slug) {
+      productsQueryBuilder.where('product.type.slug = :typeSlug', { type_slug });
+    }
+
+    if (shop_id) {
+      productsQueryBuilder.andWhere('product.shop.id = :shopId', { shop_id });
+    }
+
+    productsQueryBuilder
       .leftJoinAndSelect('product.type', 'type')
       .leftJoinAndSelect('product.shop', 'shop')
       .leftJoinAndSelect('product.image', 'image')
@@ -255,34 +272,114 @@ export class ProductsService {
       .leftJoinAndSelect('product.related_products', 'related_products')
       .leftJoinAndSelect('product.variations', 'variations')
       .leftJoinAndSelect('product.variation_options', 'variation_options');
-    // Execute the query and get the product
-    const product = await productQueryBuilder.getOne();
 
-    // Fetch related products
-    if (product) {
-      // const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
-      // .where('related_products.type.slug = :typeSlug', { typeSlug: product.type.slug }) // Use type.type_id instead of relatedProduct.type.slug
-      // .andWhere('related_products.id != :productId', { productId: product.id })
-      // .limit(20)
-      // .getMany();
+    const products = await productsQueryBuilder.limit(limit).getMany();
+    return products;
+  }
 
-      // product.related_products = relatedProducts;
+  async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
+    console.log("Updated-Product", updateProductDto)
+    const product = await this.productRepository.findOne({ where: { id: id }, relations: ['type', 'shop', 'categories', 'tags', 'image', 'gallery', 'variations', 'variation_options'] });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    product.name = updateProductDto.name || product.name;
+    product.slug = updateProductDto.name ? updateProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : product.slug;
+    product.description = updateProductDto.description || product.description;
+    product.product_type = updateProductDto.product_type || product.product_type;
+    product.status = updateProductDto.status || product.status;
+    product.quantity = updateProductDto.quantity || product.quantity;
+    product.unit = updateProductDto.unit || product.unit;
+
+    if (updateProductDto.type_id) {
+      const type = await this.typeRepository.findOne({ where: { id: updateProductDto.type_id } });
+      product.type = type;
+      product.type_id = type.id;
+    }
+
+    if (updateProductDto.shop_id) {
+      const shop = await this.shopRepository.findOne({ where: { id: updateProductDto.shop_id } });
+      product.shop = shop;
+    }
+
+    if (updateProductDto.categories) {
+      const categories = await this.categoryRepository.findByIds(updateProductDto.categories);
+      product.categories = categories;
+    }
+
+    if (updateProductDto.tags) {
+      const tags = await this.tagRepository.findByIds(updateProductDto.tags);
+      product.tags = tags;
+    }
+
+    if (updateProductDto.image) {
+      let image = await this.attachmentRepository.findOne({ where: { id: updateProductDto.image.id } });
+      product.image = image;
+    }
+
+    if (updateProductDto.gallery) {
+      const galleryAttachments = [];
+      for (const galleryImage of updateProductDto.gallery) {
+        let image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
+        galleryAttachments.push(image);
+      }
+      product.gallery = galleryAttachments;
+    }
+
+    if (updateProductDto.variations) {
+      const attributeValues: AttributeValue[] = [];
+      for (const variation of updateProductDto.variations) {
+        const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
+        if (attributeValue) {
+          attributeValues.push(attributeValue);
+        }
+      }
+      product.variations = attributeValues;
+    }
+
+    await this.productRepository.save(product);
+
+    if (updateProductDto.product_type === 'variable' && updateProductDto.variation_options && updateProductDto.variation_options.upsert) {
+      const variationOPt = [];
+      for (const variationDto of updateProductDto.variation_options.upsert) {
+        const newVariation = new Variation();
+        newVariation.title = variationDto.title;
+        newVariation.price = variationDto.price;
+        newVariation.sku = variationDto.sku;
+        newVariation.is_disable = variationDto.is_disable;
+        newVariation.sale_price = variationDto.sale_price;
+        newVariation.quantity = variationDto.quantity;
+        if (variationDto.image) {
+          let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
+          if (!image) {
+            image = new File();
+            image.attachment_id = variationDto.image.id;
+            image.url = variationDto.image.original;
+            image.fileable_id = newVariation.id;
+            await this.fileRepository.save(image);
+          }
+          newVariation.image = image;
+        }
+        const variationOptions = [];
+        for (const option of variationDto.options) {
+          const newVariationOption = new VariationOption();
+          newVariationOption.id = option.id;
+          newVariationOption.name = option.name;
+          newVariationOption.value = option.value;
+          await this.variationOptionRepository.save(newVariationOption);
+          variationOptions.push(newVariationOption);
+        }
+        newVariation.options = variationOptions;
+        await this.variationRepository.save(newVariation);
+        variationOPt.push(newVariation);
+      }
+      product.variation_options = variationOPt;
+      await this.productRepository.save(product);
     }
 
     return product;
-  }
-
-  getPopularProducts({ limit = 10, type_slug }: GetPopularProductsDto): Product[] {
-    let data: any = this.products;
-    if (type_slug) {
-      const searchData = fuse.search(type_slug);
-      data = searchData ? searchData.map(({ item }) => item) : [];
-    }
-    return data.slice(0, limit);
-  }
-
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return this.products[0];
   }
 
   remove(id: number) {

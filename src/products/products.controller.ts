@@ -35,8 +35,10 @@ export class ProductsController {
     return this.productsService.getProductBySlug(slug);
   }
 
+
   @Put(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+    console.log("Update-Product", updateProductDto)
     return this.productsService.update(+id, updateProductDto);
   }
 
