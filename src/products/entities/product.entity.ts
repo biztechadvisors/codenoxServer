@@ -96,7 +96,7 @@ export class Product extends CoreEntity {
   @Column()
   sku?: string;
 
-  @ManyToMany(() => Attachment, { cascade: true })
+  @ManyToMany(() => Attachment, { cascade: true, eager: true })
   @JoinTable({ name: 'gallery' })
   gallery?: Attachment[];
 
@@ -123,7 +123,7 @@ export class Product extends CoreEntity {
   @Column()
   in_wishlist: boolean;
 
-  @OneToMany(() => Review, review => review.product)
+  @OneToMany(() => Review, review => review.product, { eager: true })
   my_review?: Review[];
 
   @Column()
@@ -162,7 +162,7 @@ export class Variation {
   @Column()
   quantity: number;
 
-  @ManyToMany(() => VariationOption, { cascade: true })
+  @ManyToMany(() => VariationOption, { cascade: true, eager: true })
   @JoinTable()
   options: VariationOption[];
 
