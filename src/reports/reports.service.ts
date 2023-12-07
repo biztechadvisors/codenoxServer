@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common'
 import { plainToClass } from 'class-transformer'
 import reportJSON from '@db/reports.json'

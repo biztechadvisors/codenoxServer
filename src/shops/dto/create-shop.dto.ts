@@ -12,6 +12,7 @@ export class CreateShopDto extends PickType(Shop, [
   'logo',
   'settings',
   'balance',
+  'owner',
 ]) {
   categories: number[]
 }
