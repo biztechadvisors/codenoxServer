@@ -2,6 +2,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
 import { AddressType, UserAddress } from '../entities/address.entity'; // Assuming you have AddressType defined
+import { User } from 'src/users/entities/user.entity';
 
 export class CreateAddressDto {
   id:number;
@@ -15,11 +16,7 @@ export class CreateAddressDto {
     zip: string;
   };
   type: AddressType;
-  customer: {
-    id:number
-    name:string
-    email:string
-  };
+  customer: User;
 }
 
 export class GetAddressDto {

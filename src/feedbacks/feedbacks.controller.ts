@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Body,
   Controller,
@@ -10,6 +11,7 @@ import {
 import { CreateFeedBackDto } from './dto/create-feedback.dto';
 import { UpdateFeedBackDto } from './dto/update-feedback.dto';
 import { FeedbackService } from './feedbacks.service';
+import { UpdateQuestionDto } from 'src/questions/dto/update-question.dto';
 
 @Controller('feedbacks')
 export class FeedbackController {
@@ -20,13 +22,11 @@ export class FeedbackController {
     return this.feedbackService.findAllFeedBacks();
   }
 
-  // get single feedback
   @Get(':id')
   find(@Param('id') id: number) {
     return this.feedbackService.findFeedBack(id);
   }
 
-  // create a new feedback
   @Post()
   create(@Body() createFeedBackDto: CreateFeedBackDto) {
     return this.feedbackService.create(createFeedBackDto);
