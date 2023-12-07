@@ -17,6 +17,7 @@ import { Balance } from './balance.entity'
 import { ShopSettings } from './shopSettings.entity'
 
 
+
 @Entity()
 export class Shop extends CoreEntity {
     @PrimaryGeneratedColumn()
@@ -67,6 +68,9 @@ export class Shop extends CoreEntity {
     @OneToOne(() => ShopSettings)
     @JoinColumn()
     settings?: ShopSettings;
+
+    @Column({ type: 'timestamp'})
+    createdAt: Date;
 }
 
 @Entity()

@@ -10,21 +10,23 @@ import {
   Query,
 } from '@nestjs/common'
 import { ShopsService } from './shops.service'
-import { CreateShopDto } from './dto/create-shop.dto'
+import { ApproveShopDto, CreateShopDto } from './dto/create-shop.dto'
 import { UpdateShopDto } from './dto/update-shop.dto'
 import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto'
 import { GetStaffsDto } from './dto/get-staffs.dto'
 import { UserPaginator } from 'src/users/dto/get-users.dto'
+import { Shop } from './entities/shop.entity'
+import { AddStaffDto } from 'src/users/dto/add-staff.dto'
 
 @Controller('shops')
 export class ShopsController {
   constructor(private readonly shopsService: ShopsService) {}
 
   @Post()
-  create(@Body() createShopDto: CreateShopDto) {
-    return this.shopsService.create(createShopDto)
+  create(@Body() addStaffDto: AddStaffDto , createShopDto: CreateShopDto) {
+    return this.shopsService.create(addStaffDto,createShopDto)
   }
-
+ 
   @Get()
   async getShops(@Query() query: GetShopsDto): Promise<ShopPaginator> {
     return this.shopsService.getShops(query)
@@ -46,7 +48,8 @@ export class ShopsController {
   }
 
   @Post('approve')
-  approveShop(@Param('id') id: string) {
+  approveShop(@Param('id') id: number) {
+    console.log("second", id)
     return this.shopsService.approve(+id)
   }
 
@@ -61,8 +64,8 @@ export class StaffsController {
   constructor(private readonly shopsService: ShopsService) {}
 
   @Post()
-  create(@Body() createShopDto: CreateShopDto) {
-    return this.shopsService.create(createShopDto)
+  create(@Body() addStaffDto: AddStaffDto , createShopDto: CreateShopDto) {
+    return this.shopsService.create(addStaffDto ,createShopDto)   
   }
 
   @Get()
@@ -101,7 +104,8 @@ export class ApproveShopController {
   constructor(private shopsService: ShopsService) {}
 
   @Post()
-  async approveShop(@Body('id') id) {
-    return this.shopsService.approveShop(id)
+  async approveShop(@Body() approveShopDto: ApproveShopDto): Promise<Shop> {
+    return this.shopsService.approveShop(approveShopDto);
   }
+  
 }

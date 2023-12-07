@@ -1,10 +1,10 @@
 /* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { plainToClass } from 'class-transformer'
-import { CreateShopDto } from './dto/create-shop.dto'
+// import { plainToClass } from 'class-transformer'
+import { ApproveShopDto, CreateShopDto } from './dto/create-shop.dto'
 import { UpdateShopDto } from './dto/update-shop.dto'
 import { Shop } from './entities/shop.entity'
-import shopsJson from '@db/shops.json'
+// import shopsJson from '@db/shops.json'
 import Fuse from 'fuse.js'
 import { GetShopsDto } from './dto/get-shops.dto'
 import { paginate } from 'src/common/pagination/paginate'
@@ -15,14 +15,15 @@ import { convertToSlug } from 'src/helpers'
 import { Balance } from './entities/balance.entity'
 import { ShopSettings } from './entities/shopSettings.entity'
 import { ShopSocials } from 'src/settings/entities/setting.entity'
+import { AddStaffDto } from 'src/users/dto/add-staff.dto'
 
 
-const shops = plainToClass(Shop, shopsJson)
-const options = {
-  keys: ['name', 'type.slug', 'is_active'],
-  threshold: 0.3,
-}
-const fuse = new Fuse(shops, options)
+// const shops = plainToClass(Shop, shopsJson)
+// const options = {
+//   keys: ['name', 'type.slug', 'is_active'],
+//   threshold: 0.3,
+// }
+// const fuse = new Fuse(shops, options)
 
 @Injectable()
 export class ShopsService {
@@ -49,7 +50,7 @@ export class ShopsService {
     return await convertToSlug(text)
   }
 
-  async create(createShopDto: CreateShopDto): Promise<Shop> {
+  async create( addStaffDto: AddStaffDto , createShopDto: CreateShopDto): Promise<Shop> {
 
       let value: any
       let value1: any
@@ -62,7 +63,7 @@ export class ShopsService {
       const newBalance = new Balance()
       const newSetting = new ShopSettings()
 
-      const newshopss = this.shopRepository.create(createShopDto)
+      // const newshopss = this.shopRepository.create(createShopDto)
 
  try{
     if(createShopDto.address) {
@@ -124,10 +125,11 @@ export class ShopsService {
     newShop.name = createShopDto.name;
     newShop.slug = await this.convertToSlug(createShopDto.name);
     newShop.description = createShopDto.description;
-    newShop.cover_image = createShopDto.cover_image
-    newShop.logo = createShopDto.logo
-    newShop.address = value1
-    newShop.settings = value2
+    newShop.owner = createShopDto.owner;
+    newShop.cover_image = createShopDto.cover_image;
+    newShop.logo = createShopDto.logo;
+    newShop.address = value1;
+    newShop.settings = value2;
 
   
     const shop = await this.shopRepository.save(newShop)
@@ -158,7 +160,7 @@ export class ShopsService {
      newShop.balance = value
      await this.shopRepository.save(newShop) 
 
-    return shop
+     return shop
 
 } catch(error){
   console.error(error)
@@ -167,33 +169,45 @@ export class ShopsService {
   }
 
 
-  getShops({ search, limit, page }: GetShopsDto) {
-    if (!page) page = 1
+  async getShops({ search, limit, page }: GetShopsDto) {
+    if (!page) page = 1;
+  
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+  
+    let data: Shop[] = await this.shopRepository.find({
+      relations: [
+        'balance',
+        'balance.payment_info',
+        'settings',
+        'settings.socials',
+        'settings.location',
+        'address',
+        'owner',
 
-    const startIndex = (page - 1) * limit
-    const endIndex = page * limit
-    let data: Shop[] = this.shops
+      ],
+    });
+  
+    
+    const fuse = new Fuse(data, {
+      keys: ['name', 'id', 'slug', 'is_active', 'address.city', 'address.state', 'address.country'],
+      threshold: 0.7, 
+    });
+  
     if (search) {
-      const parseSearchParams = search.split(';')
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':')
-        // data = data.filter((item) => item[key] === value);
-        data = fuse.search(value)?.map(({ item }) => item)
-      }
+      const searchResults = fuse.search(search);
+      const matchedShops = searchResults ? searchResults.map(({ item }) => item) : [];
+      data = matchedShops;
+      console.log("first", data)
     }
-    // if (text?.replace(/%/g, '')) {
-    //   data = fuse.search(text)?.map(({ item }) => item);
-    // }
-    const results = data.slice(startIndex, endIndex)
-    const url = `/shops?search=${search}&limit=${limit}`
-
+       
+    const results = data.slice(startIndex, endIndex);
     return {
       data: results,
-      ...paginate(data.length, page, limit, results.length, url),
-    }
+      ...paginate(data.length, page, limit, results.length, `/shops?search=${search}&limit=${limit}`),
+    };
   }
-
-
+  
   getStaffs({ shop_id, limit, page }: GetStaffsDto) {
     const startIndex = (page - 1) * limit
     const endIndex = page * limit
@@ -230,10 +244,12 @@ export class ShopsService {
       if(!existShop){
        return null        
       } else {
-        console.log("first", existShop)
-        const shop = existShop[0]
-        console.log("shop data", shop)
-        return shop
+
+        for (let index = 0; index < existShop.length; index++) {
+          const shop = existShop[index];
+          console.log("shop data", shop);
+          return shop;
+        }
       }
      }catch(error){
       console.error("Shop Not Found")
@@ -418,27 +434,81 @@ export class ShopsService {
     }
   }
   
-  
-
   approve(id: number) {
+    console.log("first", id)
     return `This action removes a #${id} shop`
   }
 
   remove(id: number) {
+
     return `This action removes a #${id} shop`
   }
 
-  disapproveShop(id: number) {
-    const shop = this.shops.find((s) => s.id === Number(id))
-    shop.is_active = false
-
-    return shop
+ async disapproveShop(id: number) {
+    // const shop = this.shops.find((s) => s.id === Number(id))
+    // shop.is_active = false
+    // return shop
+    try{
+      const shop = await this.shopRepository.find({
+        where: {id: id},
+        relations: [
+          "balance",
+          "balance.payment_info",
+          "settings",
+          "settings.socials",
+          "settings.location"
+        ]
+      })
+      console.log("shops", shop)
+      for (let index = 0; index < shop.length; index++) {
+        const shops = shop[index];
+        shops.is_active =false
+        console.log("shop data", shops);
+        const updatedShop = this.shopRepository.save(shops)
+        return updatedShop;
+      }
+    } catch(error) {
+        console.log(error.message)
+    } 
+    
   }
 
-  approveShop(id: number) {
-    const shop = this.shops.find((s) => s.id === Number(id))
-    shop.is_active = true
+  async approveShop(approveShopDto: ApproveShopDto): Promise<Shop> {
+   console.log("first", approveShopDto)
+    try{
+    const shop = await this.shopRepository.find({
+      where: {id: approveShopDto.id},
+      relations: [
+        "balance",
+        "balance.payment_info",
+        "settings",
+        "settings.socials",
+        "settings.location"
+      ]
+    })
+    console.log("shops", shop)
+    for (let index = 0; index < shop.length; index++) {
+      const shops = shop[index];
+      shops.is_active = true
 
-    return shop
+      const balance = await this.balanceRepository.findOne({
+        where: {id: shops.balance.id}
+      })
+      console.log("balance", balance)
+
+    if(balance){
+      balance.admin_commission_rate = approveShopDto.admin_commission_rate
+      const updateData = await this.balanceRepository.save(balance)
+      shops.balance.admin_commission_rate = balance.admin_commission_rate
+      console.log("shop data5555555", updateData);
+    }
+      console.log("shop data", shops);
+
+      const updatedShop = this.shopRepository.save(shops)
+      return updatedShop;
+    }
+  } catch(error) {
+      console.log(error.message)
+  } 
   }
 }
