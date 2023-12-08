@@ -11,11 +11,10 @@ import { OrderProductPivotRepository, ProductRepository, VariationOptionReposito
 import { AttributeRepository, AttributeValueRepository } from 'src/attributes/attribute.repository';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Attribute } from 'src/attributes/entities/attribute.entity';
-import { AttachmentRepository } from 'src/common/common.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, OrderProductPivot, Variation, VariationOption, AttributeValue, Attribute, AttachmentRepository])],
+  imports: [TypeOrmModule.forFeature([Product, OrderProductPivot, Variation, VariationOption, AttributeValue,Attribute])],
   controllers: [ProductsController],
-  providers: [ProductsService, AttributeValueRepository, AttributeRepository, ProductRepository, VariationOptionRepository, VariationRepository, OrderProductPivotRepository],
+  providers: [ProductsService,AttributeValueRepository ,AttributeRepository,ProductRepository, VariationOptionRepository, VariationRepository, OrderProductPivotRepository],
 })
-export class ProductsModule {}
+export class ProductsModule { }
