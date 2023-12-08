@@ -75,4 +75,5 @@ export class Review extends CoreEntity {
   variation_option_id: string;
   @Column()
   abusive_reports_count?: number;
+  review: { id: number; };
 }

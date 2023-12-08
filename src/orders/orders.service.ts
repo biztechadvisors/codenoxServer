@@ -43,6 +43,9 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, UpdateResult } from 'typeorm';
 import { Address } from 'src/addresses/entities/address.entity';
+import { User } from 'src/users/entities/user.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { Coupon } from 'src/coupons/entities/coupon.entity';
 
 const orders = plainToClass(Order, ordersJson);
 const paymentIntents = plainToClass(PaymentIntent, paymentIntentJson);
@@ -73,11 +76,25 @@ export class OrdersService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderStatus)
     private readonly orderStatusRepository: Repository<OrderStatus>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Product)
+    private readonly productrRepository: Repository<Product>,
+    @InjectRepository(OrderFiles)
+    private readonly orderFilesRepository: Repository<Order>,
+    @InjectRepository(Coupon)
+    private readonly couponRepository: Repository<Coupon>,
+    
   ) { }
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
-    console.log("first", createOrderInput)
+    // console.log("first", createOrderInput)
     const order = plainToClass(Order, createOrderInput);
 
+    const newOrderStatus = new OrderStatus()
+    const newOrderFile =  new OrderFiles()
+
+    newOrderStatus.name = 'Order Processing'
+    newOrderStatus.color = '#d87b64'
     // Set the order type and payment type
     const paymentGatewayType = createOrderInput.payment_gateway
       ? createOrderInput.payment_gateway
@@ -90,21 +107,72 @@ export class OrdersService {
       case PaymentGatewayType.CASH_ON_DELIVERY:
         order.order_status = OrderStatusType.PROCESSING;
         order.payment_status = PaymentStatusType.CASH_ON_DELIVERY;
+        newOrderStatus.slug = OrderStatusType.PROCESSING;
         break;
       case PaymentGatewayType.CASH:
         order.order_status = OrderStatusType.PROCESSING;
         order.payment_status = PaymentStatusType.CASH;
+        newOrderStatus.slug = OrderStatusType.PROCESSING;
         break;
       case PaymentGatewayType.FULL_WALLET_PAYMENT:
         order.order_status = OrderStatusType.COMPLETED;
         order.payment_status = PaymentStatusType.WALLET;
+        newOrderStatus.slug = OrderStatusType.COMPLETED;
         break;
       default:
         order.order_status = OrderStatusType.PENDING;
         order.payment_status = PaymentStatusType.PENDING;
+        newOrderStatus.slug = OrderStatusType.PENDING;
         break;
     }
+  
 
+    if (order.customer) {
+      const customerIds = await this.userRepository.find({
+        where: ({ name: order.customer.name, email: order.customer.email }),
+      });
+    
+      if (customerIds.length > 0) {
+        order.customer = customerIds[0];
+        newOrderFile.customer_id= customerIds[0].id;// Assign the found customer to the order
+      } else {
+        // Handle the case where no matching customer is found
+        throw new NotFoundException('Customer not found');
+      }
+    }
+
+    if (order.products) {
+      const productIds = await this.productrRepository.find({
+        where: { name: order.products[0].name, product_type: order.products[0].product_type },
+      });
+    
+      if (productIds.length > 0) {
+        order.products.push(productIds[0]); 
+      } else {
+        // Handle the case where no matching product is found
+        // You might want to throw an error or handle it according to your application logic
+        throw new NotFoundException('Product not found');
+      }
+    }
+
+    if (order.coupon) {
+      const getCoupon = await this.couponRepository.findOne({ where: { id: order.coupon[0] } });
+      console.log("first Coupon", getCoupon);
+      
+      if (getCoupon) {
+        order.coupon = getCoupon;
+      } else {
+        // Handle the case where no matching coupon is found
+        throw new NotFoundException('Coupon not found');
+      }
+      // Remove the redundant assignment outside the if block
+      // order.coupon[0] = getCoupon; // Remove this line
+    }
+    
+  
+
+    const createdOrderStatus = await this.orderStatusRepository.save(newOrderStatus);
+    order.status = createdOrderStatus;
     order.children = this.processChildrenOrder(order);
 
     try {
@@ -114,10 +182,12 @@ export class OrdersService {
         const paymentIntent = await this.processPaymentIntent(order, this.setting);
         order.payment_intent = paymentIntent;
       }
-
       const savedOrder = await this.orderRepository.save(order);
-
+      newOrderFile.order_id = savedOrder.id;
+      
+      await this.orderFilesRepository.save(newOrderFile);
       return savedOrder;
+      
     } catch (error) {
       console.error('Error creating order:', error);
       throw error;
@@ -286,11 +356,13 @@ export class OrdersService {
     return await this.orderStatusRepository.save(orderStatus);
   }
 
-  
+
 
   async createOrderStatus(createOrderStatusInput: CreateOrderStatusDto): Promise<OrderStatus> {
-    const orderStatus = this.orderStatusRepository.create(createOrderStatusInput);
-    return await this.orderStatusRepository.save(orderStatus);
+    console.log("first", createOrderStatusInput)
+    return
+    // const orderStatus = this.orderStatusRepository.create(createOrderStatusInput);
+    // return await this.orderStatusRepository.save(orderStatus);
   }
 
   async updateOrderStatus(id: number, updateOrderStatusInput: UpdateOrderStatusDto): Promise<OrderStatus> {

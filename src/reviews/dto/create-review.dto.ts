@@ -7,5 +7,6 @@ export class CreateReviewDto {
   product_id: string;
   shop_id: string;
   order_id: string;
+  user_id:any;
   variation_option_id: number;
 }

@@ -47,14 +47,6 @@ export class ProductsController {
   }
 }
 
-@Controller('popular-products')
-export class PopularProductsController {
-  constructor(private readonly productsService: ProductsService) { }
-  @Get()
-  async getProducts(@Query() query: GetPopularProductsDto): Promise<Product[]> {
-    return this.productsService.getPopularProducts(query);
-  }
-}
 // @Controller('popular-products')
 // export class PopularProductsController {
 //   constructor(private readonly productsService: ProductsService) {}

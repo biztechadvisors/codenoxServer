@@ -151,47 +151,58 @@ export class AttributesService {
     // Check if the attribute exists
     const attribute = await this.attributeRepository.findOne({
       where: { id },
+      relations: ['values'], // Load the attribute values
     });
-  
+
     if (!attribute) {
       return {
         status: false,
         message: 'Attribute not found',
       };
     }
-  
+
     // Update the attribute values
     attribute.name = updateAttributeDto.name;
     attribute.slug = await this.convertToSlug(updateAttributeDto.name);
     attribute.shop_id = updateAttributeDto.shop_id;
     attribute.language = updateAttributeDto.language;
-  
-    // Check for existing attribute values before saving
-    const existingAttributeValues = await this.attributeValueRepository.find({
-      where: { attribute: { id: attribute.id } }, // Use the attribute's ID to filter attribute values
-    });
-  
-    const updatedAttributeValues = [];
-  
+
+    // Map the updated attribute values to an array of values
+    const updatedValues = updateAttributeDto.values.map((valueDto) => valueDto.value);
+   
+    // Filter out the attribute values that are not in the updated values
+    const valuesToRemove = attribute.values.filter((value) => !updatedValues.includes(value.value));
+   
+    attribute.values = attribute.values.filter((value) => updatedValues.includes(value.value));
+
+    // Remove the attribute values from the database
+    await this.attributeValueRepository.remove(valuesToRemove);
+
+    // Add or update attribute values
     for (const updateAttributeValueDto of updateAttributeDto.values) {
-      const existingAttributeValue = existingAttributeValues.find((atValue) => atValue.value === updateAttributeValueDto.value);
-  
-      if (!existingAttributeValue) {
+      let attributeValue = attribute.values.find((atValue) => atValue.value === updateAttributeValueDto.value);
+      
+      if (!attributeValue) {
         // Create a new attribute value if it doesn't exist
-        const newAttributeValue = new AttributeValue();
-        newAttributeValue.attribute = attribute; // Set the attribute reference
-        newAttributeValue.value = updateAttributeValueDto.value;
-        newAttributeValue.meta = updateAttributeValueDto.meta;
-        updatedAttributeValues.push(newAttributeValue);
+        attributeValue = new AttributeValue();
+        attributeValue.attribute = attribute; // Set the attribute reference
+        attribute.values.push(attributeValue);
       }
+
+      // Update the attribute value
+      attributeValue.value = updateAttributeValueDto.value;
+      attributeValue.meta = updateAttributeValueDto.meta;
+
+      // Save the attribute value
+      await this.attributeValueRepository.save(attributeValue);
     }
-  
-    // Update the attribute and attribute values in the database
+
+    // Update the attribute in the database
     await this.attributeRepository.save(attribute);
-    await this.attributeValueRepository.save(updatedAttributeValues);
-  
+
     return attribute;
   }
+
 
 
   async delete(id: number) {

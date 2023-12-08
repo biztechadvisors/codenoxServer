@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Attribute } from './attribute.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, FindOperator, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class AttributeValue extends CoreEntity {
@@ -18,13 +18,6 @@ export class AttributeValue extends CoreEntity {
   @Column()
   meta?: string;
 
-  @ManyToOne(() => Attribute, attribute => attribute.values)
+  @ManyToOne(() => Attribute, (attribute) => attribute.values, { onDelete: 'CASCADE' })
   attribute: Attribute;
-  // title: string;
-  // price: number;
-  // sku: string;
-  // is_disable: boolean;
-  // sale_price: number;
-  // quantity: number;
-  // options: boolean;
 }
