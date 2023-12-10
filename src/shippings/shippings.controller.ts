@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -23,8 +24,8 @@ export class ShippingsController {
   }
 
   @Get()
-  findAll(@Query() query: GetShippingsDto) {
-    return this.shippingsService.getShippings(query);
+  findAll() {
+    return this.shippingsService.getShippings();
   }
 
   @Get(':id')

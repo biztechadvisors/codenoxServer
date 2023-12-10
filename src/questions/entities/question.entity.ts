@@ -1,8 +1,9 @@
+/* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Feedback } from '../../feedbacks/entities/feedback.entity';
-import { Column, Entity, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Question extends CoreEntity {
@@ -23,9 +24,11 @@ export class Question extends CoreEntity {
   @Column()
   negative_feedbacks_count?: number;
   @OneToOne(() => Product)
-  product: Product;
+  @JoinColumn()
+  product: number;
   @OneToOne(() => User)
-  user: User;
+  @JoinColumn()
+  user: number;
   @ManyToMany(() => Feedback)
   feedbacks?: Feedback[];
   @OneToOne(() => Feedback)

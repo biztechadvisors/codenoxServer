@@ -296,7 +296,7 @@ export class SettingsOptions {
   paymentGateway: PaymentGateway[];
   @ManyToOne(() => SeoSettings)
   seo: SeoSettings;
-  @OneToOne(() => ServerInfo)
+  @ManyToOne(() => ServerInfo)
   server_info: ServerInfo;
   @Column()
   shippingClass: number;
@@ -306,7 +306,7 @@ export class SettingsOptions {
   siteSubtitle: string;
   @Column()
   siteTitle: string;
-  @OneToOne(() => SmsEvent)
+  @ManyToOne(() => SmsEvent)
   smsEvent: SmsEvent;
   @Column()
   StripeCardOnly: boolean;
@@ -330,7 +330,7 @@ export class SettingsOptions {
 export class Setting extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => SettingsOptions)
+  @ManyToOne(() => SettingsOptions)
   options: SettingsOptions;
   @Column()
   language: string;

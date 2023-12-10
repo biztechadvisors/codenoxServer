@@ -17,9 +17,9 @@ export class AddressesService {
   constructor(
     @InjectRepository(Address)
     private readonly addressRepository: Repository<Address>,
-    @InjectRepository(User) 
+    @InjectRepository(User)
     private readonly userRepository: UserRepository,
-    @InjectRepository(UserAddress) 
+    @InjectRepository(UserAddress)
     private readonly userAddressRepository: UserAddressRepository,
   ) {}
 
@@ -111,13 +111,12 @@ export class AddressesService {
       const updatedAddress = await this.addressRepository.save(existingAddress);
       console.log(updatedAddress);
 
-      return
+      return 
     } catch (error) {
       console.error('Error updating address', error);
       throw error;
     }
   }
-
 
   async remove(id: number) {
     const existingAddress = await this.addressRepository.findOne({where :{id}});

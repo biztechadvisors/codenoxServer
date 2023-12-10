@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { CoreEntity } from '../../common/entities/core.entity';
 import { Attachment } from '../../common/entities/attachment.entity';
 import { ShopSocials } from '../../settings/entities/setting.entity';

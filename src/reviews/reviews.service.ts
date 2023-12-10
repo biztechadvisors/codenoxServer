@@ -8,12 +8,18 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { GetReviewsDto, ReviewPaginator } from './dto/get-reviews.dto';
 import { Review } from './entities/review.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class ReviewService {
   constructor(
     @InjectRepository(Review)
     private readonly reviewRepository: Repository<Review>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   private async getReviewsFromDatabase(): Promise<Review[]> {
@@ -34,7 +40,26 @@ export class ReviewService {
 
   private async createReviewInDatabase(createReviewDto: CreateReviewDto): Promise<Review> {
     const review = plainToClass(Review, createReviewDto);
-    return await this.reviewRepository.save(review);
+
+    if (review.product) {
+      const getProduct = await this.productRepository.find({
+        where: ({ name: review.product.name, slug: review.product.slug }),
+      });
+      if (getProduct.length > 0) {
+        review.product = getProduct[0];
+      }
+    }
+    if (review.user) {
+      const getUser = await this.userRepository.find({
+        where: ({ name: review.user.name, email: review.user.email }),
+      });
+      if (getUser.length > 0) {
+        review.user = getUser[0];
+      }
+    }
+
+    return 
+    // await this.reviewRepository.save(review);
   }
 
   private async updateReviewInDatabase(id: number, updateReviewDto: UpdateReviewDto): Promise<Review> {

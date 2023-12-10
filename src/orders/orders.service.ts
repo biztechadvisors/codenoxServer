@@ -84,7 +84,8 @@ export class OrdersService {
     private readonly orderFilesRepository: Repository<Order>,
     @InjectRepository(Coupon)
     private readonly couponRepository: Repository<Coupon>,
-    
+    @InjectRepository(PaymentIntent)
+    private readonly paymentIntentRepository: Repository<PaymentIntent>,
   ) { }
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     // console.log("first", createOrderInput)
@@ -126,7 +127,6 @@ export class OrdersService {
         break;
     }
   
-
     if (order.customer) {
       const customerIds = await this.userRepository.find({
         where: ({ name: order.customer.name, email: order.customer.email }),
@@ -168,6 +168,20 @@ export class OrdersService {
       // Remove the redundant assignment outside the if block
       // order.coupon[0] = getCoupon; // Remove this line
     }
+
+    // if (order.payment_intent) {
+    //   const paymentIntentId = await this.paymentIntentRepository.find({
+    //     where: { name: order.products[0].name, product_type: order.products[0].product_type },
+    //   });
+    
+    //   if (paymentIntentId.length > 0) {
+    //     order.payment_intent.push(paymentIntentId[0]); 
+    //   } else {
+    //     // Handle the case where no matching product is found
+    //     // You might want to throw an error or handle it according to your application logic
+    //     throw new NotFoundException('Product not found');
+    //   }
+    // }
     
   
 
