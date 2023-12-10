@@ -144,7 +144,6 @@ export class File extends CoreEntity {
   fileable_id: number;
 }
 
-
 @Entity()
 export class Variation {
   @PrimaryGeneratedColumn()
