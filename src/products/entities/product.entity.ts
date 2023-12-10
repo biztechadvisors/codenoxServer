@@ -4,17 +4,15 @@ import { Category } from 'src/categories/entities/category.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Order } from 'src/orders/entities/order.entity';
+import { Review } from 'src/reviews/entities/review.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
-import { Review } from '../../reviews/entities/review.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
-
-export enum ProductStatus {
+enum ProductStatus {
   PUBLISH = 'publish',
   DRAFT = 'draft',
 }
-
 export enum ProductType {
   SIMPLE = 'simple',
   VARIABLE = 'variable',
@@ -61,7 +59,7 @@ export class Product extends CoreEntity {
 
   @ManyToMany(() => AttributeValue, { eager: true, cascade: true })
   @JoinTable()
-  variations?: AttributeValue;
+  variations?: AttributeValue[];
 
   @ManyToMany(() => Variation, { cascade: true })
   @JoinTable()
@@ -165,13 +163,10 @@ export class Variation {
   @Column()
   quantity: number;
 
-  @ManyToMany(() => VariationOption, { cascade: true })
+  @ManyToMany(() => VariationOption)
   @JoinTable()
   options: VariationOption[];
 
-  @ManyToOne(() => File)
-  @JoinColumn({ name: 'image_id' })
-  image: File;
 }
 
 @Entity()
@@ -182,6 +177,4 @@ export class VariationOption {
   name: string;
   @Column()
   value: string;
-  // product: Product;
-  // variation: Variation;
 }

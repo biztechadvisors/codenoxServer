@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn, ManyToOne, ManyToMany, JoinTable, JoinColumn } from 'typeorm';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn, ManyToOne, ManyToMany, JoinTable, JoinColumn, Timestamp, CreateDateColumn } from 'typeorm';
 
 export enum AddressType {
   BILLING = 'billing',
@@ -39,4 +39,10 @@ export class Address extends CoreEntity {
   type: AddressType;
   @ManyToOne(() => User, (user) => user.address)
   customer: User;
+
+ @CreateDateColumn()
+  createdAt: Date;
+
+  @CreateDateColumn()
+  updated_at: Date;
 }

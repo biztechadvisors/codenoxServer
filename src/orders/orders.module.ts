@@ -15,12 +15,13 @@ import { OrderStatus } from './entities/order-status.entity'; // Import OrderSta
 import { User } from 'src/users/entities/user.entity';
 import { OrderProductPivot, Product } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
+import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
 
 @Module({
   imports: [
     AuthModule,
     PaymentModule,
-    TypeOrmModule.forFeature([Order, OrderStatus,User, Product, OrderFiles, Coupon]), // Include Order and OrderStatus here
+    TypeOrmModule.forFeature([Order, OrderStatus,User, Product, OrderFiles, Coupon, PaymentIntent]), // Include Order and OrderStatus here
   ],
   controllers: [
     OrdersController,
