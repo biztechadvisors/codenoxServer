@@ -53,19 +53,19 @@ export class Shop extends CoreEntity {
     @Column()
     description?: string;
 
-    @OneToOne(() => Attachment)
+    @OneToOne(() => Attachment ,{cascade:true})
     @JoinColumn()
     cover_image: Attachment;
 
-    @OneToOne(() => Attachment)
+    @OneToOne(() => Attachment,{cascade:true})
     @JoinColumn()
     logo?: Attachment;
 
-    @OneToOne(() => UserAddress)
+    @OneToOne(() => UserAddress,{cascade:true})
     @JoinColumn()
     address: UserAddress;
 
-    @OneToOne(() => ShopSettings)
+    @OneToOne(() => ShopSettings,{cascade:true})
     @JoinColumn()
     settings?: ShopSettings;
 

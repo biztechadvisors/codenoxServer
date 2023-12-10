@@ -14,7 +14,8 @@ export class Balance {
   id: number
   @Column()
   admin_commission_rate: number
-  @OneToOne(() => Shop, shop => shop.balance)
+  @OneToOne(() => Shop, shop => shop.balance, {cascade:true})
+  @JoinColumn()
   shop: Shop
   @Column()
   total_earnings: number

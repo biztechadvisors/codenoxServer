@@ -31,11 +31,12 @@ export class WithdrawsController {
   withdraw(@Param('id') id: string) {
     return this.withdrawsService.findOne(+id)
   }
-  @Post(':id/approve')
+  @Post('approve')
   approveWithdraw(
     @Param('id') id: string,
     @Body() updateWithdrawDto: ApproveWithdrawDto,
   ) {
+    console.log("first", id, updateWithdrawDto)
     return this.withdrawsService.update(+id, updateWithdrawDto)
   }
 

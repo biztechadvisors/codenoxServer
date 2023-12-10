@@ -21,6 +21,7 @@ export class Withdraw extends CoreEntity {
   details: string
   @Column()
   note: string
+ 
 }
 
 export enum WithdrawStatus {
