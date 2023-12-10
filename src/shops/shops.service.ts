@@ -1,10 +1,8 @@
 /* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException } from '@nestjs/common'
-// import { plainToClass } from 'class-transformer'
 import { ApproveShopDto, CreateShopDto } from './dto/create-shop.dto'
 import { UpdateShopDto } from './dto/update-shop.dto'
 import { Shop } from './entities/shop.entity'
-// import shopsJson from '@db/shops.json'
 import Fuse from 'fuse.js'
 import { GetShopsDto } from './dto/get-shops.dto'
 import { paginate } from 'src/common/pagination/paginate'
@@ -16,6 +14,8 @@ import { Balance } from './entities/balance.entity'
 import { ShopSettings } from './entities/shopSettings.entity'
 import { ShopSocials } from 'src/settings/entities/setting.entity'
 import { AddStaffDto } from 'src/users/dto/add-staff.dto'
+// import { User } from 'src/users/entities/user.entity'
+import { UserRepository } from 'src/users/users.repository'
 
 
 // const shops = plainToClass(Shop, shopsJson)
@@ -42,6 +42,8 @@ export class ShopsService {
     private shopSocialRepository: ShopShocialRepository,
     @InjectRepository(LocationRepository)
     private locationRepository: LocationRepository,
+    @InjectRepository(UserRepository)
+    private userRepository: UserRepository,
   ) {}
   private shops: Shop[] = []
 
@@ -62,6 +64,22 @@ export class ShopsService {
       const newShop = new Shop()
       const newBalance = new Balance()
       const newSetting = new ShopSettings()
+
+      if(addStaffDto){
+
+        // const addStaff = new User()
+
+        // addStaff.managed_shop = addStaffDto.shop_id
+        const newStaff = this.userRepository.create(addStaffDto)
+        // addStaff.name = addStaffDto.name
+        // addStaff.email = addStaffDto.email
+        // addStaff.password = addStaffDto.password
+        // addStaff.createdAt = addStaffDto
+        //  newStaff = addStaff
+       const staffAdded = await this.userRepository.save(newStaff)
+       console.log("first", staffAdded)
+
+      } else {
 
       // const newshopss = this.shopRepository.create(createShopDto)
 
@@ -165,6 +183,7 @@ export class ShopsService {
 } catch(error){
   console.error(error)
 }
+      }
 
   }
 

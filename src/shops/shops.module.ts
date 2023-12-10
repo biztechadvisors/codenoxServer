@@ -14,6 +14,8 @@ import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRe
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
 import { Address } from 'src/addresses/entities/address.entity'
 import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
+import { UserRepository } from 'src/users/users.repository'
+import { User } from 'src/users/entities/user.entity'
 
 @Module({
   imports: [TypeOrmExModule.forCustomRepository([
@@ -23,8 +25,9 @@ import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
     PaymentInfoRepository,
     AddressRepository,
     LocationRepository,
-    ShopShocialRepository
-  ]),TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Address, Location, ShopSocials])],
+    ShopShocialRepository,
+    UserRepository
+  ]),TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Address, Location, ShopSocials, User])],
   controllers: [
     ShopsController,
     StaffsController,
