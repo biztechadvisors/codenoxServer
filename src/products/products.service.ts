@@ -54,7 +54,6 @@ export class ProductsService {
   ) { }
 
   async create(createProductDto: CreateProductDto) {
-
     const product = new Product();
     product.name = createProductDto.name;
     product.slug = createProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -62,63 +61,49 @@ export class ProductsService {
     product.product_type = createProductDto.product_type;
     product.status = createProductDto.status;
     product.quantity = createProductDto.quantity;
+    product.max_price = createProductDto.max_price;
+    product.min_price = createProductDto.min_price;
     product.unit = createProductDto.unit;
-
-    // Set type
     const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
+    if (!type) {
+      throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
+    }
     product.type = type;
-    product.type_id = type.id
+    product.type_id = type.id;
 
-    // Set shop
     const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
     product.shop = shop;
+    // product.shop_id = shop.id;
 
-    // Set categories
     const categories = await this.categoryRepository.findByIds(createProductDto.categories);
     product.categories = categories;
-
-    // Set tags
     const tags = await this.tagRepository.findByIds(createProductDto.tags);
     product.tags = tags;
-
-    // Set image
     if (createProductDto.image) {
       let image = await this.attachmentRepository.findOne({ where: { id: createProductDto.image.id } });
       product.image = image;
     }
-
-    // Set gallery
     if (createProductDto.gallery) {
       const galleryAttachments = [];
-
       for (const galleryImage of createProductDto.gallery) {
         let image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
         galleryAttachments.push(image);
       }
-
       product.gallery = galleryAttachments;
     }
-
     if (createProductDto.variations) {
       const attributeValues: AttributeValue[] = [];
-
       for (const variation of createProductDto.variations) {
         const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
-
         if (attributeValue) {
           attributeValues.push(attributeValue);
         }
       }
-
       product.variations = attributeValues;
     }
-
-    // Save the product
     await this.productRepository.save(product);
-
     if (createProductDto.product_type === 'variable' && createProductDto.variation_options && createProductDto.variation_options.upsert) {
       const variationOPt = [];
-
       for (const variationDto of createProductDto.variation_options.upsert) {
         const newVariation = new Variation();
         newVariation.title = variationDto.title;
@@ -127,8 +112,6 @@ export class ProductsService {
         newVariation.is_disable = variationDto.is_disable;
         newVariation.sale_price = variationDto.sale_price;
         newVariation.quantity = variationDto.quantity;
-
-        // Set image
         if (variationDto.image) {
           let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
           if (!image) {
@@ -140,30 +123,22 @@ export class ProductsService {
           }
           newVariation.image = image;
         }
-
         const variationOptions = [];
-
         for (const option of variationDto.options) {
           const newVariationOption = new VariationOption();
           newVariationOption.id = option.id;
           newVariationOption.name = option.name;
           newVariationOption.value = option.value;
-
           await this.variationOptionRepository.save(newVariationOption);
           variationOptions.push(newVariationOption);
         }
-
         newVariation.options = variationOptions;
-        // Save each variation
         await this.variationRepository.save(newVariation);
         variationOPt.push(newVariation);
       }
-
-      // Then establish the relationship
       product.variation_options = variationOPt;
       await this.productRepository.save(product);
     }
-
     return product;
   }
 
@@ -239,7 +214,7 @@ export class ProductsService {
     // Fetch related products using type_id
     if (product) {
       const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
-        .where('related_products.type_id = :type_id', { type_id: product.type.id }) // Use related_products.type_id instead of relatedProduct.type.slug
+        .where('related_products.type_id = :type_id', { type_id: product.type_id }) // Use related_products.type_id instead of relatedProduct.type.slug
         .andWhere('related_products.id != :productId', { productId: product.id })
         .limit(20)
         .getMany();
@@ -256,15 +231,14 @@ export class ProductsService {
     let productsQueryBuilder = this.productRepository.createQueryBuilder('product');
 
     if (type_slug) {
-      productsQueryBuilder.where('product.type.slug = :typeSlug', { type_slug });
+      productsQueryBuilder.innerJoinAndSelect('product.type', 'type', 'type.slug = :typeSlug', { typeSlug: type_slug });
     }
 
     if (shop_id) {
-      productsQueryBuilder.andWhere('product.shop.id = :shopId', { shop_id });
+      productsQueryBuilder.andWhere('product.shop_id = :shopId', { shopId: shop_id });
     }
 
     productsQueryBuilder
-      .leftJoinAndSelect('product.type', 'type')
       .leftJoinAndSelect('product.shop', 'shop')
       .leftJoinAndSelect('product.image', 'image')
       .leftJoinAndSelect('product.categories', 'categories')
@@ -278,19 +252,22 @@ export class ProductsService {
   }
 
   async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
-    console.log("Updated-Product", updateProductDto)
+
+    console.log("Product-updateProductDto*****", updateProductDto)
+
     const product = await this.productRepository.findOne({ where: { id: id }, relations: ['type', 'shop', 'categories', 'tags', 'image', 'gallery', 'variations', 'variation_options'] });
 
     if (!product) {
       throw new NotFoundException('Product not found');
     }
-
     product.name = updateProductDto.name || product.name;
     product.slug = updateProductDto.name ? updateProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : product.slug;
     product.description = updateProductDto.description || product.description;
     product.product_type = updateProductDto.product_type || product.product_type;
     product.status = updateProductDto.status || product.status;
     product.quantity = updateProductDto.quantity || product.quantity;
+    product.max_price = updateProductDto.max_price || product.max_price;
+    product.min_price = updateProductDto.min_price || product.min_price;
     product.unit = updateProductDto.unit || product.unit;
 
     if (updateProductDto.type_id) {
@@ -298,28 +275,46 @@ export class ProductsService {
       product.type = type;
       product.type_id = type.id;
     }
-
     if (updateProductDto.shop_id) {
       const shop = await this.shopRepository.findOne({ where: { id: updateProductDto.shop_id } });
       product.shop = shop;
+      product.shop_id = shop.id;
     }
-
     if (updateProductDto.categories) {
       const categories = await this.categoryRepository.findByIds(updateProductDto.categories);
       product.categories = categories;
     }
-
     if (updateProductDto.tags) {
       const tags = await this.tagRepository.findByIds(updateProductDto.tags);
       product.tags = tags;
     }
 
     if (updateProductDto.image) {
+      if (product && product.image) {
+        const file = await this.fileRepository.findOne({ where: { attachment_id: product.image.id } });
+        if (file) {
+          file.attachment_id = null;
+          await this.fileRepository.save(file);
+          await this.fileRepository.remove(file);
+        }
+        await this.attachmentRepository.remove(product.image);
+      }
       let image = await this.attachmentRepository.findOne({ where: { id: updateProductDto.image.id } });
       product.image = image;
     }
 
     if (updateProductDto.gallery) {
+      if (product && product.gallery) {
+        for (const galleryImage of product.gallery) {
+          const file = await this.fileRepository.findOne({ where: { attachment_id: galleryImage.id } });
+          if (file) {
+            file.attachment_id = null;
+            await this.fileRepository.save(file);
+            await this.fileRepository.remove(file);
+          }
+          await this.attachmentRepository.remove(galleryImage);
+        }
+      }
       const galleryAttachments = [];
       for (const galleryImage of updateProductDto.gallery) {
         let image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
@@ -338,9 +333,7 @@ export class ProductsService {
       }
       product.variations = attributeValues;
     }
-
     await this.productRepository.save(product);
-
     if (updateProductDto.product_type === 'variable' && updateProductDto.variation_options && updateProductDto.variation_options.upsert) {
       const variationOPt = [];
       for (const variationDto of updateProductDto.variation_options.upsert) {
@@ -382,7 +375,60 @@ export class ProductsService {
     return product;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: number): Promise<void> {
+    const product = await this.productRepository.findOne({ where: { id: id }, relations: ['type', 'shop', 'image', 'categories', 'tags', 'gallery', 'related_products', 'variations', 'variation_options'] });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    if (product.image) {
+      const image = product.image;
+      product.image = null;
+      await this.productRepository.save(product);
+      const file = await this.fileRepository.findOne({ where: { attachment_id: image.id } });
+      if (file) {
+        await this.fileRepository.remove(file);
+      }
+      await this.attachmentRepository.remove(image);
+    }
+
+    // Fetch related entities
+    const variations = await Promise.all(product.variation_options.map(async v => {
+      const variation = await this.variationRepository.findOne({ where: { id: v.id }, relations: ['options', 'image'] });
+      if (!variation) {
+        throw new NotFoundException(`Variation with ID ${v.id} not found`);
+      }
+      return variation;
+    }));
+
+    // Remove gallery attachments
+    const gallery = await this.attachmentRepository.findByIds(product.gallery.map(g => g.id));
+    await this.attachmentRepository.remove(gallery);
+
+    await Promise.all([
+      ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+      ...variations.map(async v => {
+        if (v.image) {
+          const image = v.image;
+          v.image = null;
+          await this.variationRepository.save(v);
+          const file = await this.fileRepository.findOne({ where: { id: image.id } });
+          if (file) {
+            file.attachment_id = null;
+            await this.fileRepository.save(file).then(async () => {
+              await this.fileRepository.remove(file);
+            });
+          }
+          const attachment = await this.attachmentRepository.findOne({ where: { id: image.attachment_id } });
+          if (attachment) {
+            await this.attachmentRepository.remove(attachment);
+          }
+        }
+      }),
+      this.variationRepository.remove(variations),
+      this.productRepository.remove(product),
+    ]);
+
   }
 }
