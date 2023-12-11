@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import settingsJson from '@db/settings.json'
 import { Controller, Get, Query } from '@nestjs/common'
 import { plainToClass } from 'class-transformer'

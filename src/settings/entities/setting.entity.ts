@@ -335,4 +335,8 @@ export class Setting extends CoreEntity {
   language: string
   @Column({ type: 'json' })
   translated_languages: string[]
+  @Column({ type: 'timestamp'})
+  created_at: Date;
+  @Column({ type: 'timestamp'})
+  updated_at: Date;
 }

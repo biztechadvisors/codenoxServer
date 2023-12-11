@@ -148,7 +148,7 @@ export class ShopsService {
     newShop.logo = createShopDto.logo;
     newShop.address = value1;
     newShop.settings = value2;
-
+    newShop.createdAt = new Date()
   
     const shop = await this.shopRepository.save(newShop)
     

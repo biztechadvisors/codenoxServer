@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import paymentGatewayJson from '@db/payment-gateway.json'
 import cards from '@db/payment-methods.json'
 import { Injectable } from '@nestjs/common'

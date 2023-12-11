@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Body, Controller, Get, Post } from '@nestjs/common'
 import { CreateSettingDto } from './dto/create-setting.dto'
 import { SettingsService } from './settings.service'
