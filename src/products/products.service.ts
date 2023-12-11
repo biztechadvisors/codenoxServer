@@ -252,14 +252,18 @@ export class ProductsService {
   }
 
   async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
-
-    console.log("Product-updateProductDto*****", updateProductDto)
-
     const product = await this.productRepository.findOne({ where: { id: id }, relations: ['type', 'shop', 'categories', 'tags', 'image', 'gallery', 'variations', 'variation_options'] });
-
     if (!product) {
       throw new NotFoundException('Product not found');
     }
+
+    const updatedProduct = Object.assign({}, product);
+    for (const key in updateProductDto) {
+      if (updateProductDto.hasOwnProperty(key) && updateProductDto[key] !== updatedProduct[key]) {
+        updatedProduct[key] = updateProductDto[key];
+      }
+    }
+
     product.name = updateProductDto.name || product.name;
     product.slug = updateProductDto.name ? updateProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : product.slug;
     product.description = updateProductDto.description || product.description;
@@ -269,7 +273,6 @@ export class ProductsService {
     product.max_price = updateProductDto.max_price || product.max_price;
     product.min_price = updateProductDto.min_price || product.min_price;
     product.unit = updateProductDto.unit || product.unit;
-
     if (updateProductDto.type_id) {
       const type = await this.typeRepository.findOne({ where: { id: updateProductDto.type_id } });
       product.type = type;
@@ -288,41 +291,37 @@ export class ProductsService {
       const tags = await this.tagRepository.findByIds(updateProductDto.tags);
       product.tags = tags;
     }
-
-    if (updateProductDto.image) {
+    if (updateProductDto.image !== product.image) {
       if (product && product.image) {
-        const file = await this.fileRepository.findOne({ where: { attachment_id: product.image.id } });
-        if (file) {
-          file.attachment_id = null;
-          await this.fileRepository.save(file);
-          await this.fileRepository.remove(file);
-        }
-        await this.attachmentRepository.remove(product.image);
+        const image = product.image;
+        product.image = null;
+        await this.productRepository.save(product);
+        await this.attachmentRepository.remove(image);
       }
       let image = await this.attachmentRepository.findOne({ where: { id: updateProductDto.image.id } });
       product.image = image;
     }
-
     if (updateProductDto.gallery) {
-      if (product && product.gallery) {
-        for (const galleryImage of product.gallery) {
-          const file = await this.fileRepository.findOne({ where: { attachment_id: galleryImage.id } });
-          if (file) {
-            file.attachment_id = null;
-            await this.fileRepository.save(file);
-            await this.fileRepository.remove(file);
-          }
-          await this.attachmentRepository.remove(galleryImage);
-        }
-      }
-      const galleryAttachments = [];
-      for (const galleryImage of updateProductDto.gallery) {
-        let image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
-        galleryAttachments.push(image);
-      }
-      product.gallery = galleryAttachments;
-    }
+      const existingGalleryImages = product.gallery.map(galleryImage => galleryImage.id);
+      const updatedGalleryImages = updateProductDto.gallery.map(galleryImage => galleryImage.id);
 
+      // Identify images to be removed
+      const imagesToRemove = existingGalleryImages.filter(id => !updatedGalleryImages.includes(id));
+
+      // Remove images
+      for (const imageId of imagesToRemove) {
+        const image = product.gallery.find(galleryImage => galleryImage.id === imageId);
+        product.gallery.splice(product.gallery.indexOf(image!), 1);
+        await this.attachmentRepository.remove(image);
+      }
+
+      // Add new images
+      const newGalleryImages = updateProductDto.gallery.filter(galleryImage => !existingGalleryImages.includes(galleryImage.id));
+      for (const newGalleryImage of newGalleryImages) {
+        const image = await this.attachmentRepository.findOne({ where: { id: newGalleryImage.id } });
+        product.gallery.push(image);
+      }
+    }
     if (updateProductDto.variations) {
       const attributeValues: AttributeValue[] = [];
       for (const variation of updateProductDto.variations) {
@@ -371,17 +370,13 @@ export class ProductsService {
       product.variation_options = variationOPt;
       await this.productRepository.save(product);
     }
-
     return product;
   }
-
   async remove(id: number): Promise<void> {
     const product = await this.productRepository.findOne({ where: { id: id }, relations: ['type', 'shop', 'image', 'categories', 'tags', 'gallery', 'related_products', 'variations', 'variation_options'] });
-
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
-
     if (product.image) {
       const image = product.image;
       product.image = null;
@@ -392,7 +387,6 @@ export class ProductsService {
       }
       await this.attachmentRepository.remove(image);
     }
-
     // Fetch related entities
     const variations = await Promise.all(product.variation_options.map(async v => {
       const variation = await this.variationRepository.findOne({ where: { id: v.id }, relations: ['options', 'image'] });
