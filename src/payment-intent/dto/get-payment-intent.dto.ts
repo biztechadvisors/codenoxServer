@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export class GetPaymentIntentDto {
   tracking_number: number
   payment_gateway: string

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export class StripeCreateCustomerDto {
   address?: Address
   description?: string

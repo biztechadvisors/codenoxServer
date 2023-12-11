@@ -35,6 +35,7 @@ export class WithdrawsService {
       }
      })
 
+     console.log("findShop", findId)
      if(!findId){
 
     newWithdraw.amount = createWithdrawDto.amount
@@ -43,6 +44,8 @@ export class WithdrawsService {
     newWithdraw.payment_method = createWithdrawDto.payment_method
     newWithdraw.shop_id = createWithdrawDto.shop_id
     newWithdraw.status = WithdrawStatus.PROCESSING  
+    newWithdraw.createdAt = new Date()
+    newWithdraw.updatedAt = new Date()
 
      const shop = await this.shopRepository.findOne({
     where: {
@@ -72,6 +75,7 @@ export class WithdrawsService {
     return addWithdraw
   } else {
     console.log("Already have pending Request")
+    return 'You Already Have Pending Request'
   }
     }catch(error){
       console.log(error)
@@ -192,13 +196,28 @@ console.log("find",data)
     return updatedStatus
   }
 
- async remove(id: number) {
+  async remove(id: number) {
+    // Find the Withdraw object with the given id
     const idFind = await this.withdrawRepository.findOne({
       where: {
         id: id
       }
     })
-console.log("0", idFind)
-    return `This action removes a #${id} withdraw`
+    // Check if the object exists
+    if (!idFind) {
+      // Throw an error if the object is not found
+      throw new Error(`Withdraw with ID ${id} not found`)
+    }
+    // Create a new object with only the ID
+    const deleteData = {
+      id: idFind.id
+    }
+    // Use `delete` with the filtered data object
+    await this.withdrawRepository.delete(deleteData)
+    // Log the deleted data
+    console.log("0", deleteData)
+    // Return the deleted data (optional)
+    return deleteData
   }
+  
 }

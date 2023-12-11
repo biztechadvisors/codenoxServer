@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { WebHookService } from './web-hook.service'
 import { Controller, Get } from '@nestjs/common'
 

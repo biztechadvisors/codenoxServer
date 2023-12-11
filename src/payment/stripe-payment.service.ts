@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common'
 import settingJson from '@db/settings.json'
 import { Setting } from 'src/settings/entities/setting.entity'

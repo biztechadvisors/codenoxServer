@@ -21,7 +21,10 @@ export class Withdraw extends CoreEntity {
   details: string
   @Column()
   note: string
- 
+  @Column({ type: 'timestamp'})
+  createdAt: Date;
+  @Column({ type: 'timestamp'})
+  updatedAt: Date;
 }
 
 export enum WithdrawStatus {
