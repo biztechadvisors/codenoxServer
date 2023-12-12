@@ -28,6 +28,7 @@ export class OrderProductPivot {
   unit_price: number;
   @Column()
   subtotal: number;
+  product: Product;
 }
 @Entity()
 export class Product extends CoreEntity {
