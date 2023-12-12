@@ -37,6 +37,7 @@ export class VariationDto {
   title: string;
   image: FileDto;
   options: VariationOptionDto[];
+  id: any;
 }
 
 export class FileDto {
