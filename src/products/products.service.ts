@@ -20,6 +20,7 @@ import { CategoryRepository } from 'src/categories/categories.repository';
 import { Category } from 'src/categories/entities/category.entity';
 import { AttributeValueRepository } from 'src/attributes/attribute.repository';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
+import { error } from 'console';
 
 const options = {
   keys: [
@@ -353,81 +354,123 @@ export class ProductsService {
     }
 
     if (updateProductDto.variations) {
-      const existingVariations = product.variations.map(variation => variation.id);
-      const newVariations = updateProductDto.variations.filter(variation => variation && variation.attribute && !existingVariations.includes(variation.attribute.id));
+      // Ensure product.variations is an array
+      product.variations = Array.isArray(product.variations) ? product.variations : [];
+      const existingVariations = product.variations.map(variation => variation.attribute_value_id);
+      // Ensure updateProductDto.variations is an array
+      const updateVariations = Array.isArray(updateProductDto.variations) ? updateProductDto.variations : [];
+      const newVariations = updateVariations.filter(variation => !existingVariations.includes(variation.attribute_value_id));
       for (const newVariation of newVariations) {
         const variation = await this.attributeValueRepository.findOne({ where: { id: newVariation.attribute_value_id } });
         if (variation) {
           product.variations.push(variation);
         }
       }
-    }
-
-    await this.productRepository.save(product);
-
-    if (updateProductDto.product_type === 'variable' && updateProductDto.variation_options && updateProductDto.variation_options.upsert) {
-      const existingVariations = product.variation_options.map(variation => variation.id);
-      const updatedVariations = updateProductDto.variation_options.upsert.map(variation => variation.id);
-      const variationsToRemove = existingVariations.filter(id => !updatedVariations.includes(id));
+      // Remove the association between the Product and AttributeValue which is not in the updated product variation
+      const variationsToRemove = existingVariations.filter(variation => !updateVariations.map(v => v.attribute_value_id).includes(variation));
       for (const variationId of variationsToRemove) {
-        const variation = product.variation_options.find(variation => variation.id === variationId);
-        if (variation) {
-          if (variation.image) {
-            const image = variation.image;
-            variation.image = null;
-            await this.variationRepository.save(variation);
-            const file = await this.fileRepository.findOne({ where: { id: image.id } });
-            if (file) {
-              file.attachment_id = null;
-              await this.fileRepository.save(file).then(async () => {
-                await this.fileRepository.remove(file);
-              });
-            }
-            const attachment = await this.attachmentRepository.findOne({ where: { id: image.attachment_id } });
-            if (attachment) {
-              await this.attachmentRepository.remove(attachment);
-            }
-          }
-          product.variation_options.splice(product.variation_options.indexOf(variation), 1);
-          await this.variationRepository.remove(variation);
+        const variationIndex = product.variations.findIndex(v => v.attribute_value_id === variationId);
+        if (variationIndex !== -1) {
+          product.variations.splice(variationIndex, 1);
         }
       }
-      const newVariations = updateProductDto.variation_options.upsert.filter(variation => !existingVariations.includes(variation.id));
-      for (const newVariationDto of newVariations) {
-        const newVariation = new Variation();
-        newVariation.title = newVariationDto.title;
-        newVariation.price = newVariationDto.price;
-        newVariation.sku = newVariationDto.sku;
-        newVariation.is_disable = newVariationDto.is_disable;
-        newVariation.sale_price = newVariationDto.sale_price;
-        newVariation.quantity = newVariationDto.quantity;
-        if (newVariationDto.image) {
-          let image = await this.fileRepository.findOne({ where: { id: newVariationDto.image.id } });
+    }
+
+
+    await this.productRepository.save(product);
+    if (updateProductDto.product_type === 'variable' && updateProductDto.variation_options) {
+      const existingVariations = product.variation_options.map(variation => variation.id);
+      const upsertVariations = Array.isArray(updateProductDto.variation_options.upsert) ? updateProductDto.variation_options.upsert : [];
+      for (const upsertVariationDto of upsertVariations) {
+        let variation;
+        if (existingVariations.includes(upsertVariationDto.id)) {
+          variation = product.variation_options.find(variation => variation.id === upsertVariationDto.id);
+        } else {
+          variation = new Variation();
+          product.variation_options.push(variation);
+        }
+        variation.title = upsertVariationDto.title;
+        variation.price = upsertVariationDto.price;
+        variation.sku = upsertVariationDto.sku;
+        variation.is_disable = upsertVariationDto.is_disable;
+        variation.sale_price = upsertVariationDto.sale_price;
+        variation.quantity = upsertVariationDto.quantity;
+        if (upsertVariationDto.image) {
+          let image = await this.fileRepository.findOne({ where: { id: upsertVariationDto.image.id } });
           if (!image) {
             image = new File();
-            image.attachment_id = newVariationDto.image.id;
-            image.url = newVariationDto.image.original;
-            image.fileable_id = newVariation.id;
+            image.attachment_id = upsertVariationDto.image.id;
+            image.url = upsertVariationDto.image.original;
+            image.fileable_id = variation.id;
             await this.fileRepository.save(image);
           }
-          newVariation.image = image;
+          variation.image = image;
         }
-        const variationOptions = [];
-        for (const option of newVariationDto.options) {
-          const newVariationOption = new VariationOption();
-          newVariationOption.id = option.id;
-          newVariationOption.name = option.name;
-          newVariationOption.value = option.value;
-          await this.variationOptionRepository.save(newVariationOption);
-          variationOptions.push(newVariationOption);
+        // Ensure variation.options is an array
+        variation.options = Array.isArray(variation.options) ? variation.options : [];
+        const existingOptionIds = variation.options.map(option => option.id);
+        const updatedOptionIds = upsertVariationDto.options.map(option => option.id);
+        const optionsToRemove = existingOptionIds.filter(id => !updatedOptionIds.includes(id));
+        for (const optionId of optionsToRemove) {
+          const option = variation.options.find(option => option.id === optionId);
+          if (option) {
+            variation.options.splice(variation.options.indexOf(option), 1);
+            await this.variationOptionRepository.remove(option);
+          }
         }
-        newVariation.options = variationOptions;
-        await this.variationRepository.save(newVariation);
-        product.variation_options.push(newVariation);
+        const newOptions = upsertVariationDto.options.filter(option => !existingOptionIds.includes(option.id));
+        for (const newOptionDto of newOptions) {
+          const newOption = new VariationOption();
+          newOption.id = newOptionDto.id;
+          newOption.name = newOptionDto.name;
+          newOption.value = newOptionDto.value;
+          await this.variationOptionRepository.save(newOption);
+          variation.options.push(newOption);
+        }
+        await this.variationRepository.save(variation);
+      }
+      if (updateProductDto.variation_options.delete) {
+        for (const deleteId of updateProductDto.variation_options.delete) {
+          const variation = product.variation_options.find(variation => variation.id === deleteId);
+          if (variation) {
+            // Remove the File entity associated with the Variation
+            if (variation.image) {
+              const image = variation.image;
+              variation.image = null;
+              await this.variationRepository.save(variation);
+              const file = await this.fileRepository.findOne({ where: { id: image.id } });
+              if (file) {
+                file.attachment_id = null;
+                await this.fileRepository.save(file).then(async () => {
+                  await this.fileRepository.remove(file);
+                });
+              }
+              const attachment = await this.attachmentRepository.findOne({ where: { id: image.attachment_id } });
+              if (attachment) {
+                await this.attachmentRepository.remove(attachment);
+              }
+            }
+
+            // Remove the VariationOption entities associated with the Variation
+            if (variation.options) {
+              await this.variationOptionRepository.remove(variation.options);
+            }
+
+            product.variation_options.splice(product.variation_options.indexOf(variation), 1);
+            await this.variationRepository.remove(variation);
+
+            // Remove the association between the Product and AttributeValue
+            const attributeValueIndex = product.variations.findIndex(v => v.attribute_value_id === variation.id);
+            if (attributeValueIndex !== -1) {
+              product.variations.splice(attributeValueIndex);
+            }
+          }
+        }
       }
     }
 
     await this.productRepository.save(product);
+    // throw error
     return product;
   }
 

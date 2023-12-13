@@ -57,7 +57,7 @@ export class Product extends CoreEntity {
   @JoinTable()
   tags: Tag[];
 
-  @ManyToMany(() => AttributeValue, { eager: true, cascade: true })
+  @ManyToMany(() => AttributeValue, { cascade: true })
   @JoinTable()
   variations?: AttributeValue[];
 
