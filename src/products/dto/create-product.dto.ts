@@ -23,7 +23,9 @@ export class CreateProductDto extends OmitType(Product, [
   type_id: number;
   shop_id: number;
   variations: AttributeValue[];
-  variation_options: { upsert: VariationDto[] };
+  variation_options: {
+    delete: any; upsert: VariationDto[]
+  };
   related_products: Product[];
 }
 
