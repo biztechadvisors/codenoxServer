@@ -1,6 +1,4 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateProductDto } from './create-product.dto';
+import { PartialType } from '@nestjs/swagger'
+import { CreateProductDto } from './create-product.dto'
 
-export class UpdateProductDto extends PartialType(CreateProductDto) {
-    pivot: any;
-}
+export class UpdateProductDto extends PartialType(CreateProductDto) {}
