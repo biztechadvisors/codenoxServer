@@ -47,7 +47,7 @@ import { User } from 'src/users/entities/user.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 
-const orders = plainToClass(Order, ordersJson);
+// const orders = plainToClass(Order, ordersJson);
 const paymentIntents = plainToClass(PaymentIntent, paymentIntentJson);
 const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson);
 const orderStatus = plainToClass(OrderStatus, orderStatusJson);
@@ -63,7 +63,7 @@ const settings = plainToClass(Setting, setting);
 
 @Injectable()
 export class OrdersService {
-  private orders: Order[] = orders;
+  private orders: Order[] 
   private orderStatus: OrderStatus[] = orderStatus;
   private orderFiles: OrderFiles[] = orderFiles;
   private setting: Setting = { ...settings };
@@ -88,7 +88,7 @@ export class OrdersService {
     private readonly paymentIntentRepository: Repository<PaymentIntent>,
   ) { }
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
-    // console.log("first", createOrderInput)
+    console.log("moyeMoyeOrder", createOrderInput)
     const order = plainToClass(Order, createOrderInput);
 
     const newOrderStatus = new OrderStatus()
@@ -276,18 +276,19 @@ export class OrdersService {
 
   
 
-  async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
-    try {
-      return (
-        this.orders.find(
-          (o: Order) =>
-            o.id === Number(id) || o.tracking_number === id.toString(),
-        ) ?? this.orders[0]
-      );
-    } catch (error) {
-      console.log(error);
-    }
+async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
+  try {
+    return (
+      this.orders.find(
+        (o: Order) =>
+          o.id === Number(id) || o.tracking_number === id.toString(),
+      ) ?? this.orders[0]
+    );
+  } catch (error) {
+    console.log(error);
   }
+}
+
 
   async getOrderStatuses({
     limit,

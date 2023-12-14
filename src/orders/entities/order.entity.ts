@@ -79,6 +79,7 @@ export class Order extends CoreEntity {
   total: number;
   @Column()
   paid_total: number;
+  
   @Column()
   payment_id?: string;
   @Column()
