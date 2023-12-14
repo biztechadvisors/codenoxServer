@@ -10,6 +10,9 @@ import { GetReviewsDto, ReviewPaginator } from './dto/get-reviews.dto';
 import { Review } from './entities/review.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { User } from 'src/users/entities/user.entity';
+import { Shop } from 'src/shops/entities/shop.entity';
+import { Feedback } from 'src/feedbacks/entities/feedback.entity';
+import { Order } from 'src/orders/entities/order.entity';
 
 @Injectable()
 export class ReviewService {
@@ -20,6 +23,12 @@ export class ReviewService {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Shop)
+    private readonly shopRepository: Repository<Shop>,
+    @InjectRepository(Feedback)
+    private readonly feedbackRepository: Repository<Feedback>,
+    @InjectRepository(Order)
+    private readonly orderkRepository: Repository<Order>,
   ) {}
 
   private async getReviewsFromDatabase(): Promise<Review[]> {
@@ -54,7 +63,35 @@ export class ReviewService {
         where: ({ name: review.user.name, email: review.user.email }),
       });
       if (getUser.length > 0) {
+        console.log("firstUser", getUser)
         review.user = getUser[0];
+      }
+    }
+
+    if (review.shop) {
+      const getShop = await this.shopRepository.find({
+        where: ({ name:review.shop.name, slug:review.shop.slug }),
+      });
+      if (getShop.length > 0) {
+        review.shop = getShop[0];
+      }
+    }
+
+    if (review.my_feedback) {
+      const getFeedback = await this.feedbackRepository.find({
+        where: ({ id: review.my_feedback.id }),
+      });
+      if (getFeedback.length > 0) {
+        review.my_feedback = getFeedback[0];
+      }
+    }
+
+    if (review.order) {
+      const getOrder = await this.orderkRepository.find({
+        where: ({ id: review.order.id }),
+      });
+      if (getOrder.length > 0) {
+        review.order = getOrder[0];
       }
     }
 

@@ -161,29 +161,18 @@ export class OrdersService {
       
       if (getCoupon) {
         order.coupon = getCoupon;
-      } else {
-        // Handle the case where no matching coupon is found
-        throw new NotFoundException('Coupon not found');
-      }
-      // Remove the redundant assignment outside the if block
-      // order.coupon[0] = getCoupon; // Remove this line
+      } 
     }
 
-    // if (order.payment_intent) {
-    //   const paymentIntentId = await this.paymentIntentRepository.find({
-    //     where: { name: order.products[0].name, product_type: order.products[0].product_type },
-    //   });
+    if (order.payment_intent) {
+      const paymentIntentId = await this.paymentIntentRepository.find({
+        where: { id: order.payment_intent.id, payment_gateway: order.payment_gateway },
+      });
     
-    //   if (paymentIntentId.length > 0) {
-    //     order.payment_intent.push(paymentIntentId[0]); 
-    //   } else {
-    //     // Handle the case where no matching product is found
-    //     // You might want to throw an error or handle it according to your application logic
-    //     throw new NotFoundException('Product not found');
-    //   }
-    // }
-    
-  
+      if (paymentIntentId.length > 0) {
+        order.payment_intent=paymentIntentId[0]
+      }
+    }
 
     const createdOrderStatus = await this.orderStatusRepository.save(newOrderStatus);
     order.status = createdOrderStatus;
@@ -221,31 +210,46 @@ export class OrdersService {
       if (!limit) limit = 15;
       const startIndex = (page - 1) * limit;
       const endIndex = page * limit;
-
+  
       let query = this.orderRepository.createQueryBuilder('order');
-
+  
       // Join OrderStatus entity
       query = query.leftJoinAndSelect('order.status', 'status');
-
+  
+      // Join Customer entity (assuming there is a relationship between order and customer)
+      query = query.leftJoinAndSelect('order.customer', 'customer');
+  
+      // Join Product entity (assuming there is a relationship between order and products)
+      query = query.leftJoinAndSelect('order.products', 'products');
+  
+      // Add additional joins for other related entities as needed
+  
       if (shop_id && shop_id !== 'undefined') {
         // Use the correct column name in the WHERE clause
         query = query.where('order.shop_id = :shopId', { shopId: Number(shop_id) });
       }
-
+  
       if (search) {
-        // Add your search conditions based on your entity fields
-        query = query.andWhere('status.statusId = :searchValue', { searchValue: search });
-        query = query.andWhere('order.fieldName = :searchValue', { searchValue: search });
+        // Update search conditions based on your entity fields
+        query = query.andWhere('(status.name ILIKE :searchValue OR order.fieldName ILIKE :searchValue)', { searchValue: `%${search}%` });
       }
-
+  
+      if (customer_id) {
+        query = query.andWhere('order.customer_id = :customerId', { customerId: customer_id });
+      }
+  
+      if (tracking_number) {
+        query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
+      }
+  
       const [data, totalCount] = await query
         .skip(startIndex)
         .take(limit)
         .getManyAndCount();
-
+  
       const results = data.slice(0, endIndex);
       const url = `/orders?search=${search}&limit=${limit}`;
-
+  
       return {
         data: results,
         ...paginate(totalCount, page, limit, results.length, url),
@@ -255,11 +259,13 @@ export class OrdersService {
       throw error; // rethrow the error for further analysis
     }
   }
+  
+  
 
 
 
   private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
-    const updateOrder = await this.findOrderInDatabase(id); // Ensure the review exists
+    const updateOrder = await this.findOrderInDatabase(id); 
 
     // Update the review entity with the new data
     Object.assign(updateOrder, updateOrderDto);
@@ -267,6 +273,8 @@ export class OrdersService {
     // Save the updated review to the database
     return await this.orderRepository.save(updateOrder);
   }
+
+  
 
   async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
     try {
