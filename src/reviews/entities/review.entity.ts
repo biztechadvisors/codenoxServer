@@ -27,9 +27,9 @@ export class Review extends CoreEntity {
   @JoinColumn()
   order: Order;
 
-  @OneToOne(() => User)
-  @JoinColumn()
-  customer: User;
+  // @OneToOne(() => User)
+  // @JoinColumn()
+  // customer: User;
 
   @ManyToMany(() => Attachment)
   @JoinTable()

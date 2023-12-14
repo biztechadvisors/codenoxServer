@@ -136,10 +136,8 @@ export class OrderFiles extends CoreEntity {
   order_id?: number;
   @Column()
   customer_id: number;
-
   @OneToOne(() => File)
   file: File;
-
   @OneToOne(() => Product)
   fileable: Product;
 }
