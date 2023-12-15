@@ -6,6 +6,13 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Profile } from './profile.entity';
 import { Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
 
+export enum UserType {
+    Admin = 'Admin',
+    Dealer = 'Dealer',
+    Vendar = 'Vendar',
+    Customer = 'Customer',
+}
+
 @Entity()
 export class User extends CoreEntity {
     @PrimaryGeneratedColumn()
@@ -51,4 +58,7 @@ export class User extends CoreEntity {
 
     @Column({ type: 'timestamp' })
     createdAt: Date;
+
+    @Column()
+    type: UserType;
 }

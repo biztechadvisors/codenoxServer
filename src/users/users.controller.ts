@@ -14,6 +14,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
+import { DealerDto } from './dto/add-dealer.dto';
+import { Dealer } from './entities/dealer.entity';
 
 @Controller('users')
 export class UsersController {
@@ -78,4 +80,37 @@ export class ProfilesController {
   deleteProfile(@Param('id') id: number) {
     return this.usersService.remove(id);
   }
+}
+
+@Controller('dealers')
+export class DealerController {
+  constructor(private readonly usersService: UsersService) { }
+
+  @Post()
+  async createDealer(@Body() dealerData: DealerDto) {
+    console.log("dealerData", dealerData)
+    return this.usersService.createDealer(dealerData);
+  }
+
+  @Get()
+  async getAllDealers(): Promise<Dealer[]> {
+    return this.usersService.getAllDealers();
+  }
+
+  @Get(':id')
+  async getDealerById(@Param('id') id: number): Promise<Dealer> {
+    return this.usersService.getDealerById(id);
+  }
+
+  @Put(':id')
+  async updateDealer(@Param('id') id: number, @Body() dealerData: DealerDto): Promise<Dealer> {
+    return this.usersService.updateDealer(id, dealerData);
+  }
+
+  @Delete(':id')
+  async deleteDealer(@Param('id') id: number): Promise<void> {
+    return this.usersService.deleteDealer(id);
+  }
+
+
 }

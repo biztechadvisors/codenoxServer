@@ -85,7 +85,7 @@ export class AuthService {
 
   async signIn(email, pass) {
     console.log("SignIn")
-    const user = await this.userRepository.findOne({ where: { email: email } });
+    const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
     const isMatch = await bcrypt.compare(pass, user.password);
 
     if (isMatch) {

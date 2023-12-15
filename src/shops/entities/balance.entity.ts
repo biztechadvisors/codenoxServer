@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn, OneToMany, ManyToOne, OneToOne } from 'typeorm';
 import { PaymentInfo, Shop } from './shop.entity';
+import { Dealer } from 'src/users/entities/dealer.entity';
 
 @Entity()
 export class Balance {
@@ -9,6 +10,8 @@ export class Balance {
     admin_commission_rate: number;
     @ManyToOne(() => Shop)
     shop: Shop;
+    @ManyToOne(() => Dealer)
+    dealer: Dealer;
     @Column()
     total_earnings: number;
     @Column()
