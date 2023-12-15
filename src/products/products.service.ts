@@ -150,32 +150,6 @@ export class ProductsService {
     // Construct the query builder
     const productQueryBuilder = this.productRepository.createQueryBuilder('product');
 
-    // Apply search filtering if search parameter is provided
-    if (search) {
-      const parseSearchParams = search.split(';');
-      const searchConditions: any[] = [];
-
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-
-        // Handle search by product name
-        if (key === 'name') {
-          searchConditions.push({ name: `%${value}%` });
-        }
-
-        // Handle search by other product attributes
-        else if (key !== 'slug') {
-          // Construct a search condition using the attribute key and value
-          searchConditions.push({ [key]: `%${value}%` });
-        }
-      }
-
-      // Apply search conditions using 'and' operator
-      if (searchConditions.length > 0) {
-        productQueryBuilder.andWhere(searchConditions); // Use array instead of spreading
-      }
-    }
-
     // Set the desired relations to fetch
     productQueryBuilder
       .leftJoinAndSelect('product.type', 'type')
@@ -188,17 +162,45 @@ export class ProductsService {
       .leftJoinAndSelect('product.variation_options', 'variation_options')
       .leftJoinAndSelect('product.gallery', 'gallery');
 
-    // Apply pagination limits
+    // Apply search filtering if search parameter is provided
+    if (search) {
+      const parseSearchParams = search.split(';');
+      const searchConditions: any[] = [];
+
+      for (const searchParam of parseSearchParams) {
+        const [key, value] = searchParam.split(':');
+
+        if (key === 'name') {
+          searchConditions.push({ name: `%${value}%` });
+        } else if (key === 'category') {
+          const searchTerm = value;
+          productQueryBuilder.where(qb => {
+            qb.orWhere('categories.name LIKE :searchTerm', { searchTerm: `%${searchTerm}%` });
+            qb.orWhere('categories.description LIKE :searchTerm', { searchTerm: `%${searchTerm}%` });
+          });
+        } else if (key === 'slug' && value.includes('category:')) {
+          const categorySlug = value.split('category:')[1];
+          productQueryBuilder.andWhere(`categories.slug LIKE :searchParam`, { searchParam: `%${categorySlug}%` });
+        } else {
+          searchConditions.push({ [key]: `%${value}%` });
+        }
+      }
+
+      if (searchConditions.length > 0) {
+        searchConditions.forEach(condition => {
+          Object.entries(condition).forEach(([key, value]) => {
+            if (key !== 'type.slug') {
+              productQueryBuilder.andWhere(`product.${key} LIKE :value`, { value });
+            }
+          });
+        });
+      }
+    }
+
     productQueryBuilder.skip(startIndex).take(limit);
-
-    // Execute the query and get results
     const products = await productQueryBuilder.getMany();
-
-    // Construct the pagination data
     const url = `/products?search=${search}&limit=${limit}`;
     const paginator = paginate(products.length, page, limit, products.length, url);
-
-    // Return the product data and pagination information
     return {
       data: products,
       ...paginator,
@@ -376,7 +378,6 @@ export class ProductsService {
       }
     }
 
-
     await this.productRepository.save(product);
     if (updateProductDto.product_type === 'variable' && updateProductDto.variation_options) {
       const existingVariations = product.variation_options.map(variation => variation.id);
@@ -431,39 +432,40 @@ export class ProductsService {
       }
       if (updateProductDto.variation_options.delete) {
         for (const deleteId of updateProductDto.variation_options.delete) {
-          const variation = product.variation_options.find(variation => variation.id === deleteId);
-          if (variation) {
-            // Remove the File entity associated with the Variation
-            if (variation.image) {
-              const image = variation.image;
-              variation.image = null;
-              await this.variationRepository.save(variation);
-              const file = await this.fileRepository.findOne({ where: { id: image.id } });
-              if (file) {
-                file.attachment_id = null;
-                await this.fileRepository.save(file).then(async () => {
-                  await this.fileRepository.remove(file);
-                });
+          const variation = await this.variationRepository.findOne({ where: { id: deleteId }, relations: ['options', 'image'] });
+          if (!variation) {
+            throw new NotFoundException(`Variation with ID ${deleteId} not found`);
+          }
+
+          await Promise.all([
+            ...variation.options ? [this.variationOptionRepository.remove(variation.options)] : [],
+            (async () => {
+              if (variation.image) {
+                const image = variation.image;
+                variation.image = null;
+                await this.variationRepository.save(variation);
+                const file = await this.fileRepository.findOne({ where: { id: image.id } });
+                if (file) {
+                  file.attachment_id = null;
+                  await this.fileRepository.save(file).then(async () => {
+                    await this.fileRepository.remove(file);
+                  });
+                }
+                const attachment = await this.attachmentRepository.findOne({ where: { id: image.attachment_id } });
+                if (attachment) {
+                  await this.attachmentRepository.remove(attachment);
+                }
               }
-              const attachment = await this.attachmentRepository.findOne({ where: { id: image.attachment_id } });
-              if (attachment) {
-                await this.attachmentRepository.remove(attachment);
-              }
-            }
+            })(),
+            this.variationRepository.remove(variation),
+          ]);
 
-            // Remove the VariationOption entities associated with the Variation
-            if (variation.options) {
-              await this.variationOptionRepository.remove(variation.options);
-            }
+          product.variation_options.splice(product.variation_options.indexOf(variation), 1);
 
-            product.variation_options.splice(product.variation_options.indexOf(variation), 1);
-            await this.variationRepository.remove(variation);
-
-            // Remove the association between the Product and AttributeValue
-            const attributeValueIndex = product.variations.findIndex(v => v.attribute_value_id === variation.id);
-            if (attributeValueIndex !== -1) {
-              product.variations.splice(attributeValueIndex);
-            }
+          // Remove the association between the Product and AttributeValue
+          const attributeValueIndex = product.variations.findIndex(v => v.attribute_value_id === variation.id);
+          if (attributeValueIndex !== -1) {
+            product.variations.splice(attributeValueIndex);
           }
         }
       }
