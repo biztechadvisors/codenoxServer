@@ -32,7 +32,6 @@ export class Dealer {
 
     @Column()
     name: string;
-
     @Column({ type: 'enum', enum: SubscriptionType })
     subscriptionType: SubscriptionType;
 
@@ -44,10 +43,8 @@ export class Dealer {
 
     @Column({ type: 'decimal', precision: 5, scale: 2 })
     discount: number;
-
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     walletBalance: number;
-
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
 
@@ -73,7 +70,6 @@ export class DealerProductMargin {
 
     @Column({ type: 'decimal', precision: 5, scale: 2 })
     margin: number;
-
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
 }
@@ -93,7 +89,6 @@ export class DealerCategoryMargin {
 
     @Column({ type: 'decimal', precision: 5, scale: 2 })
     margin: number;
-
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
 }

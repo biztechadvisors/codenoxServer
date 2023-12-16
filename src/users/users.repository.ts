@@ -1,7 +1,7 @@
 import { CustomRepository } from "src/typeorm-ex/typeorm-ex.decorator";
 import { User } from "./entities/user.entity";
 import { Repository } from "typeorm";
-import { Profile } from "./entities/profile.entity";
+import { Profile, Social } from "./entities/profile.entity";
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from "./entities/dealer.entity";
 
 @CustomRepository(User)
@@ -19,3 +19,6 @@ export class DealerProductMarginRepository extends Repository<DealerProductMargi
 
 @CustomRepository(DealerCategoryMargin)
 export class DealerCategoryMarginRepository extends Repository<DealerCategoryMargin> { }
+
+@CustomRepository(Social)
+export class SocialRepository extends Repository<Social> { }
