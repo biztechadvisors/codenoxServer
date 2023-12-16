@@ -17,6 +17,8 @@ import { Address } from 'src/addresses/entities/address.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { ShopRepository } from 'src/shops/shops.repository';
+import { AuthService } from 'src/auth/auth.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Module({
   imports: [
@@ -24,7 +26,7 @@ import { ShopRepository } from 'src/shops/shops.repository';
     TypeOrmModule.forFeature([User, Profile, Dealer, Social, Product, Category, Address, Attachment, DealerCategoryMargin, DealerProductMargin, Shop])
   ],
   controllers: [UsersController, ProfilesController, DealerController],
-  providers: [UsersService],
+  providers: [UsersService, AuthService, MailService],
   exports: [UsersService],
 })
 export class UsersModule { }

@@ -8,7 +8,7 @@ enum Permission {
   STAFF = 'Staff',
   CUSTOMER = 'Customer',
 }
-export class RegisterDto extends PickType(User, ['name', 'email', 'password']) {
+export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type']) {
   permission: Permission = Permission.CUSTOMER;
 }
 
