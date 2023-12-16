@@ -33,7 +33,7 @@ export class User extends CoreEntity {
     @Column({ default: false })
     isVerified: boolean;
 
-    @Column()
+    @Column({ nullable: true })
     shop_id?: number;
 
     @OneToOne(() => Profile, (profile) => profile.customer)

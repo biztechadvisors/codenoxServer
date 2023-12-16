@@ -23,21 +23,25 @@ export class UsersController {
 
   @Post()
   createUser(@Body() createUserDto: CreateUserDto) {
+    console.log("createUser")
     return this.usersService.create(createUserDto);
   }
 
   @Get()
   getAllUsers(@Query() query: GetUsersDto) {
+    console.log("getAllUsers")
     return this.usersService.getUsers(query);
   }
 
   @Get(':id')
   getUser(@Param('id') id: string) {
+    console.log("getUser")
     return this.usersService.findOne(+id);
   }
 
   @Put(':id')
-  updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
+    console.log("updateUser", id, updateUserDto)
     return this.usersService.update(+id, updateUserDto);
   }
 
@@ -48,6 +52,7 @@ export class UsersController {
 
   @Post('unblock-user')
   activeUser(@Body('id') id: number) {
+    console.log("activeUser")
     return this.usersService.activeUser(+id);
   }
 
@@ -57,7 +62,7 @@ export class UsersController {
   }
 
   @Post('make-admin')
-  makeAdmin(@Param('user_id') id: string) {
+  makeAdmin(@Param('user_id') id: number) {
     return this.usersService.makeAdmin(id);
   }
 }
@@ -68,11 +73,13 @@ export class ProfilesController {
 
   @Post()
   createProfile(@Body() createProfileDto: CreateProfileDto) {
+    console.log("createProfile")
     console.log(createProfileDto);
   }
 
   @Put(':id')
   updateProfile(@Body() updateProfileDto: UpdateProfileDto) {
+    console.log("updateProfile")
     console.log(updateProfileDto);
   }
 
