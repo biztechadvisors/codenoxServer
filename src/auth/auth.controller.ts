@@ -90,7 +90,6 @@ export class AuthController {
   ) {
     return this.authService.verifyForgetPasswordToken(verifyForgetPasswordDto);
   }
-
   @Get('me')
   me() {
     return this.authService.me();

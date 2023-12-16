@@ -16,7 +16,7 @@ import {
 } from './dto/create-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { plainToClass } from 'class-transformer';
-import { User } from 'src/users/entities/user.entity';
+import { User, UserType } from 'src/users/entities/user.entity';
 import usersJson from '@db/users.json';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/users/users.repository';
@@ -100,10 +100,10 @@ export class AuthService {
   }
 
   async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
-
     const emailExist = await this.userRepository.findOne({
       where: { email: createUserInput.email },
     });
+
     if (emailExist) {
       const otp = await this.generateOtp();
       const token = Math.floor(100 + Math.random() * 900).toString();
@@ -111,25 +111,29 @@ export class AuthService {
       emailExist.createdAt = new Date();
       await this.userRepository.save(emailExist);
 
-      await this.mailService.sendUserConfirmation(emailExist, token);
+      if (emailExist.type === UserType.Customer) {
+        await this.mailService.sendUserConfirmation(emailExist, token);
+      }
+
       return {
         message: 'OTP sent to your email.',
       };
     }
-
-    const otp = await this.generateOtp();
-    const token = Math.floor(100 + Math.random() * 900).toString();
 
     const hashPass = await bcrypt.hash(createUserInput.password, 12);
     const userData = new User();
     userData.name = createUserInput.name;
     userData.email = createUserInput.email;
     userData.password = hashPass;
-    userData.otp = otp;
+    userData.type = createUserInput.type; // Set the type
     userData.createdAt = new Date();
 
     await this.userRepository.save(userData);
-    await this.mailService.sendUserConfirmation(userData, token);
+
+    if (userData.type === UserType.Customer) {
+      const token = Math.floor(100 + Math.random() * 900).toString();
+      await this.mailService.sendUserConfirmation(userData, token);
+    }
 
     const access_token = await this.signIn(createUserInput.email, createUserInput.password);
     return {

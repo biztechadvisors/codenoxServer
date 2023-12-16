@@ -27,6 +27,8 @@ import { Category } from 'src/categories/entities/category.entity';
 import { CategoryRepository } from 'src/categories/categories.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { ShopRepository } from 'src/shops/shops.repository';
+import { RegisterDto } from 'src/auth/dto/create-auth.dto';
+import { AuthService } from 'src/auth/auth.service';
 
 const users = plainToClass(User, usersJson);
 
@@ -50,6 +52,7 @@ export class UsersService {
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
     @InjectRepository(Social) private readonly socialRepository: SocialRepository,
+    private authService: AuthService
 
   ) { }
 
@@ -310,10 +313,18 @@ export class UsersService {
   // -------------------------------Dealer Services----------------------
 
   async createDealer(dealerData: DealerDto) {
-    const user = await this.userRepository.findOne({ where: { id: dealerData.user.id } });
+    // Register the user first
+    const registerDto = new RegisterDto();
+    registerDto.name = dealerData.user.name;
+    registerDto.email = dealerData.user.email;
+    registerDto.password = dealerData.user.password;
+    const registerResponse = await this.authService.register(registerDto);
 
-    if (!user && user.type === UserType.Dealer) {
-      throw new NotFoundException(`User with ID ${dealerData.user} not found`);
+    // If registration is successful, the user will be saved in the database
+    const user = await this.userRepository.findOne({ where: { email: dealerData.user.email } });
+
+    if (!user || user.type !== UserType.Dealer) {
+      throw new NotFoundException(`User with email ${dealerData.user.email} not found or not a dealer`);
     }
 
     const dealer = new Dealer();
@@ -353,6 +364,7 @@ export class UsersService {
 
     return dealer;
   }
+
 
   async getAllDealers(): Promise<Dealer[]> {
     return this.dealerRepository.find({ relations: ['user', 'dealerProductMargins', 'dealerProductMargins.product', 'dealerCategoryMargins', 'dealerCategoryMargins.category'] });
