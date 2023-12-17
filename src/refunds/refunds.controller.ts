@@ -6,10 +6,10 @@ import {
   Patch,
   Param,
   Delete,
-} from '@nestjs/common';
-import { RefundsService } from './refunds.service';
-import { CreateRefundDto } from './dto/create-refund.dto';
-import { UpdateRefundDto } from './dto/update-refund.dto';
+} from '@nestjs/common'
+import { RefundsService } from './refunds.service'
+import { CreateRefundDto } from './dto/create-refund.dto'
+import { UpdateRefundDto } from './dto/update-refund.dto'
 
 @Controller('refunds')
 export class RefundsController {
@@ -17,26 +17,26 @@ export class RefundsController {
 
   @Post()
   create(@Body() createRefundDto: CreateRefundDto) {
-    return this.refundsService.create(createRefundDto);
+    return this.refundsService.create(createRefundDto)
   }
 
   @Get()
   findAll() {
-    return this.refundsService.findAll();
+    return this.refundsService.findAll()
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.refundsService.findOne(+id);
+    return this.refundsService.findOne(+id)
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateRefundDto: UpdateRefundDto) {
-    return this.refundsService.update(+id, updateRefundDto);
+    return this.refundsService.update(+id, updateRefundDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.refundsService.remove(+id);
+    return this.refundsService.remove(+id)
   }
 }

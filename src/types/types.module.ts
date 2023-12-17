@@ -15,4 +15,4 @@ import { Attachment } from 'src/common/entities/attachment.entity';
   controllers: [TypesController],
   providers: [TypesService, UploadsService, TypeRepository, TypeSettingsRepository, BannerRepository, AttachmentRepository],
 })
-export class TypesModule { }
+export class TypesModule {}

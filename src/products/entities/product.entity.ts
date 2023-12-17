@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
@@ -129,7 +130,7 @@ export class Product extends CoreEntity {
 
   @Column()
   language?: string;
-  @Column({ type: "json" })
+  @Column({ type: 'json' })
   translated_languages?: string[];
 }
 

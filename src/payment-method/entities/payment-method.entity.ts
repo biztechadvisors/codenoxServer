@@ -1,36 +1,37 @@
+/* eslint-disable prettier/prettier */
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { PaymentGateWay } from './payment-gateway.entity';
-import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class PaymentMethod extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
   @IsNotEmpty()
   @IsString()
-  method_key: string;
+  method_key: string
   @Column()
   @IsOptional()
   @IsBoolean()
-  default_card: boolean;
+  default_card: boolean
   @Column()
-  payment_gateway_id?: number;
+  payment_gateway_id?: number
   @Column()
-  fingerprint?: string;
+  fingerprint?: string
   @Column()
-  owner_name?: string;
+  owner_name?: string
   @Column()
-  network?: string;
+  network?: string
   @Column()
-  type?: string;
+  type?: string
   @Column()
-  last4?: string;
+  last4?: string
   @Column()
-  expires?: string;
+  expires?: string
   @Column()
-  origin?: string;
+  origin?: string
   @Column()
   verification_check?: string;
   @ManyToOne(() => PaymentGateWay)

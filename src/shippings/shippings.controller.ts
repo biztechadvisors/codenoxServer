@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -7,11 +8,11 @@ import {
   Param,
   Delete,
   Query,
-} from '@nestjs/common';
-import { ShippingsService } from './shippings.service';
-import { CreateShippingDto } from './dto/create-shipping.dto';
-import { UpdateShippingDto } from './dto/update-shipping.dto';
-import { GetShippingsDto } from './dto/get-shippings.dto';
+} from '@nestjs/common'
+import { ShippingsService } from './shippings.service'
+import { CreateShippingDto } from './dto/create-shipping.dto'
+import { UpdateShippingDto } from './dto/update-shipping.dto'
+import { GetShippingsDto } from './dto/get-shippings.dto'
 
 @Controller('shippings')
 export class ShippingsController {
@@ -19,17 +20,17 @@ export class ShippingsController {
 
   @Post()
   create(@Body() createShippingDto: CreateShippingDto) {
-    return this.shippingsService.create(createShippingDto);
+    return this.shippingsService.create(createShippingDto)
   }
 
   @Get()
   findAll(@Query() query: GetShippingsDto) {
-    return this.shippingsService.getShippings(query);
+    return this.shippingsService.getShippings(query)
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.shippingsService.findOne(+id);
+    return this.shippingsService.findOne(+id)
   }
 
   @Put(':id')
@@ -37,11 +38,11 @@ export class ShippingsController {
     @Param('id') id: string,
     @Body() updateShippingDto: UpdateShippingDto,
   ) {
-    return this.shippingsService.update(+id, updateShippingDto);
+    return this.shippingsService.update(+id, updateShippingDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.shippingsService.remove(+id);
+    return this.shippingsService.remove(+id)
   }
 }

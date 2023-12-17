@@ -1,3 +1,3 @@
 export class CreateAiDto {
-  prompt: string;
+  prompt: string
 }

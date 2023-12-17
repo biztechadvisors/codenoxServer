@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { GetConversationsDto } from 'src/conversations/dto/get-conversations.dto';
-import { CreateMessageDto } from './dto/create-message.dto';
-import { MessagesService } from './messages.service';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { GetConversationsDto } from 'src/conversations/dto/get-conversations.dto'
+import { CreateMessageDto } from './dto/create-message.dto'
+import { MessagesService } from './messages.service'
 
 @Controller('messages/conversations')
 export class MessagesController {
@@ -9,11 +9,11 @@ export class MessagesController {
 
   @Post(':id')
   createMessage(@Body() createMessageDto: CreateMessageDto) {
-    return this.messagesService.createMessage(createMessageDto);
+    return this.messagesService.createMessage(createMessageDto)
   }
 
   @Get(':param')
   getMessages(@Query() query: GetConversationsDto) {
-    return this.messagesService.getMessages(query);
+    return this.messagesService.getMessages(query)
   }
 }

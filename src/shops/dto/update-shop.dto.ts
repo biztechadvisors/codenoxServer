@@ -1,4 +1,5 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateShopDto } from './create-shop.dto';
+/* eslint-disable prettier/prettier */
+import { PartialType } from '@nestjs/swagger'
+import { CreateShopDto } from './create-shop.dto'
 
 export class UpdateShopDto extends PartialType(CreateShopDto) {}

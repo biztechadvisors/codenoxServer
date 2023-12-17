@@ -1,4 +1,5 @@
-import { AttachmentDTO } from 'src/common/dto/attachment.dto';
+/* eslint-disable prettier/prettier */
+import { AttachmentDTO } from 'src/common/dto/attachment.dto'
 
 // banner.dto.ts
 export class BannerDto {

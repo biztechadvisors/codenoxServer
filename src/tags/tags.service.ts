@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { paginate } from 'src/common/pagination/paginate';
 import { CreateTagDto } from './dto/create-tag.dto';
@@ -15,13 +16,13 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 import { AttachmentRepository } from 'src/common/common.repository';
 import { TagRepository } from './tags.repository';
 
-const tags = plainToClass(Tag, tagsJson);
+const tags = plainToClass(Tag, tagsJson)
 
 const options = {
   keys: ['name'],
   threshold: 0.3,
-};
-const fuse = new Fuse(tags, options);
+}
+const fuse = new Fuse(tags, options)
 
 @Injectable()
 export class TagsService {

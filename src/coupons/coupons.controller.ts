@@ -7,11 +7,11 @@ import {
   Param,
   Delete,
   Query,
-} from '@nestjs/common';
-import { CouponsService } from './coupons.service';
-import { CreateCouponDto } from './dto/create-coupon.dto';
-import { GetCouponsDto } from './dto/get-coupons.dto';
-import { UpdateCouponDto } from './dto/update-coupon.dto';
+} from '@nestjs/common'
+import { CouponsService } from './coupons.service'
+import { CreateCouponDto } from './dto/create-coupon.dto'
+import { GetCouponsDto } from './dto/get-coupons.dto'
+import { UpdateCouponDto } from './dto/update-coupon.dto'
 
 @Controller('coupons')
 export class CouponsController {
@@ -19,12 +19,12 @@ export class CouponsController {
 
   @Post()
   createCoupon(@Body() createCouponDto: CreateCouponDto) {
-    return this.couponsService.create(createCouponDto);
+    return this.couponsService.create(createCouponDto)
   }
 
   @Get()
   getCoupons(@Query() query: GetCouponsDto) {
-    return this.couponsService.getCoupons(query);
+    return this.couponsService.getCoupons(query)
   }
 
   @Get(':param')
@@ -32,17 +32,17 @@ export class CouponsController {
     @Param('param') param: string,
     @Query('language') language: string,
   ) {
-    return this.couponsService.getCoupon(param, language);
+    return this.couponsService.getCoupon(param, language)
   }
 
   @Get(':id/verify')
   verify(@Param('param') param: string, @Query('language') language: string) {
-    return this.couponsService.getCoupon(param, language);
+    return this.couponsService.getCoupon(param, language)
   }
 
   @Post('verify')
   verifyCoupon(@Body('code') code: string) {
-    return this.couponsService.verifyCoupon(code);
+    return this.couponsService.verifyCoupon(code)
   }
 
   @Put(':id')
@@ -50,11 +50,11 @@ export class CouponsController {
     @Param('id') id: string,
     @Body() updateCouponDto: UpdateCouponDto,
   ) {
-    return this.couponsService.update(+id, updateCouponDto);
+    return this.couponsService.update(+id, updateCouponDto)
   }
 
   @Delete(':id')
   deleteCoupon(@Param('id') id: string) {
-    return this.couponsService.remove(+id);
+    return this.couponsService.remove(+id)
   }
 }

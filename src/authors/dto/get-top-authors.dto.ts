@@ -1,3 +1,3 @@
 export class GetTopAuthorsDto {
-  limit: number;
+  limit: number
 }

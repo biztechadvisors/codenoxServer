@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto, UserPaginator } from './dto/get-users.dto';
@@ -41,22 +46,16 @@ const fuse = new Fuse(users, options);
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User) private readonly userRepository: UserRepository,
-    @InjectRepository(Address) private readonly addressesRepository: AddressRepository,
-    @InjectRepository(Profile) private readonly profilesRepository: ProfileRepository,
-    @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
-    @InjectRepository(Dealer) private readonly dealerRepository: DealerRepository,
-    @InjectRepository(Product) private readonly productRepository: ProductRepository,
-    @InjectRepository(Category) private readonly categoryRepository: CategoryRepository,
-    @InjectRepository(DealerProductMargin) private readonly dealerProductMarginRepository: DealerProductMarginRepository,
-    @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
-    @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
-    @InjectRepository(Social) private readonly socialRepository: SocialRepository,
-    private authService: AuthService
+    @InjectRepository(UserRepository) private userRepository: UserRepository,
+    @InjectRepository(AddressRepository) private addressesRepository: AddressRepository,
+    @InjectRepository(ProfileRepository) private profilesRepository: ProfileRepository,
+    @InjectRepository(AttachmentRepository) private attachmentRepository: AttachmentRepository,
+    @InjectRepository(ShopRepository) private shopRepository: ShopRepository,
+    @InjectRepository(SocialRepository) private socialRepository: SocialRepository,
 
   ) { }
 
-  //-------------------------------------------------------- 
+  //--------------------------------------------------------
 
   private users: User[] = users;
 
@@ -308,169 +307,4 @@ export class UsersService {
 
     return user;
   }
-
-
-  // -------------------------------Dealer Services----------------------
-
-  async createDealer(dealerData: DealerDto) {
-    // Register the user first
-    const registerDto = new RegisterDto();
-    registerDto.name = dealerData.user.name;
-    registerDto.email = dealerData.user.email;
-    registerDto.password = dealerData.user.password;
-    const registerResponse = await this.authService.register(registerDto);
-
-    // If registration is successful, the user will be saved in the database
-    const user = await this.userRepository.findOne({ where: { email: dealerData.user.email } });
-
-    if (!user || user.type !== UserType.Dealer) {
-      throw new NotFoundException(`User with email ${dealerData.user.email} not found or not a dealer`);
-    }
-
-    const dealer = new Dealer();
-    dealer.name = dealerData.name;
-    dealer.user = user;
-    dealer.subscriptionType = dealerData.subscriptionType;
-    dealer.subscriptionStart = dealerData.subscriptionStart;
-    dealer.subscriptionEnd = dealerData.subscriptionEnd;
-    dealer.discount = dealerData.discount;
-    dealer.walletBalance = dealerData.walletBalance;
-    dealer.isActive = dealerData.isActive;
-
-    // Save the dealer first to generate an ID
-    await this.dealerRepository.save(dealer);
-
-    // Then save the dealer product margins
-    for (const marginData of dealerData.dealerProductMargins) {
-      const product = await this.productRepository.findOne({ where: { id: marginData.product.id } });
-      const margin = new DealerProductMargin();
-      margin.product = product;
-      margin.margin = marginData.margin;
-      margin.isActive = marginData.isActive;
-      margin.dealer = dealer;  // Associate the margin with the dealer
-      await this.dealerProductMarginRepository.save(margin);  // Save the margin
-    }
-
-    // And the dealer category margins
-    for (const marginData of dealerData.dealerCategoryMargins) {
-      const category = await this.categoryRepository.findOne({ where: { id: marginData.category.id } });
-      const margin = new DealerCategoryMargin();
-      margin.category = category;
-      margin.margin = marginData.margin;
-      margin.isActive = marginData.isActive;
-      margin.dealer = dealer;  // Associate the margin with the dealer
-      await this.dealerCategoryMarginRepository.save(margin);  // Save the margin
-    }
-
-    return dealer;
-  }
-
-
-  async getAllDealers(): Promise<Dealer[]> {
-    return this.dealerRepository.find({ relations: ['user', 'dealerProductMargins', 'dealerProductMargins.product', 'dealerCategoryMargins', 'dealerCategoryMargins.category'] });
-  }
-
-  async getDealerById(id: number): Promise<Dealer> {
-    return this.dealerRepository.findOne({
-      where: { id: id },
-      relations: ['user', 'dealerProductMargins', 'dealerProductMargins.product', 'dealerCategoryMargins', 'dealerCategoryMargins.category']
-    });
-  }
-
-  async updateDealer(id: number, dealerData: DealerDto): Promise<Dealer> {
-    const dealer = await this.dealerRepository.findOne({ where: { id: id }, relations: ['user', 'dealerProductMargins', 'dealerProductMargins.product', 'dealerCategoryMargins', 'dealerCategoryMargins.category'] });
-    if (!dealer) {
-      throw new NotFoundException(`Dealer with ID ${id} not found`);
-    }
-
-    dealer.name = dealerData.name;
-    dealer.subscriptionType = dealerData.subscriptionType;
-    dealer.subscriptionStart = dealerData.subscriptionStart;
-    dealer.subscriptionEnd = dealerData.subscriptionEnd;
-    dealer.discount = dealerData.discount;
-    dealer.walletBalance = dealerData.walletBalance;
-    dealer.isActive = dealerData.isActive;
-
-    // Update or create new DealerProductMargin
-    for (const marginData of dealerData.dealerProductMargins) {
-      if (!marginData.product || !marginData.product.id) continue;  // Skip if product or product.id is not provided
-      let margin = dealer.dealerProductMargins.find(m => m.product.id === marginData.product.id);
-      if (!margin) {
-        margin = new DealerProductMargin();
-        margin.product = await this.productRepository.findOne({ where: { id: marginData.product.id } });
-        margin.dealer = dealer;  // Associate the margin with the dealer
-        dealer.dealerProductMargins.push(margin);
-      }
-      margin.margin = marginData.margin;
-      margin.isActive = marginData.isActive;
-      await this.dealerProductMarginRepository.save(margin);  // Save the margin
-    }
-
-    // Find and remove DealerProductMargin not present in the update data
-    const existingProductMarginIds = dealer.dealerProductMargins.map(m => m.product.id);
-    const updateProductMarginIds = dealerData.dealerProductMargins.map(md => md.product && md.product.id);
-    const productMarginIdsToRemove = existingProductMarginIds.filter(id => !updateProductMarginIds.includes(id));
-
-    for (const id of productMarginIdsToRemove) {
-      const marginToRemove = dealer.dealerProductMargins.find(m => m.product.id === id);
-      await this.dealerProductMarginRepository.remove(marginToRemove);
-    }
-
-    // Update or create new DealerCategoryMargin
-    for (const marginData of dealerData.dealerCategoryMargins) {
-      if (!marginData.category || !marginData.category.id) continue;  // Skip if category or category.id is not provided
-      let margin = dealer.dealerCategoryMargins.find(m => m.category.id === marginData.category.id);
-      if (!margin) {
-        margin = new DealerCategoryMargin();
-        margin.category = await this.categoryRepository.findOne({ where: { id: marginData.category.id } });
-        margin.dealer = dealer;  // Associate the margin with the dealer
-        dealer.dealerCategoryMargins.push(margin);
-      }
-      margin.margin = marginData.margin;
-      margin.isActive = marginData.isActive;
-      await this.dealerCategoryMarginRepository.save(margin);  // Save the margin
-    }
-
-    // Find and remove DealerCategoryMargin not present in the update data
-    const existingCategoryMarginIds = dealer.dealerCategoryMargins.map(m => m.category.id);
-    const updateCategoryMarginIds = dealerData.dealerCategoryMargins.map(md => md.category && md.category.id);
-    const categoryMarginIdsToRemove = existingCategoryMarginIds.filter(id => !updateCategoryMarginIds.includes(id));
-
-    for (const id of categoryMarginIdsToRemove) {
-      const marginToRemove = dealer.dealerCategoryMargins.find(m => m.category.id === id);
-      await this.dealerCategoryMarginRepository.remove(marginToRemove);
-    }
-
-    // Remove circular references
-    dealer.dealerProductMargins.forEach(margin => {
-      delete margin.dealer;
-    });
-    dealer.dealerCategoryMargins.forEach(margin => {
-      delete margin.dealer;
-    });
-
-    return this.dealerRepository.save(dealer);
-  }
-
-
-  async deleteDealer(id: number): Promise<void> {
-    const dealer = await this.dealerRepository.findOne({ where: { id: id }, relations: ['dealerProductMargins', 'dealerCategoryMargins'] });
-    if (!dealer) {
-      throw new NotFoundException(`Dealer with ID ${id} not found`);
-    }
-
-    // Remove the dealer product margins
-    for (const margin of dealer.dealerProductMargins) {
-      await this.dealerProductMarginRepository.delete(margin.id);
-    }
-
-    // Remove the dealer category margins
-    for (const margin of dealer.dealerCategoryMargins) {
-      await this.dealerCategoryMarginRepository.delete(margin.id);
-    }
-
-    await this.dealerRepository.delete(id);
-  }
-
 }
-

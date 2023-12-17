@@ -1,9 +1,9 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
+import { SortOrder } from 'src/common/dto/generic-conditions.dto'
 
 export class GetShippingsDto {
-  text?: string;
-  orderBy?: QueryShippingClassesOrderByColumn;
-  sortedBy?: SortOrder;
+  text?: string
+  orderBy?: QueryShippingClassesOrderByColumn
+  sortedBy?: SortOrder
 }
 
 export enum QueryShippingClassesOrderByColumn {

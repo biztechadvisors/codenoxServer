@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { DealerController, ProfilesController, UsersController } from './users.controller';
@@ -29,4 +30,4 @@ import { MailService } from 'src/mail/mail.service';
   providers: [UsersService, AuthService, MailService],
   exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}

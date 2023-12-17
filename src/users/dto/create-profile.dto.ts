@@ -1,5 +1,6 @@
-import { PickType } from '@nestjs/swagger';
-import { Profile } from '../entities/profile.entity';
+/* eslint-disable prettier/prettier */
+import { PickType } from '@nestjs/swagger'
+import { Profile } from '../entities/profile.entity'
 
 export class CreateProfileDto extends PickType(Profile, [
   'avatar',
@@ -7,9 +8,9 @@ export class CreateProfileDto extends PickType(Profile, [
   'socials',
   'contact',
 ]) {
-  customer: ConnectBelongsTo;
+  customer: ConnectBelongsTo
 }
 
 export class ConnectBelongsTo {
-  connect: number;
+  connect: number
 }

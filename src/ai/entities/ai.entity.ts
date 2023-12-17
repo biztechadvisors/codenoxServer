@@ -1,11 +1,11 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class Ai {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  status: 'success' | 'failed';
+  status: 'success' | 'failed'
   @Column()
-  result: string;
+  result: string
 }

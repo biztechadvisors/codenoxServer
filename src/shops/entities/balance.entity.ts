@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn, OneToMany, ManyToOne, OneToOne } from 'typeorm';
+/* eslint-disable prettier/prettier */
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, OneToOne } from 'typeorm';
 import { PaymentInfo, Shop } from './shop.entity';
 import { Dealer } from 'src/users/entities/dealer.entity';
 
@@ -8,7 +9,7 @@ export class Balance {
     id: number;
     @Column()
     admin_commission_rate: number;
-    @ManyToOne(() => Shop)
+    @OneToOne(() => Shop, shop => shop.balance, {cascade:true})
     shop: Shop;
     @ManyToOne(() => Dealer)
     dealer: Dealer;

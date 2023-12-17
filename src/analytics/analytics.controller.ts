@@ -1,5 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
-import { AnalyticsService } from './analytics.service';
+import { Controller, Get } from '@nestjs/common'
+import { AnalyticsService } from './analytics.service'
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -7,6 +7,6 @@ export class AnalyticsController {
 
   @Get()
   analytics() {
-    return this.analyticsService.findAll();
+    return this.analyticsService.findAll()
   }
 }

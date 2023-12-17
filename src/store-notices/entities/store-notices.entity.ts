@@ -1,7 +1,7 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
-import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Shop } from 'src/shops/entities/shop.entity'
+import { User } from 'src/users/entities/user.entity'
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm'
 
 enum StoreNoticePriorityType {
   High = 'high',
@@ -12,35 +12,35 @@ enum StoreNoticePriorityType {
 @Entity()
 export class StoreNotice extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  priority: StoreNoticePriorityType;
+  priority: StoreNoticePriorityType
   @Column()
-  notice: string;
+  notice: string
   @Column()
-  description?: string;
+  description?: string
   @Column()
-  effective_from?: string;
+  effective_from?: string
   @Column()
-  expired_at: string;
+  expired_at: string
   @Column()
-  type?: string;
+  type?: string
   @Column()
-  is_read?: boolean;
+  is_read?: boolean
   @ManyToMany(() => Shop)
-  shops?: Shop[];
+  shops?: Shop[]
   @ManyToMany(() => Shop)
-  users?: User[];
+  users?: User[]
   @Column()
-  received_by?: string;
+  received_by?: string
   @Column()
-  created_by: string;
+  created_by: string
   @Column()
-  expire_at: string;
+  expire_at: string
   @Column()
-  deleted_at?: string;
-  @Column({ type: "json" })
-  translated_languages: string[];
-  @Column({ type: "varchar" })
-  creator?: string;
+  deleted_at?: string
+  @Column({ type: 'json' })
+  translated_languages: string[]
+  @Column({ type: 'varchar' })
+  creator?: string
 }

@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
-import { CreateSettingDto } from './dto/create-setting.dto';
-import { SettingsService } from './settings.service';
+/* eslint-disable prettier/prettier */
+import { Body, Controller, Get, Post } from '@nestjs/common'
+import { CreateSettingDto } from './dto/create-setting.dto'
+import { SettingsService } from './settings.service'
 
 @Controller('settings')
 export class SettingsController {
@@ -8,11 +9,11 @@ export class SettingsController {
 
   @Post()
   create(@Body() createSettingDto: CreateSettingDto) {
-    return this.settingsService.create(createSettingDto);
+    return this.settingsService.create(createSettingDto)
   }
 
   @Get()
   findAll() {
-    return this.settingsService.findAll();
+    return this.settingsService.findAll()
   }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -6,11 +7,11 @@ import {
   Param,
   Delete,
   Query,
-} from '@nestjs/common';
-import { WithdrawsService } from './withdraws.service';
-import { CreateWithdrawDto } from './dto/create-withdraw.dto';
-import { ApproveWithdrawDto } from './dto/approve-withdraw.dto';
-import { GetWithdrawsDto, WithdrawPaginator } from './dto/get-withdraw.dto';
+} from '@nestjs/common'
+import { WithdrawsService } from './withdraws.service'
+import { CreateWithdrawDto } from './dto/create-withdraw.dto'
+import { ApproveWithdrawDto } from './dto/approve-withdraw.dto'
+import { GetWithdrawsDto, WithdrawPaginator } from './dto/get-withdraw.dto'
 
 @Controller('withdraws')
 export class WithdrawsController {
@@ -18,28 +19,29 @@ export class WithdrawsController {
 
   @Post()
   createWithdraw(@Body() createWithdrawDto: CreateWithdrawDto) {
-    return this.withdrawsService.create(createWithdrawDto);
+    return this.withdrawsService.create(createWithdrawDto)
   }
 
   @Get()
   async withdraws(@Query() query: GetWithdrawsDto): Promise<WithdrawPaginator> {
-    return this.withdrawsService.getWithdraws(query);
+    return this.withdrawsService.getWithdraws(query)
   }
 
   @Get(':id')
   withdraw(@Param('id') id: string) {
-    return this.withdrawsService.findOne(+id);
+    return this.withdrawsService.findOne(+id)
   }
-  @Post(':id/approve')
+  @Post('approve')
   approveWithdraw(
     @Param('id') id: string,
     @Body() updateWithdrawDto: ApproveWithdrawDto,
   ) {
-    return this.withdrawsService.update(+id, updateWithdrawDto);
+    console.log("first", id, updateWithdrawDto)
+    return this.withdrawsService.update(+id, updateWithdrawDto)
   }
 
   @Delete(':id')
   deleteWithdraw(@Param('id') id: number) {
-    return this.withdrawsService.remove(+id);
+    return this.withdrawsService.remove(+id)
   }
 }

@@ -1,8 +1,8 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Order } from 'src/orders/entities/order.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
-import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Order } from 'src/orders/entities/order.entity'
+import { Shop } from 'src/shops/entities/shop.entity'
+import { User } from 'src/users/entities/user.entity'
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
 
 export enum RefundStatus {
   APPROVED = 'Approved',
@@ -14,15 +14,15 @@ export enum RefundStatus {
 @Entity()
 export class Refund extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  amount: string;
+  amount: string
   @Column()
-  status: RefundStatus;
+  status: RefundStatus
   @OneToOne(() => Shop)
-  shop: Shop;
+  shop: Shop
   @OneToOne(() => Order)
-  order: Order;
+  order: Order
   @OneToOne(() => User)
-  customer: User;
+  customer: User
 }

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -15,29 +16,28 @@ import { convertToSlug } from 'src/helpers';
 import { TypeRepository } from 'src/types/types.repository';
 import { ILike, IsNull } from 'typeorm';
 
-const categories = plainToClass(Category, categoriesJson);
+const categories = plainToClass(Category, categoriesJson)
 const options = {
   keys: ['name', 'type.slug'],
   threshold: 0.3,
-};
-const fuse = new Fuse(categories, options);
+}
+const fuse = new Fuse(categories, options)
 
 @Injectable()
 export class CategoriesService {
-
   constructor(
-    @InjectRepository(CategoryRepository) private categoryRepository: CategoryRepository,
-    @InjectRepository(AttachmentRepository) private attachmentRepository: AttachmentRepository,
+    @InjectRepository(CategoryRepository)
+    private categoryRepository: CategoryRepository,
+    @InjectRepository(AttachmentRepository)
+    private attachmentRepository: AttachmentRepository,
     @InjectRepository(TypeRepository) private typeRepository: TypeRepository,
-
-  ) { }
-
+  ) {}
 
   async convertToSlug(text) {
-    return await convertToSlug(text);
+    return await convertToSlug(text)
   }
 
-  private categories: Category[] = categories;
+  private categories: Category[] = categories
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     // console.log('CreateCategoryDto***************', createCategoryDto);
@@ -128,13 +128,19 @@ export class CategoriesService {
 
   async getCategory(param: string, language: string): Promise<Category> {
     // Try to parse the param as a number to see if it's an id
-    const id = Number(param);
+    const id = Number(param)
     if (!isNaN(id)) {
       // If it's an id, find the category by id
-      return this.categoryRepository.findOne({ where: { id: id, language: language }, relations: ['type', 'image'] });
+      return this.categoryRepository.findOne({
+        where: { id: id, language: language },
+        relations: ['type', 'image'],
+      })
     } else {
       // If it's not an id, find the category by slug
-      return this.categoryRepository.findOne({ where: { slug: param, language: language }, relations: ['type', 'image'] });
+      return this.categoryRepository.findOne({
+        where: { slug: param, language: language },
+        relations: ['type', 'image'],
+      })
     }
   }
 
@@ -198,19 +204,19 @@ export class CategoriesService {
     });
 
     if (!category) {
-      throw new Error('Category not found');
+      throw new Error('Category not found')
     }
     // If the Category has an image, remove it first
     if (category.image) {
-      const image = category.image;
+      const image = category.image
       // Set the imageId to null in the category table before deleting the attachment
-      category.image = null;
-      await this.categoryRepository.save(category);
+      category.image = null
+      await this.categoryRepository.save(category)
       // Now, delete the image (attachment)
-      await this.attachmentRepository.remove(image);
+      await this.attachmentRepository.remove(image)
     }
     // Remove the Category instance from the database
-    await this.categoryRepository.remove(category);
+    await this.categoryRepository.remove(category)
   }
 
 

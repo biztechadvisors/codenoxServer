@@ -1,3 +1,3 @@
 export class GetTopManufacturersDto {
-  limit: number;
+  limit: number
 }

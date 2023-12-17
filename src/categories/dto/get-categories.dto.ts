@@ -1,19 +1,19 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
+import { SortOrder } from 'src/common/dto/generic-conditions.dto'
+import { PaginationArgs } from 'src/common/dto/pagination-args.dto'
+import { Paginator } from 'src/common/dto/paginator.dto'
 
-import { Category } from '../entities/category.entity';
+import { Category } from '../entities/category.entity'
 
 export class CategoryPaginator extends Paginator<Category> {
-  data: Category[];
+  data: Category[]
 }
 
 export class GetCategoriesDto extends PaginationArgs {
-  orderBy?: QueryCategoriesOrderByColumn;
-  sortedBy?: SortOrder;
-  search?: string;
-  parent?: number | string = 'null';
-  language?: string;
+  orderBy?: QueryCategoriesOrderByColumn
+  sortedBy?: SortOrder
+  search?: string
+  parent?: number | string = 'null'
+  language?: string
 }
 
 export enum QueryCategoriesOrderByColumn {

@@ -1,3 +1,3 @@
 export class DefaultCart {
-  method_id: string;
+  method_id: string
 }

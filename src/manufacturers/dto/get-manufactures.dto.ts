@@ -1,17 +1,17 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
-import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
-import { Paginator } from 'src/common/dto/paginator.dto';
-import { Manufacturer } from '../entities/manufacturer.entity';
+import { SortOrder } from 'src/common/dto/generic-conditions.dto'
+import { PaginationArgs } from 'src/common/dto/pagination-args.dto'
+import { Paginator } from 'src/common/dto/paginator.dto'
+import { Manufacturer } from '../entities/manufacturer.entity'
 
 export class ManufacturerPaginator extends Paginator<Manufacturer> {
-  data: Manufacturer[];
+  data: Manufacturer[]
 }
 
 export class GetManufacturersDto extends PaginationArgs {
-  orderBy?: QueryManufacturersOrderByColumn;
-  sortedBy?: SortOrder;
-  search?: string;
-  language?: string;
+  orderBy?: QueryManufacturersOrderByColumn
+  sortedBy?: SortOrder
+  search?: string
+  language?: string
 }
 
 export enum QueryManufacturersOrderByColumn {

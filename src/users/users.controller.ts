@@ -19,7 +19,7 @@ import { Dealer } from './entities/dealer.entity';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
   createUser(@Body() createUserDto: CreateUserDto) {
@@ -69,7 +69,7 @@ export class UsersController {
 
 @Controller('profiles')
 export class ProfilesController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
   createProfile(@Body() createProfileDto: CreateProfileDto) {

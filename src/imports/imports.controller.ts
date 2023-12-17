@@ -1,6 +1,6 @@
-import { Controller, Post, Body } from '@nestjs/common';
-import { ImportsService } from './imports.service';
-import { ImportDto } from './dto/create-import.dto';
+import { Controller, Post, Body } from '@nestjs/common'
+import { ImportsService } from './imports.service'
+import { ImportDto } from './dto/create-import.dto'
 
 @Controller()
 export class ImportsController {
@@ -8,17 +8,17 @@ export class ImportsController {
 
   @Post('import-attributes')
   importAttributes(@Body() importAttributesDto: ImportDto) {
-    console.log(importAttributesDto);
-    return true;
+    console.log(importAttributesDto)
+    return true
   }
   @Post('import-products')
   importProducts(@Body() importProductsDto: ImportDto) {
-    console.log(importProductsDto);
-    return true;
+    console.log(importProductsDto)
+    return true
   }
   @Post('import-variation-options')
   importVariationOptions(@Body() importVariationOptionsDto: ImportDto) {
-    console.log(importVariationOptionsDto);
-    return true;
+    console.log(importVariationOptionsDto)
+    return true
   }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PickType } from '@nestjs/swagger';
 import { Tag } from '../entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';

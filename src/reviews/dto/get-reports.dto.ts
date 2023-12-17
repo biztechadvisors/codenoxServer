@@ -1,3 +1,3 @@
 export class GetReportDto {
-  modal_id?: string;
+  modal_id?: string
 }

@@ -1,15 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import analyticsJson from '@db/analytics.json';
-import { plainToClass } from 'class-transformer';
-import { Analytics } from './entities/analytics.entity';
+import { Injectable } from '@nestjs/common'
+import analyticsJson from '@db/analytics.json'
+import { plainToClass } from 'class-transformer'
+import { Analytics } from './entities/analytics.entity'
 
-const analytics = plainToClass(Analytics, analyticsJson);
+const analytics = plainToClass(Analytics, analyticsJson)
 
 @Injectable()
 export class AnalyticsService {
-  private analytics = analytics;
+  private analytics = analytics
 
   findAll() {
-    return this.analytics;
+    return this.analytics
   }
 }

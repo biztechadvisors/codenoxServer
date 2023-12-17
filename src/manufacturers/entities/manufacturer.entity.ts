@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { CoreEntity } from '../../common/entities/core.entity';
 import { Attachment } from '../../common/entities/attachment.entity';
 import { ShopSocials } from '../../settings/entities/setting.entity';
@@ -21,11 +22,11 @@ export class Manufacturer extends CoreEntity {
   image?: Attachment;
 
   @Column()
-  is_approved?: boolean;
+  is_approved?: boolean
   @Column()
-  name: string;
+  name: string
   @Column()
-  products_count?: number;
+  products_count?: number
   @Column()
   slug?: string;
 
@@ -37,11 +38,11 @@ export class Manufacturer extends CoreEntity {
   type: Type;
   
   @Column()
-  type_id?: string;
+  type_id?: string
   @Column()
-  website?: string;
+  website?: string
   @Column()
-  language?: string;
-  @Column({ type: "json" })
-  translated_languages?: string[];
+  language?: string
+  @Column({ type: 'json' })
+  translated_languages?: string[]
 }

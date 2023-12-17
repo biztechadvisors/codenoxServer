@@ -1,7 +1,15 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { User } from "./user.entity";
-import { Attachment } from "src/common/entities/attachment.entity";
-import { CoreEntity } from "src/common/entities/core.entity";
+/* eslint-disable prettier/prettier */
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { User } from './user.entity';
+import { Attachment } from 'src/common/entities/attachment.entity';
+import { CoreEntity } from 'src/common/entities/core.entity';
 
 @Entity()
 export class Social {
