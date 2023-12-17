@@ -13,6 +13,7 @@ import { User } from 'src/users/entities/user.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 import { Order } from 'src/orders/entities/order.entity';
+import { Report } from './entities/reports.entity';
 
 @Injectable()
 export class ReviewService {
@@ -29,6 +30,8 @@ export class ReviewService {
     private readonly feedbackRepository: Repository<Feedback>,
     @InjectRepository(Order)
     private readonly orderkRepository: Repository<Order>,
+    @InjectRepository(Report)
+    private readonly reportRepository: Repository<Report>,
   ) {}
 
   private async getReviewsFromDatabase(): Promise<Review[]> {
@@ -92,6 +95,20 @@ export class ReviewService {
       });
       if (getOrder.length > 0) {
         review.order = getOrder[0];
+      }
+    }
+
+    if (review.abusive_reports) {
+      const getReport = await this.reportRepository.find({
+        where: {
+          user_id: review.abusive_reports[0].user_id,
+          id: review.abusive_reports[0].user_id,
+        },
+      });
+    
+      if (getReport.length > 0) {
+        review.abusive_reports = getReport;
+        review.abusive_reports_count = getReport.length
       }
     }
 
