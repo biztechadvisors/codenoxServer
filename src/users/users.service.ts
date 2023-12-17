@@ -67,11 +67,16 @@ export class UsersService {
       throw new NotFoundException(`User with email ${createUserDto.email} already exists`);
     }
 
+    const registerDto = new RegisterDto();
+    registerDto.name = createUserDto.name;
+    registerDto.email = createUserDto.email;
+    registerDto.password = createUserDto.password;
+    registerDto.isVerified = createUserDto.isVerified;
+    registerDto.type = createUserDto.type;
+
+    await this.authService.register(registerDto);
+
     const usr = new User();
-    usr.name = createUserDto.name;
-    usr.email = createUserDto.email;
-    usr.password = createUserDto.password;
-    usr.isVerified = createUserDto.isVerified;
 
     // Check if the shop exists in the ShopRepository
     const shop = await this.shopRepository.findOne({ where: { id: createUserDto.managed_shop?.id } });
@@ -309,22 +314,13 @@ export class UsersService {
     return user;
   }
 
-
   // -------------------------------Dealer Services----------------------
 
   async createDealer(dealerData: DealerDto) {
-    // Register the user first
-    const registerDto = new RegisterDto();
-    registerDto.name = dealerData.user.name;
-    registerDto.email = dealerData.user.email;
-    registerDto.password = dealerData.user.password;
-    const registerResponse = await this.authService.register(registerDto);
+    const user = await this.userRepository.findOne({ where: { id: dealerData.user.id } });
 
-    // If registration is successful, the user will be saved in the database
-    const user = await this.userRepository.findOne({ where: { email: dealerData.user.email } });
-
-    if (!user || user.type !== UserType.Dealer) {
-      throw new NotFoundException(`User with email ${dealerData.user.email} not found or not a dealer`);
+    if (!user && user.type === UserType.Dealer) {
+      throw new NotFoundException(`User with ID ${dealerData.user} not found`);
     }
 
     const dealer = new Dealer();
@@ -364,7 +360,6 @@ export class UsersService {
 
     return dealer;
   }
-
 
   async getAllDealers(): Promise<Dealer[]> {
     return this.dealerRepository.find({ relations: ['user', 'dealerProductMargins', 'dealerProductMargins.product', 'dealerCategoryMargins', 'dealerCategoryMargins.category'] });

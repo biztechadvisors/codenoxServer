@@ -10,6 +10,7 @@ enum Permission {
 }
 export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type']) {
   permission: Permission = Permission.CUSTOMER;
+  isVerified: boolean;
 }
 
 export class LoginDto extends PartialType(
