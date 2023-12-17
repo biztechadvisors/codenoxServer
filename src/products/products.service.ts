@@ -13,7 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { OrderProductPivotRepository, ProductRepository, VariationOptionRepository, VariationRepository } from './products.repository';
 import { AttachmentRepository } from 'src/common/common.repository';
 
-const products: Product[] = plainToClass(Product, [productsJson]) as Product[];
+const products: Product[] = plainToClass(Product, [productsJson]);
 
 const options = {
   keys: [

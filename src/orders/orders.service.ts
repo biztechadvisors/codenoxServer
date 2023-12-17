@@ -65,7 +65,7 @@ const settings = plainToClass(Setting, setting);
 export class OrdersService {
   private orders: Order[] 
   private orderStatus: OrderStatus[] = orderStatus;
-  private orderFiles: OrderFiles[] = orderFiles;
+  private orderFiles: OrderFiles[]
   private setting: Setting = { ...settings };
 
   constructor(
@@ -276,19 +276,37 @@ export class OrdersService {
 
   
 
+// async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
+//   try {
+//     return (
+//       this.orders.find(
+//         (o: Order) =>
+//           o.id === Number(id) || o.tracking_number === id.toString(),
+//       ) ?? this.orders[0]
+//     );
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
+
 async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
   try {
-    return (
-      this.orders.find(
-        (o: Order) =>
-          o.id === Number(id) || o.tracking_number === id.toString(),
-      ) ?? this.orders[0]
-    );
+    // Use the order repository to find the order by ID or tracking number
+    const order = await this.orderRepository.findOne({
+      where: [{ id: id }, { tracking_number: id.toString() }],
+    });
+
+    // If the order is not found, you can throw a NotFoundException
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return order;
   } catch (error) {
     console.log(error);
+    throw error; // Rethrow the error for further analysis or handling
   }
 }
-
 
   async getOrderStatuses({
     limit,
@@ -337,16 +355,8 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
 
   async remove(id: number): Promise<void> {
     const orderToDelete = await this.findOrderInDatabase(id);
-    const orderStatusToDelete = await this.findOrderStatusInDatabase(id);
-
-    if (!orderToDelete) {
-      await this.orderStatusRepository.remove(orderStatusToDelete);
-    }
-
-    if (!orderStatusToDelete) {
+    // const orderStatusToDelete = await this.findOrderStatusInDatabase(id);
       await this.orderRepository.remove(orderToDelete);
-    }
-
   }
 
 
