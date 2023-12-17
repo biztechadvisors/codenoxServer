@@ -61,4 +61,5 @@ export class User extends CoreEntity {
 
     @Column()
     type: UserType;
+    walletPoints: any;
 }

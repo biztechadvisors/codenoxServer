@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import {
   AuthResponse,
   ChangePasswordDto,
@@ -27,6 +27,9 @@ import { FindOptionsWhere } from 'typeorm';
 
 @Injectable()
 export class AuthService {
+  save(user: User) {
+    throw new Error('Method not implemented.');
+  }
 
   constructor(
     @InjectRepository(UserRepository) private userRepository: UserRepository,
@@ -84,13 +87,13 @@ export class AuthService {
   }
 
   async signIn(email, pass) {
-    console.log("SignIn")
+    console.log("SignIn", email, pass)
     const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
     const isMatch = await bcrypt.compare(pass, user.password);
 
     if (isMatch) {
       // The password is correct.
-      const payload = { sub: user.id, username: user.name };
+      const payload = { sub: user.id, username: user.email };
       return {
         access_token: await this.jwtService.signAsync(payload),
       };
@@ -100,6 +103,7 @@ export class AuthService {
   }
 
   async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
+
     const emailExist = await this.userRepository.findOne({
       where: { email: createUserInput.email },
     });
@@ -128,6 +132,10 @@ export class AuthService {
     userData.type = createUserInput.type; // Set the type
     userData.createdAt = new Date();
 
+    if (createUserInput.type !== UserType.Customer) {
+      userData.isVerified = true;
+    }
+
     await this.userRepository.save(userData);
 
     if (userData.type === UserType.Customer) {
@@ -135,18 +143,18 @@ export class AuthService {
       await this.mailService.sendUserConfirmation(userData, token);
     }
 
-    const access_token = await this.signIn(createUserInput.email, createUserInput.password);
+    const access_token = await this.signIn(userData.email, userData.password);
     return {
       token: access_token.access_token,
-      permissions: ['super_admin', 'customer'],
+      permissions: [createUserInput.permission as unknown as string],
     };
+
   }
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
-
     const user = await this.userRepository.findOne({ where: { email: loginInput.email } })
 
-    console.log("Login")
+    console.log("Login", user)
     if (!user || !user.isVerified) {
       return {
         message: 'User Is Not Regesired !'
@@ -156,7 +164,7 @@ export class AuthService {
     const access_token = await this.signIn(loginInput.email, loginInput.password)
 
     console.log("access_token", access_token)
-    if (loginInput.email === 'store_owner@demo.com') {
+    if (loginInput.type === UserType.Customer) {
       return {
         token: access_token.access_token,
         permissions: ['store_owner', 'customer'],
@@ -302,8 +310,16 @@ export class AuthService {
   // public getUser(getUserArgs: GetUserArgs): User {
   //   return this.users.find((user) => user.id === getUserArgs.id);
   // }
-  me(): User {
-    return this.users[0];
+
+  async me(email: string, id: number): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: email ? { email: email } : { id: id },
+      relations: ["profile", "address", "shops", "orders", "profile.socials"]
+    });
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} and id ${id} not found`);
+    }
+    return user;
   }
 
   // updateUser(id: number, updateUserInput: UpdateUserInput) {

@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Request,
   UseGuards
@@ -83,21 +84,39 @@ export class AuthController {
   async logout(): Promise<boolean> {
     return true;
   }
-  
+
   @Post('verify-forget-password-token')
   verifyForgetPassword(
     @Body() verifyForgetPasswordDto: VerifyForgetPasswordDto,
   ) {
     return this.authService.verifyForgetPasswordToken(verifyForgetPasswordDto);
   }
-  @Get('me')
-  me() {
-    return this.authService.me();
+
+  @Get('me/:email/:id')
+  async me(@Param('email') email: string, @Param('id') id: number) {
+    console.log("Me**********controller")
+    return await this.authService.me(email, id);
   }
+
   @Post('add-points')
-  addWalletPoints(@Body() addPointsDto: any) {
-    return this.authService.me();
+  async addWalletPoints(@Body() addPointsDto: any) {
+    // Extract the user's email and points from the request body
+    const { email, id, points } = addPointsDto;
+
+    // Get the user
+    const user = await this.authService.me(email, id);
+
+    // Add points to the user's wallet
+    user.walletPoints += points;
+
+    // Save the updated user
+    await this.authService.save(user);
+
+    // Return the updated user
+    return user;
   }
+
+
   @Post('contact-us')
   contactUs(@Body() addPointsDto: any) {
     return {

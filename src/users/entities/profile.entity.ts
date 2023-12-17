@@ -27,7 +27,7 @@ export class Profile extends CoreEntity {
     @Column()
     bio?: string;
 
-    @ManyToOne(() => Social, { cascade: true })
+    @ManyToOne(() => Social, { onDelete: 'CASCADE' })
     socials?: Social;
 
     @Column()

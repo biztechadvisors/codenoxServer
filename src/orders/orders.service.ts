@@ -66,7 +66,7 @@ export class OrdersService {
     private readonly authService: AuthService,
     private readonly stripeService: StripePaymentService,
     private readonly paypalService: PaypalPaymentService,
-  ) {}
+  ) { }
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     const order: Order = this.orders[0];
     const payment_gateway_type = createOrderInput.payment_gateway
@@ -289,7 +289,7 @@ export class OrdersService {
       (intent: PaymentIntent) =>
         intent.tracking_number === order.tracking_number &&
         intent.payment_gateway.toString().toLowerCase() ===
-          setting.options.paymentGateway.toString().toLowerCase(),
+        setting.options.paymentGateway.toString().toLowerCase(),
     );
     if (paymentIntent) {
       return paymentIntent;
@@ -340,11 +340,11 @@ export class OrdersService {
    * @param paymentGateway
    */
   async savePaymentIntent(order: Order, paymentGateway?: string): Promise<any> {
-    const me = this.authService.me();
+    const me = await this.authService.me(order.customer.email, order.customer.id);
     switch (order.payment_gateway) {
       case PaymentGatewayType.STRIPE:
         const paymentIntentParam =
-          await this.stripeService.makePaymentIntentParam(order, me);
+          await this.stripeService.makePaymentIntentParam(order, await me);
         return await this.stripeService.createPaymentIntent(paymentIntentParam);
       case PaymentGatewayType.PAYPAL:
         // here goes PayPal
