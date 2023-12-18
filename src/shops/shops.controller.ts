@@ -16,15 +16,15 @@ import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto'
 import { GetStaffsDto } from './dto/get-staffs.dto'
 import { UserPaginator } from 'src/users/dto/get-users.dto'
 import { Shop } from './entities/shop.entity'
-import { AddStaffDto } from 'src/users/dto/add-staff.dto'
+// import { AddStaffDto } from 'src/users/dto/add-staff.dto'
 
 @Controller('shops')
 export class ShopsController {
   constructor(private readonly shopsService: ShopsService) {}
 
   @Post()
-  create(@Body() addStaffDto: AddStaffDto , createShopDto: CreateShopDto) {
-    return this.shopsService.create(addStaffDto,createShopDto)
+  create(@Body() createShopDto: CreateShopDto) {
+    return this.shopsService.create(createShopDto)
   }
  
   @Get()
@@ -64,8 +64,8 @@ export class StaffsController {
   constructor(private readonly shopsService: ShopsService) {}
 
   @Post()
-  create(@Body() addStaffDto: AddStaffDto , createShopDto: CreateShopDto) {
-    return this.shopsService.create(addStaffDto ,createShopDto)   
+  create(@Body() createShopDto: CreateShopDto) {
+    return this.shopsService.create(createShopDto)   
   }
 
   @Get()

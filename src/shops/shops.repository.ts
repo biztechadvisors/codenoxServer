@@ -23,7 +23,7 @@ export class BalanceRepository extends Repository<Balance>{}
 export class AddressRepository extends Repository<UserAddress>{}
 
 @CustomRepository(ShopSocials)
-export class ShopShocialRepository extends Repository<ShopSocials>{}
+export class ShopSocialRepository extends Repository<ShopSocials>{}
 
 @CustomRepository(Location)
 export class LocationRepository extends Repository<Location>{}
