@@ -87,7 +87,6 @@ export class AuthService {
   }
 
   async signIn(email, pass) {
-    console.log("SignIn", email, pass)
     const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
     const isMatch = await bcrypt.compare(pass, user.password);
 
@@ -153,8 +152,6 @@ export class AuthService {
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
     const user = await this.userRepository.findOne({ where: { email: loginInput.email } })
-
-    console.log("Login", user)
     if (!user || !user.isVerified) {
       return {
         message: 'User Is Not Regesired !'
@@ -163,7 +160,6 @@ export class AuthService {
 
     const access_token = await this.signIn(loginInput.email, loginInput.password)
 
-    console.log("access_token", access_token)
     if (loginInput.type === UserType.Customer) {
       return {
         token: access_token.access_token,
