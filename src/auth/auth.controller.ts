@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   Request,
   UseGuards
 } from '@nestjs/common';
@@ -92,10 +93,9 @@ export class AuthController {
     return this.authService.verifyForgetPasswordToken(verifyForgetPasswordDto);
   }
 
-  @Get('me/:email/:id')
-  async me(@Param('email') email: string, @Param('id') id: number) {
-    console.log("Me**********controller")
-    return await this.authService.me(email, id);
+  @Get('me')
+  async me(@Query('username') username: string, @Query('sub') sub: number) {
+    return await this.authService.me(username, sub);
   }
 
   @Post('add-points')

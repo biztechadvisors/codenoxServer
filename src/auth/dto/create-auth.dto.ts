@@ -46,11 +46,13 @@ export class AuthResponse {
   message?: string;
 }
 export class CoreResponse extends CoreMutationOutput { }
+
 export class VerifyOtpDto {
   otp_id: string;
   code: string;
   phone_number: string;
 }
+
 export class OtpResponse {
   id: string;
   message: string;

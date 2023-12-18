@@ -3,7 +3,7 @@ import { UsersService } from './users.service';
 import { DealerController, ProfilesController, UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, SocialRepository, UserRepository } from './users.repository';
-import { AddressRepository } from 'src/addresses/addresses.repository';
+import { AddressRepository, UserAddressRepository } from 'src/addresses/addresses.repository';
 import { ProfileRepository } from './profile.repository';
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 import { AttachmentRepository } from 'src/common/common.repository';
@@ -13,20 +13,21 @@ import { Dealer, DealerCategoryMargin, DealerProductMargin } from './entities/de
 import { CategoryRepository } from 'src/categories/categories.repository';
 import { Product } from 'src/products/entities/product.entity';
 import { Category } from 'src/categories/entities/category.entity';
-import { Address } from 'src/addresses/entities/address.entity';
+import { Address, UserAddress } from 'src/addresses/entities/address.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { ShopRepository } from 'src/shops/shops.repository';
 import { AuthService } from 'src/auth/auth.service';
 import { MailService } from 'src/mail/mail.service';
+import { AddressesService } from 'src/addresses/addresses.service';
 
 @Module({
   imports: [
-    TypeOrmExModule.forCustomRepository([UserRepository, AddressRepository, ProfileRepository, AttachmentRepository, DealerRepository, ProfileRepository, CategoryRepository, AddressRepository, DealerProductMarginRepository, SocialRepository, DealerCategoryMarginRepository, ShopRepository]),
-    TypeOrmModule.forFeature([User, Profile, Dealer, Social, Product, Category, Address, Attachment, DealerCategoryMargin, DealerProductMargin, Shop])
+    TypeOrmExModule.forCustomRepository([UserRepository, UserAddressRepository, AddressRepository, ProfileRepository, AttachmentRepository, DealerRepository, ProfileRepository, CategoryRepository, AddressRepository, DealerProductMarginRepository, SocialRepository, DealerCategoryMarginRepository, ShopRepository]),
+    TypeOrmModule.forFeature([User, UserAddress, Profile, Dealer, Social, Product, Category, Address, Attachment, DealerCategoryMargin, DealerProductMargin, Shop])
   ],
   controllers: [UsersController, ProfilesController, DealerController],
-  providers: [UsersService, AuthService, MailService],
+  providers: [UsersService, AuthService, MailService, AddressesService],
   exports: [UsersService],
 })
 export class UsersModule { }

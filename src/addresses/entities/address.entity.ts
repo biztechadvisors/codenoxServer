@@ -31,11 +31,14 @@ export class Address extends CoreEntity {
   title: string;
   @Column()
   default: boolean;
+
   @OneToOne(() => UserAddress)
   @JoinColumn()
   address: UserAddress;
+
   @Column()
   type: AddressType;
+
   @ManyToOne(() => User, (user) => user.address)
   customer: User;
 }

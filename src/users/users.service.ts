@@ -11,7 +11,7 @@ import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, SocialRepository, UserRepository } from './users.repository';
 import { DeepPartial, FindOneOptions, FindOperator, Repository } from 'typeorm';
-import { Address } from 'src/addresses/entities/address.entity';
+import { Address, UserAddress } from 'src/addresses/entities/address.entity';
 import { Profile, Social } from './entities/profile.entity';
 import { AddressRepository } from 'src/addresses/addresses.repository';
 import { ProfileRepository } from './profile.repository';
@@ -29,6 +29,9 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { ShopRepository } from 'src/shops/shops.repository';
 import { RegisterDto } from 'src/auth/dto/create-auth.dto';
 import { AuthService } from 'src/auth/auth.service';
+import { AddressesService } from 'src/addresses/addresses.service';
+import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
+import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
 
 const users = plainToClass(User, usersJson);
 
@@ -52,17 +55,16 @@ export class UsersService {
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
     @InjectRepository(Social) private readonly socialRepository: SocialRepository,
-    private authService: AuthService
+    private authService: AuthService,
+    private addressesService: AddressesService,
 
   ) { }
 
   //-------------------------------------------------------- 
 
-  private users: User[] = users;
-
   async create(createUserDto: CreateUserDto) {
     const user = await this.userRepository.findOne({ where: { email: createUserDto.email } })
-
+    console.log("creating************")
     if (user) {
       throw new NotFoundException(`User with email ${createUserDto.email} already exists`);
     }
@@ -77,39 +79,37 @@ export class UsersService {
     await this.authService.register(registerDto);
 
     const usr = new User();
-
-    // Check if the shop exists in the ShopRepository
     const shop = await this.shopRepository.findOne({ where: { id: createUserDto.managed_shop?.id } });
     if (shop) {
       usr.shop_id = createUserDto.managed_shop?.id;
     }
-
     usr.is_active = createUserDto.is_active;
     usr.type = createUserDto.type;
     usr.createdAt = new Date();
 
-    // Save the user first to generate an ID
     await this.userRepository.save(usr);
 
-    // Then save the addresses
-    for (const addressData of createUserDto.address) {
-      const address = new Address();
-      // Set the properties of the address here
-      address.customer = usr;  // Associate the address with the user
-      await this.addressesRepository.save(address);  // Save the address
+    if (Array.isArray(createUserDto.address)) {
+      for (const addressData of createUserDto.address) {
+        const createAddressDto = new CreateAddressDto();
+        createAddressDto.title = addressData.title;
+        createAddressDto.type = addressData.type;
+        createAddressDto.default = addressData.default;
+        createAddressDto.address = addressData.address;
+        createAddressDto.customer_id = usr.id;
+        await this.addressesService.create(createAddressDto);
+      }
     }
 
-    // Create and save the socials
     const social = new Social();
-    // Set the properties of the social here
-    await this.socialRepository.save(social);  // Save the social
+    social.link = createUserDto.profile.socials.link;
+    social.type = createUserDto.profile.socials.type;
+    await this.socialRepository.save(social);
 
-    // And the profile
     const profile = new Profile();
-    // Set the properties of the profile here
-    profile.customer = usr;  // Associate the profile with the user
-    profile.socials = social;  // Associate the socials with the profile
-    await this.profilesRepository.save(profile);  // Save the profile
+    profile.customer = usr;
+    profile.socials = social;
+    await this.profilesRepository.save(profile);
 
     return usr;
   }
@@ -119,7 +119,7 @@ export class UsersService {
     limit,
     page,
     search,
-    type,  // Add 'type' to the parameters
+    type,
   }: GetUsersDto): Promise<UserPaginator> {
     if (!page) page = 1;
     if (!limit) limit = 30;
@@ -183,6 +183,7 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
+    console.log("update-User*****", updateUserDto)
     const user = await this.userRepository.findOne({
       where: { id: id }, relations: ["profile", "address", "shops", "orders", "profile.socials"]
     });
@@ -208,45 +209,49 @@ export class UsersService {
     // Save the updated user
     await this.userRepository.save(user);
 
-    // Then update or add the addresses
-    for (const addressData of updateUserDto.address) {
-      let address = await this.addressesRepository.findOne({ where: { id: addressData.address.id } });
-      if (address) {
-        // Update the properties of the address
-        address.title = addressData.title;
-        address.type = addressData.type;
-        address.default = addressData.default;
-        address.address = addressData.address;
-      } else {
-        address = new Address();
-        // Set the properties of the address
-        address.title = addressData.title;
-        address.type = addressData.type;
-        address.default = addressData.default;
-        address.address = addressData.address;
-        address.customer = user;  // Associate the address with the user
+    if (Array.isArray(updateUserDto.address)) {
+      for (const addressData of updateUserDto.address) {
+        let address;
+        if (addressData.address.id) {
+          address = await this.addressesRepository.findOne({ where: { id: addressData.address.id } });
+        }
+        if (address) {
+          const updateAddressDto = new UpdateAddressDto();
+          updateAddressDto.title = addressData.title;
+          updateAddressDto.type = addressData.type;
+          updateAddressDto.default = addressData.default;
+          updateAddressDto.address = addressData.address;
+          await this.addressesService.update(addressData.address.id, updateAddressDto);
+        } else {
+          const createAddressDto = new CreateAddressDto();
+          createAddressDto.title = addressData.title;
+          createAddressDto.type = addressData.type;
+          createAddressDto.default = addressData.default;
+          createAddressDto.address = addressData.address;
+          createAddressDto.customer_id = id;
+          await this.addressesService.create(createAddressDto);
+        }
       }
-      await this.addressesRepository.save(address);  // Save the updated or new address
     }
+
+    let social: Social;  // Declare 'social' here
 
     // Update and save the socials
-    const social = await this.socialRepository.findOne({ where: { id: user.profile.socials.id } });
-    if (social) {
-      // Update the properties of the social here
-      await this.socialRepository.save(social);  // Save the updated social
-    }
-
-    // Update and save the profile
-    const profile = await this.profilesRepository.findOne({ where: { id: user.profile.id } });
-    if (profile) {
-      // Update the properties of the profile here
-      profile.socials = social || profile.socials;  // Update the socials of the profile
-      await this.profilesRepository.save(profile);  // Save the updated profile
+    if (updateUserDto.profile && updateUserDto.profile.socials) {
+      social = await this.socialRepository.findOne({ where: { id: user.profile?.socials?.id } });
+      if (social) {
+        social.type = updateUserDto.profile.socials.type || social.type;
+        social.link = updateUserDto.profile.socials.link || social.link;
+      } else {
+        social = new Social();
+        social.type = updateUserDto.profile.socials.type;
+        social.link = updateUserDto.profile.socials.link;
+      }
+      await this.socialRepository.save(social);
     }
 
     return user;
   }
-
 
   async remove(id: number) {
     const user = await this.userRepository.findOne({
