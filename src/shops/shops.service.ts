@@ -7,13 +7,13 @@ import Fuse from 'fuse.js'
 import { GetShopsDto } from './dto/get-shops.dto'
 import { paginate } from 'src/common/pagination/paginate'
 import { GetStaffsDto } from './dto/get-staffs.dto'
-import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository, ShopShocialRepository } from './shops.repository'
+import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository, ShopSocialRepository } from './shops.repository'
 import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
 import { Balance } from './entities/balance.entity'
 import { ShopSettings } from './entities/shopSettings.entity'
 import { ShopSocials } from 'src/settings/entities/setting.entity'
-import { AddStaffDto } from 'src/users/dto/add-staff.dto'
+// import { AddStaffDto } from 'src/users/dto/add-staff.dto'
 // import { User } from 'src/users/entities/user.entity'
 import { UserRepository } from 'src/users/users.repository'
 
@@ -38,8 +38,8 @@ export class ShopsService {
     private paymentInfoRepository: PaymentInfoRepository,
     @InjectRepository(AddressRepository)
     private addressRepository: AddressRepository,
-    @InjectRepository(ShopShocialRepository)
-    private shopSocialRepository: ShopShocialRepository,
+    @InjectRepository(ShopSocialRepository)
+    private shopSocialRepository: ShopSocialRepository,
     @InjectRepository(LocationRepository)
     private locationRepository: LocationRepository,
     @InjectRepository(UserRepository)
@@ -52,7 +52,7 @@ export class ShopsService {
     return await convertToSlug(text)
   }
 
-  async create( addStaffDto: AddStaffDto , createShopDto: CreateShopDto): Promise<Shop> {
+  async create(createShopDto: CreateShopDto): Promise<Shop> {
 
       let value: any
       let value1: any
@@ -65,21 +65,21 @@ export class ShopsService {
       const newBalance = new Balance()
       const newSetting = new ShopSettings()
 
-      if(addStaffDto){
+      // if(addStaffDto){
 
-        // const addStaff = new User()
+      //   // const addStaff = new User()
 
-        // addStaff.managed_shop = addStaffDto.shop_id
-        const newStaff = this.userRepository.create(addStaffDto)
-        // addStaff.name = addStaffDto.name
-        // addStaff.email = addStaffDto.email
-        // addStaff.password = addStaffDto.password
-        // addStaff.createdAt = addStaffDto
-        //  newStaff = addStaff
-       const staffAdded = await this.userRepository.save(newStaff)
-       console.log("first", staffAdded)
+      //   // addStaff.managed_shop = addStaffDto.shop_id
+      //   const newStaff = this.userRepository.create(addStaffDto)
+      //   // addStaff.name = addStaffDto.name
+      //   // addStaff.email = addStaffDto.email
+      //   // addStaff.password = addStaffDto.password
+      //   // addStaff.createdAt = addStaffDto
+      //   //  newStaff = addStaff
+      //  const staffAdded = await this.userRepository.save(newStaff)
+      //  console.log("first", staffAdded)
 
-      } else {
+      // } else {
 
       // const newshopss = this.shopRepository.create(createShopDto)
 
@@ -144,6 +144,7 @@ export class ShopsService {
     newShop.slug = await this.convertToSlug(createShopDto.name);
     newShop.description = createShopDto.description;
     newShop.owner = createShopDto.owner;
+    newShop.owner_id = createShopDto.owner.id
     newShop.cover_image = createShopDto.cover_image;
     newShop.logo = createShopDto.logo;
     newShop.address = value1;
@@ -185,7 +186,7 @@ export class ShopsService {
 }
       }
 
-  }
+  // }
 
 
   async getShops({ search, limit, page }: GetShopsDto) {

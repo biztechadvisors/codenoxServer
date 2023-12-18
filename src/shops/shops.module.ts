@@ -10,7 +10,7 @@ import {
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { PaymentInfo, Shop } from './entities/shop.entity'
 import { Balance } from './entities/balance.entity'
-import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository, ShopShocialRepository } from './shops.repository'
+import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository, ShopSocialRepository } from './shops.repository'
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
 import { Address } from 'src/addresses/entities/address.entity'
 import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
@@ -25,7 +25,7 @@ import { User } from 'src/users/entities/user.entity'
     PaymentInfoRepository,
     AddressRepository,
     LocationRepository,
-    ShopShocialRepository,
+    ShopSocialRepository,
     UserRepository
   ]),TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Address, Location, ShopSocials, User])],
   controllers: [
