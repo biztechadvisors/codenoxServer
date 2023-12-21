@@ -6,7 +6,7 @@ import ordersJson from '@db/orders.json';
 import paymentGatewayJson from '@db/payment-gateway.json';
 import paymentIntentJson from '@db/payment-intent.json';
 import setting from '@db/settings.json';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import Fuse from 'fuse.js';
 import { AuthService } from 'src/auth/auth.service';
@@ -40,8 +40,14 @@ import {
   PaymentGatewayType,
   PaymentStatusType,
 } from './entities/order.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, UpdateResult } from 'typeorm';
+import { Address } from 'src/addresses/entities/address.entity';
+import { User } from 'src/users/entities/user.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { Coupon } from 'src/coupons/entities/coupon.entity';
 
-const orders = plainToClass(Order, ordersJson);
+// const orders = plainToClass(Order, ordersJson);
 const paymentIntents = plainToClass(PaymentIntent, paymentIntentJson);
 const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson);
 const orderStatus = plainToClass(OrderStatus, orderStatusJson);
@@ -57,61 +63,140 @@ const settings = plainToClass(Setting, setting);
 
 @Injectable()
 export class OrdersService {
-  private orders: Order[] = orders;
+  private orders: Order[] 
   private orderStatus: OrderStatus[] = orderStatus;
-  private orderFiles: OrderFiles[] = orderFiles;
+  private orderFiles: OrderFiles[]
   private setting: Setting = { ...settings };
 
   constructor(
     private readonly authService: AuthService,
     private readonly stripeService: StripePaymentService,
     private readonly paypalService: PaypalPaymentService,
+<<<<<<< HEAD
+=======
+    @InjectRepository(Order)
+    private readonly orderRepository: Repository<Order>,
+    @InjectRepository(OrderStatus)
+    private readonly orderStatusRepository: Repository<OrderStatus>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Product)
+    private readonly productrRepository: Repository<Product>,
+    @InjectRepository(OrderFiles)
+    private readonly orderFilesRepository: Repository<Order>,
+    @InjectRepository(Coupon)
+    private readonly couponRepository: Repository<Coupon>,
+    @InjectRepository(PaymentIntent)
+    private readonly paymentIntentRepository: Repository<PaymentIntent>,
+>>>>>>> 46c5a4cf106d1f7f16a2ba15031d85d7e3096f1c
   ) { }
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
-    const order: Order = this.orders[0];
-    const payment_gateway_type = createOrderInput.payment_gateway
+    console.log("moyeMoyeOrder", createOrderInput)
+    const order = plainToClass(Order, createOrderInput);
+
+    const newOrderStatus = new OrderStatus()
+    const newOrderFile =  new OrderFiles()
+
+    newOrderStatus.name = 'Order Processing'
+    newOrderStatus.color = '#d87b64'
+    // Set the order type and payment type
+    const paymentGatewayType = createOrderInput.payment_gateway
       ? createOrderInput.payment_gateway
       : PaymentGatewayType.CASH_ON_DELIVERY;
-    order.payment_gateway = payment_gateway_type;
-    order.payment_intent = null;
-    // set the order type and payment type
 
-    switch (payment_gateway_type) {
+    order.payment_gateway = paymentGatewayType;
+    order.payment_intent = null;
+
+    switch (paymentGatewayType) {
       case PaymentGatewayType.CASH_ON_DELIVERY:
         order.order_status = OrderStatusType.PROCESSING;
         order.payment_status = PaymentStatusType.CASH_ON_DELIVERY;
+        newOrderStatus.slug = OrderStatusType.PROCESSING;
         break;
       case PaymentGatewayType.CASH:
         order.order_status = OrderStatusType.PROCESSING;
         order.payment_status = PaymentStatusType.CASH;
+        newOrderStatus.slug = OrderStatusType.PROCESSING;
         break;
       case PaymentGatewayType.FULL_WALLET_PAYMENT:
         order.order_status = OrderStatusType.COMPLETED;
         order.payment_status = PaymentStatusType.WALLET;
+        newOrderStatus.slug = OrderStatusType.COMPLETED;
         break;
       default:
         order.order_status = OrderStatusType.PENDING;
         order.payment_status = PaymentStatusType.PENDING;
+        newOrderStatus.slug = OrderStatusType.PENDING;
         break;
     }
+  
+    if (order.customer) {
+      const customerIds = await this.userRepository.find({
+        where: ({ name: order.customer.name, email: order.customer.email }),
+      });
+    
+      if (customerIds.length > 0) {
+        order.customer = customerIds[0];
+        newOrderFile.customer_id= customerIds[0].id;// Assign the found customer to the order
+      } else {
+        // Handle the case where no matching customer is found
+        throw new NotFoundException('Customer not found');
+      }
+    }
+
+    if (order.products) {
+      const productIds = await this.productrRepository.find({
+        where: { name: order.products[0].name, product_type: order.products[0].product_type },
+      });
+    
+      if (productIds.length > 0) {
+        order.products.push(productIds[0]); 
+      } else {
+        // Handle the case where no matching product is found
+        // You might want to throw an error or handle it according to your application logic
+        throw new NotFoundException('Product not found');
+      }
+    }
+
+    if (order.coupon) {
+      const getCoupon = await this.couponRepository.findOne({ where: { id: order.coupon[0] } });
+      console.log("first Coupon", getCoupon);
+      
+      if (getCoupon) {
+        order.coupon = getCoupon;
+      } 
+    }
+
+    if (order.payment_intent) {
+      const paymentIntentId = await this.paymentIntentRepository.find({
+        where: { id: order.payment_intent.id, payment_gateway: order.payment_gateway },
+      });
+    
+      if (paymentIntentId.length > 0) {
+        order.payment_intent=paymentIntentId[0]
+      }
+    }
+
+    const createdOrderStatus = await this.orderStatusRepository.save(newOrderStatus);
+    order.status = createdOrderStatus;
     order.children = this.processChildrenOrder(order);
+
     try {
       if (
-        [
-          PaymentGatewayType.STRIPE,
-          PaymentGatewayType.PAYPAL,
-          PaymentGatewayType.RAZORPAY,
-        ].includes(payment_gateway_type)
+        [PaymentGatewayType.STRIPE, PaymentGatewayType.PAYPAL, PaymentGatewayType.RAZORPAY].includes(paymentGatewayType)
       ) {
-        const paymentIntent = await this.processPaymentIntent(
-          order,
-          this.setting,
-        );
+        const paymentIntent = await this.processPaymentIntent(order, this.setting);
         order.payment_intent = paymentIntent;
       }
-      return order;
+      const savedOrder = await this.orderRepository.save(order);
+      newOrderFile.order_id = savedOrder.id;
+      
+      await this.orderFilesRepository.save(newOrderFile);
+      return savedOrder;
+      
     } catch (error) {
-      return order;
+      console.error('Error creating order:', error);
+      throw error;
     }
   }
 
@@ -123,93 +208,169 @@ export class OrdersService {
     search,
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
-    if (!page) page = 1;
-    if (!limit) limit = 15;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-
-    let data: Order[] = this.orders;
-
-    if (shop_id && shop_id !== 'undefined') {
-      data = this.orders?.filter((p) => p?.shop?.id === Number(shop_id));
-    }
-    const results = data.slice(startIndex, endIndex);
-    const url = `/orders?search=${search}&limit=${limit}`;
-    return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
-    };
-  }
-
-  async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
     try {
-      return (
-        this.orders.find(
-          (o: Order) =>
-            o.id === Number(id) || o.tracking_number === id.toString(),
-        ) ?? this.orders[0]
-      );
+      if (!page) page = 1;
+      if (!limit) limit = 15;
+      const startIndex = (page - 1) * limit;
+      const endIndex = page * limit;
+  
+      let query = this.orderRepository.createQueryBuilder('order');
+  
+      // Join OrderStatus entity
+      query = query.leftJoinAndSelect('order.status', 'status');
+  
+      // Join Customer entity (assuming there is a relationship between order and customer)
+      query = query.leftJoinAndSelect('order.customer', 'customer');
+  
+      // Join Product entity (assuming there is a relationship between order and products)
+      query = query.leftJoinAndSelect('order.products', 'products');
+  
+      // Add additional joins for other related entities as needed
+  
+      if (shop_id && shop_id !== 'undefined') {
+        // Use the correct column name in the WHERE clause
+        query = query.where('order.shop_id = :shopId', { shopId: Number(shop_id) });
+      }
+  
+      if (search) {
+        // Update search conditions based on your entity fields
+        query = query.andWhere('(status.name ILIKE :searchValue OR order.fieldName ILIKE :searchValue)', { searchValue: `%${search}%` });
+      }
+  
+      if (customer_id) {
+        query = query.andWhere('order.customer_id = :customerId', { customerId: customer_id });
+      }
+  
+      if (tracking_number) {
+        query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
+      }
+  
+      const [data, totalCount] = await query
+        .skip(startIndex)
+        .take(limit)
+        .getManyAndCount();
+  
+      const results = data.slice(0, endIndex);
+      const url = `/orders?search=${search}&limit=${limit}`;
+  
+      return {
+        data: results,
+        ...paginate(totalCount, page, limit, results.length, url),
+      };
     } catch (error) {
-      console.log(error);
+      console.error('Error in getOrders:', error);
+      throw error; // rethrow the error for further analysis
     }
   }
+  
+  
 
-  getOrderStatuses({
+
+
+  private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
+    const updateOrder = await this.findOrderInDatabase(id); 
+
+    // Update the review entity with the new data
+    Object.assign(updateOrder, updateOrderDto);
+
+    // Save the updated review to the database
+    return await this.orderRepository.save(updateOrder);
+  }
+
+  
+
+// async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
+//   try {
+//     return (
+//       this.orders.find(
+//         (o: Order) =>
+//           o.id === Number(id) || o.tracking_number === id.toString(),
+//       ) ?? this.orders[0]
+//     );
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
+
+async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
+  try {
+    // Use the order repository to find the order by ID or tracking number
+    const order = await this.orderRepository.findOne({
+      where: [{ id: id }, { tracking_number: id.toString() }],
+    });
+
+    // If the order is not found, you can throw a NotFoundException
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return order;
+  } catch (error) {
+    console.log(error);
+    throw error; // Rethrow the error for further analysis or handling
+  }
+}
+
+  async getOrderStatuses({
     limit,
     page,
     search,
     orderBy,
-  }: GetOrderStatusesDto): OrderStatusPaginator {
+  }: GetOrderStatusesDto): Promise<OrderStatusPaginator> {
     if (!page) page = 1;
     if (!limit) limit = 30;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-    let data: OrderStatus[] = this.orderStatus;
 
-    // if (shop_id) {
-    //   data = this.orders?.filter((p) => p?.shop?.id === shop_id);
-    // }
+    let query = this.orderStatusRepository.createQueryBuilder('orderStatus');
 
     if (search) {
       const parseSearchParams = search.split(';');
-      const searchText: any = [];
       for (const searchParam of parseSearchParams) {
         const [key, value] = searchParam.split(':');
-        // TODO: Temp Solution
-        if (key !== 'slug') {
-          searchText.push({
-            [key]: value,
-          });
-        }
+        // Update the query conditions based on your entity fields
+        // query = query.andWhere(`orderStatus.${key} = :value`, { value });
       }
-
-      data = fuse
-        .search({
-          $and: searchText,
-        })
-        ?.map(({ item }) => item);
     }
 
-    const results = data.slice(startIndex, endIndex);
+    const [data, totalCount] = await query
+      .skip(startIndex)
+      .take(limit)
+      .getManyAndCount();
+
+    const results = data.slice(0, endIndex);
     const url = `/order-status?search=${search}&limit=${limit}`;
 
     return {
       data: results,
-      ...paginate(data.length, page, limit, results.length, url),
+      ...paginate(totalCount, page, limit, results.length, url),
     };
   }
 
-  getOrderStatus(param: string, language: string) {
-    return this.orderStatus.find((p) => p.slug === param);
+  async getOrderStatus(param: string, language: string): Promise<OrderStatus> {
+    return this.orderStatusRepository.findOne({ where: { slug: param } });
   }
 
-  update(id: number, updateOrderInput: UpdateOrderDto) {
-    return this.orders[0];
+  async update(id: number, updateOrderInput: UpdateOrderDto): Promise<Order> {
+    return await this.updateOrderInDatabase(id, updateOrderInput);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} order`;
+
+  async remove(id: number): Promise<void> {
+    const orderToDelete = await this.findOrderInDatabase(id);
+    // const orderStatusToDelete = await this.findOrderStatusInDatabase(id);
+      await this.orderRepository.remove(orderToDelete);
   }
+
+
+  private async findOrderInDatabase(id: number): Promise<Order | undefined> {
+    return this.orderRepository.findOne({ where: { id: id } });
+  }
+
+  private async findOrderStatusInDatabase(id: number): Promise<OrderStatus | undefined> {
+    return this.orderStatusRepository.findOne({ where: { id: id } });
+  }
+
 
   verifyCheckout(input: CheckoutVerificationDto): VerifiedCheckoutData {
     return {
@@ -221,12 +382,27 @@ export class OrdersService {
     };
   }
 
-  createOrderStatus(createOrderStatusInput: CreateOrderStatusDto) {
-    return this.orderStatus[0];
+  private async updateOrderStatusInDatabase(id: number, updateOrderStatusInput: UpdateOrderStatusDto): Promise<OrderStatus> {
+    const orderStatus = await this.findOrderStatusInDatabase(id);
+
+    // Update the order status entity with the new data
+    Object.assign(orderStatus, updateOrderStatusInput);
+
+    // Save the updated order status to the database
+    return await this.orderStatusRepository.save(orderStatus);
   }
 
-  updateOrderStatus(updateOrderStatusInput: UpdateOrderStatusDto) {
-    return this.orderStatus[0];
+
+
+  async createOrderStatus(createOrderStatusInput: CreateOrderStatusDto): Promise<OrderStatus> {
+    console.log("first", createOrderStatusInput)
+    return
+    // const orderStatus = this.orderStatusRepository.create(createOrderStatusInput);
+    // return await this.orderStatusRepository.save(orderStatus);
+  }
+
+  async updateOrderStatus(id: number, updateOrderStatusInput: UpdateOrderStatusDto): Promise<OrderStatus> {
+    return await this.updateOrderStatusInDatabase(id, updateOrderStatusInput);
   }
 
   async getOrderFileItems({ page, limit }: GetOrderFilesDto) {
@@ -270,11 +446,15 @@ export class OrdersService {
    * @returns Children[]
    */
   processChildrenOrder(order: Order) {
-    return [...order.children].map((child) => {
-      child.order_status = order.order_status;
-      child.payment_status = order.payment_status;
-      return child;
-    });
+    if (order.children && Array.isArray(order.children)) {
+      return [...order.children].map((child) => {
+        child.order_status = order.order_status;
+        child.payment_status = order.payment_status;
+        return child;
+      });
+    } else {
+      return [];
+    }
   }
   /**
    * This action will return Payment Intent
@@ -393,3 +573,5 @@ export class OrdersService {
     this.orders[0]['payment_status'] = paymentStatus;
   }
 }
+
+

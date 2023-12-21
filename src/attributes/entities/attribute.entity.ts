@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { AttributeValue } from './attribute-value.entity';
@@ -12,7 +13,8 @@ export class Attribute extends CoreEntity {
   name: string;
 
   @Column()
-  shop_id: string;
+  // shop_id: string;
+  shop_id: number
 
   @OneToOne(() => Shop)
   @JoinColumn()

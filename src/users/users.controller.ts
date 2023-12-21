@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -11,7 +12,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CreateProfileDto } from './dto/create-profile.dto';
+import { CreateProfileDto, CreateSocialDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
 import { DealerDto } from './dto/add-dealer.dto';
@@ -27,8 +28,8 @@ export class UsersController {
   }
 
   @Get()
-  getAllUsers(@Query() query: GetUsersDto) {
-    return this.usersService.getUsers(query);
+  getAllUsers() {
+    return this.usersService.getUsers();
   }
 
   @Get(':id')
@@ -63,6 +64,22 @@ export class UsersController {
   }
 }
 
+@Controller('socials')
+export class SocialController{
+  constructor(private readonly usersService: UsersService) { }
+
+  @Post()
+  createSocial(@Body() createSocialDto: CreateSocialDto) {
+    console.log(createSocialDto);
+    return this.usersService.createSocial(createSocialDto);
+  }
+
+  @Get()
+  getAllSocial() {
+    return this.usersService.findAllSocial();
+  }
+}
+
 @Controller('profiles')
 export class ProfilesController {
   constructor(private readonly usersService: UsersService) { }
@@ -71,6 +88,12 @@ export class ProfilesController {
   createProfile(@Body() createProfileDto: CreateProfileDto) {
     console.log("createProfile")
     console.log(createProfileDto);
+    return this.usersService.createProfile(createProfileDto);
+  }
+
+  @Get()
+  getAllProfile() {
+    return this.usersService.findAll();
   }
 
   @Put(':id')

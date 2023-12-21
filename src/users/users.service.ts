@@ -1,6 +1,7 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, Permission } from './dto/create-user.dto';
 import { GetUsersDto, UserPaginator } from './dto/get-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import Fuse from 'fuse.js';
@@ -110,6 +111,9 @@ export class UsersService {
 
     return usr;
   }
+  const savedUser = await this.userRepository.save(newUser);
+  return savedUser;
+}
 
   async getUsers({
     text,
@@ -145,21 +149,25 @@ export class UsersService {
         }
       }
 
-      data = fuse
-        .search({
-          $and: searchText,
-        })
-        ?.map(({ item }) => item);
-    }
+  await this.socialRepository.save(newSocial)
+}
 
     const results = data.slice(startIndex, endIndex);
     const url = `/users?type=${type || 'customer'}&limit=${limit}`;
 
-    return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
-    };
-  }
+async findAll(){
+  const AllProfile = await this.profilesRepository.find({
+    relations:['customer']
+  })
+  return AllProfile;
+}
+
+async findAllSocial(){
+  const AllSocial = await this.socialRepository.find({
+    relations:['profile', 'profile.customer','profile.avatar']
+  })
+  return AllSocial;
+}
 
   async getUsersNotify({ limit }: GetUsersDto): Promise<User[]> {
     const data = await this.userRepository.find({
