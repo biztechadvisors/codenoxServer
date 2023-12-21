@@ -32,7 +32,7 @@ export class Address extends CoreEntity {
   @Column()
   default: boolean;
 
-  @OneToOne(() => UserAddress)
+  @OneToOne(() => UserAddress, { cascade: true })
   @JoinColumn()
   address: UserAddress;
 

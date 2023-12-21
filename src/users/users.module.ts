@@ -13,18 +13,18 @@ import { Dealer, DealerCategoryMargin, DealerProductMargin } from './entities/de
 import { CategoryRepository } from 'src/categories/categories.repository';
 import { Product } from 'src/products/entities/product.entity';
 import { Category } from 'src/categories/entities/category.entity';
-import { Address, UserAddress } from 'src/addresses/entities/address.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { ShopRepository } from 'src/shops/shops.repository';
 import { AuthService } from 'src/auth/auth.service';
 import { MailService } from 'src/mail/mail.service';
 import { AddressesService } from 'src/addresses/addresses.service';
+import { Address, UserAddress } from 'src/addresses/entities/address.entity';
 
 @Module({
   imports: [
-    TypeOrmExModule.forCustomRepository([UserRepository, UserAddressRepository, AddressRepository, ProfileRepository, AttachmentRepository, DealerRepository, ProfileRepository, CategoryRepository, AddressRepository, DealerProductMarginRepository, SocialRepository, DealerCategoryMarginRepository, ShopRepository]),
-    TypeOrmModule.forFeature([User, UserAddress, Profile, Dealer, Social, Product, Category, Address, Attachment, DealerCategoryMargin, DealerProductMargin, Shop])
+    TypeOrmExModule.forCustomRepository([UserRepository, UserAddressRepository, ProfileRepository, AttachmentRepository, DealerRepository, CategoryRepository, DealerProductMarginRepository, SocialRepository, DealerCategoryMarginRepository, ShopRepository, AddressRepository]),
+    TypeOrmModule.forFeature([User, Address, UserAddress, Profile, Dealer, Social, Product, Category, Attachment, DealerCategoryMargin, DealerProductMargin, Shop])
   ],
   controllers: [UsersController, ProfilesController, DealerController],
   providers: [UsersService, AuthService, MailService, AddressesService],

@@ -23,31 +23,27 @@ export class UsersController {
 
   @Post()
   createUser(@Body() createUserDto: CreateUserDto) {
-    console.log("createUser")
     return this.usersService.create(createUserDto);
   }
 
   @Get()
   getAllUsers(@Query() query: GetUsersDto) {
-    console.log("getAllUsers")
     return this.usersService.getUsers(query);
   }
 
   @Get(':id')
   getUser(@Param('id') id: string) {
-    console.log("getUser")
     return this.usersService.findOne(+id);
   }
 
   @Put(':id')
   updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-    console.log("updateUser", id, updateUserDto)
     return this.usersService.update(+id, updateUserDto);
   }
 
   @Delete(':id')
   removeUser(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+    return this.usersService.removeUser(+id);
   }
 
   @Post('unblock-user')
@@ -85,7 +81,7 @@ export class ProfilesController {
 
   @Delete(':id')
   deleteProfile(@Param('id') id: number) {
-    return this.usersService.remove(id);
+    return this.usersService.removeUser(id);
   }
 }
 
@@ -118,6 +114,5 @@ export class DealerController {
   async deleteDealer(@Param('id') id: number): Promise<void> {
     return this.usersService.deleteDealer(id);
   }
-
 
 }

@@ -12,5 +12,6 @@ import { User } from 'src/users/entities/user.entity';
   imports: [TypeOrmExModule.forCustomRepository([AddressRepository, UserAddressRepository, UserRepository]), TypeOrmModule.forFeature([Address, UserAddress, User]),],
   controllers: [AddressesController],
   providers: [AddressesService],
+  exports: [AddressesService]
 })
 export class AddressesModule { }
