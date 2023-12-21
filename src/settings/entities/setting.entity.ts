@@ -323,6 +323,10 @@ export class SettingsOptions {
   useMustVerifyEmail: boolean
   @Column()
   useOtp: boolean
+  @Column({ type: 'timestamp'})
+  created_at: Date;
+  @Column({ type: 'timestamp'})
+  updated_at: Date;
 }
 
 @Entity()
