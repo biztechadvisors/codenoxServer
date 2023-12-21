@@ -76,3 +76,10 @@ export class OtpLoginDto {
   name?: string;
   email?: string;
 }
+
+export class GetUserArgs {
+  id: number;
+  text: string;
+  first: number;
+  page: number;
+}

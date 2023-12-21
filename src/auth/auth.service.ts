@@ -152,7 +152,6 @@ export class AuthService {
         message: 'User Is Not Regesired !'
       }
     }
-
     const access_token = await this.signIn(loginInput.email, loginInput.password)
 
     if (loginInput.type === UserType.Customer) {
@@ -171,8 +170,6 @@ export class AuthService {
   async changePassword(
     changePasswordInput: ChangePasswordDto,
   ): Promise<{ message: string } | CoreResponse> {
-    console.log("changePasswordInput", changePasswordInput);
-    console.log("changePasswordInput.email", changePasswordInput.email)
     const user = await this.userRepository.findOne({ where: { email: changePasswordInput.email } })
 
     if (!user) {
@@ -180,7 +177,7 @@ export class AuthService {
         message: "User Email is InValid"
       }
     }
-    console.log("User***", user, changePasswordInput.oldPassword)
+
     const isMatch = await bcrypt.compare(changePasswordInput.oldPassword, user.password);
 
     if (!isMatch) {
@@ -303,6 +300,7 @@ export class AuthService {
       permissions: ['super_admin', 'customer'],
     };
   }
+
   async otpLogin(otpLoginDto: OtpLoginDto): Promise<AuthResponse> {
     console.log(otpLoginDto);
     return {
