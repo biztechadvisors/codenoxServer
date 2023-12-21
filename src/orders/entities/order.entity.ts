@@ -79,6 +79,7 @@ export class Order extends CoreEntity {
   total: number;
   @Column()
   paid_total: number;
+  
   @Column()
   payment_id?: string;
   @Column()
@@ -87,7 +88,7 @@ export class Order extends CoreEntity {
   @ManyToOne(() => Coupon, coupon => coupon.orders)
   coupon?: Coupon;
 
-  @ManyToOne(() => Shop)
+  @ManyToMany(() => Shop)
   shop: Shop;
 
   @Column()
@@ -101,22 +102,27 @@ export class Order extends CoreEntity {
   @JoinTable()
   products: Product[];
 
-  @ManyToOne(() => UserAddress)
+  @ManyToMany(() => UserAddress)
+  @JoinColumn()
   billing_address: UserAddress;
 
-  @ManyToOne(() => UserAddress)
+  @ManyToMany(() => UserAddress)
+  @JoinColumn()
   shipping_address: UserAddress;
 
   @Column()
   language: string;
+
   @Column({ type: "json" })
   translated_languages: string[];
 
-  @ManyToOne(() => PaymentIntent)
+  @OneToOne(() => PaymentIntent)
+  @JoinColumn()
   payment_intent: PaymentIntent;
 
   @Column()
   altered_payment_gateway?: string;
+  customerId: any;
 }
 
 @Entity()
@@ -131,10 +137,8 @@ export class OrderFiles extends CoreEntity {
   order_id?: number;
   @Column()
   customer_id: number;
-
-  @ManyToOne(() => File)
+  @OneToOne(() => File)
   file: File;
-
-  @ManyToOne(() => Product)
+  @OneToOne(() => Product)
   fileable: Product;
 }

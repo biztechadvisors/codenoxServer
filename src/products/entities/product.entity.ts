@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
@@ -7,15 +8,18 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
 import { Review } from '../../reviews/entities/review.entity';
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+
 enum ProductStatus {
   PUBLISH = 'publish',
   DRAFT = 'draft',
 }
-export enum ProductType {
+
+enum ProductType {
   SIMPLE = 'simple',
   VARIABLE = 'variable',
 }
+
 @Entity()
 export class OrderProductPivot {
   @PrimaryGeneratedColumn()
@@ -28,8 +32,8 @@ export class OrderProductPivot {
   unit_price: number;
   @Column()
   subtotal: number;
-  product: Product;
 }
+
 @Entity()
 export class Product extends CoreEntity {
   @PrimaryGeneratedColumn()
@@ -38,14 +42,11 @@ export class Product extends CoreEntity {
   name: string;
   @Column()
   slug: string;
-
-  @ManyToOne(() => Type, { eager: true })
+  @OneToOne(() => Type, { eager: true })
   @JoinColumn()
   type: Type;
-
   @Column()
   type_id: number;
-
   @Column()
   product_type: ProductType;
 
@@ -53,32 +54,33 @@ export class Product extends CoreEntity {
   @JoinTable()
   categories: Category[];
 
-  @ManyToMany(() => Tag, tag => tag.products, { cascade: true })
+  @ManyToMany(() => Tag, tag => tag.products)
   @JoinTable()
   tags: Tag[];
 
-  @ManyToMany(() => AttributeValue, { cascade: true })
+  @ManyToMany(() => AttributeValue)
   @JoinTable()
   variations?: AttributeValue[];
 
-  @ManyToMany(() => Variation, { cascade: true })
+  @ManyToMany(() => Variation)
   @JoinTable()
   variation_options?: Variation[];
 
-  @ManyToOne(() => OrderProductPivot)
+  @OneToOne(() => OrderProductPivot)
+  @JoinColumn()
   pivot?: OrderProductPivot;
 
-  @ManyToMany(() => Order, order => order.products, { eager: true, cascade: true })
-  @JoinTable()
+  @ManyToMany(() => Order, order => order.products)
   orders: Order[];
 
-  @ManyToOne(() => Shop, { eager: true })
+  @OneToOne(() => Shop)
+  @JoinColumn()
   shop: Shop;
 
   @Column()
   shop_id: number;
 
-  @ManyToMany(() => Product, { cascade: true })
+  @ManyToMany(() => Product)
   @JoinTable()
   related_products?: Product[];
 
@@ -97,11 +99,11 @@ export class Product extends CoreEntity {
   @Column()
   sku?: string;
 
-  @ManyToMany(() => Attachment, { cascade: true, eager: true })
+  @ManyToMany(() => Attachment)
   @JoinTable({ name: 'gallery' })
   gallery?: Attachment[];
 
-  @OneToOne(() => Attachment, { cascade: true })
+  @OneToOne(() => Attachment)
   @JoinColumn({ name: 'image_id' })
   image?: Attachment;
 
@@ -124,25 +126,13 @@ export class Product extends CoreEntity {
   @Column()
   in_wishlist: boolean;
 
-  @OneToMany(() => Review, review => review.product, { eager: true })
+  @OneToMany(() => Review, review => review.product)
   my_review?: Review[];
 
   @Column()
   language?: string;
-  @Column({ type: "json" })
+  @Column({ type: 'json' })
   translated_languages?: string[];
-}
-
-@Entity()
-export class File extends CoreEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-  @Column()
-  attachment_id: number;
-  @Column()
-  url: string;
-  @Column()
-  fileable_id: number;
 }
 
 @Entity()
@@ -162,13 +152,10 @@ export class Variation {
   @Column()
   quantity: number;
 
-  @ManyToMany(() => VariationOption, { cascade: true, eager: true })
+  @ManyToMany(() => VariationOption)
   @JoinTable()
   options: VariationOption[];
 
-  @ManyToOne(() => File)
-  @JoinColumn({ name: 'image_id' })
-  image: File;
 }
 
 @Entity()
@@ -179,4 +166,16 @@ export class VariationOption {
   name: string;
   @Column()
   value: string;
+}
+
+@Entity()
+export class File extends CoreEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column()
+  attachment_id: number;
+  @Column()
+  url: string;
+  @Column()
+  fileable_id: number;
 }

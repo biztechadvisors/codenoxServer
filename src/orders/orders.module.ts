@@ -10,10 +10,19 @@ import {
 } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Order } from './entities/order.entity';
+import { Order, OrderFiles } from './entities/order.entity';
+import { OrderStatus } from './entities/order-status.entity'; // Import OrderStatus entity
+import { User } from 'src/users/entities/user.entity';
+import { OrderProductPivot, Product } from 'src/products/entities/product.entity';
+import { Coupon } from 'src/coupons/entities/coupon.entity';
+import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
 
 @Module({
-  imports: [AuthModule, PaymentModule,TypeOrmModule.forFeature([Order])],
+  imports: [
+    AuthModule,
+    PaymentModule,
+    TypeOrmModule.forFeature([Order, OrderStatus,User, Product, OrderFiles, Coupon, PaymentIntent]), // Include Order and OrderStatus here
+  ],
   controllers: [
     OrdersController,
     OrderStatusController,

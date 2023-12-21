@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Repository } from 'typeorm';
 import { Address, UserAddress } from './entities/address.entity';
 import { CustomRepository } from 'src/typeorm-ex/typeorm-ex.decorator';

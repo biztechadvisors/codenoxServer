@@ -106,7 +106,7 @@ export class CategoriesService {
       where,
       take: numericLimit,
       skip,
-      relations: ['type', 'image', 'children', 'parent'],
+      relations: ['type', 'image'],
     });
 
     // Add type_id field to each item in the data array
@@ -121,8 +121,8 @@ export class CategoriesService {
     const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}`;
     // console.log("*Categories***", formattedData)
     return {
-      data: formattedData,
-      ...paginate(total, numericPage, numericLimit, formattedData.length, url),
+      data,
+      ...paginate(total, numericPage, numericLimit, data.length, url),
     };
   }
 

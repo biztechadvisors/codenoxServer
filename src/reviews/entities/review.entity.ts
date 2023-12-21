@@ -8,7 +8,6 @@ import { Report } from './reports.entity';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-
 @Entity()
 export class Review extends CoreEntity {
   @PrimaryGeneratedColumn()
@@ -20,29 +19,28 @@ export class Review extends CoreEntity {
   @Column()
   comment: string;
 
-
   @OneToOne(() => Shop)
   @JoinColumn()
   shop: Shop;
-
 
   @OneToOne(() => Order)
   @JoinColumn()
   order: Order;
 
-
-  @OneToOne(() => User)
-  @JoinColumn()
-  customer: User;
-
+  // @OneToOne(() => User)
+  // @JoinColumn()
+  // customer: User;
 
   @ManyToMany(() => Attachment)
   @JoinTable()
   photos: Attachment[];
 
+  // @OneToOne(() => User)
+  // @JoinColumn()
+  // user: User;
 
-  @OneToOne(() => User)
-  @JoinColumn()
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 
 
@@ -54,11 +52,9 @@ export class Review extends CoreEntity {
   @JoinTable()
   feedbacks: Feedback[];
 
-
   @OneToOne(() => Feedback)
   @JoinColumn()
   my_feedback: Feedback;
-
 
   @Column()
   positive_feedbacks_count: number;
@@ -69,11 +65,9 @@ export class Review extends CoreEntity {
   @Column()
   product_id: number;
 
-
   @ManyToMany(() => Report)
   @JoinTable()
   abusive_reports: Report[];
-
 
   @Column()
   shop_id: string;
@@ -81,4 +75,5 @@ export class Review extends CoreEntity {
   variation_option_id: string;
   @Column()
   abusive_reports_count?: number;
+  review: { id: number; };
 }
