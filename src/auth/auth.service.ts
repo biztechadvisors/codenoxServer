@@ -31,54 +31,58 @@ export class AuthService {
   constructor(
     @InjectRepository(UserRepository) private userRepository: UserRepository,
     private jwtService: JwtService,
-    private mailService: MailService
-  ) { }
+    private mailService: MailService,
+  ) {}
 
   async generateOtp(): Promise<number> {
-    const otp = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
-    return otp;
+    const otp = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
+    return otp
   }
 
   async destroyOtp(otp: number, createdAt: Date): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { otp, createdAt } });
+    const user = await this.userRepository.findOne({
+      where: { otp, createdAt },
+    })
     if (!user) {
-      return;
+      return
     }
     // Destroy the OTP.
-    user.otp = null;
-    user.createdAt = null;
-    await this.userRepository.save(user);
+    user.otp = null
+    user.createdAt = null
+    await this.userRepository.save(user)
   }
 
-  async verifyOtp(otp: number): Promise<{ status: boolean } | { message: string } | boolean> {
+  async verifyOtp(
+    otp: number,
+  ): Promise<{ status: boolean } | { message: string } | boolean> {
     // Check if the OTP exists.
-    const user = await this.userRepository.findOne({ where: { otp } });
+    const user = await this.userRepository.findOne({ where: { otp } })
     if (!user) {
-      return false;
+      return false
     }
     // Check if the OTP is older than 1 minute.
-    const otpCreatedAt = new Date(user.createdAt);
-    const now = new Date();
-    const elapsedTime = now.getTime() - otpCreatedAt.getTime();
-    const oneMinuteInMilliseconds = 60 * 1000;
+    const otpCreatedAt = new Date(user.createdAt)
+    const now = new Date()
+    const elapsedTime = now.getTime() - otpCreatedAt.getTime()
+    const oneMinuteInMilliseconds = 60 * 1000
     if (elapsedTime > oneMinuteInMilliseconds) {
       // Destroy the OTP.
-      await this.destroyOtp(otp, otpCreatedAt);
+      await this.destroyOtp(otp, otpCreatedAt)
       // Prompt the user to request a new OTP.
       return {
         status: false,
-        message: "Please request a new OTP."
-      };
+        message: 'Please request a new OTP.',
+      }
     }
     // Verify the OTP.
     if (user.otp !== otp) {
-      return false;
+      return false
     }
     // Set the user's account as verified.
-    user.isVerified = true;
+    user.isVerified = true
     user.otp = null
-    await this.userRepository.save(user);
-    return true;
+    await this.userRepository.save(user)
+    return true
   }
 
   async signIn(email, pass) {
@@ -90,24 +94,26 @@ export class AuthService {
       const payload = { sub: user.id, username: user.email };
       return {
         access_token: await this.jwtService.signAsync(payload),
-      };
+      }
     } else {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException()
     }
   }
 
-  async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
-
+  async register(
+    createUserInput: RegisterDto,
+  ): Promise<{ message: string } | AuthResponse> {
+    
     const emailExist = await this.userRepository.findOne({
       where: { email: createUserInput.email },
     });
 
     if (emailExist) {
-      const otp = await this.generateOtp();
-      const token = Math.floor(100 + Math.random() * 900).toString();
-      emailExist.otp = otp;
-      emailExist.createdAt = new Date();
-      await this.userRepository.save(emailExist);
+      const otp = await this.generateOtp()
+      const token = Math.floor(100 + Math.random() * 900).toString()
+      emailExist.otp = otp
+      emailExist.createdAt = new Date()
+      await this.userRepository.save(emailExist)
 
       if (emailExist.type === UserType.Customer) {
         await this.mailService.sendUserConfirmation(emailExist, token);
@@ -158,12 +164,12 @@ export class AuthService {
       return {
         token: access_token.access_token,
         permissions: ['store_owner', 'customer'],
-      };
+      }
     } else {
       return {
         token: access_token.access_token,
         permissions: ['super_admin', 'customer'],
-      };
+      }
     }
   }
 
@@ -174,54 +180,59 @@ export class AuthService {
 
     if (!user) {
       return {
-        message: "User Email is InValid"
+        message: 'User Email is InValid',
       }
     }
 
-    const isMatch = await bcrypt.compare(changePasswordInput.oldPassword, user.password);
+    const isMatch = await bcrypt.compare(
+      changePasswordInput.oldPassword,
+      user.password,
+    )
 
     if (!isMatch) {
       // The old password is incorrect.
       return {
         success: false,
         message: 'Old password is incorrect',
-      };
+      }
     }
 
-    const hashPass = await bcrypt.hash(changePasswordInput.newPassword, 12);
-    user.password = hashPass;
-    await this.userRepository.save(user);
+    const hashPass = await bcrypt.hash(changePasswordInput.newPassword, 12)
+    user.password = hashPass
+    await this.userRepository.save(user)
 
     return {
       success: true,
       message: 'Password change successful',
-    };
+    }
   }
 
   async forgetPassword(
     forgetPasswordInput: ForgetPasswordDto,
   ): Promise<{ message: string } | CoreResponse> {
-    console.log(forgetPasswordInput);
+    console.log(forgetPasswordInput)
 
-    const user = await this.userRepository.findOne({ where: { email: forgetPasswordInput.email } })
+    const user = await this.userRepository.findOne({
+      where: { email: forgetPasswordInput.email },
+    })
     if (!user) {
       return {
-        message: "User Email is InValid"
+        message: 'User Email is InValid',
       }
     }
 
     if (user) {
-      const otp = await this.generateOtp();
-      const token = Math.floor(100 + Math.random() * 900).toString();
-      user.otp = otp;
-      user.createdAt = new Date();
-      await this.userRepository.save(user);
+      const otp = await this.generateOtp()
+      const token = Math.floor(100 + Math.random() * 900).toString()
+      user.otp = otp
+      user.createdAt = new Date()
+      await this.userRepository.save(user)
 
-      await this.mailService.sendUserConfirmation(user, token);
+      await this.mailService.sendUserConfirmation(user, token)
       return {
         success: true,
         message: 'OTP sent to your email.',
-      };
+      }
     }
     // return {
     //   success: true,
@@ -232,7 +243,7 @@ export class AuthService {
   async verifyForgetPasswordToken(
     verifyForgetPasswordTokenInput: VerifyForgetPasswordDto,
   ): Promise<CoreResponse> {
-    console.log(verifyForgetPasswordTokenInput);
+    console.log(verifyForgetPasswordTokenInput)
 
     const existEmail = await this.userRepository.findOne({ where: { email: verifyForgetPasswordTokenInput.email } });
 
@@ -261,7 +272,7 @@ export class AuthService {
   async resetPassword(
     resetPasswordInput: ResetPasswordDto,
   ): Promise<CoreResponse> {
-    console.log(resetPasswordInput);
+    console.log(resetPasswordInput)
 
     // Find the user with the specified email
     const user = await this.userRepository.findOne({ where: { email: resetPasswordInput.email } });
@@ -294,19 +305,19 @@ export class AuthService {
   }
 
   async socialLogin(socialLoginDto: SocialLoginDto): Promise<AuthResponse> {
-    console.log(socialLoginDto);
+    console.log(socialLoginDto)
     return {
       token: 'jwt token',
       permissions: ['super_admin', 'customer'],
-    };
+    }
   }
 
   async otpLogin(otpLoginDto: OtpLoginDto): Promise<AuthResponse> {
-    console.log(otpLoginDto);
+    console.log(otpLoginDto)
     return {
       token: 'jwt token',
       permissions: ['super_admin', 'customer'],
-    };
+    }
   }
 
   async verifyOtpCode(verifyOtpInput: VerifyOtpDto): Promise<CoreResponse> {
@@ -341,7 +352,7 @@ export class AuthService {
       provider: 'google',
       phone_number: '+919494949494',
       is_contact_exist: true,
-    };
+    }
   }
 
   // async getUsers({ text, first, page }: GetUsersArgs): Promise<UserPaginator> {

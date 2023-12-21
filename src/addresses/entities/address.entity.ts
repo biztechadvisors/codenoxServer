@@ -11,25 +11,25 @@ export enum AddressType {
 @Entity()
 export class UserAddress {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  street_address: string;
+  street_address: string
   @Column()
-  country: string;
+  country: string
   @Column()
-  city: string;
+  city: string
   @Column()
-  state: string;
+  state: string
   @Column()
-  zip: string;
+  zip: string
 }
 
 @Entity()
 export class Address extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  title: string;
+  title: string
   @Column()
   default: boolean;
 

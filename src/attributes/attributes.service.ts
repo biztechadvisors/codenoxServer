@@ -14,17 +14,21 @@ const attributes = plainToClass(Attribute, attributesJson);
 
 @Injectable()
 export class AttributesService {
-  private attributes: Attribute[] = attributes;
+  private attributes: Attribute[] = attributes
   constructor(
-    @InjectRepository(AttributeRepository) private attributeRepository: AttributeRepository,
-    @InjectRepository(AttributeValueRepository) private attributeValueRepository: AttributeValueRepository,
-  ) { }
+    @InjectRepository(AttributeRepository)
+    private attributeRepository: AttributeRepository,
+    @InjectRepository(AttributeValueRepository)
+    private attributeValueRepository: AttributeValueRepository,
+  ) {}
 
   async convertToSlug(text) {
-    return await convertToSlug(text);
+    return await convertToSlug(text)
   }
 
-  async create(createAttributeDto: CreateAttributeDto): Promise<{ message: string; status: boolean } | Attribute> {
+  async create(
+    createAttributeDto: CreateAttributeDto,
+  ): Promise<{ message: string; status: boolean } | Attribute> {
     // Check if the attribute exists
     const existingAttribute = await this.attributeRepository.findOne({
       where: { name: createAttributeDto.name, shop_id: createAttributeDto.shop_id },
@@ -86,10 +90,11 @@ export class AttributesService {
     }[];
   }[]> {
     const attributes = await this.attributeRepository.find({
-      relations: ['values',
+      relations: [
+        'values',
         // 'shop'
       ],
-    });
+    })
 
     return attributes.map((attribute) => {
       return {
@@ -109,16 +114,15 @@ export class AttributesService {
             language: attribute.language,
             created_at: attribute.created_at,
             updated_at: attribute.updated_at,
-          };
+          }
         }),
         // shop: {
         //   id: attribute.shop.id,
         //   name: attribute.shop.name,
         // },
-      };
-    });
+      }
+    })
   }
-
 
   // findOne(param: string) {
   //   return this.attributes.find(
@@ -126,28 +130,31 @@ export class AttributesService {
   //   );
   // }
 
-  async findOne(param: GetAttributeArgs): Promise<{ message: string } | Attribute | undefined> {
-    console.log("testing?")
+  async findOne(
+    param: GetAttributeArgs,
+  ): Promise<{ message: string } | Attribute | undefined> {
+    console.log('testing?')
     const result = await this.attributeRepository.findOne({
-      where: [
-        { id: param.id },
-        { slug: param.slug },
-      ],
-      relations: ['values',
+      where: [{ id: param.id }, { slug: param.slug }],
+      relations: [
+        'values',
         // 'shop'
-      ]
-    });
+      ],
+    })
 
     if (result) {
-      return result;
+      return result
     } else {
       return {
-        message: "Attribute Not Found"
+        message: 'Attribute Not Found',
       }
     }
   }
 
-  async update(id: number, updateAttributeDto: UpdateAttributeDto): Promise<{ message: string; status: boolean } | Attribute> {
+  async update(
+    id: number,
+    updateAttributeDto: UpdateAttributeDto,
+  ): Promise<{ message: string; status: boolean } | Attribute> {
     // Check if the attribute exists
     const attribute = await this.attributeRepository.findOne({
       where: { id },
@@ -210,22 +217,21 @@ export class AttributesService {
     const attribute = await this.attributeRepository.findOne({
       where: { id },
       relations: ['values'],
-    });
+    })
 
     // If the attribute is not found, throw an error.
     if (!attribute) {
-      throw new Error(`Attribute with ID ${id} not found`);
+      throw new Error(`Attribute with ID ${id} not found`)
     }
 
     // Delete all of the attribute values associated with the attribute.
     await Promise.all(
       attribute.values.map(async (attributeValue) => {
-        await this.attributeValueRepository.delete(attributeValue.id);
+        await this.attributeValueRepository.delete(attributeValue.id)
       }),
-    );
+    )
 
     // Delete the attribute.
-    await this.attributeRepository.delete(attribute.id);
+    await this.attributeRepository.delete(attribute.id)
   }
-
 }

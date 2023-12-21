@@ -1,4 +1,4 @@
 export class GetOrderArgs {
-  id?: number;
-  tracking_number?: string;
+  id?: number
+  tracking_number?: string
 }

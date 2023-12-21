@@ -15,4 +15,4 @@ import { User } from 'src/users/entities/user.entity';
   providers: [AddressesService],
   exports: [AddressesService]
 })
-export class AddressesModule { }
+export class AddressesModule {}

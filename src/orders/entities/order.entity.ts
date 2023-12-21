@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
+/* eslint-disable prettier/prettier */
 import { UserAddress } from 'src/addresses/entities/address.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
@@ -44,11 +46,11 @@ export enum PaymentStatusType {
 @Entity()
 export class Order extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  tracking_number: string;
+  tracking_number: string
   @Column()
-  customer_id: number;
+  customer_id: number
   @Column()
   customer_contact: string;
 
@@ -68,20 +70,24 @@ export class Order extends CoreEntity {
   status: OrderStatus;
 
   @Column()
-  order_status: OrderStatusType;
+  order_status: OrderStatusType
   @Column()
-  payment_status: PaymentStatusType;
+  payment_status: PaymentStatusType
   @Column()
-  amount: number;
+  amount: number
   @Column()
-  sales_tax: number;
+  sales_tax: number
   @Column()
-  total: number;
+  total: number
   @Column()
+<<<<<<< HEAD
   paid_total: number;
   
+=======
+  paid_total: number
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
   @Column()
-  payment_id?: string;
+  payment_id?: string
   @Column()
   payment_gateway: PaymentGatewayType;
 
@@ -92,9 +98,9 @@ export class Order extends CoreEntity {
   shop: Shop;
 
   @Column()
-  discount?: number;
+  discount?: number
   @Column()
-  delivery_fee: number;
+  delivery_fee: number
   @Column()
   delivery_time: string;
 
@@ -121,20 +127,24 @@ export class Order extends CoreEntity {
   payment_intent: PaymentIntent;
 
   @Column()
+<<<<<<< HEAD
   altered_payment_gateway?: string;
   customerId: any;
+=======
+  altered_payment_gateway?: string
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
 }
 
 @Entity()
 export class OrderFiles extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  purchase_key: string;
+  purchase_key: string
   @Column()
-  digital_file_id: number;
+  digital_file_id: number
   @Column()
-  order_id?: number;
+  order_id?: number
   @Column()
   customer_id: number;
   @OneToOne(() => File)

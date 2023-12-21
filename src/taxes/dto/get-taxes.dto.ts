@@ -1,9 +1,9 @@
-import { SortOrder } from 'src/common/dto/generic-conditions.dto';
+import { SortOrder } from 'src/common/dto/generic-conditions.dto'
 
 export class GetTaxesDto {
-  text?: string;
-  orderBy?: QueryTaxClassesOrderByColumn;
-  sortedBy?: SortOrder;
+  text?: string
+  orderBy?: QueryTaxClassesOrderByColumn
+  sortedBy?: SortOrder
 }
 
 export enum QueryTaxClassesOrderByColumn {

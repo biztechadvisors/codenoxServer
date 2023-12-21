@@ -1,3 +1,3 @@
 export class GetPaymentMethodsDto {
-  text?: string;
+  text?: string
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import exportOrderJson from '@db/order-export.json';
 import orderFilesJson from '@db/order-files.json';
 import orderInvoiceJson from '@db/order-invoice.json';
@@ -16,29 +17,50 @@ import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.enti
 import { PaypalPaymentService } from 'src/payment/paypal-payment.service';
 import { StripePaymentService } from 'src/payment/stripe-payment.service';
 import { Setting } from 'src/settings/entities/setting.entity';
+=======
+import exportOrderJson from '@db/order-export.json'
+import orderFilesJson from '@db/order-files.json'
+import orderInvoiceJson from '@db/order-invoice.json'
+import orderStatusJson from '@db/order-statuses.json'
+import ordersJson from '@db/orders.json'
+import paymentGatewayJson from '@db/payment-gateway.json'
+import paymentIntentJson from '@db/payment-intent.json'
+import setting from '@db/settings.json'
+import { Injectable } from '@nestjs/common'
+import { plainToClass } from 'class-transformer'
+import Fuse from 'fuse.js'
+import { AuthService } from 'src/auth/auth.service'
+import { paginate } from 'src/common/pagination/paginate'
+import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity'
+import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.entity'
+import { PaypalPaymentService } from 'src/payment/paypal-payment.service'
+import { StripePaymentService } from 'src/payment/stripe-payment.service'
+import { Setting } from 'src/settings/entities/setting.entity'
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
 import {
   CreateOrderStatusDto,
   UpdateOrderStatusDto,
-} from './dto/create-order-status.dto';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { GetOrderFilesDto } from './dto/get-downloads.dto';
+} from './dto/create-order-status.dto'
+import { CreateOrderDto } from './dto/create-order.dto'
+import { GetOrderFilesDto } from './dto/get-downloads.dto'
 import {
   GetOrderStatusesDto,
   OrderStatusPaginator,
-} from './dto/get-order-statuses.dto';
-import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+} from './dto/get-order-statuses.dto'
+import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto'
+import { UpdateOrderDto } from './dto/update-order.dto'
 import {
   CheckoutVerificationDto,
   VerifiedCheckoutData,
-} from './dto/verify-checkout.dto';
-import { OrderStatus } from './entities/order-status.entity';
+} from './dto/verify-checkout.dto'
+import { OrderStatus } from './entities/order-status.entity'
 import {
   Order,
   OrderFiles,
   OrderStatusType,
   PaymentGatewayType,
   PaymentStatusType,
+<<<<<<< HEAD
 } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, UpdateResult } from 'typeorm';
@@ -51,22 +73,37 @@ import { Coupon } from 'src/coupons/entities/coupon.entity';
 const paymentIntents = plainToClass(PaymentIntent, paymentIntentJson);
 const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson);
 const orderStatus = plainToClass(OrderStatus, orderStatusJson);
+=======
+} from './entities/order.entity'
+
+const orders = plainToClass(Order, ordersJson)
+const paymentIntents = plainToClass(PaymentIntent, paymentIntentJson)
+const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson)
+const orderStatus = plainToClass(OrderStatus, orderStatusJson)
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
 
 const options = {
   keys: ['name'],
   threshold: 0.3,
-};
-const fuse = new Fuse(orderStatus, options);
+}
+const fuse = new Fuse(orderStatus, options)
 
-const orderFiles = plainToClass(OrderFiles, orderFilesJson);
-const settings = plainToClass(Setting, setting);
+const orderFiles = plainToClass(OrderFiles, orderFilesJson)
+const settings = plainToClass(Setting, setting)
 
 @Injectable()
 export class OrdersService {
+<<<<<<< HEAD
   private orders: Order[] 
   private orderStatus: OrderStatus[] = orderStatus;
   private orderFiles: OrderFiles[]
   private setting: Setting = { ...settings };
+=======
+  private orders: Order[] = orders
+  private orderStatus: OrderStatus[] = orderStatus
+  private orderFiles: OrderFiles[] = orderFiles
+  private setting: Setting = { ...settings }
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
 
   constructor(
     private readonly authService: AuthService,
@@ -91,6 +128,7 @@ export class OrdersService {
 >>>>>>> 46c5a4cf106d1f7f16a2ba15031d85d7e3096f1c
   ) { }
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
+<<<<<<< HEAD
     console.log("moyeMoyeOrder", createOrderInput)
     const order = plainToClass(Order, createOrderInput);
 
@@ -103,12 +141,22 @@ export class OrdersService {
     const paymentGatewayType = createOrderInput.payment_gateway
       ? createOrderInput.payment_gateway
       : PaymentGatewayType.CASH_ON_DELIVERY;
+=======
+    const order: Order = this.orders[0]
+    const payment_gateway_type = createOrderInput.payment_gateway
+      ? createOrderInput.payment_gateway
+      : PaymentGatewayType.CASH_ON_DELIVERY
+    order.payment_gateway = payment_gateway_type
+    order.payment_intent = null
+    // set the order type and payment type
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
 
     order.payment_gateway = paymentGatewayType;
     order.payment_intent = null;
 
     switch (paymentGatewayType) {
       case PaymentGatewayType.CASH_ON_DELIVERY:
+<<<<<<< HEAD
         order.order_status = OrderStatusType.PROCESSING;
         order.payment_status = PaymentStatusType.CASH_ON_DELIVERY;
         newOrderStatus.slug = OrderStatusType.PROCESSING;
@@ -181,10 +229,30 @@ export class OrdersService {
     order.status = createdOrderStatus;
     order.children = this.processChildrenOrder(order);
 
+=======
+        order.order_status = OrderStatusType.PROCESSING
+        order.payment_status = PaymentStatusType.CASH_ON_DELIVERY
+        break
+      case PaymentGatewayType.CASH:
+        order.order_status = OrderStatusType.PROCESSING
+        order.payment_status = PaymentStatusType.CASH
+        break
+      case PaymentGatewayType.FULL_WALLET_PAYMENT:
+        order.order_status = OrderStatusType.COMPLETED
+        order.payment_status = PaymentStatusType.WALLET
+        break
+      default:
+        order.order_status = OrderStatusType.PENDING
+        order.payment_status = PaymentStatusType.PENDING
+        break
+    }
+    order.children = this.processChildrenOrder(order)
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
     try {
       if (
         [PaymentGatewayType.STRIPE, PaymentGatewayType.PAYPAL, PaymentGatewayType.RAZORPAY].includes(paymentGatewayType)
       ) {
+<<<<<<< HEAD
         const paymentIntent = await this.processPaymentIntent(order, this.setting);
         order.payment_intent = paymentIntent;
       }
@@ -197,6 +265,17 @@ export class OrdersService {
     } catch (error) {
       console.error('Error creating order:', error);
       throw error;
+=======
+        const paymentIntent = await this.processPaymentIntent(
+          order,
+          this.setting,
+        )
+        order.payment_intent = paymentIntent
+      }
+      return order
+    } catch (error) {
+      return order
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
     }
   }
 
@@ -208,6 +287,7 @@ export class OrdersService {
     search,
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
+<<<<<<< HEAD
     try {
       if (!page) page = 1;
       if (!limit) limit = 15;
@@ -260,6 +340,36 @@ export class OrdersService {
     } catch (error) {
       console.error('Error in getOrders:', error);
       throw error; // rethrow the error for further analysis
+=======
+    if (!page) page = 1
+    if (!limit) limit = 15
+    const startIndex = (page - 1) * limit
+    const endIndex = page * limit
+
+    let data: Order[] = this.orders
+
+    if (shop_id && shop_id !== 'undefined') {
+      data = this.orders?.filter((p) => p?.shop?.id === Number(shop_id))
+    }
+    const results = data.slice(startIndex, endIndex)
+    const url = `/orders?search=${search}&limit=${limit}`
+    return {
+      data: results,
+      ...paginate(data.length, page, limit, results.length, url),
+    }
+  }
+
+  async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
+    try {
+      return (
+        this.orders.find(
+          (o: Order) =>
+            o.id === Number(id) || o.tracking_number === id.toString(),
+        ) ?? this.orders[0]
+      )
+    } catch (error) {
+      console.log(error)
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
     }
   }
   
@@ -316,15 +426,25 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
     page,
     search,
     orderBy,
+<<<<<<< HEAD
   }: GetOrderStatusesDto): Promise<OrderStatusPaginator> {
     if (!page) page = 1;
     if (!limit) limit = 30;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
+=======
+  }: GetOrderStatusesDto): OrderStatusPaginator {
+    if (!page) page = 1
+    if (!limit) limit = 30
+    const startIndex = (page - 1) * limit
+    const endIndex = page * limit
+    let data: OrderStatus[] = this.orderStatus
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
 
     let query = this.orderStatusRepository.createQueryBuilder('orderStatus');
 
     if (search) {
+<<<<<<< HEAD
       const parseSearchParams = search.split(';');
       for (const searchParam of parseSearchParams) {
         const [key, value] = searchParam.split(':');
@@ -360,6 +480,46 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
     const orderToDelete = await this.findOrderInDatabase(id);
     // const orderStatusToDelete = await this.findOrderStatusInDatabase(id);
       await this.orderRepository.remove(orderToDelete);
+=======
+      const parseSearchParams = search.split(';')
+      const searchText: any = []
+      for (const searchParam of parseSearchParams) {
+        const [key, value] = searchParam.split(':')
+        // TODO: Temp Solution
+        if (key !== 'slug') {
+          searchText.push({
+            [key]: value,
+          })
+        }
+      }
+
+      data = fuse
+        .search({
+          $and: searchText,
+        })
+        ?.map(({ item }) => item)
+    }
+
+    const results = data.slice(startIndex, endIndex)
+    const url = `/order-status?search=${search}&limit=${limit}`
+
+    return {
+      data: results,
+      ...paginate(data.length, page, limit, results.length, url),
+    }
+  }
+
+  getOrderStatus(param: string, language: string) {
+    return this.orderStatus.find((p) => p.slug === param)
+  }
+
+  update(id: number, updateOrderInput: UpdateOrderDto) {
+    return this.orders[0]
+  }
+
+  remove(id: number) {
+    return `This action removes a #${id} order`
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
   }
 
 
@@ -379,9 +539,10 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
       unavailable_products: [],
       wallet_currency: 0,
       wallet_amount: 0,
-    };
+    }
   }
 
+<<<<<<< HEAD
   private async updateOrderStatusInDatabase(id: number, updateOrderStatusInput: UpdateOrderStatusDto): Promise<OrderStatus> {
     const orderStatus = await this.findOrderStatusInDatabase(id);
 
@@ -403,37 +564,45 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
 
   async updateOrderStatus(id: number, updateOrderStatusInput: UpdateOrderStatusDto): Promise<OrderStatus> {
     return await this.updateOrderStatusInDatabase(id, updateOrderStatusInput);
+=======
+  createOrderStatus(createOrderStatusInput: CreateOrderStatusDto) {
+    return this.orderStatus[0]
+  }
+
+  updateOrderStatus(updateOrderStatusInput: UpdateOrderStatusDto) {
+    return this.orderStatus[0]
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
   }
 
   async getOrderFileItems({ page, limit }: GetOrderFilesDto) {
-    if (!page) page = 1;
-    if (!limit) limit = 30;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
+    if (!page) page = 1
+    if (!limit) limit = 30
+    const startIndex = (page - 1) * limit
+    const endIndex = page * limit
 
-    const results = orderFiles.slice(startIndex, endIndex);
+    const results = orderFiles.slice(startIndex, endIndex)
 
-    const url = `/downloads?&limit=${limit}`;
+    const url = `/downloads?&limit=${limit}`
     return {
       data: results,
       ...paginate(orderFiles.length, page, limit, results.length, url),
-    };
+    }
   }
 
   async getDigitalFileDownloadUrl(digitalFileId: number) {
     const item: OrderFiles = this.orderFiles.find(
       (singleItem) => singleItem.digital_file_id === digitalFileId,
-    );
+    )
 
-    return item.file.url;
+    return item.file.url
   }
 
   async exportOrder(shop_id: string) {
-    return exportOrderJson.url;
+    return exportOrderJson.url
   }
 
   async downloadInvoiceUrl(shop_id: string) {
-    return orderInvoiceJson[0].url;
+    return orderInvoiceJson[0].url
   }
 
   /**
@@ -446,6 +615,7 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
    * @returns Children[]
    */
   processChildrenOrder(order: Order) {
+<<<<<<< HEAD
     if (order.children && Array.isArray(order.children)) {
       return [...order.children].map((child) => {
         child.order_status = order.order_status;
@@ -455,6 +625,13 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
     } else {
       return [];
     }
+=======
+    return [...order.children].map((child) => {
+      child.order_status = order.order_status
+      child.payment_status = order.payment_status
+      return child
+    })
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
   }
   /**
    * This action will return Payment Intent
@@ -469,18 +646,23 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
       (intent: PaymentIntent) =>
         intent.tracking_number === order.tracking_number &&
         intent.payment_gateway.toString().toLowerCase() ===
+<<<<<<< HEAD
         setting.options.paymentGateway.toString().toLowerCase(),
     );
+=======
+          setting.options.paymentGateway.toString().toLowerCase(),
+    )
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
     if (paymentIntent) {
-      return paymentIntent;
+      return paymentIntent
     }
     const {
       id: payment_id,
       client_secret = null,
       redirect_url = null,
       customer = null,
-    } = await this.savePaymentIntent(order, order.payment_gateway);
-    const is_redirect = redirect_url ? true : false;
+    } = await this.savePaymentIntent(order, order.payment_gateway)
+    const is_redirect = redirect_url ? true : false
     const paymentIntentInfo: PaymentIntent = {
       id: Number(Date.now()),
       order_id: order.id,
@@ -492,7 +674,7 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
         redirect_url,
         is_redirect,
       },
-    };
+    }
 
     /**
      * Commented below code will work for real database.
@@ -510,7 +692,7 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
     // };
     // paymentGateways.push(paymentGateway);
 
-    return paymentIntentInfo;
+    return paymentIntentInfo
   }
 
   /**
@@ -520,20 +702,29 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
    * @param paymentGateway
    */
   async savePaymentIntent(order: Order, paymentGateway?: string): Promise<any> {
+<<<<<<< HEAD
     const me = await this.authService.me(order.customer.email, order.customer.id);
     switch (order.payment_gateway) {
       case PaymentGatewayType.STRIPE:
         const paymentIntentParam =
           await this.stripeService.makePaymentIntentParam(order, await me);
         return await this.stripeService.createPaymentIntent(paymentIntentParam);
+=======
+    const me = this.authService.me()
+    switch (order.payment_gateway) {
+      case PaymentGatewayType.STRIPE:
+        const paymentIntentParam =
+          await this.stripeService.makePaymentIntentParam(order, me)
+        return await this.stripeService.createPaymentIntent(paymentIntentParam)
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
       case PaymentGatewayType.PAYPAL:
         // here goes PayPal
-        return this.paypalService.createPaymentIntent(order);
-        break;
+        return this.paypalService.createPaymentIntent(order)
+        break
 
       default:
         //
-        break;
+        break
     }
   }
 
@@ -543,18 +734,18 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
    * @param orderPaymentDto
    */
   async stripePay(order: Order) {
-    this.orders[0]['order_status'] = OrderStatusType.PROCESSING;
-    this.orders[0]['payment_status'] = PaymentStatusType.SUCCESS;
-    this.orders[0]['payment_intent'] = null;
+    this.orders[0]['order_status'] = OrderStatusType.PROCESSING
+    this.orders[0]['payment_status'] = PaymentStatusType.SUCCESS
+    this.orders[0]['payment_intent'] = null
   }
 
   async paypalPay(order: Order) {
-    this.orders[0]['order_status'] = OrderStatusType.PROCESSING;
-    this.orders[0]['payment_status'] = PaymentStatusType.SUCCESS;
+    this.orders[0]['order_status'] = OrderStatusType.PROCESSING
+    this.orders[0]['payment_status'] = PaymentStatusType.SUCCESS
     const { status } = await this.paypalService.verifyOrder(
       order.payment_intent.payment_intent_info.payment_id,
-    );
-    this.orders[0]['payment_intent'] = null;
+    )
+    this.orders[0]['payment_intent'] = null
     if (status === 'COMPLETED') {
       //console.log('payment Success');
     }
@@ -569,8 +760,8 @@ async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
     orderStatus: OrderStatusType,
     paymentStatus: PaymentStatusType,
   ) {
-    this.orders[0]['order_status'] = orderStatus;
-    this.orders[0]['payment_status'] = paymentStatus;
+    this.orders[0]['order_status'] = orderStatus
+    this.orders[0]['payment_status'] = paymentStatus
   }
 }
 

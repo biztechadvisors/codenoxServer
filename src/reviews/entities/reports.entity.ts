@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Column, Entity, JoinTable, ManyToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
@@ -6,16 +7,16 @@ import { Column, Entity, JoinTable, ManyToMany, OneToOne, PrimaryGeneratedColumn
 @Entity()
 export class Report extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
   user_id?: number;
   @ManyToMany(() => User)
   @JoinTable()
   user: User[];
   @Column()
-  model_id: number;
+  model_id: number
   @Column()
-  model_type: string;
+  model_type: string
   @Column()
   message: string;
 }

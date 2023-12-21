@@ -15,4 +15,4 @@ import { Feedback } from 'src/feedbacks/entities/feedback.entity';
   controllers: [QuestionController, MyQuestionsController],
   providers: [QuestionService, MyQuestionsService],
 })
-export class QuestionModule { }
+export class QuestionModule {}

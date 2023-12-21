@@ -84,4 +84,4 @@ import { ContactDetailsRepository, CurrencyOptionsRepository, DeliveryTimeReposi
             LogoSettingsRepository,
             LogoSettings],
 })
-export class SettingsModule { }
+export class SettingsModule {}
