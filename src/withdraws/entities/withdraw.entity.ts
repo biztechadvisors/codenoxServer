@@ -1,25 +1,30 @@
-import { CoreEntity } from 'src/common/entities/core.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
-import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+/* eslint-disable prettier/prettier */
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Shop } from 'src/shops/entities/shop.entity'
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class Withdraw extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  amount: number;
+  amount: number
   @Column()
-  status: WithdrawStatus;
+  status: WithdrawStatus
   @Column()
-  shop_id: number;
+  shop_id: number
   @ManyToOne(() => Shop)
-  shop: Shop;
+  shop: Shop
   @Column()
-  payment_method: string;
+  payment_method: string
   @Column()
-  details: string;
+  details: string
   @Column()
-  note: string;
+  note: string
+  @Column({ type: 'timestamp'})
+  createdAt: Date;
+  @Column({ type: 'timestamp'})
+  updatedAt: Date;
 }
 
 export enum WithdrawStatus {

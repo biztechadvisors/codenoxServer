@@ -8,8 +8,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Attribute } from './entities/attribute.entity';
 
 @Module({
-  imports: [TypeOrmExModule.forCustomRepository([AttributeRepository, AttributeValueRepository]), TypeOrmModule.forFeature([Attribute])],
+  imports: [
+    TypeOrmExModule.forCustomRepository([
+      AttributeRepository,
+      AttributeValueRepository,
+    ]),
+    TypeOrmModule.forFeature([Attribute]),
+  ],
   controllers: [AttributesController],
   providers: [AttributesService],
 })
-export class AttributesModule { }
+export class AttributesModule {}

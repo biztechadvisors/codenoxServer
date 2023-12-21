@@ -18,16 +18,16 @@ import { UserRepository } from 'src/users/users.repository';
 import { Repository } from 'typeorm';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 
-const questions = plainToClass(Question, questionsJSON);
+const questions = plainToClass(Question, questionsJSON)
 const options = {
   keys: [],
   threshold: 0.3,
-};
-const fuse = new Fuse(questions, options);
+}
+const fuse = new Fuse(questions, options)
 
 @Injectable()
 export class QuestionService {
-  private question: Question[] = questions;
+  private question: Question[] = questions
 
 constructor(
   @InjectRepository(Question)
@@ -74,7 +74,7 @@ async findAllQuestions({
     question.negative_feedbacks_count = negativeCount;
 
     if (search) {
-      const parseSearchParams = search.split(';');
+      const parseSearchParams = search.split(';')
       for (const searchParam of parseSearchParams) {
         const [key, value] = searchParam.split(':');
         if (!question[key].includes(value)) {

@@ -1,5 +1,6 @@
-import { PickType } from '@nestjs/swagger';
-import { Attribute } from '../entities/attribute.entity';
+/* eslint-disable prettier/prettier */
+import { PickType } from '@nestjs/swagger'
+import { Attribute } from '../entities/attribute.entity'
 
 export class CreateAttributeDto extends PickType(Attribute, [
   'name',
@@ -7,12 +8,12 @@ export class CreateAttributeDto extends PickType(Attribute, [
   'slug',
   'language',
 ]) {
-  values: AttributeValueDto[];
+  values: AttributeValueDto[]
 }
 
 export class AttributeValueDto {
-  id: number;
-  value: string;
-  meta?: string;
-  language?: string;
+  id: number
+  value: string
+  meta?: string
+  language?: string
 }

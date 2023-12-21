@@ -1,32 +1,32 @@
+/* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class TotalYearSaleByMonth {
   @PrimaryGeneratedColumn()
   id: number
   @Column()
-  total?: number;
+  total?: number
   @Column()
-  month?: string;
+  month?: string
 }
 
 @Entity()
 export class Analytics extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  totalRevenue?: number;
+  totalRevenue?: number
   @Column()
-  totalShops?: number;
+  totalShops?: number
   @Column()
-  todaysRevenue?: number;
+  todaysRevenue?: number
   @Column()
-  totalOrders?: number;
+  totalOrders?: number
   @Column()
   newCustomers?: number;
   @ManyToMany(() => TotalYearSaleByMonth)
   @JoinTable()
   totalYearSaleByMonth?: TotalYearSaleByMonth[];
 }
-

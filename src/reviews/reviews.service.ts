@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { Any, Repository } from 'typeorm';
@@ -135,10 +136,40 @@ export class ReviewService {
 
   async findAllReviews({ limit, page, search, product_id }: GetReviewsDto): Promise<ReviewPaginator> {
     let reviews = await this.getReviewsFromDatabase();
+=======
+import { Injectable } from '@nestjs/common'
+import { plainToClass } from 'class-transformer'
+import Fuse from 'fuse.js'
+import { paginate } from 'src/common/pagination/paginate'
+import { CreateReviewDto } from './dto/create-review.dto'
+import { UpdateReviewDto } from './dto/update-review.dto'
+import { GetReviewsDto, ReviewPaginator } from './dto/get-reviews.dto'
+import reviewJSON from '@db/reviews.json'
+import { Review } from './entities/review.entity'
+
+const reviews = plainToClass(Review, reviewJSON)
+const options = {
+  keys: ['product_id'],
+  threshold: 0.3,
+}
+const fuse = new Fuse(reviews, options)
+
+@Injectable()
+export class ReviewService {
+  private reviews: Review[] = reviews
+
+  findAllReviews({ limit, page, search, product_id }: GetReviewsDto) {
+    if (!page) page = 1
+    if (!limit) limit = 30
+    const startIndex = (page - 1) * limit
+    const endIndex = page * limit
+    let data: Review[] = this.reviews
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
 
     if (search) {
-      const parseSearchParams = search.split(';');
+      const parseSearchParams = search.split(';')
       for (const searchParam of parseSearchParams) {
+<<<<<<< HEAD
         const [key, value] = searchParam.split(':');
         const options = {
           keys: [key],
@@ -146,10 +177,15 @@ export class ReviewService {
         };
         const fuse = new Fuse(reviews, options);
         reviews = fuse.search(value)?.map(({ item }) => item) || [];
+=======
+        const [key, value] = searchParam.split(':')
+        data = fuse.search(value)?.map(({ item }) => item)
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
       }
     }
 
     if (product_id) {
+<<<<<<< HEAD
       reviews = reviews.filter((p) => p.product_id === Number(product_id));
     }
 
@@ -178,6 +214,33 @@ export class ReviewService {
 
   async delete(id: number): Promise<void> {
     return await this.deleteReviewInDatabase(id);
+=======
+      data = data.filter((p) => p.product_id === Number(product_id))
+    }
+
+    const results = data.slice(startIndex, endIndex)
+    const url = `/reviews?search=${search}&limit=${limit}`
+    return {
+      data: results,
+      ...paginate(data.length, page, limit, results.length, url),
+    }
+  }
+
+  findReview(id: number) {
+    return this.reviews.find((p) => p.id === id)
+  }
+
+  create(createReviewDto: CreateReviewDto) {
+    return this.reviews[0]
+  }
+
+  update(id: number, updateReviewDto: UpdateReviewDto) {
+    return this.reviews[0]
+  }
+
+  delete(id: number) {
+    return this.reviews[0]
+>>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
   }
   
 }

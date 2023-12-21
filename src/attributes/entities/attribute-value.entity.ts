@@ -7,16 +7,16 @@ import { Column, Entity, FindOperator, ManyToOne, PrimaryGeneratedColumn } from 
 export class AttributeValue extends CoreEntity {
   // [x: string]: any;
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
   @Column()
-  shop_id: number;
+  shop_id: number
 
   @Column()
-  value: string;
+  value: string
 
   @Column()
-  meta?: string;
+  meta?: string
 
   @ManyToOne(() => Attribute, (attribute) => attribute.values, { onDelete: 'CASCADE' })
   attribute: Attribute;

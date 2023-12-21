@@ -1,8 +1,15 @@
 /* eslint-disable prettier/prettier */
-import { Column, Entity, JoinColumn, JoinTable, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { User } from "./user.entity";
-import { Attachment } from "src/common/entities/attachment.entity";
-import { CoreEntity } from "src/common/entities/core.entity";
+import {
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from 'typeorm';
+import { User } from './user.entity';
+import { Attachment } from 'src/common/entities/attachment.entity';
+import { CoreEntity } from 'src/common/entities/core.entity';
 
 @Entity()
 export class Profile extends CoreEntity {
@@ -37,8 +44,8 @@ export class Social {
     @Column()
     link: string;
 
-    @ManyToOne(()=> Profile, { cascade: true })
-    @JoinColumn({name:'ProfileId'})
+    @ManyToOne(() => Profile, { cascade: true })
+    @JoinColumn({ name: 'ProfileId' })
     profile: Profile;
 
 }

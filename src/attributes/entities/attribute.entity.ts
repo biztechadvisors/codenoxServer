@@ -7,10 +7,10 @@ import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn
 @Entity()
 export class Attribute extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
   @Column()
-  name: string;
+  name: string
 
   @Column()
   // shop_id: string;
@@ -21,17 +21,20 @@ export class Attribute extends CoreEntity {
   shop: Shop;
 
   @Column()
-  slug: string;
+  slug: string
 
-  @OneToMany(() => AttributeValue, attributeValue => attributeValue.attribute, {
-    onDelete: 'CASCADE',
-  })
-  values: AttributeValue[];
+  @OneToMany(
+    () => AttributeValue,
+    (attributeValue) => attributeValue.attribute,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
+  values: AttributeValue[]
 
   @Column()
-  language: string;
+  language: string
 
   @Column({ type: 'json' })
-  translated_languages: string[];
+  translated_languages: string[]
 }
-

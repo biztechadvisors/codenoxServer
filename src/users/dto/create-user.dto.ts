@@ -1,9 +1,7 @@
-/* eslint-disable prettier/prettier */
 import { PickType } from '@nestjs/swagger';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
-import { User, UserType } from '../entities/user.entity';
+import { User } from '../entities/user.entity';
 import { CreateProfileDto } from './create-profile.dto';
-import { Shop } from 'src/shops/entities/shop.entity';
 
 export enum Permission {
   SUPER_ADMIN = 'Super admin',
@@ -21,7 +19,5 @@ export class CreateUserDto extends PickType(User, [
 ]) {
   address: CreateAddressDto[];
   profile: CreateProfileDto;
-  managed_shop: Shop;
   permission: Permission = Permission.CUSTOMER;
-  type: UserType;
 }

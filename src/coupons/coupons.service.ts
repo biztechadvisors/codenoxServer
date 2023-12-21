@@ -87,7 +87,7 @@ export class CouponsService {
     if (search) {
       const parseSearchParams = search.split(';');
       for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
+        const [key, value] = searchParam.split(':')
         // TODO: Temp Solution
         if (key !== 'slug') {
           queryBuilder = queryBuilder.andWhere(`coupon.${key} = :value`, { value });
