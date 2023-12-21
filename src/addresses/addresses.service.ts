@@ -10,14 +10,13 @@ import { AddressRepository, UserAddressRepository } from './addresses.repository
 @Injectable()
 export class AddressesService {
   constructor(
-    @InjectRepository(UserAddress) private readonly userAddressesRepository: UserAddressRepository,
-    @InjectRepository(Address) private readonly addressesRepository: AddressRepository,
+    @InjectRepository(UserAddress) private readonly userAddressRepository: UserAddressRepository,
+    @InjectRepository(Address) private readonly addressRepository: AddressRepository,
     @InjectRepository(User) private readonly userRepository: UserRepository,
   ) { }
 
 
   async create(createAddressDto: CreateAddressDto) {
-    console.log("createAddressDto***Create", createAddressDto)
     // Create a new UserAddress with the provided data
     const userAddress = new UserAddress();
     userAddress.street_address = createAddressDto.address.street_address;
@@ -25,38 +24,36 @@ export class AddressesService {
     userAddress.city = createAddressDto.address.city;
     userAddress.state = createAddressDto.address.state;
     userAddress.zip = createAddressDto.address.zip;
-    await this.userAddressesRepository.save(userAddress);  // Save the new UserAddress
+    await this.userAddressRepository.save(userAddress);  // Save the new UserAddress
 
     // Create a new Address with the provided data
     const address = new Address();
     address.title = createAddressDto.title;
     address.type = createAddressDto.type;
     address.default = createAddressDto.default;
-    address.address = userAddress;  // Associate the UserAddress with the Address
+    address.address = userAddress;
     const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id } });  // Find the user
-    address.customer = user;  // Associate the Address with the user
-    await this.addressesRepository.save(address);  // Save the new address
+    address.customer = user;
+    await this.addressRepository.save(address);
 
     return address;
   }
 
   async findAll() {
     // This action returns all addresses
-    const addresses = await this.addressesRepository.find({ relations: ["address"] });
+    const addresses = await this.addressRepository.find({ relations: ["address"] });
     return addresses;
   }
 
   async findOne(id: number) {
     // This action returns a #${id} address
-    const address = await this.addressesRepository.findOne({ where: { id: id }, relations: ["address"] });
+    const address = await this.addressRepository.findOne({ where: { id: id }, relations: ["address"] });
     return address;
   }
 
   async update(id: number, updateAddressDto: UpdateAddressDto) {
     // Find the address with the specified id
-    console.log("update*****Addressservice", id, updateAddressDto)
-    const address = await this.addressesRepository.findOne({ where: { id: id }, relations: ["address"] });
-    console.log("Exist-update-Address**", address)
+    const address = await this.addressRepository.findOne({ where: { id: id }, relations: ["address"] });
     if (address) {
       // Update the properties of the address
       address.title = updateAddressDto.title;
@@ -73,7 +70,7 @@ export class AddressesService {
         address.address.zip = updateAddressDto.address.zip;
 
         // Save the updated UserAddress
-        await this.userAddressesRepository.save(address.address);
+        await this.userAddressRepository.save(address.address);
       } else {
         // Create a new UserAddress with the provided data
         const userAddress = new UserAddress();
@@ -84,32 +81,37 @@ export class AddressesService {
         userAddress.zip = updateAddressDto.address.zip;
 
         // Save the new UserAddress
-        await this.userAddressesRepository.save(userAddress);
+        await this.userAddressRepository.save(userAddress);
 
         // Associate the UserAddress with the Address
         address.address = userAddress;
       }
 
       // Save the updated address
-      await this.addressesRepository.save(address);
+      await this.addressRepository.save(address);
     }
-
-    console.log("successs****address", address)
     return address;
   }
 
   async remove(id: number) {
+
     // Find the address with the specified id
-    const address = await this.addressesRepository.findOne({ where: { id: id }, relations: ["address"] });
+    const address = await this.addressRepository.findOne({ where: { id: id } });
 
-    if (address) {
-      // Remove the address
-      await this.addressesRepository.remove(address);
+    // Find the UserAddress with the specified addressId
+    const userAddress = await this.userAddressRepository.findOne({ where: { id: address.address.id } });
 
-      // Remove the related UserAddress
-      await this.userAddressesRepository.remove(address.address);
+    if (userAddress) {
+      // Remove the UserAddress
+      await this.userAddressRepository.remove(userAddress);
+
+      if (address) {
+        // Remove the address
+        await this.addressRepository.remove(address);
+      }
     }
 
     return [];
   }
+
 }

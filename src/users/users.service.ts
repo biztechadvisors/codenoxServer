@@ -4,14 +4,12 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto, UserPaginator } from './dto/get-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import Fuse from 'fuse.js';
-
 import { User, UserType } from './entities/user.entity';
 import usersJson from '@db/users.json';
 import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, SocialRepository, UserRepository } from './users.repository';
-import { DeepPartial, FindOneOptions, FindOperator, Repository } from 'typeorm';
-import { Address, UserAddress } from 'src/addresses/entities/address.entity';
+import { Address } from 'src/addresses/entities/address.entity';
 import { Profile, Social } from './entities/profile.entity';
 import { AddressRepository } from 'src/addresses/addresses.repository';
 import { ProfileRepository } from './profile.repository';
@@ -45,8 +43,8 @@ const fuse = new Fuse(users, options);
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly userRepository: UserRepository,
-    @InjectRepository(Address) private readonly addressesRepository: AddressRepository,
-    @InjectRepository(Profile) private readonly profilesRepository: ProfileRepository,
+    @InjectRepository(Address) private readonly addressRepository: AddressRepository,
+    @InjectRepository(Profile) private readonly profileRepository: ProfileRepository,
     @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
     @InjectRepository(Dealer) private readonly dealerRepository: DealerRepository,
     @InjectRepository(Product) private readonly productRepository: ProductRepository,
@@ -55,8 +53,8 @@ export class UsersService {
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
     @InjectRepository(Social) private readonly socialRepository: SocialRepository,
-    private authService: AuthService,
-    private addressesService: AddressesService,
+    private readonly authService: AuthService,
+    private readonly addressesService: AddressesService,
 
   ) { }
 
@@ -64,7 +62,6 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     const user = await this.userRepository.findOne({ where: { email: createUserDto.email } })
-    console.log("creating************")
     if (user) {
       throw new NotFoundException(`User with email ${createUserDto.email} already exists`);
     }
@@ -109,7 +106,7 @@ export class UsersService {
     const profile = new Profile();
     profile.customer = usr;
     profile.socials = social;
-    await this.profilesRepository.save(profile);
+    await this.profileRepository.save(profile);
 
     return usr;
   }
@@ -183,7 +180,6 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    console.log("update-User*****", updateUserDto)
     const user = await this.userRepository.findOne({
       where: { id: id }, relations: ["profile", "address", "shops", "orders", "profile.socials"]
     });
@@ -213,7 +209,7 @@ export class UsersService {
       for (const addressData of updateUserDto.address) {
         let address;
         if (addressData.address.id) {
-          address = await this.addressesRepository.findOne({ where: { id: addressData.address.id } });
+          address = await this.addressRepository.findOne({ where: { id: addressData.address.id } });
         }
         if (address) {
           const updateAddressDto = new UpdateAddressDto();
@@ -253,7 +249,7 @@ export class UsersService {
     return user;
   }
 
-  async remove(id: number) {
+  async removeUser(id: number) {
     const user = await this.userRepository.findOne({
       where: { id: id }, relations: ["profile", "address", "shops", "orders"]
     });
@@ -262,17 +258,18 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    // First, remove the user
-    await this.userRepository.remove(user);
-
-    // Then remove the related entities
-    await this.profilesRepository.remove(user.profile);
-    await this.addressesRepository.remove(user.address);
+    // First, remove the related entities
+    await Promise.all(user.address.map(address => this.addressesService.remove(address.id)));
+    await this.profileRepository.remove(user.profile);
     await this.shopRepository.remove(user.shops);
     // await this.ordersRepository.remove(user.orders);
 
+    // Then, remove the user
+    await this.userRepository.remove(user);
+
     return `User with id ${id} has been removed`;
   }
+
 
   async makeAdmin(user_id: number) {
     const user = await this.userRepository.findOne({ where: { id: user_id } });

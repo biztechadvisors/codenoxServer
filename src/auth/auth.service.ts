@@ -15,12 +15,9 @@ import {
   OtpDto,
 } from './dto/create-auth.dto';
 import * as bcrypt from 'bcrypt';
-import { plainToClass } from 'class-transformer';
 import { User, UserType } from 'src/users/entities/user.entity';
-import usersJson from '@db/users.json';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/users/users.repository';
-const users = plainToClass(User, usersJson);
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
 import { FindOptionsWhere } from 'typeorm';
@@ -36,8 +33,6 @@ export class AuthService {
     private jwtService: JwtService,
     private mailService: MailService
   ) { }
-
-  private users: User[] = users;
 
   async generateOtp(): Promise<number> {
     const otp = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
@@ -176,8 +171,8 @@ export class AuthService {
   async changePassword(
     changePasswordInput: ChangePasswordDto,
   ): Promise<{ message: string } | CoreResponse> {
-    console.log(changePasswordInput);
-
+    console.log("changePasswordInput", changePasswordInput);
+    console.log("changePasswordInput.email", changePasswordInput.email)
     const user = await this.userRepository.findOne({ where: { email: changePasswordInput.email } })
 
     if (!user) {
@@ -185,7 +180,7 @@ export class AuthService {
         message: "User Email is InValid"
       }
     }
-
+    console.log("User***", user, changePasswordInput.oldPassword)
     const isMatch = await bcrypt.compare(changePasswordInput.oldPassword, user.password);
 
     if (!isMatch) {
@@ -242,21 +237,65 @@ export class AuthService {
   ): Promise<CoreResponse> {
     console.log(verifyForgetPasswordTokenInput);
 
-    return {
-      success: true,
-      message: 'Password change successful',
-    };
+    const existEmail = await this.userRepository.findOne({ where: { email: verifyForgetPasswordTokenInput.email } });
+
+    if (!existEmail) {
+      return {
+        success: false,
+        message: 'Email does not exist',
+      };
+    }
+
+    const otpVerificationResult = await this.verifyOtp(verifyForgetPasswordTokenInput.token);
+
+    if (typeof otpVerificationResult === 'boolean' && otpVerificationResult) {
+      return {
+        success: true,
+        message: 'Password change successful',
+      };
+    } else {
+      return {
+        success: false,
+        message: 'OTP verification failed',
+      };
+    }
   }
+
   async resetPassword(
     resetPasswordInput: ResetPasswordDto,
   ): Promise<CoreResponse> {
     console.log(resetPasswordInput);
 
-    return {
-      success: true,
-      message: 'Password change successful',
-    };
+    // Find the user with the specified email
+    const user = await this.userRepository.findOne({ where: { email: resetPasswordInput.email } });
+
+    if (!user) {
+      return {
+        success: false,
+        message: 'User not found',
+      };
+    }
+
+    // Verify the OTP
+    const otpVerificationResult = await this.verifyOtp(resetPasswordInput.token);
+
+    if (typeof otpVerificationResult === 'boolean' && otpVerificationResult) {
+      // Update the user's password
+      user.password = resetPasswordInput.password;
+      await this.userRepository.save(user);
+
+      return {
+        success: true,
+        message: 'Password change successful',
+      };
+    } else {
+      return {
+        success: false,
+        message: 'OTP verification failed',
+      };
+    }
   }
+
   async socialLogin(socialLoginDto: SocialLoginDto): Promise<AuthResponse> {
     console.log(socialLoginDto);
     return {
@@ -271,15 +310,32 @@ export class AuthService {
       permissions: ['super_admin', 'customer'],
     };
   }
+
   async verifyOtpCode(verifyOtpInput: VerifyOtpDto): Promise<CoreResponse> {
     console.log(verifyOtpInput);
-    return {
-      message: 'success',
-      success: true,
-    };
+    const result = await this.verifyOtp(verifyOtpInput.code);
+
+    if (typeof result === 'boolean') {
+      return {
+        message: result ? 'OTP verification successful' : 'OTP verification failed',
+        success: result,
+      };
+    } else if ('status' in result) {
+      return {
+        message: result.status ? 'OTP verification successful' : 'OTP verification failed',
+        success: result.status,
+      };
+    } else {
+      return {
+        message: result.message,
+        success: false,
+      };
+    }
   }
+
   async sendOtpCode(otpInput: OtpDto): Promise<OtpResponse> {
     console.log(otpInput);
+
     return {
       message: 'success',
       success: true,

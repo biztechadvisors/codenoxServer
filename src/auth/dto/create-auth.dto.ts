@@ -31,11 +31,11 @@ export class ForgetPasswordDto {
 }
 export class VerifyForgetPasswordDto {
   email: string;
-  token: string;
+  token: number;
 }
 export class ResetPasswordDto {
   email: string;
-  token: string;
+  token: number;
   password: string;
 }
 
@@ -49,7 +49,7 @@ export class CoreResponse extends CoreMutationOutput { }
 
 export class VerifyOtpDto {
   otp_id: string;
-  code: string;
+  code: number;
   phone_number: string;
 }
 
