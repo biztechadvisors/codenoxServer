@@ -19,24 +19,24 @@ export class SmsAdmin {
 export class SeoSettings {
   @PrimaryGeneratedColumn()
   id: number
-  @Column()
+  @Column({ nullable: true })
   metaTitle?: string
-  @Column()
+  @Column({ nullable: true})
   metaDescription?: string
-  @Column()
+  @Column({ nullable: true})
   ogTitle?: string
-  @Column()
+  @Column({ nullable: true })
   ogDescription?: string
   @OneToOne(() => Attachment)
   @JoinColumn()
   ogImage?: Attachment;
-  @Column()
+  @Column({ nullable: true })
   twitterHandle?: string
-  @Column()
+  @Column({ nullable:true })
   twitterCardType?: string
-  @Column()
+  @Column({ nullable: true })
   metaTags?: string
-  @Column()
+  @Column({ nullable: true })
   canonicalUrl?: string
 }
 
@@ -263,7 +263,7 @@ export class SettingsOptions {
   currency: string;
   @ManyToOne(() => CurrencyOptions)
   currencyOptions: CurrencyOptions;
-  @Column()
+  @Column({ nullable: true })
   currencyToWalletRatio: number
   @Column()
   defaultAi: string
@@ -276,7 +276,7 @@ export class SettingsOptions {
   emailEvent: EmailEvent;
   @Column()
   freeShipping: boolean
-  @Column({ type: 'float' })
+  @Column({ type: 'float', nullable: true })
   freeShippingAmount: number
   @Column()
   guestCheckout: boolean
@@ -288,7 +288,7 @@ export class SettingsOptions {
   maximumQuestionLimit: number
   @Column()
   maxShopDistance: number
-  @Column()
+  @Column({ nullable: true })
   minimumOrderAmount: number;
   @ManyToMany(() => PaymentGateway)
   @JoinTable()
@@ -297,11 +297,11 @@ export class SettingsOptions {
   seo: SeoSettings;
   @ManyToOne(() => ServerInfo)
   server_info: ServerInfo;
-  @Column()
+  @Column({ nullable: true })
   shippingClass: number
-  @Column()
+  @Column({ nullable: true })
   signupPoints: number
-  @Column()
+  @Column({ nullable: true })
   siteSubtitle: string
   @Column()
   siteTitle: string;

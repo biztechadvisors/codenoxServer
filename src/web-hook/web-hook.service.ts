@@ -12,4 +12,7 @@ export class WebHookService {
   paypal() {
     return `this action is for paypal pay`
   }
+  mollie() {
+    return `this action is for paypal pay`
+  }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Body,
   Controller,
@@ -63,8 +64,7 @@ export class OrdersController {
   @HttpCode(200)
   async submitPayment(@Body() orderPaymentDto: OrderPaymentDto): Promise<void> {
     const { tracking_number } = orderPaymentDto
-    const order: Order =
-      await this.ordersService.getOrderByIdOrTrackingNumber(tracking_number)
+    const order: Order = await this.ordersService.getOrderByIdOrTrackingNumber(tracking_number)
     switch (order.payment_gateway.toString().toLowerCase()) {
       case 'stripe':
         this.ordersService.stripePay(order)
