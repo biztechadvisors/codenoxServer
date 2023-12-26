@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import exportOrderJson from '@db/order-export.json'
 import orderFilesJson from '@db/order-files.json'
 import orderInvoiceJson from '@db/order-invoice.json'

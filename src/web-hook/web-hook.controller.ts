@@ -17,4 +17,8 @@ export class WebHookController {
   paypal() {
     return this.webHookServices.paypal()
   }
+  @Get('mollie')
+  Mollie() {
+    return this.webHookServices.mollie()
+  }
 }
