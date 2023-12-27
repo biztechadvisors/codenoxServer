@@ -7,6 +7,7 @@ export class WebHookController {
   constructor(private readonly webHookServices: WebHookService) {}
   @Get('razorpay')
   razorPay() {
+    console.log("working")
     return this.webHookServices.razorPay()
   }
   @Get('stripe')
