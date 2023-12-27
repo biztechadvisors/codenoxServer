@@ -123,21 +123,22 @@ export class SettingsService {
            newcontact.contact = createSettingDto.options.contactDetails.contact
            newcontact.website = createSettingDto.options.contactDetails.website
 
-          // if(createSettingDto.options.contactDetails.location){
-          //   const newLocation = new Location()
+          if(createSettingDto.options.contactDetails.location){
+            const newLocation = new Location()
 
-          //   newLocation.lat = createSettingDto.options.contactDetails.location.lat ? createSettingDto.options.contactDetails.location.lat: null
-          //   newLocation.lng = createSettingDto.options.contactDetails.location.lng ? createSettingDto.options.contactDetails.location.lng : null
-          //   newLocation.city = createSettingDto.options.contactDetails.location.city ? createSettingDto.options.contactDetails.location.city : null
-          //   newLocation.state = createSettingDto.options.contactDetails.location.state ? createSettingDto.options.contactDetails.location.state : null
-          //   newLocation.zip = createSettingDto.options.contactDetails.location.zip ? createSettingDto.options.contactDetails.location.zip : null
-          //   newLocation.country = createSettingDto.options.contactDetails.location.country ? createSettingDto.options.contactDetails.location.country : null
-          //   newLocation.formattedAddress = createSettingDto.options.contactDetails.location.formattedAddress ? createSettingDto.options.contactDetails.location.formattedAddress : null
-          //   // const newLocation = createSettingDto.options.contactDetails.location
-          //   const locations = await this.locationRepository.save(newLocation)
-          //   value6 = locations
+            newLocation.lat = createSettingDto.options.contactDetails.location.lat ? createSettingDto.options.contactDetails.location.lat: null
+            newLocation.lng = createSettingDto.options.contactDetails.location.lng ? createSettingDto.options.contactDetails.location.lng : null
+            newLocation.city = createSettingDto.options.contactDetails.location.city ? createSettingDto.options.contactDetails.location.city : null
+            newLocation.state = createSettingDto.options.contactDetails.location.state ? createSettingDto.options.contactDetails.location.state : null
+            newLocation.zip = createSettingDto.options.contactDetails.location.zip ? createSettingDto.options.contactDetails.location.zip : null
+            newLocation.country = createSettingDto.options.contactDetails.location.country ? createSettingDto.options.contactDetails.location.country : null
+            newLocation.formattedAddress = createSettingDto.options.contactDetails.location.formattedAddress ? createSettingDto.options.contactDetails.location.formattedAddress : null
+            // const newLocation = createSettingDto.options.contactDetails.location
+            const locations = await this.locationRepository.save(newLocation)
+            value6 = locations
             
-          // }
+          }
+
           if(createSettingDto.options.contactDetails.socials){
             const socials: ShopSocials[] = [];
 
@@ -154,7 +155,7 @@ export class SettingsService {
                newcontact.socials = socials
             console.log("All socials saved with ids: ", socials);
           }
-          // newcontact.location = value6
+          newcontact.location = value6
          
           const contacts = await this.contactDetailRepository.save(newcontact)
           const socialIds = contacts.socials.map((social) => social.id);
@@ -287,20 +288,20 @@ export class SettingsService {
             console.error("Error saving SEO:", error);
           }
         }
-          //serverInfo
-        // if(createSettingDto.options.server_info){
-        //   const newServerInfo = new ServerInfo()
+          // serverInfo
+        if(createSettingDto.options.server_info){
+          const newServerInfo = new ServerInfo()
 
-        //   newServerInfo.max_execution_time = createSettingDto.options.server_info.max_execution_time
-        //   newServerInfo.max_input_time = createSettingDto.options.server_info.max_input_time
-        //   newServerInfo.memory_limit = createSettingDto.options.server_info.memory_limit
-        //   newServerInfo.post_max_size = createSettingDto.options.server_info.post_max_size
-        //   newServerInfo.upload_max_filesize = createSettingDto.options.server_info.upload_max_filesize
+          newServerInfo.max_execution_time = createSettingDto.options.server_info.max_execution_time
+          newServerInfo.max_input_time = createSettingDto.options.server_info.max_input_time
+          newServerInfo.memory_limit = createSettingDto.options.server_info.memory_limit
+          newServerInfo.post_max_size = createSettingDto.options.server_info.post_max_size
+          newServerInfo.upload_max_filesize = createSettingDto.options.server_info.upload_max_filesize
 
-        //   const serverInfoId = await this.serverInfoRepository.save(newServerInfo)
+          const serverInfoId = await this.serverInfoRepository.save(newServerInfo)
 
-        //   value17 = serverInfoId.id
-        // }
+          value17 = serverInfoId.id
+        }
         
         //delivery Time
         if(createSettingDto.options.deliveryTime){
@@ -378,17 +379,77 @@ export class SettingsService {
       console.error(error)
     }
   }
+  // const findData: Setting[] = []
+ async findAll() {
 
-  findAll() {
-    return this.settings
+    const settingData = await this.settingRepository.find({ 
+      relations: [
+        'options.contactDetails',
+        'options.contactDetails.socials',
+        'options.contactDetails.location',
+        'options.currencyOptions',
+        'options.emailEvent',
+        'options.emailEvent.admin',
+        'options.emailEvent.vendor',
+        'options.emailEvent.customer',
+        'options.smsEvent',
+        'options.smsEvent.admin',
+        'options.smsEvent.vendor',
+        'options.smsEvent.customer',
+        'options.seo',
+        'options.seo.ogImage',
+        'options.deliveryTime',
+        'options.paymentGateway',
+        'options.logo',
+      ]
+    })
+    if(!settingData){
+      return null        
+     } else {
+
+       for (let index = 0; index < settingData.length; index++) {
+         const setting = settingData[index];
+         console.log("Setting data", setting);
+         return setting;
+       }
+     }
   }
 
   findOne(id: number) {
     return `This action returns a #${id} setting`
   }
 
-  update(id: number, updateSettingDto: UpdateSettingDto) {
-    return this.settings
+ async update(id: number, updateSettingDto: UpdateSettingDto) {
+    console.log("first", id, updateSettingDto)
+    const findSetting = await this.settingRepository.find({
+      where: { id: id },
+      relations: [
+        'options.contactDetails',
+        'options.contactDetails.socials',
+        'options.contactDetails.location',
+        'options.currencyOptions',
+        'options.emailEvent',
+        'options.emailEvent.admin',
+        'options.emailEvent.vendor',
+        'options.emailEvent.customer',
+        'options.smsEvent',
+        'options.smsEvent.admin',
+        'options.smsEvent.vendor',
+        'options.smsEvent.customer',
+        'options.seo',
+        'options.seo.ogImage',
+        'options.deliveryTime',
+        'options.paymentGateway',
+        'options.logo',
+      ]
+    })
+
+    for (let index = 0; index < findSetting.length; index++) {
+      const setting = findSetting[index];
+      console.log("Setting data", setting);
+      return setting;
+    }
+
   }
 
   remove(id: number) {
