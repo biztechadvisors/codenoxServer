@@ -18,13 +18,6 @@ import { ShopSocials } from 'src/settings/entities/setting.entity'
 import { UserRepository } from 'src/users/users.repository'
 
 
-// const shops = plainToClass(Shop, shopsJson)
-// const options = {
-//   keys: ['name', 'type.slug', 'is_active'],
-//   threshold: 0.3,
-// }
-// const fuse = new Fuse(shops, options)
-
 @Injectable()
 export class ShopsService {
   constructor(

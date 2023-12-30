@@ -7,6 +7,8 @@ import { ContactDetails, CurrencyOptions, DeliveryTime, EmailAdmin, EmailCustome
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
 import { ContactDetailsRepository, CurrencyOptionsRepository, DeliveryTimeRepository, EmailAdminRepository, EmailCustomerRepository, EmailEventRepository, EmailVendorRepository, LogoSettingsRepository, PaymentGateWayRepository, SeoSettingsRepository, ServerInfoRepository, SettingRepository, SettingsOptionsRepository, SmsAdminRepository, SmsCustomerRepository, SmsEventRepository, SmsVendorRepository } from './settings.repository'
 import { LocationRepository, ShopSocialRepository } from 'src/shops/shops.repository'
+import { AttachmentRepository } from 'src/common/common.repository'
+import { Attachment } from 'src/common/entities/attachment.entity'
 
 @Module({
   imports: [TypeOrmExModule.forCustomRepository([
@@ -29,7 +31,8 @@ import { LocationRepository, ShopSocialRepository } from 'src/shops/shops.reposi
     DeliveryTimeRepository,
     LogoSettingsRepository,
     PaymentGateWayRepository,
-  ]),TypeOrmModule.forFeature([Setting, PaymentGateway, LogoSettings, DeliveryTime, ServerInfo, SeoSettings, SmsEvent, SmsAdmin, SmsVendor, SmsCustomer, EmailAdmin, EmailVendor, EmailCustomer, EmailEvent, CurrencyOptions, ShopSocials, SettingsOptions, ContactDetails, Location])],
+    AttachmentRepository,
+  ]),TypeOrmModule.forFeature([Setting, Attachment, PaymentGateway, LogoSettings, DeliveryTime, ServerInfo, SeoSettings, SmsEvent, SmsAdmin, SmsVendor, SmsCustomer, EmailAdmin, EmailVendor, EmailCustomer, EmailEvent, CurrencyOptions, ShopSocials, SettingsOptions, ContactDetails, Location])],
   controllers: [SettingsController],
   providers: [SettingsService],
   exports: [SettingsService],
