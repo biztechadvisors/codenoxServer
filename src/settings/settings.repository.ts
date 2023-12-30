@@ -3,6 +3,7 @@ import { CustomRepository } from "src/typeorm-ex/typeorm-ex.decorator";
 import { Repository } from "typeorm";
 import { ContactDetails, CurrencyOptions, DeliveryTime, EmailAdmin, EmailCustomer, EmailEvent, EmailVendor, LogoSettings, PaymentGateway, SeoSettings, ServerInfo, Setting, SettingsOptions, SmsAdmin, SmsCustomer, SmsEvent, SmsVendor } from "./entities/setting.entity";
 
+
 @CustomRepository(Setting)
 export class SettingRepository extends Repository<Setting>{}
 
