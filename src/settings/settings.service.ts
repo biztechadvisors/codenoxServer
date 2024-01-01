@@ -47,6 +47,7 @@ import { LocationRepository, ShopSocialRepository } from 'src/shops/shops.reposi
 import { AttachmentRepository } from 'src/common/common.repository'
 
 
+
 @Injectable()
 export class SettingsService {
   constructor(
@@ -92,7 +93,7 @@ export class SettingsService {
     private attachmentRepository: AttachmentRepository,
   ){}
 
-
+//create setting
  async create(id: number, createSettingDto: CreateSettingDto): Promise<Setting> {
 
    let value4: any
@@ -424,7 +425,8 @@ export class SettingsService {
     }
   
   }
-  // const findData: Setting[] = []
+
+  //find all settings
  async findAll() {
 
     const settingData = await this.settingRepository.find({ 
@@ -460,6 +462,7 @@ export class SettingsService {
      }
   }
 
+  //find one setting 
  async findOne(id: number) {
     const settingData = await this.settingRepository.findOne({
       where: { id: id }, 
@@ -490,8 +493,8 @@ export class SettingsService {
      }
   }
 
+  //update setting
  async update(id: number, updateSettingDto: UpdateSettingDto) {
-
     try{
     const findSetting = await this.settingRepository.find({
       where: { id: id },
@@ -545,7 +548,7 @@ export class SettingsService {
             'logo'
           ]
          })
-             console.log("Data", findOption)
+            //  console.log("Data", findOption)
          findOption.currency = updateSettingDto.options.currency
          findOption.currencyToWalletRatio = updateSettingDto.options.currencyToWalletRatio
          findOption.freeShipping = updateSettingDto.options.freeShipping
@@ -570,6 +573,8 @@ export class SettingsService {
          findOption.useMustVerifyEmail = updateSettingDto.options.useMustVerifyEmail
          findOption.useOtp = updateSettingDto.options.useOtp
          findOption.updated_at = new Date()
+
+         console.log("receive Data", updateSettingDto.options.emailEvent)
 
              //update contact Details
            if(updateSettingDto.options.contactDetails){
@@ -682,9 +687,9 @@ export class SettingsService {
                     where: {id: updateEvent.admin.id }
                   })
                   
-                 updateAdmin.paymentOrder = updateSettingDto.options.emailEvent.admin.paymentOrder 
-                 updateAdmin.refundOrder =  updateSettingDto.options.emailEvent.admin.refundOrder
-                 updateAdmin.statusChangeOrder =  updateSettingDto.options.emailEvent.admin.statusChangeOrder
+                 updateAdmin.paymentOrder = updateSettingDto.options.emailEvent.admin.paymentOrder ? updateSettingDto.options.emailEvent.admin.paymentOrder : false 
+                 updateAdmin.refundOrder =  updateSettingDto.options.emailEvent.admin.refundOrder ? updateSettingDto.options.emailEvent.admin.refundOrder : false
+                 updateAdmin.statusChangeOrder =  updateSettingDto.options.emailEvent.admin.statusChangeOrder ?updateSettingDto.options.emailEvent.admin.statusChangeOrder : false
                  
                          await this.emailAdminRepository.save(updateAdmin)
                 
@@ -699,11 +704,11 @@ export class SettingsService {
                      where: {id: updateEvent.vendor.id }
                    })
                   console.log("Vendor------------",updateVendor)
-                  updateVendor.paymentOrder = updateSettingDto.options.emailEvent.vendor.paymentOrder 
-                  updateVendor.refundOrder =  updateSettingDto.options.emailEvent.vendor.refundOrder
-                  updateVendor.statusChangeOrder =  updateSettingDto.options.emailEvent.vendor.statusChangeOrder
-                  updateVendor.createQuestion =  updateSettingDto.options.emailEvent.vendor.createQuestion
-                  updateVendor.createReview =  updateSettingDto.options.emailEvent.vendor.createReview
+                  updateVendor.paymentOrder = updateSettingDto.options.emailEvent.vendor.paymentOrder ? updateSettingDto.options.emailEvent.vendor.paymentOrder : false 
+                  updateVendor.refundOrder =  updateSettingDto.options.emailEvent.vendor.refundOrder ?updateSettingDto.options.emailEvent.vendor.refundOrder : false
+                  updateVendor.statusChangeOrder =  updateSettingDto.options.emailEvent.vendor.statusChangeOrder ? updateSettingDto.options.emailEvent.vendor.statusChangeOrder : false
+                  updateVendor.createQuestion =  updateSettingDto.options.emailEvent.vendor.createQuestion ? updateSettingDto.options.emailEvent.vendor.createQuestion : false
+                  updateVendor.createReview =  updateSettingDto.options.emailEvent.vendor.createReview ? updateSettingDto.options.emailEvent.vendor.createReview : false
               
                              await this.emailVendorRepository.save(updateVendor)
                  
@@ -718,10 +723,10 @@ export class SettingsService {
                      where: {id: updateEvent.customer.id }
                    })
                   console.log("Customer------------",updateCustomer)
-                  updateCustomer.paymentOrder = updateSettingDto.options.emailEvent.customer.paymentOrder 
-                  updateCustomer.refundOrder =  updateSettingDto.options.emailEvent.customer.refundOrder
-                  updateCustomer.statusChangeOrder =  updateSettingDto.options.emailEvent.customer.statusChangeOrder
-                  updateCustomer.answerQuestion =  updateSettingDto.options.emailEvent.customer.answerQuestion
+                  updateCustomer.paymentOrder = updateSettingDto.options.emailEvent.customer.paymentOrder ? updateSettingDto.options.emailEvent.customer.paymentOrder : false 
+                  updateCustomer.refundOrder =  updateSettingDto.options.emailEvent.customer.refundOrder ? updateSettingDto.options.emailEvent.customer.refundOrder : false
+                  updateCustomer.statusChangeOrder =  updateSettingDto.options.emailEvent.customer.statusChangeOrder ? updateSettingDto.options.emailEvent.customer.statusChangeOrder : false
+                  updateCustomer.answerQuestion =  updateSettingDto.options.emailEvent.customer.answerQuestion ? updateSettingDto.options.emailEvent.customer.answerQuestion : false
               
                                await this.emailCustomerRepository.save(updateCustomer)
                   
@@ -742,7 +747,7 @@ export class SettingsService {
                 where: { id: findOption.smsEvent.id },
                 relations: ['admin', 'vendor', 'customer']
               })
-              console.log("updateEvent", updateSms)
+              // console.log("updateEvent", updateSms)
   
               if(updateSms){    
 
@@ -753,9 +758,9 @@ export class SettingsService {
                     where: {id: updateSms.admin.id }
                   })
                   
-                 updateAdmin.paymentOrder = updateSettingDto.options.smsEvent.admin.paymentOrder 
-                 updateAdmin.refundOrder =  updateSettingDto.options.smsEvent.admin.refundOrder
-                 updateAdmin.statusChangeOrder =  updateSettingDto.options.smsEvent.admin.statusChangeOrder
+                 updateAdmin.paymentOrder = updateSettingDto.options.smsEvent.admin.paymentOrder ? updateSettingDto.options.smsEvent.admin.paymentOrder : false 
+                 updateAdmin.refundOrder =  updateSettingDto.options.smsEvent.admin.refundOrder ? updateSettingDto.options.smsEvent.admin.refundOrder : false
+                 updateAdmin.statusChangeOrder =  updateSettingDto.options.smsEvent.admin.statusChangeOrder ? updateSettingDto.options.smsEvent.admin.statusChangeOrder : false
                  
                          await this.smsAdminRepository.save(updateAdmin)
                 
@@ -769,10 +774,10 @@ export class SettingsService {
                      const updateVendor = await this.smsVendorRepository.findOne({
                      where: {id: updateSms.vendor.id }
                    })
-                  console.log("Vendor------------",updateVendor)
-                  updateVendor.paymentOrder = updateSettingDto.options.smsEvent.vendor.paymentOrder 
-                  updateVendor.refundOrder =  updateSettingDto.options.smsEvent.vendor.refundOrder
-                  updateVendor.statusChangeOrder =  updateSettingDto.options.smsEvent.vendor.statusChangeOrder
+                  // console.log("Vendor------------",updateVendor)
+                  updateVendor.paymentOrder = updateSettingDto.options.smsEvent.vendor.paymentOrder ? updateSettingDto.options.smsEvent.vendor.paymentOrder : false
+                  updateVendor.refundOrder =  updateSettingDto.options.smsEvent.vendor.refundOrder ? updateSettingDto.options.smsEvent.vendor.refundOrder : false
+                  updateVendor.statusChangeOrder =  updateSettingDto.options.smsEvent.vendor.statusChangeOrder ? updateSettingDto.options.smsEvent.vendor.statusChangeOrder : false
               
                              await this.smsVendorRepository.save(updateVendor)
                  
@@ -787,9 +792,9 @@ export class SettingsService {
                      where: {id: updateSms.customer.id }
                    })
                   console.log("Customer------------",updateCustomer)
-                  updateCustomer.paymentOrder = updateSettingDto.options.smsEvent.customer.paymentOrder 
-                  updateCustomer.refundOrder =  updateSettingDto.options.smsEvent.customer.refundOrder
-                  updateCustomer.statusChangeOrder =  updateSettingDto.options.smsEvent.customer.statusChangeOrder
+                  updateCustomer.paymentOrder = updateSettingDto.options.smsEvent.customer.paymentOrder ? updateSettingDto.options.smsEvent.customer.paymentOrder : false
+                  updateCustomer.refundOrder =  updateSettingDto.options.smsEvent.customer.refundOrder ? updateSettingDto.options.smsEvent.customer.refundOrder : false
+                  updateCustomer.statusChangeOrder =  updateSettingDto.options.smsEvent.customer.statusChangeOrder ? updateSettingDto.options.smsEvent.customer.statusChangeOrder : false
                  
               
                                await this.smsCustomerRepository.save(updateCustomer)
@@ -896,7 +901,7 @@ export class SettingsService {
             
               if (existingTime) {
                  
-
+                  // if(remove){ } 
                 const final = this.deliveryTimeRepository.create({ ...existingTime, ...updates})
                 const updatedTime = await this.deliveryTimeRepository.save(final);
                 console.log("Updated Social:", updatedTime);
@@ -984,9 +989,9 @@ export class SettingsService {
               }
   
           }
-          // findOption.server_info = valueId ? valueId : null
-          const updatedValue = await this.settingsOptionsRepository.save(findOption) 
-          console.log("first", findOption, updatedValue)
+         
+           await this.settingsOptionsRepository.save(findOption) 
+          // console.log("first", findOption, updatedValue)
           
       }
        const updateSetting = await this.settingRepository.save(setting)
@@ -1000,11 +1005,15 @@ export class SettingsService {
     }
   }
 
+  //remove delivery time and socials
  async remove(id: number) {
+
+  try{
+
     const findId = await this.deliveryTimeRepository.findOne({
       where: { id: id }
     })
-    console.log("id", findId)
+    // console.log("id", findId)
     if(findId){
       const del1 = await this.deliveryTimeRepository.delete(findId)
       console.log("first", del1)
@@ -1013,9 +1022,17 @@ export class SettingsService {
       const find2Id = await this.shopSocialRepository.findOne({
         where: { id: id }
       })
-       const del2 = await this.shopSocialRepository.delete(find2Id)
-       console.log("DELETE", del2)
+       if(find2Id){
+        const del2 = await this.shopSocialRepository.delete(find2Id)
+        console.log("DELETE", del2)
+       } else {
+          console.error('Related data is not exist!')
+       }
+      
     }
-    return `Successfully remove this #${id} from DeliveryTime`
+    return `Deleted successfully!`
+  }catch(error){
+    throw new NotFoundException(error)
+  }
   }
 }
