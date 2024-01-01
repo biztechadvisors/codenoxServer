@@ -31,6 +31,9 @@ export class Dealer {
     user: User;
 
     @Column()
+    phone: number;
+
+    @Column()
     name: string;
     @Column({ type: 'enum', enum: SubscriptionType })
     subscriptionType: SubscriptionType;

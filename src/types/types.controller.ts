@@ -16,7 +16,7 @@ import { GetTypesDto } from './dto/get-types.dto'
 
 @Controller('types')
 export class TypesController {
-  constructor(private readonly typesService: TypesService) {}
+  constructor(private readonly typesService: TypesService) { }
 
   @Post()
   create(@Body() createTypeDto: CreateTypeDto) {

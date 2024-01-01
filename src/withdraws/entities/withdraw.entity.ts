@@ -21,9 +21,9 @@ export class Withdraw extends CoreEntity {
   details: string
   @Column()
   note: string
-  @Column({ type: 'timestamp'})
+  @Column({ type: 'timestamp' })
   createdAt: Date;
-  @Column({ type: 'timestamp'})
+  @Column({ type: 'timestamp' })
   updatedAt: Date;
 }
 

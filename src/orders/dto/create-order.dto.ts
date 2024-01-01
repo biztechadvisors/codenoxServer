@@ -24,19 +24,21 @@ export class CreateOrderDto {
 }
 
 export class UserAddressInput {
-  street_address: string
-  country: string
-  city: string
-  state: string
-  zip: string
+  id: number; // Added based on the provided input
+  street_address: string;
+  country: string;
+  city: string;
+  state: string;
+  zip: string;
 }
 
 export class ConnectProductOrderPivot {
-  product_id: number
-  variation_option_id?: number
-  order_quantity: number
-  unit_price: number
-  subtotal: number
+  product_id: number;
+  variation_option_id?: number;
+  order_quantity: number;
+  unit_price: number;
+  subtotal: number;
+  quantity: any;
 }
 
 export class CardInput {

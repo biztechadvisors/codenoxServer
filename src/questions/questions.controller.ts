@@ -8,31 +8,31 @@ import {
   Body,
   Put,
   Delete,
-} from '@nestjs/common'
-import { CreateQuestionDto } from './dto/create-question.dto'
-import { GetQuestionDto } from './dto/get-questions.dto'
-import { UpdateQuestionDto } from './dto/update-question.dto'
-import { QuestionService } from './questions.service'
+} from '@nestjs/common';
+import { CreateQuestionDto } from './dto/create-question.dto';
+import { GetQuestionDto } from './dto/get-questions.dto';
+import { UpdateQuestionDto } from './dto/update-question.dto';
+import { QuestionService } from './questions.service';
 
 @Controller('questions')
 export class QuestionController {
-  constructor(private questionService: QuestionService) {}
+  constructor(private questionService: QuestionService) { }
   // show all
   // TODO: there is a bug in displaying all questions
   // In product single page front-end all the questions apperaed. It should be based on product ID.
   @Get()
   findAll(@Query() query: GetQuestionDto) {
-    return this.questionService.findAllQuestions(query)
+    return this.questionService.findAllQuestions(query);
   }
   // show one
   @Get(':id')
   find(@Param('id') id: string) {
-    return this.questionService.findQuestion(+id)
+    return this.questionService.findQuestion(+id);
   }
   // create
   @Post()
   create(@Body() createQuestionDto: CreateQuestionDto) {
-    return this.questionService.create(createQuestionDto)
+    return this.questionService.create(createQuestionDto);
   }
 
   // update
@@ -48,6 +48,6 @@ export class QuestionController {
   // delete
   @Delete(':id')
   delete(@Param('id') id: string) {
-    return this.questionService.delete(+id)
+    return this.questionService.delete(+id);
   }
 }

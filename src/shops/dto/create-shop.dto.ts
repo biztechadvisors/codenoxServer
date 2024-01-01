@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { PickType } from '@nestjs/swagger'
 import { Shop } from '../entities/shop.entity'
-
+import { User } from 'src/users/entities/user.entity'
 
 export class CreateShopDto extends PickType(Shop, [
   'name',
@@ -15,6 +15,7 @@ export class CreateShopDto extends PickType(Shop, [
   'owner',
 ]) {
   categories: number[]
+  user: User
 }
 
 export class ApproveShopDto {

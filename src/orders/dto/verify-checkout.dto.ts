@@ -1,11 +1,11 @@
 import { ConnectProductOrderPivot, UserAddressInput } from './create-order.dto'
 
 export class CheckoutVerificationDto {
-  amount: number
-  products: ConnectProductOrderPivot[]
-  billing_address?: UserAddressInput
-  shipping_address?: UserAddressInput
-  customer_id?: string
+  amount: number;
+  products: ConnectProductOrderPivot[];
+  billing_address?: UserAddressInput;
+  shipping_address?: UserAddressInput;
+  customer_id?: string;
 }
 
 export class VerifiedCheckoutData {

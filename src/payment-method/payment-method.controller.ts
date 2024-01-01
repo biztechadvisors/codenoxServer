@@ -8,7 +8,6 @@ import {
   Post,
   Put,
   Query,
-<<<<<<< HEAD
 } from '@nestjs/common';
 import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
 import { GetPaymentMethodsDto } from './dto/get-payment-methods.dto';
@@ -16,27 +15,14 @@ import { DefaultCart } from './dto/set-default-card.dto';
 import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto';
 import { PaymentMethodService } from './payment-method.service';
 import { User } from 'src/users/entities/user.entity';
-=======
-} from '@nestjs/common'
-import { CreatePaymentMethodDto } from './dto/create-payment-method.dto'
-import { GetPaymentMethodsDto } from './dto/get-payment-methods.dto'
-import { DefaultCart } from './dto/set-default-card.dto'
-import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto'
-import { PaymentMethodService } from './payment-method.service'
->>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
 
 @Controller('cards')
 export class PaymentMethodController {
   constructor(private readonly paymentMethodService: PaymentMethodService) { }
 
   @Post()
-<<<<<<< HEAD
   create(@Body() createPaymentMethodDto: CreatePaymentMethodDto, user: User) {
     return this.paymentMethodService.create(createPaymentMethodDto, user);
-=======
-  create(@Body() createPaymentMethodDto: CreatePaymentMethodDto) {
-    return this.paymentMethodService.create(createPaymentMethodDto)
->>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
   }
 
   @Get()
@@ -67,15 +53,9 @@ export class PaymentMethodController {
 export class SavePaymentMethodController {
   constructor(private readonly paymentMethodService: PaymentMethodService) { }
   @Post()
-<<<<<<< HEAD
   savePaymentMethod(@Body() createPaymentMethodDto: CreatePaymentMethodDto, user: User) {
     createPaymentMethodDto.default_card = false;
     return this.paymentMethodService.savePaymentMethod(createPaymentMethodDto, user);
-=======
-  savePaymentMethod(@Body() createPaymentMethodDto: CreatePaymentMethodDto) {
-    createPaymentMethodDto.default_card = false
-    return this.paymentMethodService.savePaymentMethod(createPaymentMethodDto)
->>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
   }
 }
 

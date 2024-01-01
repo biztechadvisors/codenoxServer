@@ -4,4 +4,4 @@ import { Withdraw } from "./entities/withdraw.entity";
 import { Repository } from "typeorm";
 
 @CustomRepository(Withdraw)
-export class WithdrawRepository extends Repository<Withdraw>{}
+export class WithdrawRepository extends Repository<Withdraw>{ }

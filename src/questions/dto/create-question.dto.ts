@@ -19,5 +19,5 @@ export class CreateQuestionDto extends PickType(Question, [
 ]) {
   product: Product;
   user: User;
-  feedback:Feedback;
+  feedback: Feedback;
 }

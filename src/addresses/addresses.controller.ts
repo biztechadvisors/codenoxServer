@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -14,22 +13,21 @@ import { UpdateAddressDto } from './dto/update-address.dto';
 
 @Controller('address')
 export class AddressesController {
-  constructor(private readonly addressesService: AddressesService) {}
+  constructor(private readonly addressesService: AddressesService) { }
 
   @Post()
   createAddress(@Body() createAddressDto: CreateAddressDto) {
-    console.log(createAddressDto)
     return this.addressesService.create(createAddressDto);
   }
 
   @Get()
   addresses() {
-    return this.addressesService.findAll()
+    return this.addressesService.findAll();
   }
 
   @Get(':id')
   address(@Param('id') id: string) {
-    return this.addressesService.findOne(+id)
+    return this.addressesService.findOne(+id);
   }
 
   @Put(':id')
@@ -37,11 +35,11 @@ export class AddressesController {
     @Param('id') id: string,
     @Body() updateAddressDto: UpdateAddressDto,
   ) {
-    return this.addressesService.update(+id, updateAddressDto)
+    return this.addressesService.update(+id, updateAddressDto);
   }
 
   @Delete(':id')
   deleteAddress(@Param('id') id: string) {
-    return this.addressesService.remove(+id)
+    return this.addressesService.remove(+id);
   }
 }
