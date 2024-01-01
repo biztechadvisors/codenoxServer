@@ -1,7 +1,6 @@
-/* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
-import { CreateUserDto, Permission } from './dto/create-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto, UserPaginator } from './dto/get-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import Fuse from 'fuse.js';
@@ -62,6 +61,7 @@ export class UsersService {
   //-------------------------------------------------------- 
 
   async create(createUserDto: CreateUserDto) {
+
     const user = await this.userRepository.findOne({ where: { email: createUserDto.email } })
     if (user) {
       throw new NotFoundException(`User with email ${createUserDto.email} already exists`);
@@ -72,7 +72,7 @@ export class UsersService {
     registerDto.email = createUserDto.email;
     registerDto.password = createUserDto.password;
     registerDto.isVerified = createUserDto.isVerified;
-    registerDto.type = createUserDto.type;
+    registerDto.type = createUserDto.type ? createUserDto.type : UserType.Customer;
 
     await this.authService.register(registerDto);
 
@@ -107,13 +107,12 @@ export class UsersService {
     const profile = new Profile();
     profile.customer = usr;
     profile.socials = social;
+    profile.bio = createUserDto.profile.bio;
+    profile.contact = createUserDto.profile.contact;
     await this.profileRepository.save(profile);
 
     return usr;
   }
-  const savedUser = await this.userRepository.save(newUser);
-  return savedUser;
-}
 
   async getUsers({
     text,
@@ -126,17 +125,11 @@ export class UsersService {
     if (!limit) limit = 30;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-
-    // Get users from the custom repository
-    let data: User[] = await this.userRepository.find({ relations: ["profile", "address", "shops", "orders"] });
-
-    // Filter users by type if it's provided, or default to 'customer'
-    data = data.filter(user => user.type === (type || 'customer'));
-
+    let data: User[] = await this.userRepository.find({ relations: ["profile", "address", "shops", "orders", "address.address"] });
+    data = data.filter(user => user.type === (type || UserType.Customer));
     if (text?.replace(/%/g, '')) {
       data = fuse.search(text)?.map(({ item }) => item);
     }
-
     if (search) {
       const parseSearchParams = search.split(';');
       const searchText: any = [];
@@ -148,26 +141,19 @@ export class UsersService {
           });
         }
       }
-
-  await this.socialRepository.save(newSocial)
-}
-
+      data = fuse
+        .search({
+          $and: searchText,
+        })
+        ?.map(({ item }) => item);
+    }
     const results = data.slice(startIndex, endIndex);
     const url = `/users?type=${type || 'customer'}&limit=${limit}`;
-
-async findAll(){
-  const AllProfile = await this.profilesRepository.find({
-    relations:['customer']
-  })
-  return AllProfile;
-}
-
-async findAllSocial(){
-  const AllSocial = await this.socialRepository.find({
-    relations:['profile', 'profile.customer','profile.avatar']
-  })
-  return AllSocial;
-}
+    return {
+      data: results,
+      ...paginate(data.length, page, limit, results.length, url),
+    };
+  }
 
   async getUsersNotify({ limit }: GetUsersDto): Promise<User[]> {
     const data = await this.userRepository.find({
@@ -178,7 +164,7 @@ async findAllSocial(){
   }
 
   async findOne(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id: id }, relations: ["profile", "address", "shops", "orders"] });
+    const user = await this.userRepository.findOne({ where: { id: id }, relations: ["profile", "address", "shops", "orders", "address.address"] });
 
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
@@ -189,7 +175,7 @@ async findAllSocial(){
 
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.userRepository.findOne({
-      where: { id: id }, relations: ["profile", "address", "shops", "orders", "profile.socials"]
+      where: { id: id }, relations: ["profile", "address", "address.address", "shops", "orders", "profile.socials"]
     });
 
     if (!user) {
@@ -238,11 +224,20 @@ async findAllSocial(){
       }
     }
 
-    let social: Social;  // Declare 'social' here
+    // Find the profile by customer id
+    let profile = await this.profileRepository.findOne({ where: { customer: { id } } });
+
+    // If the profile does not exist, create a new one
+    if (!profile) {
+      profile = new Profile();
+      profile.customer = user;
+      profile.bio = updateUserDto.profile.bio;
+      profile.contact = updateUserDto.profile.contact;
+    }
 
     // Update and save the socials
     if (updateUserDto.profile && updateUserDto.profile.socials) {
-      social = await this.socialRepository.findOne({ where: { id: user.profile?.socials?.id } });
+      let social = await this.socialRepository.findOne({ where: { id: profile.socials?.id } });
       if (social) {
         social.type = updateUserDto.profile.socials.type || social.type;
         social.link = updateUserDto.profile.socials.link || social.link;
@@ -252,7 +247,12 @@ async findAllSocial(){
         social.link = updateUserDto.profile.socials.link;
       }
       await this.socialRepository.save(social);
+      profile.socials = social;
     }
+
+    // Save the profile
+    await this.profileRepository.save(profile);
+
 
     return user;
   }
@@ -335,6 +335,7 @@ async findAllSocial(){
 
     const dealer = new Dealer();
     dealer.name = dealerData.name;
+    dealer.phone = dealerData.phone;
     dealer.user = user;
     dealer.subscriptionType = dealerData.subscriptionType;
     dealer.subscriptionStart = dealerData.subscriptionStart;
@@ -377,7 +378,7 @@ async findAllSocial(){
 
   async getDealerById(id: number): Promise<Dealer> {
     return this.dealerRepository.findOne({
-      where: { id: id },
+      where: { user: { id } },
       relations: ['user', 'dealerProductMargins', 'dealerProductMargins.product', 'dealerCategoryMargins', 'dealerCategoryMargins.category']
     });
   }
@@ -389,6 +390,7 @@ async findAllSocial(){
     }
 
     dealer.name = dealerData.name;
+    dealer.phone = dealerData.phone;
     dealer.subscriptionType = dealerData.subscriptionType;
     dealer.subscriptionStart = dealerData.subscriptionStart;
     dealer.subscriptionEnd = dealerData.subscriptionEnd;
@@ -478,4 +480,3 @@ async findAllSocial(){
   }
 
 }
-

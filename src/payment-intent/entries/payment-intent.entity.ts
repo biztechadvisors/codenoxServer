@@ -5,9 +5,9 @@ import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 export class PaymentIntentInfo {
   @PrimaryGeneratedColumn()
   id: number // Add this line
-  @Column()
+  @Column({ nullable: true })
   client_secret?: string | null
-  @Column()
+  @Column({ nullable: true })
   redirect_url?: string | null
   @Column()
   payment_id: string

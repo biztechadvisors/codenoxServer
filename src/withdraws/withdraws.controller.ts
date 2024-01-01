@@ -15,7 +15,7 @@ import { GetWithdrawsDto, WithdrawPaginator } from './dto/get-withdraw.dto'
 
 @Controller('withdraws')
 export class WithdrawsController {
-  constructor(private readonly withdrawsService: WithdrawsService) {}
+  constructor(private readonly withdrawsService: WithdrawsService) { }
 
   @Post()
   createWithdraw(@Body() createWithdrawDto: CreateWithdrawDto) {

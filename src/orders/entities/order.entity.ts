@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
-/* eslint-disable prettier/prettier */
 import { UserAddress } from 'src/addresses/entities/address.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
@@ -46,11 +44,11 @@ export enum PaymentStatusType {
 @Entity()
 export class Order extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
   @Column()
-  tracking_number: string
+  tracking_number: string;
   @Column()
-  customer_id: number
+  customer_id: number;
   @Column()
   customer_contact: string;
 
@@ -59,7 +57,8 @@ export class Order extends CoreEntity {
   })
   customer: User;
 
-  @ManyToOne(() => Order, { nullable: true })
+  @ManyToOne(() => Order, order => order.children, { nullable: true })
+  @JoinColumn()
   parentOrder: Order;
 
   @OneToMany(() => Order, order => order.parentOrder)
@@ -70,50 +69,44 @@ export class Order extends CoreEntity {
   status: OrderStatus;
 
   @Column()
-  order_status: OrderStatusType
+  order_status: OrderStatusType;
   @Column()
-  payment_status: PaymentStatusType
+  payment_status: PaymentStatusType;
   @Column()
-  amount: number
+  amount: number;
+  @Column({ nullable: true })
+  sales_tax: number;
   @Column()
-  sales_tax: number
+  total: number;
   @Column()
-  total: number
-  @Column()
-<<<<<<< HEAD
   paid_total: number;
-  
-=======
-  paid_total: number
->>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
+
   @Column()
-  payment_id?: string
+  payment_id?: string;
   @Column()
   payment_gateway: PaymentGatewayType;
 
-  @ManyToOne(() => Coupon, coupon => coupon.orders)
+  @ManyToOne(() => Coupon, coupon => coupon.orders, { nullable: true })
   coupon?: Coupon;
 
-  @ManyToMany(() => Shop)
+  @ManyToOne(() => Shop, { nullable: true })
   shop: Shop;
 
-  @Column()
-  discount?: number
-  @Column()
-  delivery_fee: number
-  @Column()
+  @Column({ nullable: true })
+  discount?: number;
+  @Column({ nullable: true })
+  delivery_fee: number;
+  @Column({ nullable: true })
   delivery_time: string;
 
   @ManyToMany(() => Product, product => product.orders)
   @JoinTable()
   products: Product[];
 
-  @ManyToMany(() => UserAddress)
-  @JoinColumn()
+  @ManyToOne(() => UserAddress)
   billing_address: UserAddress;
 
-  @ManyToMany(() => UserAddress)
-  @JoinColumn()
+  @ManyToOne(() => UserAddress)
   shipping_address: UserAddress;
 
   @Column()
@@ -127,28 +120,27 @@ export class Order extends CoreEntity {
   payment_intent: PaymentIntent;
 
   @Column()
-<<<<<<< HEAD
   altered_payment_gateway?: string;
+
+  @Column()
   customerId: any;
-=======
-  altered_payment_gateway?: string
->>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
 }
 
 @Entity()
 export class OrderFiles extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
   @Column()
-  purchase_key: string
+  purchase_key: string;
   @Column()
-  digital_file_id: number
+  digital_file_id: number;
   @Column()
-  order_id?: number
+  order_id?: number;
   @Column()
   customer_id: number;
-  @OneToOne(() => File)
+
+  @ManyToOne(() => File, { cascade: true })
   file: File;
-  @OneToOne(() => Product)
+  @ManyToOne(() => Product)
   fileable: Product;
 }

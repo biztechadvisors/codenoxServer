@@ -1,6 +1,4 @@
-/* eslint-disable prettier/prettier */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Inject, Injectable,NotFoundException  } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,7 +16,7 @@ export class AddressesService {
   ) { }
 
 
-  async create(createAddressDto: CreateAddressDto) {
+  async create(createAddressDto: CreateAddressDto): Promise<Address> {
     // Create a new UserAddress with the provided data
     const userAddress = new UserAddress();
     userAddress.street_address = createAddressDto.address.street_address;
@@ -26,20 +24,29 @@ export class AddressesService {
     userAddress.city = createAddressDto.address.city;
     userAddress.state = createAddressDto.address.state;
     userAddress.zip = createAddressDto.address.zip;
-    await this.userAddressRepository.save(userAddress);  // Save the new UserAddress
+
+    // Save the new UserAddress and retrieve the saved entity
+    const savedUserAddress = await this.userAddressRepository.save(userAddress);
 
     // Create a new Address with the provided data
     const address = new Address();
     address.title = createAddressDto.title;
     address.type = createAddressDto.type;
     address.default = createAddressDto.default;
-    address.address = userAddress;
-    const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id } });  // Find the user
-    address.customer = user;
-    await this.addressRepository.save(address);
+    address.address = savedUserAddress;  // Use the saved UserAddress
 
-    return address;
+    const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id } });  // Find the user
+    if (!user) {
+      throw new Error('User does not exist');
+    }
+    address.customer = user;
+
+    // Save the new Address and retrieve the saved entity
+    const savedAddress = await this.addressRepository.save(address);
+
+    return savedAddress;
   }
+
 
   async findAll() {
     // This action returns all addresses

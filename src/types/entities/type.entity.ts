@@ -12,6 +12,7 @@ import {
 } from 'typeorm'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { CoreEntity } from 'src/common/entities/core.entity'
+import { Product } from 'src/products/entities/product.entity'
 
 // TypeSettings entity
 @Entity()
@@ -35,14 +36,18 @@ export class Type extends CoreEntity {
   name: string
   @Column()
   slug: string
+
   @OneToOne(() => Attachment)
   @JoinColumn()
   image: Attachment
+
   @Column()
   icon: string
+
   @OneToMany(() => Banner, (banner) => banner.type, { cascade: true })
   banners?: Banner[]
-  @ManyToMany(() => Attachment) // Replace @OneToMany with @ManyToMany
+
+  @ManyToMany(() => Attachment)
   @JoinTable({
     // Create a join table between Type and Attachment
     name: 'type_promotional_sliders',
@@ -50,9 +55,14 @@ export class Type extends CoreEntity {
     inverseJoinColumn: { name: 'attachmentId', referencedColumnName: 'id' },
   })
   promotional_sliders?: Attachment[]
+
   @OneToOne(() => TypeSettings)
   @JoinColumn()
   settings?: TypeSettings
+
+  @OneToMany(() => Product, (product) => product.type)
+  product?: Product[]
+
   @Column()
   language: string
   @Column({ type: 'json' })

@@ -1,6 +1,6 @@
-import { PickType } from '@nestjs/swagger'
-import { Coupon, CouponType } from '../entities/coupon.entity'
+/* eslint-disable prettier/prettier */
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
+import { CouponType } from '../entities/coupon.entity';
 
 export class CreateCouponDto {
   code: string;
@@ -10,7 +10,7 @@ export class CreateCouponDto {
   active_from: string;
   expire_at: string;
   language: string;
-  type: CouponType;
+  type: CouponType
   is_valid: boolean;
   amount: number;
   image: AttachmentDTO;

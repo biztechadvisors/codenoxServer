@@ -9,20 +9,11 @@ export class CategoryPaginator extends Paginator<Category> {
 }
 
 export class GetCategoriesDto extends PaginationArgs {
-<<<<<<< HEAD
-  orderBy?: QueryCategoriesOrderByColumn;
-  sortedBy?: SortOrder;
-  search?: string;
-  parent?: number | string = 'null';
-  language?: string;
-  typeSlug?: string;
-=======
   orderBy?: QueryCategoriesOrderByColumn
   sortedBy?: SortOrder
   search?: string
   parent?: number | string = 'null'
   language?: string
->>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
 }
 
 export enum QueryCategoriesOrderByColumn {

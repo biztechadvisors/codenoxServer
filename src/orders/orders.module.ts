@@ -1,13 +1,12 @@
-import { Module } from '@nestjs/common'
-import { AuthModule } from 'src/auth/auth.module'
-import { PaymentModule } from 'src/payment/payment.module'
+import { Module } from '@nestjs/common';
+import { AuthModule } from 'src/auth/auth.module';
+import { PaymentModule } from 'src/payment/payment.module';
 import {
   DownloadInvoiceController,
   OrderExportController,
   OrderFilesController,
   OrdersController,
   OrderStatusController,
-<<<<<<< HEAD
 } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -16,23 +15,19 @@ import { OrderStatus } from './entities/order-status.entity'; // Import OrderSta
 import { User } from 'src/users/entities/user.entity';
 import { OrderProductPivot, Product } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
-import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
+import { PaymentIntent, PaymentIntentInfo } from 'src/payment-intent/entries/payment-intent.entity';
+import { OrderProductPivotRepository } from 'src/products/products.repository';
+import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 
 @Module({
   imports: [
     AuthModule,
     PaymentModule,
-    TypeOrmModule.forFeature([Order, OrderStatus,User, Product, OrderFiles, Coupon, PaymentIntent]), // Include Order and OrderStatus here
+    TypeOrmExModule.forCustomRepository([
+      OrderProductPivotRepository
+    ]),
+    TypeOrmModule.forFeature([Order, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo]), // Include Order and OrderStatus here
   ],
-=======
-} from './orders.controller'
-import { OrdersService } from './orders.service'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { Order } from './entities/order.entity'
-
-@Module({
-  imports: [AuthModule, PaymentModule, TypeOrmModule.forFeature([Order])],
->>>>>>> 6e28216ba071c18075e0820b6c10a9f57ef0b35f
   controllers: [
     OrdersController,
     OrderStatusController,
@@ -43,4 +38,4 @@ import { Order } from './entities/order.entity'
   providers: [OrdersService],
   exports: [OrdersService],
 })
-export class OrdersModule {}
+export class OrdersModule { }
