@@ -13,8 +13,7 @@ export class Attribute extends CoreEntity {
   name: string;
 
   @Column()
-  // shop_id: string;
-  shop_id: number
+  shop_id: string;
 
   @OneToOne(() => Shop)
   @JoinColumn()
@@ -34,4 +33,3 @@ export class Attribute extends CoreEntity {
   @Column({ type: 'json' })
   translated_languages: string[];
 }
-

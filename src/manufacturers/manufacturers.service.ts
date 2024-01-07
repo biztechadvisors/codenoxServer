@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { Manufacturer } from './entities/manufacturer.entity';
 import manufacturersJson from '@db/manufacturers.json';
