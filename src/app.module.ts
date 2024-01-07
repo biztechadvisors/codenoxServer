@@ -44,6 +44,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from './mail/mail.module';
 import { Review } from './reviews/entities/review.entity';
+import { PermissionModule } from './permission/permission.module';
 
 @Module({
   imports: [
@@ -70,7 +71,7 @@ import { Review } from './reviews/entities/review.entity';
     }),
     StripeModule.forRoot({
       apiKey: process.env.STRIPE_API_KEY,
-      apiVersion: '2022-11-15',
+      apiVersion: '2023-10-16',
     }),
     UsersModule,
     MailModule,
@@ -109,6 +110,7 @@ import { Review } from './reviews/entities/review.entity';
     ConversationsModule,
     MessagesModule,
     AiModule,
+    PermissionModule,
     MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],

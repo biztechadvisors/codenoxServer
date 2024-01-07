@@ -210,7 +210,7 @@ export class OrdersService {
 
   remove(id: number) {
     return `This action removes a #${id} order`;
-  }
+  }1
 
   verifyCheckout(input: CheckoutVerificationDto): VerifiedCheckoutData {
     return {
@@ -349,7 +349,7 @@ export class OrdersService {
         return await this.stripeService.createPaymentIntent(paymentIntentParam);
       case PaymentGatewayType.PAYPAL:
         // here goes PayPal
-        return this.paypalService.createPaymentIntent(order);
+        await this.paypalService.createPaymentIntent(order);
         break;
 
       default:

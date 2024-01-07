@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import * as Paypal from '@paypal/checkout-server-sdk';
 import { Order } from 'src/orders/entities/order.entity';

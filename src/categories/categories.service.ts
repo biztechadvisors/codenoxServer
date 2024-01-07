@@ -1,3 +1,6 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable prefer-const */
+
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateCategoryDto } from './dto/create-category.dto';
