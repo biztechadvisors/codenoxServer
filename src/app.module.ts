@@ -69,9 +69,9 @@ import { PermissionModule } from './permission/permission.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    StripeModule.forRoot({
+    StripeModule.forRoot({  
       apiKey: process.env.STRIPE_API_KEY,
-      apiVersion: '2023-10-16',
+      apiVersion: '2022-11-15',
     }),
     UsersModule,
     MailModule,

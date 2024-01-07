@@ -2,6 +2,7 @@
 
 import { PickType } from "@nestjs/swagger";
 import { Permission, PermissionType } from "../entities/permission.entity";
+// import { Permission, PermissionType } from "../entities/permission.entity";
 
 export class CreatePermissionDto extends PickType(Permission,[
 'id',
