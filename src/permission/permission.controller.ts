@@ -2,9 +2,9 @@
 
 import { Body, Controller, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { CreatePermissionDto, CreatePermissionTypeDto } from "./dto/create-permission.dto";
-import { PermissionService } from "./permission.service";
-import { Permission } from "@aws-sdk/client-s3";
+// import { Permission } from "@aws-sdk/client-s3";
 import { UpdatePermissionDto } from "./dto/update-permission.dto";
+import { PermissionService } from "./permission.service";
 
 @Controller('permission')
 export class PermissionController {
