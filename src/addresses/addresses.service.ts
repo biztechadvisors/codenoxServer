@@ -9,7 +9,6 @@ import { AddressRepository, UserAddressRepository } from './addresses.repository
 import { Repository, FindManyOptions   } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { UserRepository } from 'src/users/users.repository';
-import { promises } from 'dns';
 
 
 @Injectable()

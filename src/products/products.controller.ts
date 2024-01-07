@@ -22,7 +22,7 @@ export class ProductsController {
 
   @Post()
   createProduct(@Body() createProductDto: CreateProductDto) {
-    console.log("****Data-Product****", createProductDto)
+    console.log("****Create-Product****", createProductDto)
     return this.productsService.create(createProductDto);
   }
 
@@ -36,8 +36,10 @@ export class ProductsController {
     return this.productsService.getProductBySlug(slug);
   }
 
+
   @Put(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+    console.log("Update-Product", id, updateProductDto)
     return this.productsService.update(+id, updateProductDto);
   }
 

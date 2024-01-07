@@ -85,48 +85,48 @@ export class AccessToken {
   nonce: string;
 }
 
-@Entity()
-export class Name3 {
-  @PrimaryGeneratedColumn()
-  id: number;
-  @Column()
-  given_name: string;
-  @Column()
-  surname: string;
-}
+// @Entity()
+// export class Name3 {
+//   @PrimaryGeneratedColumn()
+//   id: number;
+//   @Column()
+//   given_name: string;
+//   @Column()
+//   surname: string;
+// }
 
-@Entity()
-export class Address3 {
-  @PrimaryGeneratedColumn()
-  id: number
-  @Column()
-  country_code: string;
-}
+// @Entity()
+// export class Address3 {
+//   @PrimaryGeneratedColumn()
+//   id: number
+//   @Column()
+//   country_code: string;
+// }
 
-@Entity()
-export class Link2 {
-  @PrimaryGeneratedColumn()
-  id: number;
-  @Column()
-  href: string;
-  @Column()
-  rel: string;
-  @Column()
-  method: string;
-}
+// @Entity()
+// export class Link2 {
+//   @PrimaryGeneratedColumn()
+//   id: number;
+//   @Column()
+//   href: string;
+//   @Column()
+//   rel: string;
+//   @Column()
+//   method: string;
+// }
 
 @Entity()
 export class Payer {
   @PrimaryGeneratedColumn()
   id: number;
-  @ManyToOne(() => Name3)
-  name: Name3;
+  @ManyToOne(() => Name)
+  name: Name;
   @Column()
   email_address: string;
   @Column()
   payer_id: string;
-  @ManyToOne(() => Address3)
-  address: Address3;
+  @ManyToOne(() => Address)
+  address: Address;
 }
 
 @Entity()
@@ -142,9 +142,9 @@ export class PaypalCaptureOrderResponse {
   purchase_units: PurchaseUnit[];
   @ManyToOne(() => Payer)
   payer: Payer;
-  @ManyToMany(() => Link2)
+  @ManyToMany(() => Link)
   @JoinTable()
-  links: Link2[];
+  links: Link[];
 }
 
 @Entity()
