@@ -24,23 +24,6 @@ export class UploadsService {
     console.log("AttachmentData", attachmentData)
     return attachmentData;
   }
-// =====AWS CODE====================
-  // async uploadFile(attachments: Array<Express.MulterS3.File>): Promise<AttachmentDTO[]> {
-   
-  // //  console.log(attachments)
-  //   const attachmentData = [];
-  //   for (const file of attachments) {
-  //     console.log(file)
-  //     // console.log(file.)
-  //     const attachmentDTO = new AttachmentDTO();
-  //     attachmentDTO.original = file.location;
-  //     attachmentDTO.thumbnail = file.originalname;
-  //     attachmentData.push(attachmentDTO);
-  //   }
-  //   await this.attachmentRepository.save(attachmentData);
-  //   console.log("AttachmentData", attachmentData)
-  //   return attachmentData;
-  // }
 
   findAll() {
     return `This action returns all uploads`;
