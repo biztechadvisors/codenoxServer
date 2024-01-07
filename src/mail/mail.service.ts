@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { User } from '../users/entities/user.entity';

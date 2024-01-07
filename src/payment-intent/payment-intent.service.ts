@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import taxesJson from '@db/taxes.json';
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';

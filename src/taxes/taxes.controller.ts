@@ -32,6 +32,10 @@ export class TaxesController {
   findOne(@Param('id') id: string) {
     return this.taxesService.findOne(+id);
   }
+  @Get(':id/:proId')
+  findOnePro(@Param('id') id: string, @Param('proId') proId: string) {
+    return this.taxesService.findOnePro(+id, +proId);
+  }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateTaxDto: UpdateTaxDto) {

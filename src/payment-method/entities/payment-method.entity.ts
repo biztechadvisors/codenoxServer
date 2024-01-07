@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
+// import { PaymentGateway } from 'src/settings/entities/setting.entity';
 import { PaymentGateWay } from './payment-gateway.entity';
 import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 

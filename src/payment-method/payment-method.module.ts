@@ -12,9 +12,10 @@ import { PaymentMethodService } from './payment-method.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentMethod } from './entities/payment-method.entity';
 import { PaymentGateWay } from './entities/payment-gateway.entity';
+import { StripeCustomer, StripePaymentMethod } from 'src/payment/entity/stripe.entity';
 
 @Module({
-  imports: [AuthModule, PaymentModule, SettingsModule, TypeOrmModule.forFeature([PaymentMethod, PaymentGateWay])],
+  imports: [AuthModule, PaymentModule, SettingsModule, TypeOrmModule.forFeature([PaymentMethod, PaymentGateWay,StripePaymentMethod,StripeCustomer])],
   controllers: [
     PaymentMethodController,
     SetDefaultCartController,
