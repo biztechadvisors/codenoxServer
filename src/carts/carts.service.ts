@@ -5,12 +5,16 @@ import { Cart } from './entities/cart.entity'
 import { CreateCartDto } from './dto/create-cart.dto'
 import { CartRepository } from './carts.repository'
 import { GetCartData } from './dto/get-cart.dto'
-
+// import mailer from 'nodemailer/lib/mailer'
+import { Cron, Interval, ScheduleModule } from '@nestjs/schedule';
+import { LessThan } from 'typeorm';
 
 
 @Injectable()
 export class AbandonedCartService {
+  private isRunning = false;
   constructor(
+    // private readonly scheduler: ScheduleModule,
     @InjectRepository(CartRepository)
     private cartRepository: CartRepository,
   ) {}
@@ -46,8 +50,8 @@ export class AbandonedCartService {
       newCart.phone = createCartDto.phone
       newCart.cartData = JSON.stringify(createCartDto.cartData)
       newCart.cartQuantity = totalQuantity
-      newCart.created_at = createCartDto.created_at
-      newCart.updated_at = createCartDto.updated_at
+      newCart.created_at = new Date()
+      newCart.updated_at = new Date()
 
 
       await this.cartRepository.save(newCart)
@@ -183,7 +187,44 @@ export class AbandonedCartService {
   
 // ----------------------------ABANDONED CART REMINDER------------------------------------
 
+@Interval(60000)
+async sendAbandonedCartReminder() {
+  // if(!this.isRunning){
+  //   this.isRunning = true
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    // retrieve abandoned cart data from database
+    const abandonedCartData = await this.cartRepository.find({
+      where: {
+        updated_at: LessThan(twentyFourHoursAgo), // Ensure correct comparison
+        // updated_at: MoreThan(new Date(0)),  // cart updated more than 24 hours ago
+      },
+    });
+    console.log("first+++++++++++", abandonedCartData)
+    // this.logger.debug('first', abandonedCartData);
+    // loop through abandoned cart data and send email for each cart
+    for (const cart of abandonedCartData) {
+      console.log("checkinggg_______________")
+      try {
+        const products = JSON.parse(cart.cartData);
+        const email = cart.email;
+        console.log("=============", products, "email", email)
+        // const res = mailer.sendAbandonedCartEmail(email, products);
+        // this.logger.debug('Email sent successfully to', email);
+      } catch (error) {
+        // this.logger.error('Failed to send email to', email, error);
+      }
+    }
+    // this.logger.debug('Abandoned cart reminder emails sent successfully');
+  
+  } catch (error) {
+    // this.logger.error(error);
+    console.log('Failed to send abandoned cart reminder emails');
+  }
+// }
+}
 
+// @Cron('* * * * *', sendAbandonedCartReminder)
 
 
 // Helper function to merge two carts

@@ -15,8 +15,8 @@ export class Cart extends CoreEntity {
   cartData: string
   @Column('integer')
   cartQuantity: number
-  @Column('datetime')
-  created_at: Date
-  @Column('datetime')
-  updated_at: Date
+  @Column({ type: 'timestamp'})
+  created_at: Date;
+  @Column({ type: 'timestamp'})
+  updated_at: Date;
 }
