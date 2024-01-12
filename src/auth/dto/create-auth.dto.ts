@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PartialType, PickType } from '@nestjs/swagger';
 import { CoreMutationOutput } from 'src/common/dto/core-mutation-output.dto';
 import { User } from 'src/users/entities/user.entity';
@@ -40,10 +41,36 @@ export class ResetPasswordDto {
 
 export class AuthResponse {
   token: string;
-  permissions: string[];
+  type_name: string[]
+  permissions: PermissionItem[];
   success?: boolean;
   message?: string;
 }
+export interface PermissionItem {
+  type: string;
+  read: boolean;
+  write: boolean;
+}
+
+// export class PermissionsDTO {
+//   id: number;
+//   type_name: string; // Corrected property name
+//   permission: PermissionDTO[];
+// }
+
+// export class PermissionDTO {
+//   type: string;
+//   read: boolean;
+//   write: boolean;
+// }
+
+
+// export class AuthResponse {
+//   token: string;
+//   permissions: string[];
+//   success?: boolean;
+//   message?: string;
+// }
 export class CoreResponse extends CoreMutationOutput { }
 export class VerifyOtpDto {
   otp_id: string;

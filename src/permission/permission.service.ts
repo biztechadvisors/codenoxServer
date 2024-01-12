@@ -214,8 +214,5 @@ export class PermissionService{
     //     console.error(error);
     //     return 'Update unsuccessful';
     //   }
-    // }
-    
-    
-    
+    // }   
 }
