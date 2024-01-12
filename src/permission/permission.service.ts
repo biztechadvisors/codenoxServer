@@ -84,7 +84,6 @@ export class PermissionService{
     }
 
     async getPermissionID(id: number) {
-      
         const result = await this.permissionRepository
           .createQueryBuilder('permission')
           .leftJoinAndSelect('permission.permissions', 'permissions')
@@ -103,7 +102,7 @@ export class PermissionService{
           id: permission.id,
           type_name: permission.type_name,
           permission: permission.permissions.map(p => ({
-            id: p.permissionId, // Use the alias 'permissionId' for the 'id' property
+            id: p.permissionId,
             type: p.type,
             read: p.read,
             write: p.write,
