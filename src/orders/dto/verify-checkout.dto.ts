@@ -1,4 +1,4 @@
-import { ConnectProductOrderPivot, UserAddressInput } from './create-order.dto';
+import { ConnectProductOrderPivot, UserAddressInput } from './create-order.dto'
 
 export class CheckoutVerificationDto {
   amount: number;
@@ -9,9 +9,9 @@ export class CheckoutVerificationDto {
 }
 
 export class VerifiedCheckoutData {
-  total_tax: number;
-  shipping_charge: number;
-  unavailable_products: number[];
-  wallet_currency: number;
-  wallet_amount: number;
+  total_tax: number
+  shipping_charge: number
+  unavailable_products: number[]
+  wallet_currency: number
+  wallet_amount: number
 }

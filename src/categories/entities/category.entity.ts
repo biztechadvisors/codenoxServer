@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Product } from 'src/products/entities/product.entity';
@@ -7,43 +8,45 @@ import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany
 @Entity()
 export class Category extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
   @Column()
-  name: string;
+  name: string
 
   @Column()
-  slug: string;
+  slug: string
 
-  @ManyToOne(() => Category, category => category.children)
-  parent?: Category;
+  @OneToOne(() => Category, { nullable: true })
+  @JoinColumn()
+  parent?: Category
 
   @OneToMany(() => Category, category => category.parent)
   children?: Category[];
 
   @Column()
-  details?: string;
+  details?: string
 
-  @ManyToOne(() => Attachment)
+  @ManyToOne(() => Attachment, { eager: true }) // assuming you want to eagerly load the image
   @JoinColumn()
   image?: Attachment;
 
   @Column()
-  icon?: string;
+  icon?: string
 
   @ManyToOne(() => Type)
   @JoinColumn()
-  type?: Type;
+  type?: Type
 
-  @OneToMany(() => Product, product => product.categories)
+  @ManyToMany(() => Product, product => product.categories)
+  @JoinTable()
   products: Product[];
 
   @Column()
-  language: string;
+  language: string
 
   @Column({ type: 'json' })
-  translated_languages: string[];
+  translated_languages: string[]
 
   @Column()
-  products_count: number;
+  products_count: number
 }

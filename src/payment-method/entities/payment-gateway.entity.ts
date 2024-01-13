@@ -5,11 +5,11 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 @Entity()
 export class PaymentGateWay extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  user_id: number;
+  user_id: number
   @Column()
-  customer_id: string;
+  customer_id: string
   @Column()
-  gateway_name: string;
+  gateway_name: string
 }

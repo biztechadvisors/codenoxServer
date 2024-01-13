@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { TagsController } from './tags.controller';
@@ -14,4 +15,4 @@ import { Type } from 'src/types/entities/type.entity';
   controllers: [TagsController],
   providers: [TagsService, TagRepository, AttachmentRepository, TypeRepository],
 })
-export class TagsModule { }
+export class TagsModule {}

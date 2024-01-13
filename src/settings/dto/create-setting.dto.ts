@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 
 import { AttachmentDTO } from "src/common/dto/attachment.dto";
-import {  SeoSettings, } from "../entities/setting.entity";
+import { SeoSettings, } from "../entities/setting.entity";
 // import { PaymentGateWay } from "src/payment-method/entities/payment-gateway.entity";
 
 export class SmsAdminDto {
@@ -55,68 +55,68 @@ export class SmsVendorDto {
   statusChangeOrder: boolean;
 }
 
-export class ContactDetails{
-  id:number
+export class ContactDetails {
+  id: number
   socials: ShopSocials
-  contact:  string
+  contact: string
   location: Location
   website: string
 }
-export class Location{
+export class Location {
   lat: number
-  lng:number
-  city:string
-  state:string
-  country:string
-  zip:string
+  lng: number
+  city: string
+  state: string
+  country: string
+  zip: string
   formattedAddress: string
 }
 
 
-export class CurrencyOptions{
+export class CurrencyOptions {
   id: number
   formation: string
   fractions: number
 }
 
-export class EmailAdmin{
+export class EmailAdmin {
   id: number
   refundOrder: boolean
   paymentOrder: boolean
   statusChangeOrder: boolean
 }
 
-export class EmailVendor{
-  id:number
-  refundOrder:boolean
+export class EmailVendor {
+  id: number
+  refundOrder: boolean
   createReview: boolean
   paymentOrder: boolean
   createQuestion: boolean
   statusChangeOrder: boolean
 }
 
-export class EmailCustomer{
-  id:number;
-  refundOrder:boolean
-  paymentOrder:boolean
-  answerQuestion:boolean
-  statusChangeOrder:boolean
+export class EmailCustomer {
+  id: number;
+  refundOrder: boolean
+  paymentOrder: boolean
+  answerQuestion: boolean
+  statusChangeOrder: boolean
 }
 
-export class EmailEvent{
-  id:number
-  admin:EmailAdmin
+export class EmailEvent {
+  id: number
+  admin: EmailAdmin
   vendor: EmailVendor
   customer: EmailCustomer
 }
 
-export class OptionPaymentGateway{
+export class OptionPaymentGateway {
   id: number
   name: string
   title: string
 }
 
-export class ServerInfo{
+export class ServerInfo {
   id: number
   memory_limit: string
   post_max_size: number
@@ -126,18 +126,18 @@ export class ServerInfo{
 }
 
 
-export class SmsEventDto{
-  id:number
-  admin:SmsAdminDto
+export class SmsEventDto {
+  id: number
+  admin: SmsAdminDto
   vendor: SmsVendorDto
-  customer:SmsCustomerDto
+  customer: SmsCustomerDto
 }
 
-export class SmsCustomerDto{
-  id:number
+export class SmsCustomerDto {
+  id: number
   refundOrder: boolean
-  paymentOrder:boolean
-  statusChangeOrder:boolean
+  paymentOrder: boolean
+  statusChangeOrder: boolean
 }
 
 export class SettingsOptionsDto {

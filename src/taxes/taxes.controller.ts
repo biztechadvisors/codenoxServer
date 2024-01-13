@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -15,7 +16,7 @@ import { GetTaxesDto } from './dto/get-taxes.dto';
 
 @Controller('taxes')
 export class TaxesController {
-  constructor(private readonly taxesService: TaxesService) {}
+  constructor(private readonly taxesService: TaxesService) { }
 
   @Post()
   create(@Body() createTaxDto: CreateTaxDto) {
@@ -23,7 +24,7 @@ export class TaxesController {
   }
 
   @Get()
-  findAll(@Query() getTaxesDto: GetTaxesDto) {
+  findAll() {
     return this.taxesService.findAll();
   }
 

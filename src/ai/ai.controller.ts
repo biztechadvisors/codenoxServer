@@ -1,6 +1,6 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { AiService } from './ai.service';
-import { CreateAiDto } from './dto/create-ai.dto';
+import { Body, Controller, Post } from '@nestjs/common'
+import { AiService } from './ai.service'
+import { CreateAiDto } from './dto/create-ai.dto'
 
 @Controller()
 export class AiController {
@@ -8,6 +8,6 @@ export class AiController {
 
   @Post('generate-descriptions')
   create(@Body() createAiDto: CreateAiDto) {
-    return this.aiService.create(createAiDto);
+    return this.aiService.create(createAiDto)
   }
 }

@@ -38,5 +38,5 @@ export class Coupon extends CoreEntity {
   @Column()
   language: string;
   @Column({ type: "json" })
-  translated_languages: string |string[];
+  translated_languages: string | string[];
 }

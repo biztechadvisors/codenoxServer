@@ -4,7 +4,9 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
+  Query,
   Request,
   UseGuards
 } from '@nestjs/common';
@@ -83,7 +85,7 @@ export class AuthController {
   async logout(): Promise<boolean> {
     return true;
   }
-  
+
   @Post('verify-forget-password-token')
   verifyForgetPassword(
     @Body() verifyForgetPasswordDto: VerifyForgetPasswordDto,
@@ -92,13 +94,29 @@ export class AuthController {
   }
 
   @Get('me')
-  me() {
-    return this.authService.me();
+  async me(@Query('username') username: string, @Query('sub') sub: number) {
+    return await this.authService.me(username, sub);
   }
+
   @Post('add-points')
-  addWalletPoints(@Body() addPointsDto: any) {
-    return this.authService.me();
+  async addWalletPoints(@Body() addPointsDto: any) {
+    // Extract the user's email and points from the request body
+    const { email, id, points } = addPointsDto;
+
+    // Get the user
+    const user = await this.authService.me(email, id);
+
+    // Add points to the user's wallet
+    user.walletPoints += points;
+
+    // Save the updated user
+    await this.authService.save(user);
+
+    // Return the updated user
+    return user;
   }
+
+
   @Post('contact-us')
   contactUs(@Body() addPointsDto: any) {
     return {

@@ -1,3 +1,3 @@
 export class CreateNewSubscriberDto {
-  email: string;
+  email: string
 }

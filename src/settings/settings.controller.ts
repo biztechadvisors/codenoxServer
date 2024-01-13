@@ -15,6 +15,6 @@ export class SettingsController {
 
   @Get()
   findAll() {
-    return this.settingsService.findAll();
+    return this.settingsService.findAll()
   }
 }

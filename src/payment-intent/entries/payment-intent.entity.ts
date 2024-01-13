@@ -1,30 +1,32 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+/* eslint-disable prettier/prettier */
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class PaymentIntentInfo {
   @PrimaryGeneratedColumn()
-  id: number; // Add this line
+  id: number // Add this line
+  @Column({ nullable: true })
+  client_secret?: string | null
+  @Column({ nullable: true })
+  redirect_url?: string | null
   @Column()
-  client_secret?: string | null;
+  payment_id: string
   @Column()
-  redirect_url?: string | null;
+  order_id: string
   @Column()
-  payment_id: string;
-  @Column()
-  is_redirect: boolean;
+  is_redirect: boolean
 }
 
 @Entity()
 export class PaymentIntent {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  order_id: number;
+  order_id: number
   @Column()
-  tracking_number: string;
+  tracking_number: string
   @Column()
   payment_gateway: string;
-  @OneToOne(() => PaymentIntentInfo)
+  @ManyToOne(() => PaymentIntentInfo)
   payment_intent_info: Partial<PaymentIntentInfo>; // Change this line
 }
-

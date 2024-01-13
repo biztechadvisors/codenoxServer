@@ -7,13 +7,13 @@ import {
   Post,
   Put,
   Query,
-} from '@nestjs/common';
-import { GetUsersDto } from 'src/users/dto/get-users.dto';
-import { UsersService } from 'src/users/users.service';
-import { CreateStoreNoticeDto } from './dto/create-store-notice.dto';
-import { GetStoreNoticesDto } from './dto/get-store-notices.dto';
-import { UpdateStoreNoticeDto } from './dto/update-store-notice.dto';
-import { StoreNoticesService } from './store-notices.service';
+} from '@nestjs/common'
+import { GetUsersDto } from 'src/users/dto/get-users.dto'
+import { UsersService } from 'src/users/users.service'
+import { CreateStoreNoticeDto } from './dto/create-store-notice.dto'
+import { GetStoreNoticesDto } from './dto/get-store-notices.dto'
+import { UpdateStoreNoticeDto } from './dto/update-store-notice.dto'
+import { StoreNoticesService } from './store-notices.service'
 
 @Controller('store-notices')
 export class StoreNoticesController {
@@ -24,12 +24,12 @@ export class StoreNoticesController {
 
   @Post()
   createStoreNotice(@Body() createStoreNoticeDto: CreateStoreNoticeDto) {
-    return this.storeNoticesService.create(createStoreNoticeDto);
+    return this.storeNoticesService.create(createStoreNoticeDto)
   }
 
   @Get()
   getStoreNotices(@Query() query: GetStoreNoticesDto) {
-    return this.storeNoticesService.getStoreNotices(query);
+    return this.storeNoticesService.getStoreNotices(query)
   }
 
   // @Get('getUsersToNotify')
@@ -42,18 +42,18 @@ export class StoreNoticesController {
     @Param('param') param: string,
     @Query('language') language: string,
   ) {
-    return this.storeNoticesService.getStoreNotice(param, language);
+    return this.storeNoticesService.getStoreNotice(param, language)
   }
   @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateStoreNoticeDto: UpdateStoreNoticeDto,
   ) {
-    return this.storeNoticesService.update(+id, updateStoreNoticeDto);
+    return this.storeNoticesService.update(+id, updateStoreNoticeDto)
   }
 
   @Delete(':id')
   deleteStoreNotice(@Param('id') id: string) {
-    return this.storeNoticesService.remove(+id);
+    return this.storeNoticesService.remove(+id)
   }
 }

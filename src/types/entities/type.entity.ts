@@ -1,64 +1,86 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, OneToOne, ManyToMany, JoinTable } from 'typeorm';
-import { Attachment } from 'src/common/entities/attachment.entity';
-import { CoreEntity } from 'src/common/entities/core.entity';
+/* eslint-disable prettier/prettier */
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm'
+import { Attachment } from 'src/common/entities/attachment.entity'
+import { CoreEntity } from 'src/common/entities/core.entity'
+import { Product } from 'src/products/entities/product.entity'
 
 // TypeSettings entity
 @Entity()
 export class TypeSettings {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  isHome: boolean;
+  isHome: boolean
   @Column()
-  layoutType: string;
+  layoutType: string
   @Column()
-  productCard: string;
+  productCard: string
 }
 
 // Type entity
 @Entity()
 export class Type extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column()
-  name: string;
+  name: string
   @Column()
-  slug: string;
+  slug: string
+
   @OneToOne(() => Attachment)
   @JoinColumn()
-  image: Attachment;
+  image: Attachment
+
   @Column()
-  icon: string;
-  @OneToMany(() => Banner, banner => banner.type, { cascade: true })
-  banners?: Banner[];
-  @ManyToMany(() => Attachment) // Replace @OneToMany with @ManyToMany
-  @JoinTable({ // Create a join table between Type and Attachment
+  icon: string
+
+  @OneToMany(() => Banner, (banner) => banner.type, { cascade: true })
+  banners?: Banner[]
+
+  @ManyToMany(() => Attachment)
+  @JoinTable({
+    // Create a join table between Type and Attachment
     name: 'type_promotional_sliders',
     joinColumn: { name: 'typeId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'attachmentId', referencedColumnName: 'id' }
+    inverseJoinColumn: { name: 'attachmentId', referencedColumnName: 'id' },
   })
-  promotional_sliders?: Attachment[];
+  promotional_sliders?: Attachment[]
+
   @OneToOne(() => TypeSettings)
   @JoinColumn()
-  settings?: TypeSettings;
+  settings?: TypeSettings
+
+  @OneToMany(() => Product, (product) => product.type)
+  product?: Product[]
+
   @Column()
-  language: string;
+  language: string
   @Column({ type: 'json' })
-  translated_languages: string[];
+  translated_languages: string[]
 }
 
 // Banner entity
 @Entity()
 export class Banner {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
   @Column({ nullable: true })
-  title?: string;
+  title?: string
   @Column({ nullable: true })
-  description?: string;
+  description?: string
   @OneToOne(() => Attachment)
   @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
-  image: Attachment;
-  @ManyToOne(() => Type, type => type.banners)
-  type: Type;
+  image: Attachment
+  @ManyToOne(() => Type, (type) => type.banners)
+  type: Type
 }

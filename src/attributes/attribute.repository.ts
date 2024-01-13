@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Repository } from 'typeorm';
 import { Attribute } from './entities/attribute.entity';
 import { CustomRepository } from 'src/typeorm-ex/typeorm-ex.decorator';

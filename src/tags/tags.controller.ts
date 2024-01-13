@@ -7,11 +7,11 @@ import {
   Param,
   Delete,
   Query,
-} from '@nestjs/common';
-import { TagsService } from './tags.service';
-import { CreateTagDto } from './dto/create-tag.dto';
-import { UpdateTagDto } from './dto/update-tag.dto';
-import { GetTagsDto, TagPaginator } from './dto/get-tags.dto';
+} from '@nestjs/common'
+import { TagsService } from './tags.service'
+import { CreateTagDto } from './dto/create-tag.dto'
+import { UpdateTagDto } from './dto/update-tag.dto'
+import { GetTagsDto, TagPaginator } from './dto/get-tags.dto'
 
 @Controller('tags')
 export class TagsController {
@@ -19,26 +19,26 @@ export class TagsController {
 
   @Post()
   create(@Body() createTagDto: CreateTagDto) {
-    return this.tagsService.create(createTagDto);
+    return this.tagsService.create(createTagDto)
   }
 
   @Get()
   async findAll(@Query() query: GetTagsDto): Promise<TagPaginator> {
-    return this.tagsService.findAll(query);
+    return this.tagsService.findAll(query)
   }
 
   @Get(':param')
   findOne(@Param('param') param: string, @Query('language') language: string) {
-    return this.tagsService.findOne(param, language);
+    return this.tagsService.findOne(param, language)
   }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
-    return this.tagsService.update(+id, updateTagDto);
+    return this.tagsService.update(+id, updateTagDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.tagsService.remove(+id);
+    return this.tagsService.remove(+id)
   }
 }

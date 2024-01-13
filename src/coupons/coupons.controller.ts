@@ -16,7 +16,7 @@ import { UpdateCouponDto } from './dto/update-coupon.dto';
 
 @Controller('coupons')
 export class CouponsController {
-  constructor(private readonly couponsService: CouponsService) {}
+  constructor(private readonly couponsService: CouponsService) { }
 
   @Post()
   createCoupon(@Body() createCouponDto: CreateCouponDto) {
