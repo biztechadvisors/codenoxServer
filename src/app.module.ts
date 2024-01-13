@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { MessagesModule } from './messages/messages.module';
 import { Module } from '@nestjs/common';
 import { StripeModule } from 'nestjs-stripe';
@@ -43,7 +42,6 @@ import { MulterModule } from '@nestjs/platform-express';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from './mail/mail.module';
-import { Review } from './reviews/entities/review.entity';
 
 @Module({
   imports: [
@@ -61,7 +59,8 @@ import { Review } from './reviews/entities/review.entity';
         database: configService.get('DB_DATABASE'),
         synchronize: configService.get<boolean>('DB_SYNC'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        logging: true
+        logging: true,
+        autoLoadEntities: true,
       }),
       inject: [ConfigService],
     }),
@@ -114,20 +113,4 @@ import { Review } from './reviews/entities/review.entity';
   controllers: [],
   providers: [],
 })
-export class AppModule {
-  updateReview(id: number, updatedReview: Review) {
-    throw new Error('Method not implemented.');
-  }
-  deleteReview(id: number) {
-    throw new Error('Method not implemented.');
-  }
-  createReview(newReview: Review) {
-    throw new Error('Method not implemented.');
-  }
-  getReviewById(id: number) {
-    throw new Error('Method not implemented.');
-  }
-  getAllReviews(): import("./reviews/entities/review.entity").Review[] | PromiseLike<import("./reviews/entities/review.entity").Review[]> {
-    throw new Error('Method not implemented.');
-  }
-}
+export class AppModule { }

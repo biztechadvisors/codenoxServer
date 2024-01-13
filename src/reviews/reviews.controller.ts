@@ -15,9 +15,9 @@ import { ReviewService } from './reviews.service';
 
 @Controller('reviews')
 export class ReviewController {
-  constructor(private readonly reviewService: ReviewService) {}
+  constructor(private readonly reviewService: ReviewService) { }
 
-  //   find all reviews
+  // find all reviews
   // TODO: there is a bug in displaying all reviews
   // front-end a issue ase with pobon paul
   // In product single page front-end all the reviews apperaed. It should be based on product ID.

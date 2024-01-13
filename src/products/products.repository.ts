@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { CustomRepository } from "src/typeorm-ex/typeorm-ex.decorator";
 import { Repository } from "typeorm";
 import { File, OrderProductPivot, Product, Variation, VariationOption } from "./entities/product.entity";

@@ -27,16 +27,20 @@ export class Review extends CoreEntity {
   @JoinColumn()
   order: Order;
 
-  @OneToOne(() => User)
-  @JoinColumn()
-  customer: User;
+  // @OneToOne(() => User)
+  // @JoinColumn()
+  // customer: User;
 
   @ManyToMany(() => Attachment)
   @JoinTable()
   photos: Attachment[];
 
-  @OneToOne(() => User)
-  @JoinColumn()
+  // @OneToOne(() => User)
+  // @JoinColumn()
+  // user: User;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 
 
@@ -71,4 +75,5 @@ export class Review extends CoreEntity {
   variation_option_id: string;
   @Column()
   abusive_reports_count?: number;
+  review: { id: number; };
 }

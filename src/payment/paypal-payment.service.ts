@@ -23,19 +23,21 @@ export class PaypalPaymentService {
   }
 
   async createPaymentIntent(order: Order) {
-    const request = await new this.paypal.orders.OrdersCreateRequest();
-    request.headers = {
-      ...request.headers,
-      'Content-Type': 'application/json',
-      'PayPal-Request-Id': uuidv4(),
-    };
+    const request = new this.paypal.orders.OrdersCreateRequest();
+    request.headers['Content-Type'] = 'application/json';
+    request.headers['PayPal-Request-Id'] = uuidv4();
     const body = this.getRequestBody(order);
     request.requestBody(body);
     try {
       const response = await this.client.execute(request);
-      const { links, id } = await response.result;
+      const { links, id } = response.result;
+      let redirect_url = null;
+      if (links && links.find(link => link.rel === 'payer-action')) {
+        redirect_url = links.find(link => link.rel === 'payer-action').href;
+      }
       return {
-        redirect_url: links[1].href,
+        client_secret: this.clientSecret,
+        redirect_url: redirect_url,
         id: id,
       };
     } catch (error) {
@@ -44,6 +46,7 @@ export class PaypalPaymentService {
   }
 
   async verifyOrder(orderId: string | number) {
+    console.log("verifyOrder***request", orderId)
     const request = await new this.paypal.orders.OrdersCaptureRequest(orderId);
     request.requestBody({});
     const response = await this.client.execute(request);
@@ -52,8 +55,13 @@ export class PaypalPaymentService {
       status: response.result.status,
     };
   }
+
   private getRequestBody(order: Order) {
     const redirectUrl = process.env.SHOP_URL || 'http://localhost:3003';
+    let reference_id = '';
+    if (order.tracking_number || order.id) {
+      reference_id = order.tracking_number ? order.tracking_number : order.id.toString();
+    }
     return {
       intent: 'CAPTURE',
       payment_source: {
@@ -69,13 +77,14 @@ export class PaypalPaymentService {
       purchase_units: [
         {
           amount: {
-            currency_code: 'USD',
-            value: 56,
+            currency_code: "USD",
+            value: order.total
           },
           description: 'Order From Marvel',
-          reference_id: order.tracking_number.toString(),
+          reference_id: reference_id,
         },
       ],
     };
   }
+
 }

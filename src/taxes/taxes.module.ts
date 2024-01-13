@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { TaxesService } from './taxes.service';
 import { TaxesController } from './taxes.controller';

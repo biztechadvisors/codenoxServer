@@ -1,5 +1,7 @@
+/* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Product } from 'src/products/entities/product.entity';
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Tax extends CoreEntity {
@@ -23,4 +25,7 @@ export class Tax extends CoreEntity {
   priority?: number;
   @Column()
   on_shipping: boolean;
+  @OneToOne(() => Product)
+  @JoinColumn()
+  product: Product
 }

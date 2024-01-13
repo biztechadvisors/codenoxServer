@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -15,7 +16,7 @@ import { GetShippingsDto } from './dto/get-shippings.dto';
 
 @Controller('shippings')
 export class ShippingsController {
-  constructor(private readonly shippingsService: ShippingsService) {}
+  constructor(private readonly shippingsService: ShippingsService) { }
 
   @Post()
   create(@Body() createShippingDto: CreateShippingDto) {
@@ -23,8 +24,8 @@ export class ShippingsController {
   }
 
   @Get()
-  findAll(@Query() query: GetShippingsDto) {
-    return this.shippingsService.getShippings(query);
+  findAll() {
+    return this.shippingsService.getShippings();
   }
 
   @Get(':id')

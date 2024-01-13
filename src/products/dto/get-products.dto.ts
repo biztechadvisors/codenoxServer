@@ -1,7 +1,22 @@
+import { Attachment } from 'src/common/entities/attachment.entity';
+import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
 import { Paginator } from 'src/common/dto/paginator.dto';
-
+import { Category } from 'src/categories/entities/category.entity';
+import { Shop } from 'src/shops/entities/shop.entity';
+import { Tag } from 'src/tags/entities/tag.entity';
+import { Type } from 'src/types/entities/type.entity';
 import { Product } from '../entities/product.entity';
+
+export enum ProductStatus {
+  PUBLISH = 'publish',
+  DRAFT = 'draft',
+}
+
+export enum ProductType {
+  SIMPLE = 'simple',
+  VARIABLE = 'variable',
+}
 
 export class ProductPaginator extends Paginator<Product> {
   data: Product[];
@@ -14,6 +29,7 @@ export class GetProductsDto extends PaginationArgs {
   search?: string;
   date_range?: string;
   language?: string;
+  with: string;
 }
 
 export enum QueryProductsOrderByColumn {

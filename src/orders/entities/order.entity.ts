@@ -7,6 +7,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { User } from 'src/users/entities/user.entity';
 import { OrderStatus } from './order-status.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { join } from 'path';
 
 export enum PaymentGatewayType {
   STRIPE = 'STRIPE',
@@ -16,6 +17,7 @@ export enum PaymentGatewayType {
   PAYPAL = 'PAYPAL',
   RAZORPAY = 'RAZORPAY',
 }
+
 export enum OrderStatusType {
   PENDING = 'order-pending',
   PROCESSING = 'order-processing',
@@ -57,13 +59,15 @@ export class Order extends CoreEntity {
   })
   customer: User;
 
-  @ManyToOne(() => Order, { nullable: true })
+  @ManyToOne(() => Order, order => order.children, { nullable: true })
+  @JoinColumn()
   parentOrder: Order;
 
   @OneToMany(() => Order, order => order.parentOrder)
   children?: Order[];
 
   @OneToOne(() => OrderStatus)
+  @JoinColumn()
   status: OrderStatus;
 
   @Column()
@@ -72,50 +76,56 @@ export class Order extends CoreEntity {
   payment_status: PaymentStatusType;
   @Column()
   amount: number;
-  @Column()
+  @Column({ nullable: true })
   sales_tax: number;
   @Column()
   total: number;
   @Column()
   paid_total: number;
+
   @Column()
   payment_id?: string;
   @Column()
   payment_gateway: PaymentGatewayType;
 
-  @ManyToOne(() => Coupon, coupon => coupon.orders)
+  @ManyToOne(() => Coupon, coupon => coupon.orders, { nullable: true })
   coupon?: Coupon;
 
-  @ManyToMany(() => Shop)
+  @ManyToOne(() => Shop, { nullable: true })
   shop: Shop;
 
-  @Column()
+  @Column({ nullable: true })
   discount?: number;
-  @Column()
+  @Column({ nullable: true })
   delivery_fee: number;
-  @Column()
+  @Column({ nullable: true })
   delivery_time: string;
 
   @ManyToMany(() => Product, product => product.orders)
   @JoinTable()
   products: Product[];
 
-  @ManyToMany(() => UserAddress)
+  @ManyToOne(() => UserAddress)
   billing_address: UserAddress;
 
-  @ManyToMany(() => UserAddress)
+  @ManyToOne(() => UserAddress)
   shipping_address: UserAddress;
 
   @Column()
   language: string;
+
   @Column({ type: "json" })
   translated_languages: string[];
 
   @OneToOne(() => PaymentIntent)
+  @JoinColumn()
   payment_intent: PaymentIntent;
 
   @Column()
   altered_payment_gateway?: string;
+
+  @Column()
+  customerId: any;
 }
 
 @Entity()
@@ -131,9 +141,8 @@ export class OrderFiles extends CoreEntity {
   @Column()
   customer_id: number;
 
-  @OneToOne(() => File)
+  @ManyToOne(() => File, { cascade: true })
   file: File;
-
-  @OneToOne(() => Product)
+  @ManyToOne(() => Product)
   fileable: Product;
 }

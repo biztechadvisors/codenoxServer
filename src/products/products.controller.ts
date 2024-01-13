@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -18,26 +17,28 @@ import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(private readonly productsService: ProductsService) { }
 
   @Post()
   createProduct(@Body() createProductDto: CreateProductDto) {
-    
     return this.productsService.create(createProductDto);
   }
 
-  // @Get()
-  // async getProducts(@Query() query: GetProductsDto): Promise<ProductPaginator> {
-  //   return this.productsService.getProducts(query);
-  // }
+  @Get()
+  async getProducts(@Query() query: GetProductsDto): Promise<ProductPaginator> {
+    console.log("getProducts****", query)
+    return this.productsService.getProducts(query);
+  }
 
-  // @Get(':slug')
-  // async getProductBySlug(@Param('slug') slug: string): Promise<Product> {
-  //   return this.productsService.getProductBySlug(slug);
-  // }
+  @Get(':slug')
+  async getProductBySlug(@Param('slug') slug: string): Promise<Product> {
+    return this.productsService.getProductBySlug(slug);
+  }
+
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+    console.log("Update-Product", id, updateProductDto)
     return this.productsService.update(+id, updateProductDto);
   }
 
@@ -47,11 +48,11 @@ export class ProductsController {
   }
 }
 
-// @Controller('popular-products')
-// export class PopularProductsController {
-//   constructor(private readonly productsService: ProductsService) {}
-//   @Get()
-//   async getProducts(@Query() query: GetPopularProductsDto): Promise<Product[]> {
-//     return this.productsService.getPopularProducts(query);
-//   }
-// }
+@Controller('popular-products')
+export class PopularProductsController {
+  constructor(private readonly productsService: ProductsService) { }
+  @Get()
+  async getProducts(@Query() query: GetPopularProductsDto): Promise<Product[]> {
+    return this.productsService.getPopularProducts(query);
+  }
+}

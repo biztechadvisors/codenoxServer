@@ -1,34 +1,50 @@
-import taxesJson from '@db/taxes.json';
-import { Injectable } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
-import { PaymentIntent } from './entries/payment-intent.entity';
-import ordersJson from '@db/orders.json';
-import { Order } from 'src/orders/entities/order.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { GetPaymentIntentDto } from './dto/get-payment-intent.dto';
-
-const orders = plainToClass(Order, ordersJson);
-const paymentIntents = plainToClass(PaymentIntent, taxesJson);
+import { PaymentIntent, PaymentIntentInfo } from './entries/payment-intent.entity';
 
 @Injectable()
 export class PaymentIntentService {
-  private paymentIntents: PaymentIntent[] = paymentIntents;
-  getPaymentIntent(query: GetPaymentIntentDto) {
-    const order = [...orders].find(
-      (or) => or.tracking_number === ('334983046149' as string),
-    );
-    if (order?.payment_intent?.id) {
-      return order.payment_intent;
-    }
-    return {
-      id: 6,
-      order_id: 35,
-      tracking_number: '20230728840046',
-      payment_gateway: 'Stripe',
-      payment_intent_info: {
-        payment_id: 'null',
-        is_redirect: false,
-        client_secret: '',
+  constructor(
+    @InjectRepository(PaymentIntent)
+    private paymentIntentRepository: Repository<PaymentIntent>,
+    @InjectRepository(PaymentIntentInfo)
+    private paymentIntentInfoRepository: Repository<PaymentIntentInfo>,
+  ) { }
+
+  async getPaymentIntent(getPaymentIntentDto: GetPaymentIntentDto): Promise<PaymentIntent> {
+    const { tracking_number, payment_gateway } = getPaymentIntentDto;
+    const paymentIntent = await this.paymentIntentRepository.findOne({
+      where: {
+        tracking_number,
+        payment_gateway,
       },
-    };
+      relations: ['payment_intent_info'],
+    });
+
+    if (!paymentIntent) {
+      throw new NotFoundException('Payment intent not found');
+    }
+
+    return paymentIntent;
   }
+
+  async savePaymentIdIntent(razorpayData: any): Promise<any> {
+    try {
+      const paymentIntentInfo = await this.paymentIntentInfoRepository.findOne({ where: { order_id: razorpayData.razorpay_order_id } });
+
+      if (paymentIntentInfo) {
+        paymentIntentInfo.payment_id = razorpayData.razorpay_payment_id;
+        await this.paymentIntentInfoRepository.save(paymentIntentInfo);
+        return paymentIntentInfo; // Return the updated paymentIntentInfo
+      } else {
+        console.error('PaymentIntentInfo not found');
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+
 }

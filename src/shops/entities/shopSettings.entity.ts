@@ -1,16 +1,25 @@
-import { Location, ShopSocials } from 'src/settings/entities/setting.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+/* eslint-disable prettier/prettier */
+import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
 
 @Entity()
 export class ShopSettings {
   @PrimaryGeneratedColumn()
-  id: number;
-  @OneToOne(() => ShopSocials)
-  socials: ShopSocials[];
+  id: number
+  @ManyToMany(() => ShopSocials, { cascade: true })
+  @JoinTable()
+  socials: ShopSocials[]
   @Column()
-  contact: string;
-  @OneToOne(() => Location)
-  location: Location;
+  contact: string
+  @ManyToOne(() => Location)
+  location: Location
   @Column()
-  website: string;
+  website: string
 }

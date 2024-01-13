@@ -23,7 +23,7 @@ import { OrdersService } from './orders.service';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) { }
 
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
@@ -56,13 +56,14 @@ export class OrdersController {
   }
 
   @Post('checkout/verify')
-  verifyCheckout(@Query() query: CheckoutVerificationDto) {
-    return this.ordersService.verifyCheckout(query);
+  verifyCheckout(@Body() body: CheckoutVerificationDto) { // Changed from @Query() to @Body()
+    return this.ordersService.verifyCheckout(body);
   }
+
   @Post('/payment')
   @HttpCode(200)
   async submitPayment(@Body() orderPaymentDto: OrderPaymentDto): Promise<void> {
-    const { tracking_number } = orderPaymentDto;
+    const { tracking_number, paymentIntentInfo } = orderPaymentDto;
     const order: Order = await this.ordersService.getOrderByIdOrTrackingNumber(
       tracking_number,
     );
@@ -73,6 +74,9 @@ export class OrdersController {
       case 'paypal':
         this.ordersService.paypalPay(order);
         break;
+      case 'razorpay':
+        this.ordersService.razorpayPay(order, paymentIntentInfo);
+        break;
       default:
         break;
     }
@@ -82,7 +86,7 @@ export class OrdersController {
 
 @Controller('order-status')
 export class OrderStatusController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) { }
 
   @Post()
   create(@Body() createOrderStatusDto: CreateOrderStatusDto) {
@@ -112,7 +116,7 @@ export class OrderStatusController {
 
 @Controller('downloads')
 export class OrderFilesController {
-  constructor(private ordersService: OrdersService) {}
+  constructor(private ordersService: OrdersService) { }
 
   @Get()
   async getOrderFileItems(
@@ -131,7 +135,7 @@ export class OrderFilesController {
 
 @Controller('export-order-url')
 export class OrderExportController {
-  constructor(private ordersService: OrdersService) {}
+  constructor(private ordersService: OrdersService) { }
 
   @Get()
   async orderExport(@Query('shop_id') shop_id: string) {
@@ -141,7 +145,7 @@ export class OrderExportController {
 
 @Controller('download-invoice-url')
 export class DownloadInvoiceController {
-  constructor(private ordersService: OrdersService) {}
+  constructor(private ordersService: OrdersService) { }
 
   @Post()
   async downloadInvoiceUrl(@Body('shop_id') shop_id: string) {

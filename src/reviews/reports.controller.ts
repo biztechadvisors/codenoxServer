@@ -13,7 +13,7 @@ import { AbusiveReportService } from './reports.service';
 
 @Controller('abusive_reports')
 export class AbusiveReportsController {
-  constructor(private reportService: AbusiveReportService) {}
+  constructor(private reportService: AbusiveReportService) { }
 
   @Get()
   async findAll() {

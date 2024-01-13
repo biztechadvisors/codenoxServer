@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
 import { CreateConversationDto } from './dto/create-conversation.dto';
@@ -8,7 +9,7 @@ import {
 
 @Controller('conversations')
 export class ConversationsController {
-  constructor(private readonly conversationsService: ConversationsService) {}
+  constructor(private readonly conversationsService: ConversationsService) { }
 
   @Post()
   createConversation(@Body() createConversationDto: CreateConversationDto) {
@@ -23,7 +24,7 @@ export class ConversationsController {
   }
 
   @Get(':param')
-  getStoreNotice(@Param('param') param: string) {
+  getStoreNotice(@Param('param') param: number) {
     return this.conversationsService.getConversation(param);
   }
 }

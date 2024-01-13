@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -15,7 +16,7 @@ import { MyQuestionsService } from './my-questions.service';
 
 @Controller('my-questions')
 export class MyQuestionsController {
-  constructor(private myQuestionService: MyQuestionsService) {}
+  constructor(private myQuestionService: MyQuestionsService) { }
   // show all
   // TODO: there is a bug in displaying all questions
   // In product single page front-end all the questions apperaed. It should be based on product ID.
