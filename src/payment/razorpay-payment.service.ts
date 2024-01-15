@@ -47,7 +47,7 @@ export class RazorpayService {
                 payment: payment
             };
         } catch (err) {
-            throw new HttpException(new Error(err.message), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -165,6 +165,7 @@ export class OrdersService {
       const savedOrder = await this.orderRepository.save(order);
       newOrderFile.order_id = savedOrder.id;
       await this.orderFilesRepository.save(newOrderFile);
+      console.log("Oreder_jaon****", newOrderFile)
       return savedOrder;
     } catch (error) {
       console.error('Error creating order:', error);
@@ -648,81 +649,38 @@ export class OrdersService {
   }
 
   async paypalPay(order: Order) {
-    // Set the order status to processing
-    this.orders[0]['order_status'] = OrderStatusType.PROCESSING;
+    console.log("paypalPay**", order);
+    order.order_status = OrderStatusType.PROCESSING;
     try {
-      // Verify the order with PayPal
-      const response = await this.paypalService.verifyOrder(
-        order.payment_intent.payment_intent_info.order_id,
-      );
-      console.log("response-paypal", order)
-      // Check if the payment intent exists
-      const paymentIntent = await this.paymentIntentRepository.findOne(response.id);
-      if (!paymentIntent) {
-        throw new Error('Payment intent not found');
-      }
-
-      // Check the status of the payment
+      const response = await this.paypalService.verifyOrder(order.payment_intent.payment_intent_info.order_id);
+      console.log("response-paypal", order);
       if (response.status === 'COMPLETED') {
-        // If the payment is completed, update the payment status and clear the payment intent
-        this.orders[0]['payment_status'] = PaymentStatusType.SUCCESS;
-        this.orders[0]['payment_intent'] = null;
         console.log('Payment Success');
+        order.payment_status = PaymentStatusType.SUCCESS;
+        order.payment_intent = null;
       } else {
-        // If the payment is not completed, update the payment status to failed
-        this.orders[0]['payment_status'] = PaymentStatusType.FAILED;
         console.log('Payment Failed');
+        order.payment_status = PaymentStatusType.FAILED;
       }
+      await this.orderRepository.save(order);
     } catch (error) {
-      // If there's an error, log it and set the order status to failed
       console.error('Failed to process payment:', error);
-      this.orders[0]['order_status'] = OrderStatusType.FAILED;
+      order.order_status = OrderStatusType.FAILED;
+      await this.orderRepository.save(order);
     }
   }
 
-  async razorpayPay(order: Order, paymentIntentInfo: PaymentIntentInfo) {
-    // Preserve the original order status
-    const originalOrderStatus = order.order_status;
-    // Log the order
-    console.log("response-razorpay", order);
-    // Verify the order with Razorpay
+  async razorpayPay(order: Order, paymentIntentInfo: PaymentIntentInfo): Promise<boolean> {
     const response = await this.razorpayService.verifyOrder(paymentIntentInfo.payment_id);
-
-    // Check if the payment intent exists
-    console.log("response*******", response.payment.status);
-    const paymentIntent = await this.paymentIntentInfoRepository.findOne({ where: { order_id: response.payment.order_id } });
-    if (!paymentIntent) {
-      throw new Error('Payment intent not found');
+    if (response.payment.status === 'captured') {
+      return true;
     }
-
-    // Check the status of the payment
-    if (response.payment.status === PaymentStatusType.SUCCESS) {
-      // If the payment is captured, update the payment status and clear the payment intent
-      console.log('Payment Success');
-      await this.changeOrderPaymentStatus(order.id, originalOrderStatus, PaymentStatusType.SUCCESS);
-    } else {
-      // If the payment is not captured, update the payment status to pending or failed
-      console.log('Payment Pending'); // Or 'Payment Failed'
-      await this.changeOrderPaymentStatus(order.id, originalOrderStatus, PaymentStatusType.PENDING); // Or PaymentStatusType.FAILED based on your business logic
-    }
+    return false;
   }
 
-  /**
-   * This method will set order status and payment status
-   * @param orderId
-   * @param orderStatus
-   * @param paymentStatus
-   */
-  async changeOrderPaymentStatus(
-    orderId: number,
-    orderStatus: OrderStatusType,
-    paymentStatus: PaymentStatusType,
-  ) {
-    // Update the order status and payment status in the database
-    await this.orderRepository.update(orderId, {
-      order_status: orderStatus,
-      payment_status: paymentStatus
-    });
+  async changeOrderPaymentStatus(order: Order, paymentStatus: PaymentStatusType): Promise<void> {
+    order.payment_status = paymentStatus;
+    await this.orderRepository.save(order);
   }
 
 
