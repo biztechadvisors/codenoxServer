@@ -60,7 +60,7 @@ import { ScheduleModule } from '@nestjs/schedule';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        // synchronize: configService.get<boolean>('DB_SYNC'),
+        synchronize: configService.get<boolean>('DB_SYNC'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: true,
         autoLoadEntities: true,

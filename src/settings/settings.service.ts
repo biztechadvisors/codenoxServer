@@ -428,8 +428,8 @@ export class SettingsService {
 
   //find all settings
  async findAll() {
-
-    const settingData = await this.settingRepository.find({ 
+    console.log("first")
+    const settingData = await this.settingRepository.find({
       relations: [
         'options.contactDetails',
         'options.contactDetails.socials',
@@ -449,7 +449,8 @@ export class SettingsService {
         'options.paymentGateway',
         'options.logo',
       ]
-    })
+   })
+
     if(!settingData){
       return null        
      } else {
@@ -459,6 +460,7 @@ export class SettingsService {
         //  console.log("Setting data", setting);
          return setting;
        }
+      console.log("first", settingData)
      }
   }
 
