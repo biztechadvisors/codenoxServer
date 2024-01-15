@@ -21,7 +21,7 @@ export class WithdrawsService {
     @InjectRepository(ShopRepository)
     private shopRepository: ShopRepository,
   ) { }
-  private withdraw: Withdraw[] = []
+  // private withdraw: Withdraw[] = []
 
   async create(createWithdrawDto: CreateWithdrawDto) {
     const newWithdraw = new Withdraw()
@@ -121,9 +121,9 @@ export class WithdrawsService {
         },
         relations: ['shop']
       });
-      console.log("find", data)
+      // console.log("find", data)
     }
-    console.log("data", data)
+    // console.log("data", data)
     const results = data.slice(startIndex, endIndex);
     const url = `/withdraws?limit=${limit}`;
     console.log("result", results)
@@ -204,19 +204,16 @@ export class WithdrawsService {
       }
     })
     // Check if the object exists
-    if (!idFind) {
-      // Throw an error if the object is not found
+    if (!idFind) {  
       throw new Error(`Withdraw with ID ${id} not found`)
     }
-    // Create a new object with only the ID
+   
     const deleteData = {
       id: idFind.id
     }
-    // Use `delete` with the filtered data object
-    await this.withdrawRepository.delete(deleteData)
-    // Log the deleted data
+   
+    await this.withdrawRepository.delete(deleteData)  
     console.log("0", deleteData)
-    // Return the deleted data (optional)
     return deleteData
   }
 
