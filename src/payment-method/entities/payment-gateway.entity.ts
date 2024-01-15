@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class PaymentGateWay extends CoreEntity {

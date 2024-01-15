@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
-/* eslint-disable prettier/prettier */
 import { UserAddress } from 'src/addresses/entities/address.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
@@ -47,11 +45,11 @@ export enum PaymentStatusType {
 @Entity()
 export class Order extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
   @Column()
-  tracking_number: string
+  tracking_number: string;
   @Column()
-  customer_id: number
+  customer_id: number;
   @Column()
   customer_contact: string;
 
@@ -60,7 +58,8 @@ export class Order extends CoreEntity {
   })
   customer: User;
 
-  @ManyToOne(() => Order, { nullable: true })
+  @ManyToOne(() => Order, order => order.children, { nullable: true })
+  @JoinColumn()
   parentOrder: Order;
 
   @OneToMany(() => Order, order => order.parentOrder)
@@ -71,33 +70,34 @@ export class Order extends CoreEntity {
   status: OrderStatus;
 
   @Column()
-  order_status: OrderStatusType
+  order_status: OrderStatusType;
   @Column()
-  payment_status: PaymentStatusType
+  payment_status: PaymentStatusType;
   @Column()
-  amount: number
+  amount: number;
+  @Column({ nullable: true })
+  sales_tax: number;
   @Column()
-  sales_tax: number
+  total: number;
   @Column()
-  total: number
+  paid_total: number;
+
   @Column()
-  paid_total: number
-  @Column()
-  payment_id?: string
+  payment_id?: string;
   @Column()
   payment_gateway: PaymentGatewayType;
 
-  @ManyToOne(() => Coupon, coupon => coupon.orders)
+  @ManyToOne(() => Coupon, coupon => coupon.orders, { nullable: true })
   coupon?: Coupon;
 
-  @ManyToOne(() => Shop)
+  @ManyToOne(() => Shop, { nullable: true })
   shop: Shop;
 
-  @Column()
-  discount?: number
-  @Column()
-  delivery_fee: number
-  @Column()
+  @Column({ nullable: true })
+  discount?: number;
+  @Column({ nullable: true })
+  delivery_fee: number;
+  @Column({ nullable: true })
   delivery_time: string;
 
   @ManyToMany(() => Product, product => product.orders)
@@ -112,32 +112,36 @@ export class Order extends CoreEntity {
 
   @Column()
   language: string;
+
   @Column({ type: "json" })
   translated_languages: string[];
 
-  @ManyToOne(() => PaymentIntent)
+  @OneToOne(() => PaymentIntent)
+  @JoinColumn()
   payment_intent: PaymentIntent;
 
   @Column()
-  altered_payment_gateway?: string
+  altered_payment_gateway?: string;
+
+  @Column()
+  customerId: any;
 }
 
 @Entity()
 export class OrderFiles extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
   @Column()
-  purchase_key: string
+  purchase_key: string;
   @Column()
-  digital_file_id: number
+  digital_file_id: number;
   @Column()
-  order_id?: number
+  order_id?: number;
   @Column()
   customer_id: number;
 
-  @ManyToOne(() => File)
+  @ManyToOne(() => File, { cascade: true })
   file: File;
-
   @ManyToOne(() => Product)
   fileable: Product;
 }

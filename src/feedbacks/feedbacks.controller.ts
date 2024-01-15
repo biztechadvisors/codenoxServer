@@ -12,13 +12,11 @@ export class FeedbackController {
     return this.feedbackService.findAllFeedBacks()
   }
 
-  // get single feedback
   @Get(':id')
   find(@Param('id') id: number) {
     return this.feedbackService.findFeedBack(id)
   }
 
-  // create a new feedback
   @Post()
   create(@Body() createFeedBackDto: CreateFeedBackDto) {
     return this.feedbackService.create(createFeedBackDto)

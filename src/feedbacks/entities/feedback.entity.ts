@@ -11,7 +11,7 @@ export class Feedback extends CoreEntity {
   @Column()
   model_type: string
   @Column()
-  model_id: string
+  model_id: number
   @Column()
   positive?: boolean
   @Column()

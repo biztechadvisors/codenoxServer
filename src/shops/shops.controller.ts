@@ -8,6 +8,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common'
 import { ShopsService } from './shops.service'
 import { ApproveShopDto, CreateShopDto } from './dto/create-shop.dto'
@@ -20,20 +21,20 @@ import { Shop } from './entities/shop.entity'
 
 @Controller('shops')
 export class ShopsController {
-  constructor(private readonly shopsService: ShopsService) {}
+  constructor(private readonly shopsService: ShopsService) { }
 
   @Post()
   create(@Body() createShopDto: CreateShopDto) {
     return this.shopsService.create(createShopDto)
   }
- 
+
   @Get()
   async getShops(@Query() query: GetShopsDto): Promise<ShopPaginator> {
     return this.shopsService.getShops(query)
   }
 
   @Get(':slug')
-  async getShop(@Param('slug') slug: string ) {
+  async getShop(@Param('slug') slug: string) {
     return this.shopsService.getShop(slug)
   }
 
@@ -47,25 +48,24 @@ export class ShopsController {
     return this.shopsService.remove(+id)
   }
 
-  @Post('approve')
-  approveShop(@Param('id') id: number) {
-    console.log("second", id)
-    return this.shopsService.approve(+id)
+  @Post('approve/:id')
+  async approve(@Param('id', ParseIntPipe) id: number) {
+    return this.shopsService.changeShopStatus(id, true);
   }
 
-  @Post('disapprove')
-  disapproveShop(@Param('id') id: string) {
-    return this.shopsService.approve(+id)
+  @Post('disapprove/:id')
+  async disapprove(@Param('id', ParseIntPipe) id: number) {
+    return this.shopsService.changeShopStatus(id, false);
   }
 }
 
 @Controller('staffs')
 export class StaffsController {
-  constructor(private readonly shopsService: ShopsService) {}
+  constructor(private readonly shopsService: ShopsService) { }
 
   @Post()
   create(@Body() createShopDto: CreateShopDto) {
-    return this.shopsService.create(createShopDto)   
+    return this.shopsService.create(createShopDto)
   }
 
   @Get()
@@ -91,8 +91,7 @@ export class StaffsController {
 
 @Controller('disapprove-shop')
 export class DisapproveShopController {
-  constructor(private shopsService: ShopsService) {}
-
+  constructor(private shopsService: ShopsService) { }
   @Post()
   async disapproveShop(@Body('id') id) {
     return this.shopsService.disapproveShop(id)
@@ -101,11 +100,9 @@ export class DisapproveShopController {
 
 @Controller('approve-shop')
 export class ApproveShopController {
-  constructor(private shopsService: ShopsService) {}
-
+  constructor(private shopsService: ShopsService) { }
   @Post()
   async approveShop(@Body() approveShopDto: ApproveShopDto): Promise<Shop> {
     return this.shopsService.approveShop(approveShopDto);
   }
-  
 }

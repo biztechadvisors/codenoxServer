@@ -1,7 +1,6 @@
-/* eslint-disable prettier/prettier */
-import { PartialType, PickType } from '@nestjs/swagger'
-import { CoreMutationOutput } from 'src/common/dto/core-mutation-output.dto'
-import { User } from 'src/users/entities/user.entity'
+import { PartialType, PickType } from '@nestjs/swagger';
+import { CoreMutationOutput } from 'src/common/dto/core-mutation-output.dto';
+import { User } from 'src/users/entities/user.entity';
 
 enum Permission {
   SUPER_ADMIN = 'Super admin',
@@ -9,68 +8,78 @@ enum Permission {
   STAFF = 'Staff',
   CUSTOMER = 'Customer',
 }
-export class RegisterDto extends PickType(User, ['name', 'email', 'password']) {
-  permission: Permission = Permission.CUSTOMER
+export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type']) {
+  permission: Permission = Permission.CUSTOMER;
+  isVerified: boolean;
 }
 
 export class LoginDto extends PartialType(
   PickType(User, ['email', 'password']),
-) {}
+) { }
 
 export class SocialLoginDto {
-  provider: string
-  access_token: string
+  provider: string;
+  access_token: string;
 }
 export class ChangePasswordDto {
-  email: string
-  oldPassword: string
-  newPassword: string
+  email: string;
+  oldPassword: string;
+  newPassword: string;
 }
 export class ForgetPasswordDto {
-  email: string
+  email: string;
 }
 export class VerifyForgetPasswordDto {
-  email: string
-  token: string
+  email: string;
+  token: number;
 }
 export class ResetPasswordDto {
-  email: string
-  token: string
-  password: string
+  email: string;
+  token: number;
+  password: string;
 }
 
 export class AuthResponse {
-  token: string
-  permissions: string[]
-  success?: boolean
-  message?: string
+  token: string;
+  permissions: string[];
+  success?: boolean;
+  message?: string;
 }
-export class CoreResponse extends CoreMutationOutput {}
+export class CoreResponse extends CoreMutationOutput { }
+
 export class VerifyOtpDto {
-  otp_id: string
-  code: string
-  phone_number: string
+  otp_id: string;
+  code: number;
+  phone_number: string;
 }
+
 export class OtpResponse {
-  id: string
-  message: string
-  success: boolean
-  phone_number: string
-  provider: string
-  is_contact_exist: boolean
+  id: string;
+  message: string;
+  success: boolean;
+  phone_number: string;
+  provider: string;
+  is_contact_exist: boolean;
 }
 export class OtpDto {
-  phone_number: string
+  phone_number: string;
 }
 
 export class UpdateOtpDto {
-  otp: number
+  otp: number;
 }
 
 export class OtpLoginDto {
-  otp_id: string
-  code: string
-  phone_number: string
-  name?: string
-  email?: string
+  otp_id: string;
+  code: string;
+  phone_number: string;
+  name?: string;
+  email?: string;
+}
+
+export class GetUserArgs {
+  id: number;
+  text: string;
+  first: number;
+  page: number;
 }

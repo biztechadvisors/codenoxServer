@@ -1,7 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
-
 @Entity()
 export class Name {
   @PrimaryGeneratedColumn()
@@ -86,24 +85,6 @@ export class AccessToken {
 }
 
 @Entity()
-export class Name3 {
-  @PrimaryGeneratedColumn()
-  id: number;
-  @Column()
-  given_name: string;
-  @Column()
-  surname: string;
-}
-
-@Entity()
-export class Address3 {
-  @PrimaryGeneratedColumn()
-  id: number
-  @Column()
-  country_code: string;
-}
-
-@Entity()
 export class Link2 {
   @PrimaryGeneratedColumn()
   id: number;
@@ -119,14 +100,14 @@ export class Link2 {
 export class Payer {
   @PrimaryGeneratedColumn()
   id: number;
-  @ManyToOne(() => Name3)
-  name: Name3;
+  @ManyToOne(() => Name)
+  name: Name;
   @Column()
   email_address: string;
   @Column()
   payer_id: string;
-  @ManyToOne(() => Address3)
-  address: Address3;
+  @ManyToOne(() => Address)
+  address: Address;
 }
 
 @Entity()
@@ -303,6 +284,3 @@ export class Capture {
   @Column()
   update_time: string;
 }
-
-
-

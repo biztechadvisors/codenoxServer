@@ -1,7 +1,8 @@
 /* eslint-disable prettier/prettier */
 import { CustomRepository } from "src/typeorm-ex/typeorm-ex.decorator";
-import { Withdraw } from "./entities/withdraw.entity";
 import { Repository } from "typeorm";
+import { Coupon } from "./entities/coupon.entity";
 
-@CustomRepository(Withdraw)
-export class WithdrawRepository extends Repository<Withdraw>{ }
+
+@CustomRepository(Coupon)
+export class CouponRepository extends Repository<Coupon>{}
