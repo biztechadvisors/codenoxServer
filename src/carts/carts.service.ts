@@ -6,17 +6,19 @@ import { CreateCartDto } from './dto/create-cart.dto'
 import { CartRepository } from './carts.repository'
 import { GetCartData } from './dto/get-cart.dto'
 // import mailer from 'nodemailer/lib/mailer'
-import { Cron, Interval, ScheduleModule } from '@nestjs/schedule';
+import { Interval } from '@nestjs/schedule';
 import { LessThan } from 'typeorm';
+import { MailService } from 'src/mail/mail.service'
 
 
 @Injectable()
 export class AbandonedCartService {
-  private isRunning = false;
+ 
   constructor(
     // private readonly scheduler: ScheduleModule,
     @InjectRepository(CartRepository)
     private cartRepository: CartRepository,
+    private mailService: MailService,
   ) {}
 
   // -------------------------------CREATE CART------------------------------------------------
@@ -189,114 +191,31 @@ export class AbandonedCartService {
 
 @Interval(60000)
 async sendAbandonedCartReminder() {
-  // if(!this.isRunning){
-  //   this.isRunning = true
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    // retrieve abandoned cart data from database
+
     const abandonedCartData = await this.cartRepository.find({
       where: {
-        updated_at: LessThan(twentyFourHoursAgo), // Ensure correct comparison
-        // updated_at: MoreThan(new Date(0)),  // cart updated more than 24 hours ago
+        updated_at: LessThan(twentyFourHoursAgo), 
+       
       },
     });
-    console.log("first+++++++++++", abandonedCartData)
-    // this.logger.debug('first', abandonedCartData);
-    // loop through abandoned cart data and send email for each cart
+
     for (const cart of abandonedCartData) {
-      console.log("checkinggg_______________")
+    
       try {
-        const products = JSON.parse(cart.cartData);
-        const email = cart.email;
-        console.log("=============", products, "email", email)
-        // const res = mailer.sendAbandonedCartEmail(email, products);
-        // this.logger.debug('Email sent successfully to', email);
+        const pro = JSON.stringify(cart.cartData)
+        const products = JSON.parse(pro);
+        const email = cart.email;      
+        const res = await this.mailService.sendAbandonmenCartReminder(email, products);
+        console.log(res)
       } catch (error) {
-        // this.logger.error('Failed to send email to', email, error);
+        console.log("erroor___________", error)
       }
-    }
-    // this.logger.debug('Abandoned cart reminder emails sent successfully');
-  
+    }  
   } catch (error) {
-    // this.logger.error(error);
     console.log('Failed to send abandoned cart reminder emails');
   }
-// }
-}
-
-// @Cron('* * * * *', sendAbandonedCartReminder)
-
-
-// Helper function to merge two carts
-async mergeCarts(existingCart, newCart): Promise<Cart> {
-  console.log("existing&meregcart", existingCart, newCart)
-  const mergedCart = { ...existingCart }
-  Object.entries(newCart).forEach(([productId, cartData]) => {
-    if (!mergedCart[productId]) {
-      mergedCart[productId] = cartData
-      console.log("cartDataaaaa", cartData)
-    } else {
-      const cart = JSON.stringify(existingCart.cartData)
-      console.log("cart", cart)
-      const cartData = JSON.parse(cart)
-      console.log("cartData", cartData)
-      // mergedCart.push(newCart)
-      // Sum up the quantity of all products in the cart
-      mergedCart[productId].quantity += cartData.quantity
-    }
-  })
-  return mergedCart
-}
-
-
-
-
-
-
-
-
 
 }
-// function mergeCarts(existingCartData: CartData[], newCartData: CartData[]): CartData[] {
-//   const mergedCartData = [...existingCartData];
-
-//   for (const newCartItem of newCartData) {
-//     const existingCartItem = mergedCartData.find((item) => item.productId === newCartItem.productId);
-//     if (existingCartItem) {
-//       existingCartItem.quantity += newCartItem.quantity;
-//     } else {
-//       mergedCartData.push(newCartItem);
-//     }
-//   }
-
-//   return mergedCartData;
-// }
-
-
-          // Get the cart quantity from the existing cart data
-      //     const existingCartQuantity = await this.getCartQuantity(existingCart)
-      // console.log("existingcartQuantity", existingCartQuantity)
-      //     // Sum up the existing cart quantity and the new cart quantity
-      //     const newCartQuantity = existingCart.cartQuantity + existingCartQuantity
-      // console.log("newCartQuantity", newCartQuantity)
-      //     // Update the cart quantity in the existing cart data
-      //     existingCart.cartQuantity = newCartQuantity
-      
-      //     // Save the existing cart data
-      //     await this.cartRepository.save(existingCart)
-
-
-      // Get the cart quantity from the existing cart data
-// async getCartQuantity(existingCart: GetCartQuantityDto): Promise<number> {
-//   // Get the cart data from the existing cart
-//   const cart = JSON.stringify(existingCart.cartData)
-//   console.log("cart", cart)
-//   const cartData = JSON.parse(cart)
-//   console.log("cartData", cartData)
-//   // Sum up the quantity of all products in the cart
-//   const cartQuantity = cartData.reduce((totalQuantity: number, product: { quantity: number }) => {
-//     return totalQuantity + product.quantity
-//   }, 0)
-// console.log("cartQuantity", cartQuantity)
-//   return cartQuantity
-// }
+}
