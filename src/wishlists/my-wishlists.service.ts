@@ -30,7 +30,7 @@ export class MyWishlistService {
   constructor(
     @InjectRepository(WishlistRepository)
     private wishlistReopsitory: WishlistRepository,
-  ) {}
+  ) { }
 
   findAMyWishlists({ limit, page, search }: GetWishlistDto) {
     if (!page) page = 1

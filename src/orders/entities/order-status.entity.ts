@@ -1,21 +1,25 @@
 /* eslint-disable prettier/prettier */
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Order } from './order.entity';
 
 @Entity()
 export class OrderStatus extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
   @Column()
-  name: string
+  name: string;
   @Column()
-  color: string
+  color: string;
   @Column()
-  serial: number
+  serial: number;
   @Column()
-  slug: string
+  slug: string;
   @Column()
-  language: string
-  @Column({ type: 'json' })
-  translated_languages: string[]
+  language: string;
+  @Column({ type: "json" })
+  translated_languages: string[];
+  @ManyToOne(() => Order, order => order.status)
+  order: Order;
+
 }

@@ -1,14 +1,8 @@
-import { Attachment } from 'src/common/entities/attachment.entity'
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { Order } from 'src/orders/entities/order.entity'
-import {
-  Column,
-  Entity,
-  ManyToMany,
-  OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm'
+/* eslint-disable prettier/prettier */
+import { Attachment } from 'src/common/entities/attachment.entity';
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { Order } from 'src/orders/entities/order.entity';
+import { Column, Entity, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum CouponType {
   FIXED_COUPON = 'fixed',
@@ -20,29 +14,29 @@ export enum CouponType {
 @Entity()
 export class Coupon extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
   @Column()
-  code: string
+  code: string;
   @Column()
-  description?: string
+  description?: string;
   @Column()
-  minimum_cart_amount: number
-  @OneToMany(() => Order, (order) => order.coupon)
-  orders?: Order[]
+  minimum_cart_amount: number;
+  @OneToMany(() => Order, order => order.coupon)
+  orders?: Order[];
   @Column()
-  type: CouponType
+  type: CouponType;
   @OneToOne(() => Attachment)
-  image: Attachment
+  image: Attachment;
   @Column()
-  is_valid: boolean
+  is_valid: boolean;
   @Column()
-  amount: number
+  amount: number;
   @Column()
-  active_from: string
+  active_from: string;
   @Column()
-  expire_at: string
+  expire_at: string;
   @Column()
-  language: string
-  @Column({ type: 'json' })
-  translated_languages: string[]
+  language: string;
+  @Column({ type: "json" })
+  translated_languages: string | string[];
 }

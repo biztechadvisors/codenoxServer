@@ -43,7 +43,7 @@ import {
   SmsEventRepository, 
   SmsVendorRepository 
 } from './settings.repository'
-import { LocationRepository, ShopSocialRepository } from 'src/shops/shops.repository'
+import { LocationRepository, ShopSocialsRepository } from 'src/shops/shops.repository'
 import { AttachmentRepository } from 'src/common/common.repository'
 
 
@@ -59,8 +59,8 @@ export class SettingsService {
     private contactDetailRepository: ContactDetailsRepository,
     @InjectRepository(LocationRepository)
     private locationRepository: LocationRepository,
-    @InjectRepository(ShopSocialRepository)
-    private shopSocialRepository: ShopSocialRepository,
+    @InjectRepository(ShopSocialsRepository)
+    private shopSocialRepository: ShopSocialsRepository,
     @InjectRepository(CurrencyOptionsRepository)
     private currencyOptionRepository: CurrencyOptionsRepository,
     @InjectRepository(EmailEventRepository)

@@ -78,8 +78,10 @@ export class TypesService {
 
 
   async getTypeBySlug(slug: string): Promise<Type> {
-    const type = await this.typeRepository.findOne({ where: { slug }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
-    // console.log("One-Type", type)
+    const type = await this.typeRepository.findOne({
+      where: { slug },
+      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'product']
+    });
     return type;
   }
 

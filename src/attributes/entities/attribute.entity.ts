@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { AttributeValue } from './attribute-value.entity';
@@ -7,33 +6,29 @@ import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn
 @Entity()
 export class Attribute extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
   @Column()
-  name: string
+  name: string;
 
   @Column()
-  shop_id: string
+  shop_id: string;
 
   @OneToOne(() => Shop)
   @JoinColumn()
   shop: Shop;
 
   @Column()
-  slug: string
+  slug: string;
 
-  @OneToMany(
-    () => AttributeValue,
-    (attributeValue) => attributeValue.attribute,
-    {
-      onDelete: 'CASCADE',
-    },
-  )
-  values: AttributeValue[]
+  @OneToMany(() => AttributeValue, attributeValue => attributeValue.attribute, {
+    onDelete: 'CASCADE',
+  })
+  values: AttributeValue[];
 
   @Column()
-  language: string
+  language: string;
 
   @Column({ type: 'json' })
-  translated_languages: string[]
+  translated_languages: string[];
 }

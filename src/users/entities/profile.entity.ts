@@ -1,15 +1,7 @@
-/* eslint-disable prettier/prettier */
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-import { User } from './user.entity';
-import { Attachment } from 'src/common/entities/attachment.entity';
-import { CoreEntity } from 'src/common/entities/core.entity';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "./user.entity";
+import { Attachment } from "src/common/entities/attachment.entity";
+import { CoreEntity } from "src/common/entities/core.entity";
 
 @Entity()
 export class Social {
@@ -35,7 +27,7 @@ export class Profile extends CoreEntity {
     @Column()
     bio?: string;
 
-    @ManyToOne(() => Social, { cascade: true })
+    @ManyToOne(() => Social, { onDelete: 'CASCADE' })
     socials?: Social;
 
     @Column()

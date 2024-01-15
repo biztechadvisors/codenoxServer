@@ -16,7 +16,7 @@ import { MyWishlistService } from './my-wishlists.service'
 
 @Controller('my-wishlists')
 export class MyWishlistsController {
-  constructor(private myWishlistService: MyWishlistService) {}
+  constructor(private myWishlistService: MyWishlistService) { }
 
   // Get All
   @Get()
