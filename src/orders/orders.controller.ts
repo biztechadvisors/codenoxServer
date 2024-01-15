@@ -1,9 +1,11 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   HttpCode,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
@@ -18,7 +20,7 @@ import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto';
 import { OrderPaymentDto } from './dto/order-payment.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
-import { Order } from './entities/order.entity';
+import { Order, PaymentStatusType } from './entities/order.entity';
 import { OrdersService } from './orders.service';
 
 @Controller('orders')
@@ -67,18 +69,24 @@ export class OrdersController {
     const order: Order = await this.ordersService.getOrderByIdOrTrackingNumber(
       tracking_number,
     );
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
     switch (order.payment_gateway.toString().toLowerCase()) {
       case 'stripe':
-        this.ordersService.stripePay(order);
+        await this.ordersService.stripePay(order);
         break;
       case 'paypal':
-        this.ordersService.paypalPay(order);
+        await this.ordersService.paypalPay(order);
         break;
       case 'razorpay':
-        this.ordersService.razorpayPay(order, paymentIntentInfo);
+        const paymentSuccessful = await this.ordersService.razorpayPay(order, paymentIntentInfo);
+        if (paymentSuccessful) {
+          await this.ordersService.changeOrderPaymentStatus(order, PaymentStatusType.SUCCESS);
+        }
         break;
       default:
-        break;
+        throw new BadRequestException('Invalid payment gateway');
     }
     this.ordersService.processChildrenOrder(order);
   }
