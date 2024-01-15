@@ -27,6 +27,7 @@ export enum OrderStatusType {
   FAILED = 'order-failed',
   AT_LOCAL_FACILITY = 'order-at-local-facility',
   OUT_FOR_DELIVERY = 'order-out-for-delivery',
+  // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
   DEFAULT_ORDER_STATUS = 'order-pending',
 }
 
