@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { UserAddress } from 'src/addresses/entities/address.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
@@ -81,7 +82,6 @@ export class Order extends CoreEntity {
   total: number;
   @Column()
   paid_total: number;
-
   @Column()
   payment_id?: string;
   @Column()

@@ -16,9 +16,9 @@ export class ShippingsService {
   private shippings: Shipping[] = shippings;
   constructor(
     @InjectRepository(Shipping)
-    private readonly shippingRepository: Repository<Shipping>
+    private readonly shippingRepository:Repository<Shipping>
 
-  ) { }
+  ){}
 
   async create(createShippingDto: CreateShippingDto) {
     const shipping = new Shipping()
@@ -31,19 +31,19 @@ export class ShippingsService {
   }
 
   async getShippings() {
-    const shippingFind = await this.shippingRepository.find()
+    const shippingFind =  await this.shippingRepository.find()
     return shippingFind
     // return this.shippings;
   }
 
   findOne(id: number) {
-    return this.shippingRepository.find({ where: { id } });
+    return this.shippingRepository.find({where :{id}});
   }
 
   async update(id: number, updateShippingDto: UpdateShippingDto) {
-    const existingShipping = await this.shippingRepository.findOne({ where: { id } })
+    const existingShipping = await this.shippingRepository.findOne({where:{id}})
 
-    if (!existingShipping) {
+    if(!existingShipping){
       throw new NotFoundException('Address not found');
     }
 
@@ -59,11 +59,11 @@ export class ShippingsService {
   }
 
   async remove(id: number) {
-    const existingShipping = await this.shippingRepository.findOne({ where: { id } });
+    const existingShipping = await this.shippingRepository.findOne({where :{id}});
 
     if (!existingShipping) {
       throw new NotFoundException('Address not found');
     }
     await this.shippingRepository.remove(existingShipping);
   }
-}
+  }

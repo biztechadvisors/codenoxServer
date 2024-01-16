@@ -6,17 +6,17 @@ export class CreateCouponDto {
   code: string;
   description?: string;
   minimum_cart_amount: number;
-  translated_languages: string | string[];
+  translated_languages: string |string[];
   active_from: string;
   expire_at: string;
   language: string;
   type: CouponType
   is_valid: boolean;
   amount: number;
-  image: AttachmentDTO;
+  image: AttachmentDTO; 
 }
 
-export class pagination {
+export class pagination{
   currentPage: number;
   pageSize: number;
   totalItems: number;

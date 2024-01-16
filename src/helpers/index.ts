@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export function convertToSlug(text) {
   return text
     .toString()

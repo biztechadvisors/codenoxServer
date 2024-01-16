@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { AbusiveReportsController } from './reports.controller';
 import { AbusiveReportService } from './reports.service';

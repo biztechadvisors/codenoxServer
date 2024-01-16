@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { SortOrder } from 'src/common/dto/generic-conditions.dto'
 import { PaginationArgs } from 'src/common/dto/pagination-args.dto'
 import { Paginator } from 'src/common/dto/paginator.dto'

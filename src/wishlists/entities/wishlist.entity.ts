@@ -2,28 +2,20 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Wishlist extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
-
+  @OneToOne(() => Product)
+  @JoinColumn()
+  product: Product;
   @Column()
-  product_id: string;
-
+  product_id: number;
   @ManyToMany(() => User)
   @JoinTable()
   user: User[];
-
-  @ManyToOne(() => Product, (product) => product.in_wishlist)
-  product: Product
-
-  // @ManyToOne(() => User)
-  // user: User[]
-  @Column('datetime')
-  created_at: Date
-
-  @Column('datetime')
-  updated_at: Date
+  @Column()
+  user_id: number;
 }

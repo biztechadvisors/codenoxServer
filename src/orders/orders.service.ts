@@ -626,6 +626,7 @@ export class OrdersService {
   async savePaymentIntent(order: Order, _paymentGateway?: string): Promise<any> {
     const usr = await this.userRepository.findOne({ where: { id: order.customer.id } });
     const me = this.authService.me(usr.email, usr.id);
+    // const me = this.authService.me(usr.email, usr.id);
     switch (order.payment_gateway) {
       case PaymentGatewayType.STRIPE:
         const paymentIntentParam =
@@ -697,4 +698,3 @@ export class OrdersService {
     this.orders[0]['payment_status'] = paymentStatus;
   }
 }
-

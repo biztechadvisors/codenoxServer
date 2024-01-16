@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { ConnectProductOrderPivot, UserAddressInput } from './create-order.dto'
 
 export class CheckoutVerificationDto {

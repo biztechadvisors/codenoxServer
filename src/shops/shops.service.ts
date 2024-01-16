@@ -23,7 +23,6 @@ import { AddressesService } from 'src/addresses/addresses.service'
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto'
 import { UserAddressRepository } from 'src/addresses/addresses.repository'
 
-
 @Injectable()
 export class ShopsService {
   constructor(
@@ -52,7 +51,7 @@ export class ShopsService {
 
   private shops: Shop[] = []
 
-  async convertToSlug(text: string) {
+  async convertToSlug(text: any) {
     return await convertToSlug(text)
   }
 
@@ -70,10 +69,10 @@ export class ShopsService {
       if (createShopDto.address) {
         const createAddressDto = new CreateAddressDto();
         createAddressDto.title = createShopDto.address.street_address;
-        createAddressDto.type = AddressType.SHOP;
+        createAddressDto.type = AddressType.SHIPPING;
         createAddressDto.default = true;
         createAddressDto.address = createShopDto.address;
-        createAddressDto.customer_id = createShopDto.user.id;
+        createAddressDto.customer = createShopDto.user;
 
         // Save the new UserAddress and retrieve the saved entity
         const savedAddress = await this.addressesService.create(createAddressDto);
@@ -121,7 +120,6 @@ export class ShopsService {
       newShop.settings = settingId;
       newShop.createdAt = new Date()
       const shop = await this.shopRepository.save(newShop)
-
       let saved;
       if (createShopDto.balance) {
         if (createShopDto.balance.payment_info) {

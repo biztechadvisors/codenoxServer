@@ -16,7 +16,7 @@ import { GetShippingsDto } from './dto/get-shippings.dto';
 
 @Controller('shippings')
 export class ShippingsController {
-  constructor(private readonly shippingsService: ShippingsService) { }
+  constructor(private readonly shippingsService: ShippingsService) {}
 
   @Post()
   create(@Body() createShippingDto: CreateShippingDto) {

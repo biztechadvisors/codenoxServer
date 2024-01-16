@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Dealer } from 'src/users/entities/dealer.entity';
 import {
   Column,

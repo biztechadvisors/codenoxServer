@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PartialType, PickType } from '@nestjs/swagger';
 import { CoreMutationOutput } from 'src/common/dto/core-mutation-output.dto';
 import { User } from 'src/users/entities/user.entity';
@@ -8,9 +9,8 @@ enum Permission {
   STAFF = 'Staff',
   CUSTOMER = 'Customer',
 }
-export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type']) {
+export class RegisterDto extends PickType(User, ['name', 'email', 'password']) {
   permission: Permission = Permission.CUSTOMER;
-  isVerified: boolean;
 }
 
 export class LoginDto extends PartialType(
@@ -31,28 +31,52 @@ export class ForgetPasswordDto {
 }
 export class VerifyForgetPasswordDto {
   email: string;
-  token: number;
+  token: string;
 }
 export class ResetPasswordDto {
   email: string;
-  token: number;
+  token: string;
   password: string;
 }
 
 export class AuthResponse {
   token: string;
-  permissions: string[];
+  type_name: string[]
+  permissions: PermissionItem[];
   success?: boolean;
   message?: string;
 }
-export class CoreResponse extends CoreMutationOutput { }
-
-export class VerifyOtpDto {
-  otp_id: string;
-  code: number;
-  phone_number: string;
+export interface PermissionItem {
+  type: string;
+  read: boolean;
+  write: boolean;
 }
 
+// export class PermissionsDTO {
+//   id: number;
+//   type_name: string; // Corrected property name
+//   permission: PermissionDTO[];
+// }
+
+// export class PermissionDTO {
+//   type: string;
+//   read: boolean;
+//   write: boolean;
+// }
+
+
+// export class AuthResponse {
+//   token: string;
+//   permissions: string[];
+//   success?: boolean;
+//   message?: string;
+// }
+export class CoreResponse extends CoreMutationOutput { }
+export class VerifyOtpDto {
+  otp_id: string;
+  code: string;
+  phone_number: string;
+}
 export class OtpResponse {
   id: string;
   message: string;
@@ -75,11 +99,4 @@ export class OtpLoginDto {
   phone_number: string;
   name?: string;
   email?: string;
-}
-
-export class GetUserArgs {
-  id: number;
-  text: string;
-  first: number;
-  page: number;
 }

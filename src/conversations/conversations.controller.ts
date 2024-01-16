@@ -9,7 +9,7 @@ import {
 
 @Controller('conversations')
 export class ConversationsController {
-  constructor(private readonly conversationsService: ConversationsService) { }
+  constructor(private readonly conversationsService: ConversationsService) {}
 
   @Post()
   createConversation(@Body() createConversationDto: CreateConversationDto) {

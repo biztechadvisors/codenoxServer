@@ -31,7 +31,7 @@ export class UploadsController {
     } catch (err) {
       console.log(err)
     }
-    return [
+return [    
       {
         id: new UUID(),
         original: attachment[0].filename,
