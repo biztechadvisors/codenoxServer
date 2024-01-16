@@ -3,7 +3,7 @@ import {
   Conversation,
   LatestMessage,
 } from 'src/conversations/entities/conversation.entity';
-import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Message extends LatestMessage {

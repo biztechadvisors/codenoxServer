@@ -1,19 +1,8 @@
+/* eslint-disable prettier/prettier */
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./user.entity";
 import { Attachment } from "src/common/entities/attachment.entity";
 import { CoreEntity } from "src/common/entities/core.entity";
-
-@Entity()
-export class Social {
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column()
-    type: string;
-
-    @Column()
-    link: string;
-}
 
 @Entity()
 export class Profile extends CoreEntity {
@@ -27,12 +16,30 @@ export class Profile extends CoreEntity {
     @Column()
     bio?: string;
 
-    @ManyToOne(() => Social, { onDelete: 'CASCADE' })
-    socials?: Social;
+    // @OneToMany(() => Social,(social) => social.id)
+    // @JoinColumn()
+    // socials?: Social;
 
     @Column()
     contact?: string;
 
     @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
     customer?: User;
+}
+
+@Entity()
+export class Social {
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column()
+    type: string;
+
+    @Column()
+    link: string;
+
+    @ManyToOne(()=> Profile, { cascade: true })
+    @JoinColumn({name:'ProfileId'})
+    profile: Profile;
+
 }

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { OmitType } from '@nestjs/swagger';
 import { Report } from '../entities/reports.entity';
 

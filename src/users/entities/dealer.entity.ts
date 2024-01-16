@@ -1,11 +1,10 @@
+/* eslint-disable prettier/prettier */
 import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
     ManyToOne,
     JoinColumn,
-    ManyToMany,
-    JoinTable,
     CreateDateColumn,
     UpdateDateColumn,
     OneToOne,

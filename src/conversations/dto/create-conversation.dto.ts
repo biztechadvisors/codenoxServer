@@ -9,7 +9,7 @@ export class CreateConversationDto extends PickType(Conversation, [
   'unseen',
   'user_id'
 ]) {
-  latest_message: LatestMessage
-  user: User
-  shop: Shop
+  latest_message :LatestMessage
+  user:User
+  shop:Shop
 }

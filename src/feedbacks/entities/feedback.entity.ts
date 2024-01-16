@@ -1,19 +1,21 @@
 /* eslint-disable prettier/prettier */
-import { CoreEntity } from 'src/common/entities/core.entity'
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { User } from 'src/users/entities/user.entity';
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Feedback extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+  @OneToOne(()=> User)
+  @JoinColumn()
+  user: User;
   @Column()
-  user_id: string
+  model_type: string;
   @Column()
-  model_type: string
+  model_id: number;
   @Column()
-  model_id: number
+  positive?: boolean;
   @Column()
-  positive?: boolean
-  @Column()
-  negative?: boolean
+  negative?: boolean;
 }

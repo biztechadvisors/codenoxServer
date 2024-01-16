@@ -11,7 +11,7 @@ import { Product } from 'src/products/entities/product.entity';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Question, Feedback, User, Product])],
+  imports: [TypeOrmModule.forFeature([Question,Feedback, User,Product])],
   controllers: [QuestionController, MyQuestionsController],
   providers: [QuestionService, MyQuestionsService],
 })

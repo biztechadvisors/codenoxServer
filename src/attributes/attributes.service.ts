@@ -159,7 +159,6 @@ export class AttributesService {
         message: 'Attribute not found',
       };
     }
-
     // Update the attribute values
     attribute.name = updateAttributeDto.name;
     attribute.slug = await this.convertToSlug(updateAttributeDto.name);

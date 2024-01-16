@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common'
 import { AuthModule } from 'src/auth/auth.module'
 import { PaymentModule } from 'src/payment/payment.module'

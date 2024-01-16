@@ -1,5 +1,5 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
 import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -55,7 +55,6 @@ export class ProductsService {
   ) { }
 
   async create(createProductDto: CreateProductDto) {
-
     const product = new Product();
     product.name = createProductDto.name;
     product.slug = createProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');

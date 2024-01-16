@@ -43,11 +43,9 @@ import { MulterModule } from '@nestjs/platform-express';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from './mail/mail.module';
-import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule.forRoot({
         isGlobal: true,
@@ -60,7 +58,7 @@ import { ScheduleModule } from '@nestjs/schedule';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        synchronize: configService.get<boolean>('DB_SYNC'),
+        // synchronize: configService.get<boolean>('DB_SYNC'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: true,
         autoLoadEntities: true,
@@ -74,6 +72,8 @@ import { ScheduleModule } from '@nestjs/schedule';
       apiKey: process.env.STRIPE_API_KEY,
       apiVersion: '2022-11-15',
     }),
+    ServeStaticModule,
+    JwtModule,
     UsersModule,
     MailModule,
     CommonModule,

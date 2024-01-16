@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { OmitType } from '@nestjs/swagger';
 import { File, Product, Variation } from '../entities/product.entity';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';

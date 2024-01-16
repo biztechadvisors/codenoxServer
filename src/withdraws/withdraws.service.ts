@@ -121,9 +121,9 @@ export class WithdrawsService {
         },
         relations: ['shop']
       });
-      // console.log("find", data)
+      console.log("find", data)
     }
-    // console.log("data", data)
+    console.log("data", data)
     const results = data.slice(startIndex, endIndex);
     const url = `/withdraws?limit=${limit}`;
     console.log("result", results)
@@ -203,17 +203,20 @@ export class WithdrawsService {
         id: id
       }
     })
-    // Check if the object exists
-    if (!idFind) {  
+   
+    if (!idFind) {
+    
       throw new Error(`Withdraw with ID ${id} not found`)
     }
-   
+  
     const deleteData = {
       id: idFind.id
     }
    
-    await this.withdrawRepository.delete(deleteData)  
+    await this.withdrawRepository.delete(deleteData)
+  
     console.log("0", deleteData)
+   
     return deleteData
   }
 
