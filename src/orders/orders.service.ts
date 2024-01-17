@@ -41,6 +41,7 @@ import { User } from 'src/users/entities/user.entity';
 import { OrderProductPivot, Product } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { RazorpayService } from 'src/payment/razorpay-payment.service';
+import { ShiprocketService } from 'src/orders/shiprocket.service';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -54,6 +55,8 @@ export class OrdersService {
     private readonly stripeService: StripePaymentService,
     private readonly paypalService: PaypalPaymentService,
     private readonly razorpayService: RazorpayService,
+    private readonly shiprocketService: ShiprocketService,
+
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderStatus)
@@ -121,6 +124,69 @@ export class OrdersService {
         throw new NotFoundException('Customer not found');
       }
     }
+    const Invoice = "OD" + Math.floor(Math.random() * Date.now());
+    if (!order.products) {
+      throw new Error('order.products is undefined');
+    }
+
+    const productEntities = await Promise.all(
+      order.products
+        .filter((product: any) => product.product_id !== undefined) // Filter out products with undefined id
+        .map((product: any) => this.productRepository.findOne({ where: { id: product.product_id } }))
+    );
+
+    console.log("productEntities***", productEntities)
+    const orderData = {
+      order_id: Invoice,
+      order_date: new Date().toISOString(),
+      pickup_location: "Primary",
+      channel_id: "",
+      comment: "",
+      billing_customer_name: order.billing_address.name ? order.billing_address.name : "John",
+      billing_last_name: order.billing_address.lastName ? order.billing_address.lastName : "Doe",
+      billing_address: order.billing_address.street_address,
+      billing_address_2: order.billing_address.ShippingAddress ? order.billing_address.ShippingAddress : "indore",
+      billing_city: order.billing_address.city,
+      billing_pincode: order.billing_address.zip,
+      billing_state: order.billing_address.state,
+      billing_country: order.billing_address.country,
+      billing_email: order.customer.email,
+      billing_phone: order.customer_contact,
+      shipping_is_billing: true,
+      shipping_customer_name: order.shipping_address.name ? order.shipping_address.name : "John",
+      shipping_last_name: order.shipping_address.lastName ? order.shipping_address.lastName : "Doe",
+      shipping_address: order.shipping_address.street_address,
+      shipping_address_2: order.shipping_address.ShippingAddress ? order.shipping_address.ShippingAddress : "indore",
+      shipping_city: order.shipping_address.city,
+      shipping_pincode: order.shipping_address.zip,
+      shipping_country: order.shipping_address.country,
+      shipping_state: order.shipping_address.state,
+      shipping_email: order.customer.email,
+      shipping_phone: order.customer_contact,
+      order_items: productEntities.map((product: Product, index: number) => ({
+        name: product.name,
+        sku: product.sku ? product.sku : Math.random(),
+        units: order.products[index].order_quantity,
+        selling_price: product.sale_price,
+        unit_price: order.products[index].unit_price,
+        subtotal: order.products[index].subtotal,
+        discount: product.discount ? product.discount : 0,
+        tax: product.tax ? product.tax : 0,
+        hsn: product.hsn ? product.hsn : 0
+      })),
+      payment_method: order.payment_gateway,
+      shipping_charges: 0,
+      giftwrap_charges: 0,
+      transaction_charges: 0,
+      total_discount: 0,
+      sub_total: order.total,
+      length: 10,
+      breadth: 10,
+      height: 10,
+      weight: 1
+    };
+    const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
+    order.tracking_number = shiprocketResponse.shipment_id ? shiprocketResponse.shipment_id : shiprocketResponse.order_id;
     const savedOrder = await this.orderRepository.save(order);
     if (order.products) {
       const productEntities = await this.productRepository.find({
@@ -160,12 +226,10 @@ export class OrdersService {
       }
       const createdOrderStatus = await this.orderStatusRepository.save(newOrderStatus);
       order.status = createdOrderStatus;
-      order.tracking_number = order.id.toString();
       order.children = this.processChildrenOrder(order);
       const savedOrder = await this.orderRepository.save(order);
       newOrderFile.order_id = savedOrder.id;
       await this.orderFilesRepository.save(newOrderFile);
-      console.log("Oreder_jaon****", newOrderFile)
       return savedOrder;
     } catch (error) {
       console.error('Error creating order:', error);
@@ -580,6 +644,7 @@ export class OrdersService {
       return [];
     }
   }
+
   /**
    * This action will return Payment Intent
    * @param order
@@ -589,7 +654,6 @@ export class OrdersService {
   async processPaymentIntent(order: Order): Promise<PaymentIntent> {
     try {
       const pI = await this.savePaymentIntent(order);
-      console.log("pI********", pI)
       const is_redirect = pI.redirect_url ? true : false;
       let redirect_url = pI.redirect_url ? pI.redirect_url : null;
       const paymentIntentInfo = this.paymentIntentInfoRepository.create({
