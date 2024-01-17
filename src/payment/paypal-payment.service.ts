@@ -12,13 +12,21 @@ export class PaypalPaymentService {
   private paypal: any;
   constructor() {
     this.paypal = Paypal;
-    this.clientId = process.env.PAYPAL_SANDBOX_CLIENT_ID;
-    this.clientSecret = process.env.PAYPAL_SANDBOX_CLIENT_SECRET;
-    // This sample uses SandboxEnvironment. In production, use LiveEnvironment
-    this.environment = new this.paypal.core.SandboxEnvironment(
-      this.clientId,
-      this.clientSecret,
-    );
+    if (process.env.NODE_ENV === "production") {
+      this.clientId = process.env.PAYPAL_CLIENT_ID;
+      this.clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+      this.environment = new this.paypal.core.LiveEnvironment(
+        this.clientId,
+        this.clientSecret,
+      );
+    } else {
+      this.clientId = process.env.PAYPAL_SANDBOX_CLIENT_ID;
+      this.clientSecret = process.env.PAYPAL_SANDBOX_CLIENT_SECRET;
+      this.environment = new this.paypal.core.SandboxEnvironment(
+        this.clientId,
+        this.clientSecret,
+      );
+    }
     this.client = new this.paypal.core.PayPalHttpClient(this.environment);
   }
 
@@ -62,6 +70,7 @@ export class PaypalPaymentService {
     if (order.tracking_number || order.id) {
       reference_id = order.tracking_number ? order.tracking_number : order.id.toString();
     }
+    console.log("call-paypal*****")
     return {
       intent: 'CAPTURE',
       payment_source: {
@@ -78,7 +87,7 @@ export class PaypalPaymentService {
         {
           amount: {
             currency_code: "USD",
-            value: order.total
+            value: order.total * 100
           },
           description: 'Order From Marvel',
           reference_id: reference_id,

@@ -22,6 +22,9 @@ export class UserAddress {
   state: string;
   @Column()
   zip: string;
+  name: any;
+  lastName: any;
+  ShippingAddress: any;
 }
 
 @Entity()

@@ -77,6 +77,7 @@ export class OrdersController {
         await this.ordersService.stripePay(order);
         break;
       case 'paypal':
+        console.log("paypal-order****", order)
         await this.ordersService.paypalPay(order);
         break;
       case 'razorpay':

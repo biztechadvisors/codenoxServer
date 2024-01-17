@@ -14,13 +14,13 @@ export class PaymentIntentController {
 
   @Get()
   async getPaymentIntent(@Query() query: GetPaymentIntentDto) {
-    console.log('payment_intent', query)
+    console.log('getPaymentIntent***', query)
     return this.paymentIntentService.getPaymentIntent(query)
   }
 
   @Post('save-paymentId')
   async savePaymentIdIntent(@Body() razorpayData: any): Promise<any> {
-    console.log("razorpayData", razorpayData)
+    console.log("savePaymentIdIntent***", razorpayData)
     return await this.paymentIntentService.savePaymentIdIntent(razorpayData);
   }
 

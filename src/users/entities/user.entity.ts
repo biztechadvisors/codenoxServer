@@ -5,6 +5,7 @@ import { Order } from 'src/orders/entities/order.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Profile } from './profile.entity';
 import { Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
+import { Dealer } from './dealer.entity';
 
 export enum UserType {
   Admin = 'Admin',
@@ -39,6 +40,10 @@ export class User extends CoreEntity {
   @OneToOne(() => Profile, (profile) => profile.customer)
   @JoinColumn()
   profile?: Profile;
+
+  @OneToOne(() => Dealer, (dealer) => dealer)
+  @JoinColumn()
+  dealer?: Dealer;
 
   @OneToMany(() => Shop, (shop) => shop.owner, { cascade: true })
   shops?: Shop[];
