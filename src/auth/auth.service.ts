@@ -20,7 +20,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/users/users.repository';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
-import { FindOptionsWhere } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
+import { Permission } from 'src/permission/entities/permission.entity';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +31,7 @@ export class AuthService {
 
   constructor(
     @InjectRepository(UserRepository) private userRepository: UserRepository,
+    @InjectRepository(Permission) private permissionRepository: Repository<Permission>,
     private jwtService: JwtService,
     private mailService: MailService
   ) { }
@@ -133,9 +135,43 @@ export class AuthService {
     }
 
     const access_token = await this.signIn(userData.email, userData.password);
+
+    const result = await this.permissionRepository
+      .createQueryBuilder('permission')
+      .leftJoinAndSelect('permission.permissions', 'permissions')
+      .where(`permission.id = ${6}`)
+      .select([
+        'permission.id',
+        'permission.type_name',
+        'permissions.id',
+        'permissions.type',
+        'permissions.read',
+        'permissions.write',
+      ])
+      .getMany();
+
+
+    console.log('result')
+    console.log(result)
+
+
+    const formattedResult = result.map(permission => ({
+      id: permission.id,
+      type_name: permission.type_name,
+      permission: permission.permissions.map(p => ({
+        id: p.id,
+        type: p.type,
+        read: p.read,
+        write: p.write,
+      })),
+    }));
+
+
+    console.log(formattedResult[0])
     return {
       token: access_token.access_token,
-      permissions: [createUserInput.permission as unknown as string],
+      type_name: [`${formattedResult[0].type_name}`],
+      permissions: formattedResult[0].permission
     };
 
   }
@@ -151,15 +187,48 @@ export class AuthService {
     }
     const access_token = await this.signIn(loginInput.email, loginInput.password)
 
-    if (loginInput.type === UserType.Customer) {
+    const result = await this.permissionRepository
+      .createQueryBuilder('permission')
+      .leftJoinAndSelect('permission.permissions', 'permissions')
+      .where(`permission.id = ${6}`)
+      .select([
+        'permission.id',
+        'permission.type_name',
+        'permissions.id',
+        'permissions.type',
+        'permissions.read',
+        'permissions.write',
+      ])
+      .getMany();
+
+
+    console.log('result')
+    console.log(result)
+
+    const formattedResult = result.map(permission => ({
+      id: permission.id,
+      type_name: permission.type_name,
+      permission: permission.permissions.map(p => ({
+        id: p.id,
+        type: p.type,
+        read: p.read,
+        write: p.write,
+      })),
+    }));
+
+
+    console.log(formattedResult[0].type_name)
+    if (loginInput.email === 'store_owner@demo.com') {
       return {
         token: access_token.access_token,
-        permissions: ['store_owner', 'customer'],
+        type_name: [`${formattedResult[0].type_name[0]}`, `${formattedResult[0].type_name}`],
+        permissions: formattedResult[0].permission
       };
     } else {
       return {
         token: access_token.access_token,
-        permissions: ['super_admin', 'customer'],
+        type_name: [`${formattedResult[0].type_name}`],
+        permissions: formattedResult[0].permission //['super_admin', 'customer'],
       };
     }
   }
@@ -288,16 +357,86 @@ export class AuthService {
   }
 
   async socialLogin(socialLoginDto: SocialLoginDto): Promise<AuthResponse> {
+
+    const result = await this.permissionRepository
+      .createQueryBuilder('permission')
+      .leftJoinAndSelect('permission.permissions', 'permissions')
+      .where(`permission.id = ${6}`)
+      .select([
+        'permission.id',
+        'permission.type_name',
+        'permissions.id',
+        'permissions.type',
+        'permissions.read',
+        'permissions.write',
+      ])
+      .getMany();
+
+
+    console.log('result')
+    console.log(result)
+
+
+    const formattedResult = result.map(permission => ({
+      id: permission.id,
+      type_name: permission.type_name,
+      permission: permission.permissions.map(p => ({
+        id: p.id,
+        type: p.type,
+        read: p.read,
+        write: p.write,
+      })),
+    }));
+
+
+    console.log(formattedResult[0])
     return {
-      token: 'jwt token',
-      permissions: ['super_admin', 'customer'],
+      // token: access_token.access_token,
+      token: "jwt token",
+      type_name: [`${formattedResult[0].type_name}`],
+      permissions: formattedResult[0].permission
     };
+
   }
 
   async otpLogin(otpLoginDto: OtpLoginDto): Promise<AuthResponse> {
+    const result = await this.permissionRepository
+      .createQueryBuilder('permission')
+      .leftJoinAndSelect('permission.permissions', 'permissions')
+      .where(`permission.id = ${6}`)
+      .select([
+        'permission.id',
+        'permission.type_name',
+        'permissions.id',
+        'permissions.type',
+        'permissions.read',
+        'permissions.write',
+      ])
+      .getMany();
+
+
+    console.log('result')
+    console.log(result)
+
+
+    const formattedResult = result.map(permission => ({
+      id: permission.id,
+      type_name: permission.type_name,
+      permission: permission.permissions.map(p => ({
+        id: p.id,
+        type: p.type,
+        read: p.read,
+        write: p.write,
+      })),
+    }));
+
+
+    console.log(formattedResult[0])
     return {
-      token: 'jwt token',
-      permissions: ['super_admin', 'customer'],
+      // token: access_token.access_token,
+      token: "jwt token",
+      type_name: [`${formattedResult[0].type_name}`],
+      permissions: formattedResult[0].permission
     };
   }
 

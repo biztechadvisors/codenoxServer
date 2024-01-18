@@ -135,7 +135,6 @@ export class OrdersService {
         .map((product: any) => this.productRepository.findOne({ where: { id: product.product_id } }))
     );
 
-    console.log("productEntities***", productEntities)
     const orderData = {
       order_id: Invoice,
       order_date: new Date().toISOString(),
@@ -237,7 +236,6 @@ export class OrdersService {
     }
   }
 
-
   async getOrders({
     limit,
     page,
@@ -250,39 +248,54 @@ export class OrdersService {
       if (!page) page = 1;
       if (!limit) limit = 15;
       const startIndex = (page - 1) * limit;
-      const endIndex = page * limit;
 
+      // Adjusted query for necessary fields and structure
       let query = this.orderRepository.createQueryBuilder('order');
-
-      // Join OrderStatus entity
-      query = query.leftJoinAndSelect('order.status', 'status');
-      query = query.leftJoinAndSelect('order.billing_address', 'billing_address');
-      query = query.leftJoinAndSelect('order.shipping_address', 'shipping_address');
-
-      // Join Customer entity
-      query = query.leftJoinAndSelect('order.customer', 'customer');
-
-      // Join Product entity and its pivot
-      query = query.leftJoinAndSelect('order.products', 'products')
+      query = query
+        .select([
+          'order.id',
+          'order.tracking_number',
+          'order.customer_id',
+          'order.customer_contact',
+          'customer.name', // Changed 'order.customer_name' to 'customer.name'
+          'order.amount',
+          'order.sales_tax',
+          'order.paid_total',
+          'order.total',
+          'order.cancelled_amount',
+          'order.language',
+          // Removed 'order.coupon_id'
+          'order.parent_id',
+          'order.shop_id',
+          'order.discount',
+          'order.payment_gateway',
+          'order.shipping_address',
+          'order.billing_address',
+          'order.logistics_provider',
+          'order.delivery_fee',
+          'order.delivery_time',
+          'order.order_status',
+          'order.payment_status',
+          'order.created_at',
+          'customer.name AS customer_name',
+          'customer.email AS customer_email',
+          'products.*', // Include all product fields
+          'pivot.*', // Include all pivot fields
+        ])
+        .leftJoinAndSelect('order.customer', 'customer')
+        .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot');
 
-      // Join PaymentIntent entity
-      query = query.leftJoinAndSelect('order.payment_intent', 'payment_intent');
-
-      // Add additional joins for other related entities as needed
-
+      // Apply filters as needed
       if (shop_id && shop_id !== 'undefined') {
         query = query.andWhere('products.shop_id = :shopId', { shopId: Number(shop_id) });
       }
-
       if (search) {
-        query = query.andWhere('(status.name ILIKE :searchValue OR order.fieldName ILIKE :searchValue)', { searchValue: `%${search}%` });
+        query = query.andWhere('(order.tracking_number ILIKE :searchValue OR customer.name ILIKE :searchValue)', { searchValue: `%${search}%` });
       }
-
       if (customer_id) {
         query = query.andWhere('order.customer_id = :customerId', { customerId: customer_id });
       }
-
       if (tracking_number) {
         query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
       }
@@ -292,18 +305,23 @@ export class OrdersService {
         .take(limit)
         .getManyAndCount();
 
-      const results = data.slice(0, endIndex);
-      const url = `/orders?search=${search}&limit=${limit}`;
+      // Structure the response with pagination and nested child orders
+      const results = data.map((order) => ({
+        ...order,
+        children: order.children?.map((child) => ({ ...child, products: child.products })), // Include products in child orders
+      }));
 
+      const url = `/orders?search=${search}&limit=${limit}`;
       return {
         data: results,
         ...paginate(totalCount, page, limit, results.length, url),
       };
     } catch (error) {
       console.error('Error in getOrders:', error);
-      throw error; // rethrow the error for further analysis
+      throw error;
     }
   }
+
 
   private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
     try {
@@ -340,7 +358,6 @@ export class OrdersService {
     }
   }
 
-
   async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
     console.log("getOrderByIdOrTrackingNumber", id);
     try {
@@ -371,7 +388,6 @@ export class OrdersService {
       throw error;
     }
   }
-
 
   async getOrderStatuses({
     limit = 30,
@@ -428,8 +444,6 @@ export class OrdersService {
 
     return orderStatus;
   }
-
-
 
   async update(id: number, updateOrderInput: UpdateOrderDto): Promise<Order> {
 

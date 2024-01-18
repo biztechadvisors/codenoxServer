@@ -27,6 +27,7 @@ export class ShiprocketService {
             }));
             return (response as any).data;
         } catch (error) {
+            console.log("error.response.data", error.response.data)
             throw new Error(`Error creating Shiprocket order ${error.response.data}`);
         }
     }

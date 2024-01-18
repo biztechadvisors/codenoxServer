@@ -53,23 +53,18 @@ export class Order extends CoreEntity {
   customer_id: number;
   @Column()
   customer_contact: string;
-
   @ManyToOne(() => User, user => user.orders, {
     eager: true,
   })
   customer: User;
-
   @ManyToOne(() => Order, order => order.children, { nullable: true })
   @JoinColumn()
   parentOrder: Order;
-
   @OneToMany(() => Order, order => order.parentOrder)
   children?: Order[];
-
   @OneToOne(() => OrderStatus)
   @JoinColumn()
   status: OrderStatus;
-
   @Column()
   order_status: OrderStatusType;
   @Column()
@@ -82,50 +77,44 @@ export class Order extends CoreEntity {
   total: number;
   @Column()
   paid_total: number;
-
   @Column()
   payment_id?: string;
   @Column()
   payment_gateway: PaymentGatewayType;
-
   @ManyToOne(() => Coupon, coupon => coupon.orders, { nullable: true })
   coupon?: Coupon;
-
   @ManyToOne(() => Shop, { nullable: true })
   shop: Shop;
-
   @Column({ nullable: true })
   discount?: number;
   @Column({ nullable: true })
   delivery_fee: number;
   @Column({ nullable: true })
   delivery_time: string;
-
   @ManyToMany(() => Product, product => product.orders)
   @JoinTable()
   products: Product[];
-
   @ManyToOne(() => UserAddress)
   billing_address: UserAddress;
-
   @ManyToOne(() => UserAddress)
   shipping_address: UserAddress;
-
   @Column()
   language: string;
-
   @Column({ type: "json" })
   translated_languages: string[];
-
   @OneToOne(() => PaymentIntent)
   @JoinColumn()
   payment_intent: PaymentIntent;
-
   @Column()
   altered_payment_gateway?: string;
-
   @Column()
   customerId: any;
+  @Column('json', { nullable: true })
+  logistics_provider: object;
+  @Column('int', { nullable: true })
+  shop_id: number;
+  @Column('decimal', { precision: 5, scale: 2, nullable: true })
+  cancelled_amount: number;
 }
 
 @Entity()
@@ -140,7 +129,6 @@ export class OrderFiles extends CoreEntity {
   order_id?: number;
   @Column()
   customer_id: number;
-
   @ManyToOne(() => File, { cascade: true })
   file: File;
   @ManyToOne(() => Product)

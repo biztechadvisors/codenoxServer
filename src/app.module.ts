@@ -42,6 +42,8 @@ import { MulterModule } from '@nestjs/platform-express';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from './mail/mail.module';
+import { PermissionModule } from './permission/permission.module';
+
 
 @Module({
   imports: [
@@ -57,7 +59,7 @@ import { MailModule } from './mail/mail.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        // synchronize: configService.get<boolean>('DB_SYNC'),
+        synchronize: configService.get<boolean>('DB_SYNC'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: true,
         autoLoadEntities: true,
@@ -108,6 +110,7 @@ import { MailModule } from './mail/mail.module';
     ConversationsModule,
     MessagesModule,
     AiModule,
+    PermissionModule,
     MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],
