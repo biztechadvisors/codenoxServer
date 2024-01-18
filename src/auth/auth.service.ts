@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import {
   AuthResponse,
@@ -139,7 +140,7 @@ export class AuthService {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${6}`)
+      .where(`permission.id = ${1}`)
       .select([
         'permission.id',
         'permission.type_name',
@@ -190,7 +191,7 @@ export class AuthService {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${6}`)
+      .where(`permission.id = ${1}`)
       .select([
         'permission.id',
         'permission.type_name',

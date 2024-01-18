@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import exportOrderJson from '@db/order-export.json';
 import orderFilesJson from '@db/order-files.json';
 import orderInvoiceJson from '@db/order-invoice.json';
@@ -236,6 +237,91 @@ export class OrdersService {
     }
   }
 
+  // async getOrders({
+  //   limit,
+  //   page,
+  //   customer_id,
+  //   tracking_number,
+  //   search,
+  //   shop_id,
+  // }: GetOrdersDto): Promise<OrderPaginator> {
+  //   try {
+  //     if (!page) page = 1;
+  //     if (!limit) limit = 15;
+  //     const startIndex = (page - 1) * limit;
+
+  //     // Adjusted query for necessary fields and structure
+  //     let query = this.orderRepository.createQueryBuilder('order');
+  //     query = query
+  //       .select([
+  //         'order.id',
+  //         'order.tracking_number',
+  //         'order.customer_id',
+  //         'order.customer_contact',
+  //         'customer.name', // Changed 'order.customer_name' to 'customer.name'
+  //         'order.amount',
+  //         'order.sales_tax',
+  //         'order.paid_total',
+  //         'order.total',
+  //         'order.cancelled_amount',
+  //         'order.language',
+  //         // Removed 'order.coupon_id'
+  //         'order.parent_id',
+  //         'order.shop_id',
+  //         'order.discount',
+  //         'order.payment_gateway',
+  //         'order.shipping_address',
+  //         'order.billing_address',
+  //         'order.logistics_provider',
+  //         'order.delivery_fee',
+  //         'order.delivery_time',
+  //         'order.order_status',
+  //         'order.payment_status',
+  //         'order.created_at',
+  //         'customer.name AS customer_name',
+  //         'customer.email AS customer_email',
+  //         'products.*', // Include all product fields
+  //         'pivot.*', // Include all pivot fields
+  //       ])
+  //       .leftJoinAndSelect('order.customer', 'customer')
+  //       .leftJoinAndSelect('order.products', 'products')
+  //       .leftJoinAndSelect('products.pivot', 'pivot');
+
+  //     // Apply filters as needed
+  //     if (shop_id && shop_id !== 'undefined') {
+  //       query = query.andWhere('products.shop_id = :shopId', { shopId: Number(shop_id) });
+  //     }
+  //     if (search) {
+  //       query = query.andWhere('(order.tracking_number ILIKE :searchValue OR customer.name ILIKE :searchValue)', { searchValue: `%${search}%` });
+  //     }
+  //     if (customer_id) {
+  //       query = query.andWhere('order.customer_id = :customerId', { customerId: customer_id });
+  //     }
+  //     if (tracking_number) {
+  //       query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
+  //     }
+
+  //     const [data, totalCount] = await query
+  //       .skip(startIndex)
+  //       .take(limit)
+  //       .getManyAndCount();
+
+  //     // Structure the response with pagination and nested child orders
+  //     const results = data.map((order) => ({
+  //       ...order,
+  //       children: order.children?.map((child) => ({ ...child, products: child.products })), // Include products in child orders
+  //     }));
+
+  //     const url = `/orders?search=${search}&limit=${limit}`;
+  //     return {
+  //       data: results,
+  //       ...paginate(totalCount, page, limit, results.length, url),
+  //     };
+  //   } catch (error) {
+  //     console.error('Error in getOrders:', error);
+  //     throw error;
+  //   }
+  // }
   async getOrders({
     limit,
     page,
@@ -244,82 +330,22 @@ export class OrdersService {
     search,
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
-    try {
-      if (!page) page = 1;
-      if (!limit) limit = 15;
-      const startIndex = (page - 1) * limit;
+    if (!page) page = 1;
+    if (!limit) limit = 15;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
 
-      // Adjusted query for necessary fields and structure
-      let query = this.orderRepository.createQueryBuilder('order');
-      query = query
-        .select([
-          'order.id',
-          'order.tracking_number',
-          'order.customer_id',
-          'order.customer_contact',
-          'customer.name', // Changed 'order.customer_name' to 'customer.name'
-          'order.amount',
-          'order.sales_tax',
-          'order.paid_total',
-          'order.total',
-          'order.cancelled_amount',
-          'order.language',
-          // Removed 'order.coupon_id'
-          'order.parent_id',
-          'order.shop_id',
-          'order.discount',
-          'order.payment_gateway',
-          'order.shipping_address',
-          'order.billing_address',
-          'order.logistics_provider',
-          'order.delivery_fee',
-          'order.delivery_time',
-          'order.order_status',
-          'order.payment_status',
-          'order.created_at',
-          'customer.name AS customer_name',
-          'customer.email AS customer_email',
-          'products.*', // Include all product fields
-          'pivot.*', // Include all pivot fields
-        ])
-        .leftJoinAndSelect('order.customer', 'customer')
-        .leftJoinAndSelect('order.products', 'products')
-        .leftJoinAndSelect('products.pivot', 'pivot');
+    let data: Order[] = this.orders;
 
-      // Apply filters as needed
-      if (shop_id && shop_id !== 'undefined') {
-        query = query.andWhere('products.shop_id = :shopId', { shopId: Number(shop_id) });
-      }
-      if (search) {
-        query = query.andWhere('(order.tracking_number ILIKE :searchValue OR customer.name ILIKE :searchValue)', { searchValue: `%${search}%` });
-      }
-      if (customer_id) {
-        query = query.andWhere('order.customer_id = :customerId', { customerId: customer_id });
-      }
-      if (tracking_number) {
-        query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
-      }
-
-      const [data, totalCount] = await query
-        .skip(startIndex)
-        .take(limit)
-        .getManyAndCount();
-
-      // Structure the response with pagination and nested child orders
-      const results = data.map((order) => ({
-        ...order,
-        children: order.children?.map((child) => ({ ...child, products: child.products })), // Include products in child orders
-      }));
-
-      const url = `/orders?search=${search}&limit=${limit}`;
-      return {
-        data: results,
-        ...paginate(totalCount, page, limit, results.length, url),
-      };
-    } catch (error) {
-      console.error('Error in getOrders:', error);
-      throw error;
+    if (shop_id && shop_id !== 'undefined') {
+      data = this.orders?.filter((p) => p?.shop?.id === Number(shop_id));
     }
+    const results = data.slice(startIndex, endIndex);
+    const url = `/orders?search=${search}&limit=${limit}`;
+    return {
+      data: results,
+      ...paginate(data.length, page, limit, results.length, url),
+    };
   }
 
 
