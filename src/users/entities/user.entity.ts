@@ -69,4 +69,9 @@ export class User extends CoreEntity {
 
   @Column()
   walletPoints: number;
+
+  @Column('varchar', { length: 200, nullable: true })
+  contact: string;
+  @Column('datetime', { nullable: true })
+  email_verified_at: Date;
 }

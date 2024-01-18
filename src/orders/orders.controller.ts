@@ -34,18 +34,21 @@ export class OrdersController {
 
   @Get()
   async getOrders(@Query() query: GetOrdersDto): Promise<OrderPaginator> {
+    console.log("getOrders***")
     return this.ordersService.getOrders(query);
   }
 
-  @Get(':id')
-  getOrderById(@Param('id') id: number) {
-    return this.ordersService.getOrderByIdOrTrackingNumber(Number(id));
-  }
+  // @Get(':id')
+  // getOrderById(@Param('id') id: number) {
+  //   console.log("getOrderById***")
+  //   return this.ordersService.getOrderByIdOrTrackingNumber(Number(id));
+  // }
 
-  @Get('tracking-number/:tracking_id')
-  getOrderByTrackingNumber(@Param('tracking_id') tracking_id: number) {
-    return this.ordersService.getOrderByIdOrTrackingNumber(tracking_id);
-  }
+  // @Get('tracking-number/:tracking_id')
+  // getOrderByTrackingNumber(@Param('tracking_id') tracking_id: number) {
+  //   console.log("getOrderByTrackingNumber***")
+  //   return this.ordersService.getOrderByIdOrTrackingNumber(tracking_id);
+  // }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
