@@ -2,17 +2,13 @@
 import exportOrderJson from '@db/order-export.json';
 import orderFilesJson from '@db/order-files.json';
 import orderInvoiceJson from '@db/order-invoice.json';
-// import orderStatusJson from '@db/order-statuses.json';
-// import ordersJson from '@db/orders.json';
-// import paymentGatewayJson from '@db/payment-gateway.json';
-// import paymentIntentJson from '@db/payment-intent.json';
 import setting from '@db/settings.json';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { AuthService } from 'src/auth/auth.service';
 import { paginate } from 'src/common/pagination/paginate';
 import { PaymentIntent, PaymentIntentInfo } from 'src/payment-intent/entries/payment-intent.entity';
-// import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.entity';
+import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.entity';
 import { PaypalPaymentService } from 'src/payment/paypal-payment.service';
 import { StripePaymentService } from 'src/payment/stripe-payment.service';
 import { Setting } from 'src/settings/entities/setting.entity';
@@ -42,25 +38,26 @@ import {
 } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, UpdateResult } from 'typeorm';
-import { Address } from 'src/addresses/entities/address.entity';
 import { User } from 'src/users/entities/user.entity';
 import { OrderProductPivot, Product } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
-
+import { RazorpayService } from 'src/payment/razorpay-payment.service';
+import { ShiprocketService } from 'src/orders/shiprocket.service';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
-const settings = plainToClass(Setting, setting);
 
 @Injectable()
 export class OrdersService {
   private orders: Order[]
   private orderFiles: OrderFiles[]
-  private setting: Setting = { ...settings };
 
   constructor(
     private readonly authService: AuthService,
     private readonly stripeService: StripePaymentService,
     private readonly paypalService: PaypalPaymentService,
+    private readonly razorpayService: RazorpayService,
+    private readonly shiprocketService: ShiprocketService,
+
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderStatus)
@@ -75,10 +72,8 @@ export class OrdersService {
     private readonly couponRepository: Repository<Coupon>,
     @InjectRepository(PaymentIntentInfo)
     private readonly paymentIntentInfoRepository: Repository<PaymentIntentInfo>,
-
     @InjectRepository(PaymentIntent)
     private readonly paymentIntentRepository: Repository<PaymentIntent>,
-
     @InjectRepository(OrderProductPivot)
     private readonly orderProductPivotRepository: Repository<OrderProductPivot>,
 
@@ -86,7 +81,6 @@ export class OrdersService {
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     const order = plainToClass(Order, createOrderInput);
-    console.log("order***", order)
     const newOrderStatus = new OrderStatus();
     const newOrderFile = new OrderFiles();
     newOrderStatus.name = 'Order Processing';
@@ -131,6 +125,68 @@ export class OrdersService {
         throw new NotFoundException('Customer not found');
       }
     }
+    const Invoice = "OD" + Math.floor(Math.random() * Date.now());
+    if (!order.products) {
+      throw new Error('order.products is undefined');
+    }
+
+    const productEntities = await Promise.all(
+      order.products
+        .filter((product: any) => product.product_id !== undefined) // Filter out products with undefined id
+        .map((product: any) => this.productRepository.findOne({ where: { id: product.product_id } }))
+    );
+
+    const orderData = {
+      order_id: Invoice,
+      order_date: new Date().toISOString(),
+      pickup_location: "Primary",
+      channel_id: "",
+      comment: "",
+      billing_customer_name: order.billing_address.name ? order.billing_address.name : "John",
+      billing_last_name: order.billing_address.lastName ? order.billing_address.lastName : "Doe",
+      billing_address: order.billing_address.street_address,
+      billing_address_2: order.billing_address.ShippingAddress ? order.billing_address.ShippingAddress : "indore",
+      billing_city: order.billing_address.city,
+      billing_pincode: order.billing_address.zip,
+      billing_state: order.billing_address.state,
+      billing_country: order.billing_address.country,
+      billing_email: order.customer.email,
+      billing_phone: order.customer_contact,
+      shipping_is_billing: true,
+      shipping_customer_name: order.shipping_address.name ? order.shipping_address.name : "John",
+      shipping_last_name: order.shipping_address.lastName ? order.shipping_address.lastName : "Doe",
+      shipping_address: order.shipping_address.street_address,
+      shipping_address_2: order.shipping_address.ShippingAddress ? order.shipping_address.ShippingAddress : "indore",
+      shipping_city: order.shipping_address.city,
+      shipping_pincode: order.shipping_address.zip,
+      shipping_country: order.shipping_address.country,
+      shipping_state: order.shipping_address.state,
+      shipping_email: order.customer.email,
+      shipping_phone: order.customer_contact,
+      order_items: productEntities.map((product: Product, index: number) => ({
+        name: product.name,
+        sku: product.sku ? product.sku : Math.random(),
+        units: order.products[index].order_quantity,
+        selling_price: product.sale_price,
+        unit_price: order.products[index].unit_price,
+        subtotal: order.products[index].subtotal,
+        discount: product.discount ? product.discount : 0,
+        tax: product.tax ? product.tax : 0,
+        hsn: product.hsn ? product.hsn : 0
+      })),
+      payment_method: order.payment_gateway,
+      shipping_charges: 0,
+      giftwrap_charges: 0,
+      transaction_charges: 0,
+      total_discount: 0,
+      sub_total: order.total,
+      length: 10,
+      breadth: 10,
+      height: 10,
+      weight: 1
+    };
+    const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
+    order.tracking_number = shiprocketResponse.shipment_id ? shiprocketResponse.shipment_id : shiprocketResponse.order_id;
     const savedOrder = await this.orderRepository.save(order);
     if (order.products) {
       const productEntities = await this.productRepository.find({
@@ -165,14 +221,13 @@ export class OrdersService {
       if (
         [PaymentGatewayType.STRIPE, PaymentGatewayType.PAYPAL, PaymentGatewayType.RAZORPAY].includes(paymentGatewayType)
       ) {
-        const paymentIntent = await this.processPaymentIntent(order, this.setting);
+        const paymentIntent = await this.processPaymentIntent(order);
         order.payment_intent = paymentIntent;
       }
-      const savedOrder = await this.orderRepository.save(order);
-      newOrderStatus.order = savedOrder;
       const createdOrderStatus = await this.orderStatusRepository.save(newOrderStatus);
       order.status = createdOrderStatus;
       order.children = this.processChildrenOrder(order);
+      const savedOrder = await this.orderRepository.save(order);
       newOrderFile.order_id = savedOrder.id;
       await this.orderFilesRepository.save(newOrderFile);
       return savedOrder;
@@ -182,7 +237,91 @@ export class OrdersService {
     }
   }
 
+  // async getOrders({
+  //   limit,
+  //   page,
+  //   customer_id,
+  //   tracking_number,
+  //   search,
+  //   shop_id,
+  // }: GetOrdersDto): Promise<OrderPaginator> {
+  //   try {
+  //     if (!page) page = 1;
+  //     if (!limit) limit = 15;
+  //     const startIndex = (page - 1) * limit;
 
+  //     // Adjusted query for necessary fields and structure
+  //     let query = this.orderRepository.createQueryBuilder('order');
+  //     query = query
+  //       .select([
+  //         'order.id',
+  //         'order.tracking_number',
+  //         'order.customer_id',
+  //         'order.customer_contact',
+  //         'customer.name', // Changed 'order.customer_name' to 'customer.name'
+  //         'order.amount',
+  //         'order.sales_tax',
+  //         'order.paid_total',
+  //         'order.total',
+  //         'order.cancelled_amount',
+  //         'order.language',
+  //         // Removed 'order.coupon_id'
+  //         'order.parent_id',
+  //         'order.shop_id',
+  //         'order.discount',
+  //         'order.payment_gateway',
+  //         'order.shipping_address',
+  //         'order.billing_address',
+  //         'order.logistics_provider',
+  //         'order.delivery_fee',
+  //         'order.delivery_time',
+  //         'order.order_status',
+  //         'order.payment_status',
+  //         'order.created_at',
+  //         'customer.name AS customer_name',
+  //         'customer.email AS customer_email',
+  //         'products.*', // Include all product fields
+  //         'pivot.*', // Include all pivot fields
+  //       ])
+  //       .leftJoinAndSelect('order.customer', 'customer')
+  //       .leftJoinAndSelect('order.products', 'products')
+  //       .leftJoinAndSelect('products.pivot', 'pivot');
+
+  //     // Apply filters as needed
+  //     if (shop_id && shop_id !== 'undefined') {
+  //       query = query.andWhere('products.shop_id = :shopId', { shopId: Number(shop_id) });
+  //     }
+  //     if (search) {
+  //       query = query.andWhere('(order.tracking_number ILIKE :searchValue OR customer.name ILIKE :searchValue)', { searchValue: `%${search}%` });
+  //     }
+  //     if (customer_id) {
+  //       query = query.andWhere('order.customer_id = :customerId', { customerId: customer_id });
+  //     }
+  //     if (tracking_number) {
+  //       query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
+  //     }
+
+  //     const [data, totalCount] = await query
+  //       .skip(startIndex)
+  //       .take(limit)
+  //       .getManyAndCount();
+
+  //     // Structure the response with pagination and nested child orders
+  //     const results = data.map((order) => ({
+  //       ...order,
+  //       children: order.children?.map((child) => ({ ...child, products: child.products })), // Include products in child orders
+  //     }));
+
+  //     const url = `/orders?search=${search}&limit=${limit}`;
+  //     return {
+  //       data: results,
+  //       ...paginate(totalCount, page, limit, results.length, url),
+  //     };
+  //   } catch (error) {
+  //     console.error('Error in getOrders:', error);
+  //     throw error;
+  //   }
+  // }
   async getOrders({
     limit,
     page,
@@ -250,6 +389,7 @@ export class OrdersService {
     }
   }
 
+
   private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
     try {
       // Find the order in the database
@@ -259,6 +399,7 @@ export class OrdersService {
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
+        .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info') // Add this line
         .leftJoinAndSelect('order.shop', 'shop')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
         .leftJoinAndSelect('order.shipping_address', 'shipping_address')
@@ -284,16 +425,16 @@ export class OrdersService {
     }
   }
 
-
   async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
+    console.log("getOrderByIdOrTrackingNumber", id);
     try {
-      // Use the order repository to find the order by ID or tracking number
       const order = await this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
+        .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info') // Add this line
         .leftJoinAndSelect('order.shop', 'shop')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
         .leftJoinAndSelect('order.shipping_address', 'shipping_address')
@@ -304,7 +445,6 @@ export class OrdersService {
         .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
         .getOne();
 
-      // If the order is not found, you can throw a NotFoundException
       if (!order) {
         throw new NotFoundException('Order not found');
       }
@@ -312,7 +452,7 @@ export class OrdersService {
       return order;
     } catch (error) {
       console.error('Error in getOrderByIdOrTrackingNumber:', error);
-      throw error; // Rethrow the error for further analysis or handling
+      throw error;
     }
   }
 
@@ -372,9 +512,9 @@ export class OrdersService {
     return orderStatus;
   }
 
-
-
   async update(id: number, updateOrderInput: UpdateOrderDto): Promise<Order> {
+
+    console.log("update-Order", id, updateOrderInput)
     try {
       // Update the order in the database
       const updatedOrder = await this.updateOrderInDatabase(id, updateOrderInput);
@@ -585,35 +725,36 @@ export class OrdersService {
       return [];
     }
   }
+
   /**
    * This action will return Payment Intent
    * @param order
    * @param setting
    */
-  async processPaymentIntent(order: Order, setting: Setting): Promise<PaymentIntent> {
 
-    const pI = await this.savePaymentIntent(order);
-    console.log("pI********", pI)
-    const is_redirect = pI.links ? true : false;
-    const paymentIntentInfo = this.paymentIntentInfoRepository.create({
-      client_secret: pI.client_secret,
-      payment_id: pI.id,
-      redirect_url: is_redirect ? pI.links[1].href : null,
-      is_redirect,
-    });
-
-    await this.paymentIntentInfoRepository.save(paymentIntentInfo);
-
-    let paymentIntent = this.paymentIntentRepository.create({
-      order_id: order.id,
-      tracking_number: order.tracking_number,
-      payment_gateway: order.payment_gateway.toString().toLowerCase(),
-      payment_intent_info: paymentIntentInfo,
-    });
-
-    await this.paymentIntentRepository.save(paymentIntent);
-
-    return paymentIntent;
+  async processPaymentIntent(order: Order): Promise<PaymentIntent> {
+    try {
+      const pI = await this.savePaymentIntent(order);
+      const is_redirect = pI.redirect_url ? true : false;
+      let redirect_url = pI.redirect_url ? pI.redirect_url : null;
+      const paymentIntentInfo = this.paymentIntentInfoRepository.create({
+        order_id: pI.id,
+        client_secret: pI.client_secret,
+        redirect_url: redirect_url,
+        is_redirect,
+      });
+      await this.paymentIntentInfoRepository.save(paymentIntentInfo);
+      let paymentIntent = this.paymentIntentRepository.create({
+        order_id: order.id,
+        tracking_number: order.tracking_number ? order.tracking_number : order.id.toString(),
+        payment_gateway: order.payment_gateway.toString().toLowerCase(),
+        payment_intent_info: paymentIntentInfo,
+      });
+      await this.paymentIntentRepository.save(paymentIntent);
+      return paymentIntent;
+    } catch (error) {
+      console.error(error);
+    }
   }
 
 
@@ -626,7 +767,6 @@ export class OrdersService {
   async savePaymentIntent(order: Order, _paymentGateway?: string): Promise<any> {
     const usr = await this.userRepository.findOne({ where: { id: order.customer.id } });
     const me = this.authService.me(usr.email, usr.id);
-    // const me = this.authService.me(usr.email, usr.id);
     switch (order.payment_gateway) {
       case PaymentGatewayType.STRIPE:
         const paymentIntentParam =
@@ -635,6 +775,9 @@ export class OrdersService {
       case PaymentGatewayType.PAYPAL:
         // here goes PayPal
         return this.paypalService.createPaymentIntent(order);
+      case PaymentGatewayType.RAZORPAY:
+        // here goes PayPal
+        return this.razorpayService.createPaymentIntent(order);
       default:
         break;
     }
@@ -652,50 +795,40 @@ export class OrdersService {
   }
 
   async paypalPay(order: Order) {
-    // Set the order status to processing
-    this.orders[0]['order_status'] = OrderStatusType.PROCESSING;
+    console.log("paypalPay**", order);
+    order.order_status = OrderStatusType.PROCESSING;
     try {
-      // Verify the order with PayPal
-      const response = await this.paypalService.verifyOrder(
-        order.payment_intent.payment_intent_info.payment_id,
-      );
-
-      // Check if the payment intent exists
-      const paymentIntent = await this.paymentIntentRepository.findOne(response.id);
-      if (!paymentIntent) {
-        throw new Error('Payment intent not found');
-      }
-
-      // Check the status of the payment
+      const response = await this.paypalService.verifyOrder(order.payment_intent.payment_intent_info.order_id);
+      console.log("response-paypal", order);
       if (response.status === 'COMPLETED') {
-        // If the payment is completed, update the payment status and clear the payment intent
-        this.orders[0]['payment_status'] = PaymentStatusType.SUCCESS;
-        this.orders[0]['payment_intent'] = null;
         console.log('Payment Success');
-        
+        order.payment_status = PaymentStatusType.SUCCESS;
+        order.payment_intent = null;
       } else {
-        // If the payment is not completed, update the payment status to failed
-        this.orders[0]['payment_status'] = PaymentStatusType.FAILED;
         console.log('Payment Failed');
+        order.payment_status = PaymentStatusType.FAILED;
       }
+      await this.orderRepository.save(order);
     } catch (error) {
-      // If there's an error, log it and set the order status to failed
       console.error('Failed to process payment:', error);
-      this.orders[0]['order_status'] = OrderStatusType.FAILED;
+      order.order_status = OrderStatusType.FAILED;
+      await this.orderRepository.save(order);
     }
   }
 
-
-  /**
-   * This method will set order status and payment status
-   * @param orderStatus
-   * @param paymentStatus
-   */
-  changeOrderPaymentStatus(
-    orderStatus: OrderStatusType,
-    paymentStatus: PaymentStatusType,
-  ) {
-    this.orders[0]['order_status'] = orderStatus;
-    this.orders[0]['payment_status'] = paymentStatus;
+  async razorpayPay(order: Order, paymentIntentInfo: PaymentIntentInfo): Promise<boolean> {
+    const response = await this.razorpayService.verifyOrder(paymentIntentInfo.payment_id);
+    if (response.payment.status === 'captured') {
+      return true;
+    }
+    return false;
   }
+
+  async changeOrderPaymentStatus(order: Order, paymentStatus: PaymentStatusType): Promise<void> {
+    order.payment_status = paymentStatus;
+    await this.orderRepository.save(order);
+  }
+
+
 }
+

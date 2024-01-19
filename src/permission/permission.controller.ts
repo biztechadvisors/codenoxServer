@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 
-import { Body, Controller, Get, Param, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { CreatePermissionDto, CreatePermissionTypeDto } from "./dto/create-permission.dto";
 // import { Permission } from "@aws-sdk/client-s3";
 import { UpdatePermissionDto } from "./dto/update-permission.dto";
@@ -29,5 +29,11 @@ export class PermissionController {
   @Put(':id')
   updatePermission(@Param('id') id:string, @Body() updatePermissionDto:UpdatePermissionDto){
     return this.permissionService.updatePermission(+id, updatePermissionDto);
+  }
+
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.permissionService.remove(+id);
   }
 }

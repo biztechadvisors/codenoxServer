@@ -1,10 +1,8 @@
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as paypal from '@paypal/checkout-server-sdk';
-import { v4 as uuidv4 } from 'uuid';
+import * as Paypal from '@paypal/checkout-server-sdk';
 import { Order } from 'src/orders/entities/order.entity';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class PaypalPaymentService {
@@ -12,62 +10,91 @@ export class PaypalPaymentService {
   private clientSecret: string;
   private environment: any;
   private client: any;
-
-  constructor(
-  ) {
-    this.clientId = process.env.PAYPAL_SANDBOX_CLIENT_ID;
-    this.clientSecret = process.env.PAYPAL_SANDBOX_CLIENT_SECRET;
-    this.environment = new paypal.core.SandboxEnvironment(
-      this.clientId,
-      this.clientSecret,
-    );
-    this.client = new paypal.core.PayPalHttpClient(this.environment);
+  private paypal: any;
+  constructor() {
+    this.paypal = Paypal;
+    if (process.env.NODE_ENV === "production") {
+      this.clientId = process.env.PAYPAL_CLIENT_ID;
+      this.clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+      this.environment = new this.paypal.core.LiveEnvironment(
+        this.clientId,
+        this.clientSecret,
+      );
+    } else {
+      this.clientId = process.env.PAYPAL_SANDBOX_CLIENT_ID;
+      this.clientSecret = process.env.PAYPAL_SANDBOX_CLIENT_SECRET;
+      this.environment = new this.paypal.core.SandboxEnvironment(
+        this.clientId,
+        this.clientSecret,
+      );
+    }
+    this.client = new this.paypal.core.PayPalHttpClient(this.environment);
   }
 
   async createPaymentIntent(order: Order) {
-    const request = new paypal.orders.OrdersCreateRequest();
+    const request = new this.paypal.orders.OrdersCreateRequest();
+    request.headers['Content-Type'] = 'application/json';
     request.headers['PayPal-Request-Id'] = uuidv4();
-    request.requestBody({
-      "intent": "CAPTURE",
-      "client_secret": this.clientSecret,
-      "payment_source": {
-        "paypal": {
-          "experience_context": {
-            "return_url": `${process.env.SHOP_URL || 'http://localhost:3003'}/orders/${order.tracking_number}/thank-you`,
-            "payment_method_preference": "IMMEDIATE_PAYMENT_REQUIRED",
-            "cancel_url": `${process.env.SHOP_URL || 'http://localhost:3003'}/orders/${order.tracking_number}/payment`,
-            "user_action": "PAY_NOW",
+    const body = this.getRequestBody(order);
+    request.requestBody(body);
+    try {
+      const response = await this.client.execute(request);
+      const { links, id } = response.result;
+      let redirect_url = null;
+      if (links && links.find(link => link.rel === 'payer-action')) {
+        redirect_url = links.find(link => link.rel === 'payer-action').href;
+      }
+      return {
+        client_secret: this.clientSecret,
+        redirect_url: redirect_url,
+        id: id,
+      };
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async verifyOrder(orderId: string | number) {
+    console.log("verifyOrder***request", orderId)
+    const request = await new this.paypal.orders.OrdersCaptureRequest(orderId);
+    request.requestBody({});
+    const response = await this.client.execute(request);
+    return {
+      id: response.result.id,
+      status: response.result.status,
+    };
+  }
+
+  private getRequestBody(order: Order) {
+    const redirectUrl = process.env.SHOP_URL || 'http://localhost:3003';
+    let reference_id = '';
+    if (order.tracking_number || order.id) {
+      reference_id = order.tracking_number ? order.tracking_number : order.id.toString();
+    }
+    console.log("call-paypal*****")
+    return {
+      intent: 'CAPTURE',
+      payment_source: {
+        paypal: {
+          experience_context: {
+            return_url: `${redirectUrl}/orders/${order.tracking_number}/thank-you`,
+            payment_method_preference: 'IMMEDIATE_PAYMENT_REQUIRED',
+            cancel_url: `${redirectUrl}/orders/${order.tracking_number}/payment`,
+            user_action: 'PAY_NOW',
           },
         },
       },
-      "purchase_units": order.products.map(product => ({
-        "amount": {
-          "currency_code": "USD",
-          "value": product.price.toString(),
+      purchase_units: [
+        {
+          amount: {
+            currency_code: "USD",
+            value: order.total * 100
+          },
+          description: 'Order From Marvel',
+          reference_id: reference_id,
         },
-        "description": product.description,
-        "reference_id": product.id.toString(),
-      })),
-    });
-
-    try {
-      const response = await this.client.execute(request);
-      return response.result;
-    } catch (error) {
-      console.error(error);
-    }
+      ],
+    };
   }
 
-
-  async verifyOrder(orderId: string) {
-    const request = new paypal.orders.OrdersCaptureRequest(orderId);
-    request.requestBody({});
-
-    try {
-      const response = await this.client.execute(request);
-      return response.result;
-    } catch (error) {
-      console.error(error);
-    }
-  }
 }

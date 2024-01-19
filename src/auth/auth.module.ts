@@ -8,10 +8,14 @@ import { UsersModule } from 'src/users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { MailModule } from 'src/mail/mail.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Permission } from 'src/permission/entities/permission.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Module({
   imports: [
     TypeOrmExModule.forCustomRepository([UserRepository]),
+    TypeOrmModule.forFeature([Permission, User]),
     UsersModule,
     MailModule,
     JwtModule.register({

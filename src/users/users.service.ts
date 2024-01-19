@@ -126,7 +126,7 @@ export class UsersService {
     if (!limit) limit = 30;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-    let data: User[] = await this.userRepository.find({ relations: ["profile", "address", "shops", "orders", "address.address"] });
+    let data: User[] = await this.userRepository.find({ relations: ["dealer", "profile", "address", "shops", "orders", "address.address"] });
     data = data.filter(user => user.type === (type || UserType.Customer));
     if (text?.replace(/%/g, '')) {
       data = fuse.search(text)?.map(({ item }) => item);
@@ -160,7 +160,6 @@ export class UsersService {
     const data = await this.userRepository.find({
       take: limit
     });
-
     return data;
   }
 
@@ -448,7 +447,6 @@ export class UsersService {
       const marginToRemove = dealer.dealerCategoryMargins.find(m => m.category.id === id);
       await this.dealerCategoryMarginRepository.remove(marginToRemove);
     }
-
     // Remove circular references
     dealer.dealerProductMargins.forEach(margin => {
       delete margin.dealer;
@@ -456,28 +454,23 @@ export class UsersService {
     dealer.dealerCategoryMargins.forEach(margin => {
       delete margin.dealer;
     });
-
     return this.dealerRepository.save(dealer);
   }
 
-
   async deleteDealer(id: number): Promise<void> {
-    const dealer = await this.dealerRepository.findOne({ where: { id: id }, relations: ['dealerProductMargins', 'dealerCategoryMargins'] });
+    const dealer = await this.dealerRepository.findOne({ where: { user: { id } }, relations: ['user', 'dealerProductMargins', 'dealerCategoryMargins'] });
     if (!dealer) {
       throw new NotFoundException(`Dealer with ID ${id} not found`);
     }
-
     // Remove the dealer product margins
     for (const margin of dealer.dealerProductMargins) {
       await this.dealerProductMarginRepository.delete(margin.id);
     }
-
     // Remove the dealer category margins
     for (const margin of dealer.dealerCategoryMargins) {
       await this.dealerCategoryMarginRepository.delete(margin.id);
     }
-
-    await this.dealerRepository.delete(id);
+    await this.dealerRepository.delete(dealer.id);
   }
 
 }

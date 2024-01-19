@@ -1,10 +1,12 @@
 /* eslint-disable prettier/prettier */
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   HttpCode,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
@@ -19,7 +21,7 @@ import { GetOrdersDto, OrderPaginator } from './dto/get-orders.dto';
 import { OrderPaymentDto } from './dto/order-payment.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
-import { Order } from './entities/order.entity';
+import { Order, PaymentStatusType } from './entities/order.entity';
 import { OrdersService } from './orders.service';
 
 @Controller('orders')
@@ -33,18 +35,21 @@ export class OrdersController {
 
   @Get()
   async getOrders(@Query() query: GetOrdersDto): Promise<OrderPaginator> {
+    console.log("getOrders***")
     return this.ordersService.getOrders(query);
   }
 
-  @Get(':id')
-  getOrderById(@Param('id') id: number) {
-    return this.ordersService.getOrderByIdOrTrackingNumber(Number(id));
-  }
+  // @Get(':id')
+  // getOrderById(@Param('id') id: number) {
+  //   console.log("getOrderById***")
+  //   return this.ordersService.getOrderByIdOrTrackingNumber(Number(id));
+  // }
 
-  @Get('tracking-number/:tracking_id')
-  getOrderByTrackingNumber(@Param('tracking_id') tracking_id: number) {
-    return this.ordersService.getOrderByIdOrTrackingNumber(tracking_id);
-  }
+  // @Get('tracking-number/:tracking_id')
+  // getOrderByTrackingNumber(@Param('tracking_id') tracking_id: number) {
+  //   console.log("getOrderByTrackingNumber***")
+  //   return this.ordersService.getOrderByIdOrTrackingNumber(tracking_id);
+  // }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
@@ -64,19 +69,29 @@ export class OrdersController {
   @Post('/payment')
   @HttpCode(200)
   async submitPayment(@Body() orderPaymentDto: OrderPaymentDto): Promise<void> {
-    const { tracking_number } = orderPaymentDto;
+    const { tracking_number, paymentIntentInfo } = orderPaymentDto;
     const order: Order = await this.ordersService.getOrderByIdOrTrackingNumber(
       tracking_number,
     );
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
     switch (order.payment_gateway.toString().toLowerCase()) {
       case 'stripe':
-        this.ordersService.stripePay(order);
+        await this.ordersService.stripePay(order);
         break;
       case 'paypal':
-        this.ordersService.paypalPay(order);
+        console.log("paypal-order****", order)
+        await this.ordersService.paypalPay(order);
+        break;
+      case 'razorpay':
+        const paymentSuccessful = await this.ordersService.razorpayPay(order, paymentIntentInfo);
+        if (paymentSuccessful) {
+          await this.ordersService.changeOrderPaymentStatus(order, PaymentStatusType.SUCCESS);
+        }
         break;
       default:
-        break;
+        throw new BadRequestException('Invalid payment gateway');
     }
     this.ordersService.processChildrenOrder(order);
   }

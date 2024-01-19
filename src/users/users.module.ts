@@ -21,11 +21,12 @@ import { AuthService } from 'src/auth/auth.service';
 import { MailService } from 'src/mail/mail.service';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { Address, UserAddress } from 'src/addresses/entities/address.entity';
+import { Permission } from 'src/permission/entities/permission.entity';
 
 @Module({
   imports: [
     TypeOrmExModule.forCustomRepository([UserRepository, UserAddressRepository, ProfileRepository, AttachmentRepository, DealerRepository, CategoryRepository, DealerProductMarginRepository, SocialRepository, DealerCategoryMarginRepository, ShopRepository, AddressRepository]),
-    TypeOrmModule.forFeature([User, Address, UserAddress, Profile, Dealer, Social, Product, Category, Attachment, DealerCategoryMargin, DealerProductMargin, Shop])
+    TypeOrmModule.forFeature([User, Address, UserAddress, Profile, Dealer, Social, Product, Category, Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission])
   ],
   controllers: [UsersController, ProfilesController, DealerController],
   providers: [UsersService, AuthService, MailService, AddressesService],

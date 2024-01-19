@@ -16,7 +16,7 @@ import { QuestionService } from './questions.service';
 
 @Controller('questions')
 export class QuestionController {
-  constructor(private questionService: QuestionService) {}
+  constructor(private questionService: QuestionService) { }
   // show all
   // TODO: there is a bug in displaying all questions
   // In product single page front-end all the questions apperaed. It should be based on product ID.

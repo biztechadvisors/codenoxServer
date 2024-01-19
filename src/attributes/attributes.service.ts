@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { AttributeValueDto, CreateAttributeDto } from './dto/create-attribute.dto';
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
@@ -55,9 +56,7 @@ export class AttributesService {
     }
     // Otherwise, update the existing attribute values
     const existingAttributeValues = existingAttribute.values;
-    console.log("existingAttribute", existingAttribute)
     for (const newAttributeValue of createAttributeDto.values) {
-      console.log("newAttributeValues", newAttributeValue)
       const existingAttributeValue = existingAttributeValues.find((atValue) => atValue.value === newAttributeValue.value);
       if (existingAttributeValue) {
         existingAttributeValue.meta = newAttributeValue.meta;

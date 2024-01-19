@@ -30,4 +30,22 @@ export class PaymentIntentService {
 
     return paymentIntent;
   }
+
+  async savePaymentIdIntent(razorpayData: any): Promise<any> {
+    try {
+      const paymentIntentInfo = await this.paymentIntentInfoRepository.findOne({ where: { order_id: razorpayData.razorpay_order_id } });
+
+      if (paymentIntentInfo) {
+        paymentIntentInfo.payment_id = razorpayData.razorpay_payment_id;
+        await this.paymentIntentInfoRepository.save(paymentIntentInfo);
+        return paymentIntentInfo; // Return the updated paymentIntentInfo
+      } else {
+        console.error('PaymentIntentInfo not found');
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+
 }

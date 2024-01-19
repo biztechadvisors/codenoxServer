@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-inferrable-types */
-import { Injectable, NotFoundException} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { plainToClass } from 'class-transformer';
 import { CreateCouponDto, pagination } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { Coupon, CouponType } from './entities/coupon.entity';
@@ -23,14 +24,14 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 export class CouponsService {
   constructor(
     @InjectRepository(Coupon)
-    private readonly couponRepository:Repository<Coupon>,
+    private readonly couponRepository: Repository<Coupon>,
     // @InjectRepository(Attachment)
     // private readonly attachmentRepository:AttachmentRepository
-  ){}
+  ) { }
 
   async create(createCouponDto: CreateCouponDto): Promise<Coupon> {
     console.log('Coupon Work')
-    const coupon =new Coupon();
+    const coupon = new Coupon();
     coupon.code = createCouponDto.code
     coupon.language = createCouponDto.language
     coupon.description = createCouponDto.description
@@ -46,7 +47,7 @@ export class CouponsService {
     coupon.amount = createCouponDto.amount
     coupon.active_from = createCouponDto.active_from
     coupon.expire_at = createCouponDto.expire_at
-    const Type = createCouponDto.type?createCouponDto.type:CouponType.DEFAULT_COUPON
+    const Type = createCouponDto.type ? createCouponDto.type : CouponType.DEFAULT_COUPON
     switch (Type) {
       case CouponType.FIXED_COUPON:
         coupon.type = CouponType.FIXED_COUPON;
@@ -76,11 +77,11 @@ export class CouponsService {
   async getCoupons({ search, limit, page }: GetCouponsDto): Promise<{ data: Coupon[]; pagination: pagination }> {
     if (!page) page = 1;
     if (!limit) limit = 12;
-  
+
     const startIndex = (page - 1) * limit;
-  
+
     let queryBuilder = this.couponRepository.createQueryBuilder('coupon');
-  
+
     if (search) {
       const parseSearchParams = search.split(';');
       for (const searchParam of parseSearchParams) {
@@ -91,15 +92,15 @@ export class CouponsService {
         }
       }
     }
-  
+
     const [coupons, totalCount] = await queryBuilder
       .skip(startIndex)
       .take(limit)
       .getManyAndCount();
-  
+
     const url = `/coupons?search=${search}&limit=${limit}`;
     const pagination = paginate(totalCount, page, limit, coupons.length, url);
-  
+
     return {
       data: coupons,
       pagination,
@@ -108,8 +109,8 @@ export class CouponsService {
 
 
   async getCoupon(param: string): Promise<Coupon[]> {
-   const findAddress = await this.couponRepository.find({where:{code:param}});
-   return findAddress;
+    const findAddress = await this.couponRepository.find({ where: { code: param } });
+    return findAddress;
   }
 
   async update(id: number, updateCouponDto: UpdateCouponDto) {
@@ -125,7 +126,7 @@ export class CouponsService {
     existingCoupons.language = updateCouponDto.language
     existingCoupons.description = updateCouponDto.description
     existingCoupons.minimum_cart_amount = updateCouponDto.minimum_cart_amount
-    const Type = updateCouponDto.type?updateCouponDto.type:CouponType.DEFAULT_COUPON
+    const Type = updateCouponDto.type ? updateCouponDto.type : CouponType.DEFAULT_COUPON
     switch (Type) {
       case CouponType.FIXED_COUPON:
         existingCoupons.type = CouponType.FIXED_COUPON;
@@ -153,7 +154,7 @@ export class CouponsService {
   }
 
   async remove(id: number) {
-    const existingCoupons = await this.couponRepository.findOne({where:{id}})
+    const existingCoupons = await this.couponRepository.findOne({ where: { id } })
     if (!existingCoupons) {
       throw new NotFoundException('Address not found');
     }
@@ -170,36 +171,15 @@ export class CouponsService {
     const expirationDate = new Date(coupon.expire_at);
 
     if (expirationDate > currentDate) {
+      console.log('Work')
       return coupon;
     } else {
+      console.log('Work-Not')
       return null;
     }
   }
 
   return null;
-    // return {
-    //   is_valid: true,
-    //   coupon: {
-    //     id: 9,
-    //     code: code,
-    //     description: null,
-    //     image: {
-    //       id: 925,
-    //       original:
-    //         'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/925/5x2x.png',
-    //       thumbnail:
-    //         'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/925/conversions/5x2x-thumbnail.jpg',
-    //     },
-    //     type: 'fixed',
-    //     amount: 5,
-    //     active_from: '2021-03-28T05:46:42.000Z',
-    //     expire_at: '2024-06-23T05:46:42.000Z',
-    //     created_at: '2021-03-28T05:48:16.000000Z',
-    //     updated_at: '2021-08-19T03:58:34.000000Z',
-    //     deleted_at: null,
-    //     is_valid: true,
-    //   },
-    // };
   }
 }
 function paginate(totalItems: number, currentPage: number, pageSize: number, totalResults: number, url: string): pagination {

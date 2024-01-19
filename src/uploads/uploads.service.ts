@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, UploadedFiles } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AttachmentRepository } from 'src/common/common.repository';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';

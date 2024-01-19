@@ -8,7 +8,8 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
 import { Review } from '../../reviews/entities/review.entity';
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+
 enum ProductStatus {
   PUBLISH = 'publish',
   DRAFT = 'draft',
@@ -178,6 +179,20 @@ export class Variation {
   @ManyToOne(() => File)
   @JoinColumn({ name: 'image_id' })
   image: File;
+
+  @Column()
+  attribute_value_id: number;
+
+  @Column()
+  attribute_id: number;
+  @Column()
+  value: string;
+  @Column()
+  meta: string;
+  @Column()
+  created_at: Date;
+  @Column()
+  updated_at: Date;
 }
 
 @Entity()

@@ -9,7 +9,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { TaxesService } from './taxes.service';
-import { CreateTaxDto } from './dto/create-tax.dto';
+import { CreateTaxDto, ValidateGstDto } from './dto/create-tax.dto';
 import { UpdateTaxDto } from './dto/update-tax.dto';
 
 
@@ -20,6 +20,13 @@ export class TaxesController {
   @Post()
   create(@Body() createTaxDto: CreateTaxDto) {
     return this.taxesService.create(createTaxDto);
+  }
+
+
+  @Post('/validate-gst')
+  createValidateGST(@Body() validateGstDto:ValidateGstDto) {
+    console.log(validateGstDto);
+    return this.taxesService.validateGST(validateGstDto.gstNumber);
   }
 
   @Get()
@@ -40,6 +47,7 @@ export class TaxesController {
   update(@Param('id') id: string, @Body() updateTaxDto: UpdateTaxDto) {
     return this.taxesService.update(+id, updateTaxDto);
   }
+
 
   @Delete(':id')
   remove(@Param('id') id: string) {
