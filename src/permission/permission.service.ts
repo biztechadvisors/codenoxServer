@@ -164,8 +164,6 @@ export class PermissionService{
         .delete()
         .where('permissionsId = :id', { id })
         .execute();
-
-    // Now you can safely delete the record from the permission table
     const result = await this.permissionRepository
         .createQueryBuilder()
         .delete()
@@ -179,69 +177,4 @@ export class PermissionService{
     return result;
     }
     
-    // async updatePermission(id: number, updatePermissionDto: UpdatePermissionDto) {
-    //   try {
-    //     const permissionToUpdate = await this.permissionRepository
-    //       .createQueryBuilder('permission')
-    //       .leftJoinAndSelect('permission.permissions', 'permissions')
-    //       .where('permission.id = :id', { id })
-    //       .getOne();
-    
-    //     if (!permissionToUpdate) {
-    //       throw new Error('Permission not found');
-    //     }
-    
-    //     permissionToUpdate.type_name = updatePermissionDto.type_name;
-
-
-    //     if(Array.isArray(updatePermissionDto.permission)&& updatePermissionDto.permission){
-    //     for (const updatedPermission of updatePermissionDto.permission) {
-    //       // console.log('updatedPermission.permissionId')
-    //       // console.log(updatedPermission.id)
-    //       permissionToUpdate.permissions.forEach((permissionType) => {
-    //         const updatePermission = permissionType.id === updatedPermission.id;
-    //         if (updatePermission) {
-    //           permissionType.read = updatedPermission.read;
-    //           permissionType.type = updatedPermission.type;
-    //           permissionType.write = updatedPermission.write;
-    //           permissionType.permissions = permissionToUpdate;
-    //         }
-    //         console.log(updatePermission);
-    //       });
-    //       // const permissionTypeFlags = permissionToUpdate.permissions.map((permissionType) => {
-    //       //   if(permissionType.id === permissionToUpdate.id){
-    //       //     console.log(permissionType.id)
-    //       //   }
-    //       //   // console.log('permissionType.id')
-    //       //   // console.log(permissionType.id)
-    //       //   // console.log('permissionToUpdate.id')
-    //       //   // console.log(updatedPermission.id)
-    //       //   // return permissionType.id === permissionToUpdate.id;
-    //       // });
-          
-    //       // console.log(permissionTypeFlags);
-
-    //       // const permissionTypeFlags = permissionToUpdate.permissions.map((permissionType) => {
-    //       //   const updatePermission = permissionType.id === updatedPermission.id;
-    //       //   if(updatePermission){
-    //       //     permissionType.read = updatedPermission.read
-    //       //     permissionType.type = updatedPermission.type
-    //       //     permissionType.write = updatedPermission.write
-    //       //     permissionType.id = permissionToUpdate.id
-    //       //   }
-    //       //   console.log(updatePermission);
-           
-    //       //   // return updatePermission;
-    //       // });
-    //       // console.log(permissionTypeFlags)
-    //     }
-    //   }
-    //     // await this.permissionRepository.save(permissionToUpdate);
-    // console.log(permissionToUpdate)
-    //     return permissionToUpdate;
-    //   } catch (error) {
-    //     console.error(error);
-    //     return 'Update unsuccessful';
-    //   }
-    // }   
 }

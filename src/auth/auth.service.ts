@@ -121,7 +121,7 @@ export class AuthService {
     userData.name = createUserInput.name;
     userData.email = createUserInput.email;
     userData.password = hashPass;
-    userData.type = createUserInput.type ? createUserInput.type : UserType.Customer;
+    userData.type = createUserInput.type ? createUserInput.type : UserType.Customer; // 1
     userData.createdAt = new Date();
 
     if (createUserInput.type !== UserType.Customer) {
@@ -140,7 +140,7 @@ export class AuthService {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${1}`)
+      .where(`permission.id = ${1}`) //createUserInput.type OR 1
       .select([
         'permission.id',
         'permission.type_name',
@@ -191,7 +191,7 @@ export class AuthService {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${1}`)
+      .where(`permission.id = ${1}`) // user.type OR 1
       .select([
         'permission.id',
         'permission.type_name',
@@ -219,19 +219,19 @@ export class AuthService {
 
 
     console.log(formattedResult[0].type_name)
-    if (loginInput.email === 'store_owner@demo.com') {
-      return {
-        token: access_token.access_token,
-        type_name: [`${formattedResult[0].type_name[0]}`, `${formattedResult[0].type_name}`],
-        permissions: formattedResult[0].permission
-      };
-    } else {
+    // if (loginInput.email === 'store_owner@demo.com') {
+    //   return {
+    //     token: access_token.access_token,
+    //     type_name: [`${formattedResult[0].type_name[0]}`, `${formattedResult[0].type_name}`],
+    //     permissions: formattedResult[0].permission
+    //   };
+    // } else {
       return {
         token: access_token.access_token,
         type_name: [`${formattedResult[0].type_name}`],
         permissions: formattedResult[0].permission //['super_admin', 'customer'],
       };
-    }
+    // }
   }
 
   async changePassword(
