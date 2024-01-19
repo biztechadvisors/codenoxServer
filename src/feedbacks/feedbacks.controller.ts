@@ -11,7 +11,7 @@ import {
 import { CreateFeedBackDto } from './dto/create-feedback.dto';
 import { UpdateFeedBackDto } from './dto/update-feedback.dto';
 import { FeedbackService } from './feedbacks.service';
-// import { UpdateQuestionDto } from 'src/questions/dto/update-question.dto';
+import { UpdateQuestionDto } from 'src/questions/dto/update-question.dto';
 
 @Controller('feedbacks')
 export class FeedbackController {

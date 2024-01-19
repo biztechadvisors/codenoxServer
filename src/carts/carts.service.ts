@@ -5,7 +5,6 @@ import { Cart } from './entities/cart.entity'
 import { CreateCartDto } from './dto/create-cart.dto'
 import { CartRepository } from './carts.repository'
 import { GetCartData } from './dto/get-cart.dto'
-// import mailer from 'nodemailer/lib/mailer'
 import { Interval } from '@nestjs/schedule';
 import { LessThan } from 'typeorm';
 import { MailService } from 'src/mail/mail.service'

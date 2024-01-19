@@ -87,7 +87,7 @@ export class ShopsService {
 
       let settingId;
       if (createShopDto.settings) {
-        // const newSettings = this.shopSettingsRepository.create(createShopDto.settings)
+        const newSettings = this.shopSettingsRepository.create(createShopDto.settings)
         if (createShopDto.settings.socials) {
           const socials: ShopSocials[] = [];
           for (const social of createShopDto.settings.socials) {

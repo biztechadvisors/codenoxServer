@@ -7,7 +7,7 @@ import { Conversation, LatestMessage } from './entities/conversation.entity';
 import { Message } from 'src/messages/entities/message.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Conversation,LatestMessage,Message])],
+  imports: [TypeOrmModule.forFeature([Conversation, LatestMessage, Message])],
   controllers: [ConversationsController],
   providers: [ConversationsService],
 })

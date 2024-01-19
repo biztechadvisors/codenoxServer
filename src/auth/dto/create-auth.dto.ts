@@ -40,9 +40,16 @@ export class ResetPasswordDto {
   password: string;
 }
 
+export interface PermissionItem {
+  type: string;
+  read: boolean;
+  write: boolean;
+}
+
 export class AuthResponse {
   token: string;
-  permissions: string[];
+  permissions: PermissionItem[];
+  type_name: string[]
   success?: boolean;
   message?: string;
 }

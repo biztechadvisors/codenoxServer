@@ -12,6 +12,8 @@ export class PaymentIntentInfo {
   @Column()
   payment_id: string
   @Column()
+  order_id: string
+  @Column()
   is_redirect: boolean
 }
 

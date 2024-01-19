@@ -130,6 +130,10 @@
       {
         "name": "paypal",
         "title": "Paypal"
+      },
+      {
+        "name": "razorpay",
+        "title": "Razorpay"
       }
     ],
     "currencyOptions": {

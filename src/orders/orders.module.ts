@@ -19,6 +19,8 @@ import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { PaymentIntent, PaymentIntentInfo } from 'src/payment-intent/entries/payment-intent.entity';
 import { OrderProductPivotRepository } from 'src/products/products.repository';
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
+import { ShiprocketService } from 'src/orders/shiprocket.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
       OrderProductPivotRepository
     ]),
     TypeOrmModule.forFeature([Order, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo]), // Include Order and OrderStatus here
+    HttpModule, // Add this line
   ],
   controllers: [
     OrdersController,
@@ -36,7 +39,7 @@ import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
     OrderExportController,
     DownloadInvoiceController,
   ],
-  providers: [OrdersService],
+  providers: [OrdersService, ShiprocketService],
   exports: [OrdersService],
 })
 export class OrdersModule { }

@@ -43,6 +43,8 @@ import { MulterModule } from '@nestjs/platform-express';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from './mail/mail.module';
+import { PermissionModule } from './permission/permission.module';
+
 
 @Module({
   imports: [
@@ -109,6 +111,7 @@ import { MailModule } from './mail/mail.module';
     ConversationsModule,
     MessagesModule,
     AiModule,
+    PermissionModule,
     MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],

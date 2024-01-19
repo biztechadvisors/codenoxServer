@@ -11,6 +11,7 @@ import Fuse from 'fuse.js'
 // import { Balance } from 'src/shops/entities/balance.entity'
 import { BalanceRepository, ShopRepository } from 'src/shops/shops.repository'
 
+
 @Injectable()
 export class WithdrawsService {
   constructor(
@@ -24,11 +25,12 @@ export class WithdrawsService {
   // private withdraw: Withdraw[] = []
 
   async create(createWithdrawDto: CreateWithdrawDto) {
+    console.log("entered")
     const newWithdraw = new Withdraw()
     // const newWithdrawBalance = new Balance()
 
     try {
-
+console.log("working")
       const findId = await this.withdrawRepository.find({
         where: {
           shop_id: createWithdrawDto.shop_id
@@ -36,7 +38,7 @@ export class WithdrawsService {
       })
 
       console.log("findShop", findId)
-      if (!findId) {
+      if (findId) {
 
         newWithdraw.amount = createWithdrawDto.amount
         newWithdraw.details = createWithdrawDto.details
@@ -74,7 +76,7 @@ export class WithdrawsService {
         console.log("add data", addWithdraw)
         return addWithdraw
       } else {
-        console.log("Already have pending Request")
+        console.error()
         return 'You Already Have Pending Request'
       }
     } catch (error) {

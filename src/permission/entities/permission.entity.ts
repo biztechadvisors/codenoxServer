@@ -9,6 +9,8 @@ export class Permission {
 
   @Column()
   type_name: string;
+  @Column()
+  permission_name: string
 
   
   @OneToMany(() => PermissionType, PermissionType => PermissionType.permissions)

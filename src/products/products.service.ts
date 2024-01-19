@@ -1,5 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { plainToClass } from 'class-transformer';
 import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -73,23 +74,21 @@ export class ProductsService {
     }
     product.type = type;
     product.type_id = type.id;
-
     const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
     product.shop = shop;
     product.shop_id = shop.id;
-
     const categories = await this.categoryRepository.findByIds(createProductDto.categories);
     product.categories = categories;
     const tags = await this.tagRepository.findByIds(createProductDto.tags);
     product.tags = tags;
     if (createProductDto.image) {
-      let image = await this.attachmentRepository.findOne({ where: { id: createProductDto.image.id } });
+      const image = await this.attachmentRepository.findOne({ where: { id: createProductDto.image.id } });
       product.image = image;
     }
     if (createProductDto.gallery) {
       const galleryAttachments = [];
       for (const galleryImage of createProductDto.gallery) {
-        let image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
+        const image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
         galleryAttachments.push(image);
       }
       product.gallery = galleryAttachments;
@@ -147,13 +146,11 @@ export class ProductsService {
   }
 
   async getProducts({ limit = 30, page = 1, search }: GetProductsDto): Promise<ProductPaginator> {
+
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    // Construct the query builder
     const productQueryBuilder = this.productRepository.createQueryBuilder('product');
-
-    // Set the desired relations to fetch
     productQueryBuilder
       .leftJoinAndSelect('product.type', 'type')
       .leftJoinAndSelect('product.shop', 'shop')
@@ -163,15 +160,18 @@ export class ProductsService {
       .leftJoinAndSelect('product.related_products', 'related_products')
       .leftJoinAndSelect('product.variations', 'variations')
       .leftJoinAndSelect('product.variation_options', 'variation_options')
-      .leftJoinAndSelect('product.gallery', 'gallery');
+      .leftJoinAndSelect('product.gallery', 'gallery')
+      .leftJoinAndSelect('product.pivot', 'pivot')
+      .leftJoinAndSelect('product.orders', 'orders')
+      .leftJoinAndSelect('product.my_review', 'my_review')
+      .leftJoinAndSelect('product.variations', 'attributeValues')
+      .leftJoinAndSelect('attributeValues.attribute', 'attribute');
 
-    // Apply search filtering if search parameter is provided
     if (search) {
       const parseSearchParams = search.split(';');
       const searchConditions: any[] = [];
       for (const searchParam of parseSearchParams) {
         const [key, value] = searchParam.split(':');
-
         if (key === 'name') {
           searchConditions.push({ name: `%${value}%` });
         } else if (key === 'category') {
@@ -191,7 +191,6 @@ export class ProductsService {
           searchConditions.push({ [key]: `%${value}%` });
         }
       }
-
       if (searchConditions.length > 0) {
         searchConditions.forEach(condition => {
           Object.entries(condition).forEach(([key, value]) => {
@@ -202,11 +201,12 @@ export class ProductsService {
         });
       }
     }
-
     productQueryBuilder.skip(startIndex).take(limit);
+
     const products = await productQueryBuilder.getMany();
     const url = `/products?search=${search}&limit=${limit}`;
     const paginator = paginate(products.length, page, limit, products.length, url);
+
     return {
       data: products,
       ...paginator,
@@ -217,13 +217,38 @@ export class ProductsService {
     // Fetch the product using the slug
     const product = await this.productRepository.findOne({
       where: { slug },
-      relations: ['type', 'shop', 'image', 'categories', 'tags', 'gallery', 'related_products', 'variations', 'variation_options'],
+      relations: [
+        'type',
+        'shop',
+        'image',
+        'categories',
+        'tags',
+        'gallery',
+        'related_products',
+        'variations.attribute', // Include attribute for variations
+        'variation_options.options', // Include options for variation_options
+      ],
     });
+
+    // Destructuring variations and variation_options
+    if (product) {
+      // Destructuring variations
+      product.variations = product.variations.map((variation) => ({
+        ...variation,
+        attribute: variation.attribute, // Extract attribute value
+      }));
+
+      // Destructuring variation_options
+      product.variation_options = product.variation_options.map((option) => ({
+        ...option,
+        options: option.options.map((optionAttribute) => optionAttribute), // Extract option values
+      }));
+    }
 
     // Fetch related products using type_id
     if (product) {
       const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
-        .where('related_products.type_id = :type_id', { type_id: product.type_id }) // Use related_products.type_id instead of relatedProduct.type.slug
+        .where('related_products.type_id = :type_id', { type_id: product.type_id })
         .andWhere('related_products.id != :productId', { productId: product.id })
         .limit(20)
         .getMany();
@@ -237,7 +262,7 @@ export class ProductsService {
   async getPopularProducts(query: GetPopularProductsDto): Promise<Product[]> {
     const { limit = 10, type_slug, shop_id } = query;
 
-    let productsQueryBuilder = this.productRepository.createQueryBuilder('product');
+    const productsQueryBuilder = this.productRepository.createQueryBuilder('product');
 
     if (type_slug) {
       productsQueryBuilder.innerJoinAndSelect('product.type', 'type', 'type.slug = :typeSlug', { typeSlug: type_slug });
