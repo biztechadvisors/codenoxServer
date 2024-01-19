@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { CreatePermissionDto, CreatePermissionTypeDto } from "./dto/create-permission.dto";
 import { Permission, PermissionType } from "./entities/permission.entity";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -141,10 +141,14 @@ export class PermissionService{
                 permissionType.type = updatedPermission.type;
                 permissionType.write = updatedPermission.write;
                 await this.permissionTypeRepository.save(permissionType)
+                if (!permissionType.read) {
+                  await this.permissionTypeRepository.remove(permissionType);
+                }
               }
             });
           }
         }
+
         const savePermissionToUpdate = await this.permissionRepository.save(permissionToUpdate);
     
         return savePermissionToUpdate;
@@ -153,8 +157,28 @@ export class PermissionService{
         return 'Update unsuccessful';
       }
     }
-    
 
+    async remove(id: number) {
+      await this.permissionTypeRepository
+        .createQueryBuilder()
+        .delete()
+        .where('permissionsId = :id', { id })
+        .execute();
+
+    // Now you can safely delete the record from the permission table
+    const result = await this.permissionRepository
+        .createQueryBuilder()
+        .delete()
+        .where('id = :id', { id })
+        .execute();
+
+    if (result.affected === 0) {
+        throw new NotFoundException('Permission not found');
+    }
+
+    return result;
+    }
+    
     // async updatePermission(id: number, updatePermissionDto: UpdatePermissionDto) {
     //   try {
     //     const permissionToUpdate = await this.permissionRepository
