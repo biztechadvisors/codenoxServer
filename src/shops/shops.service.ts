@@ -51,7 +51,7 @@ export class ShopsService {
 
   private shops: Shop[] = []
 
-  async convertToSlug(text: any) {
+  async convertToSlug(text) {
     return await convertToSlug(text)
   }
 
@@ -69,10 +69,10 @@ export class ShopsService {
       if (createShopDto.address) {
         const createAddressDto = new CreateAddressDto();
         createAddressDto.title = createShopDto.address.street_address;
-        createAddressDto.type = AddressType.SHIPPING;
+        createAddressDto.type = AddressType.SHOP;
         createAddressDto.default = true;
         createAddressDto.address = createShopDto.address;
-        createAddressDto.customer = createShopDto.user;
+        createAddressDto.customer_id = createShopDto.user.id;
 
         // Save the new UserAddress and retrieve the saved entity
         const savedAddress = await this.addressesService.create(createAddressDto);

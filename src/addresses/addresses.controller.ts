@@ -14,11 +14,10 @@ import { UpdateAddressDto } from './dto/update-address.dto';
 
 @Controller('address')
 export class AddressesController {
-  constructor(private readonly addressesService: AddressesService) {}
+  constructor(private readonly addressesService: AddressesService) { }
 
   @Post()
   createAddress(@Body() createAddressDto: CreateAddressDto) {
-    console.log(createAddressDto)
     return this.addressesService.create(createAddressDto);
   }
 

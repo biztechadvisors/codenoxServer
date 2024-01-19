@@ -672,6 +672,7 @@ export class OrdersService {
         this.orders[0]['payment_status'] = PaymentStatusType.SUCCESS;
         this.orders[0]['payment_intent'] = null;
         console.log('Payment Success');
+        
       } else {
         // If the payment is not completed, update the payment status to failed
         this.orders[0]['payment_status'] = PaymentStatusType.FAILED;
