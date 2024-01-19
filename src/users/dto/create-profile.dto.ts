@@ -5,19 +5,12 @@ import { Profile } from '../entities/profile.entity';
 export class CreateProfileDto extends PickType(Profile, [
   'avatar',
   'bio',
-  // 'socials',
+  'socials',
   'contact',
-  'customer'
 ]) {
-  // customer: number;
+  customer: ConnectBelongsTo;
 }
 
-// export class ConnectBelongsTo {
-//   connect: number;
-// }
-
-export class CreateSocialDto {
-  type: string;
-  link: string;
-  profile:Profile
+export class ConnectBelongsTo {
+  connect: number;
 }

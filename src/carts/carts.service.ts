@@ -216,6 +216,5 @@ async sendAbandonedCartReminder() {
   } catch (error) {
     console.log('Failed to send abandoned cart reminder emails');
   }
-
 }
 }

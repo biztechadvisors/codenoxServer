@@ -100,7 +100,7 @@ async sendInvoiceToDealer(user: User, products: any){
 }
 
 // send Invoice Email to Customer
-async sendInvoiceToCustomer(user: User, products: any){
+async sendInvoiceToCustomer(email:string, products: any){
 
   try{
     const productDetails = products.map((items: any) => ({
@@ -109,12 +109,12 @@ async sendInvoiceToCustomer(user: User, products: any){
       imageUrl: items.image
     }));
     await this.mailerService.sendMail({
-      to: user.email,
+      to: email,
       from: '"Tilitso Purchase" <info@365dgrsol.in>',
       subject: 'Your Tilitso Order Confirmation. Please share your feedback',
       template: './invoiceToCustomer',
       context: {
-        email: user.email,
+        email: email,
         products: productDetails,
       },
     });
@@ -159,8 +159,8 @@ async sendUserRefund(user: User, products: any){
     await this.mailerService.sendMail({
       to: user.email,
       from: '"Dealer" <info@365dgrsol.in>',
-      subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-      template: './',
+      subject: 'Your Refund amount. Please share your feedback',
+      template: './refund',
       context: {
         email: user.email,
         products: productDetails,

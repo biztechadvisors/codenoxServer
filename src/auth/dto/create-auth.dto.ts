@@ -9,8 +9,9 @@ enum Permission {
   STAFF = 'Staff',
   CUSTOMER = 'Customer',
 }
-export class RegisterDto extends PickType(User, ['name', 'email', 'password']) {
+export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type']) {
   permission: Permission = Permission.CUSTOMER;
+  isVerified: boolean;
 }
 
 export class LoginDto extends PartialType(
@@ -31,52 +32,28 @@ export class ForgetPasswordDto {
 }
 export class VerifyForgetPasswordDto {
   email: string;
-  token: string;
+  token: number;
 }
 export class ResetPasswordDto {
   email: string;
-  token: string;
+  token: number;
   password: string;
 }
 
 export class AuthResponse {
   token: string;
-  type_name: string[]
-  permissions: PermissionItem[];
+  permissions: string[];
   success?: boolean;
   message?: string;
 }
-export interface PermissionItem {
-  type: string;
-  read: boolean;
-  write: boolean;
-}
-
-// export class PermissionsDTO {
-//   id: number;
-//   type_name: string; // Corrected property name
-//   permission: PermissionDTO[];
-// }
-
-// export class PermissionDTO {
-//   type: string;
-//   read: boolean;
-//   write: boolean;
-// }
-
-
-// export class AuthResponse {
-//   token: string;
-//   permissions: string[];
-//   success?: boolean;
-//   message?: string;
-// }
 export class CoreResponse extends CoreMutationOutput { }
+
 export class VerifyOtpDto {
   otp_id: string;
-  code: string;
+  code: number;
   phone_number: string;
 }
+
 export class OtpResponse {
   id: string;
   message: string;
@@ -99,4 +76,11 @@ export class OtpLoginDto {
   phone_number: string;
   name?: string;
   email?: string;
+}
+
+export class GetUserArgs {
+  id: number;
+  text: string;
+  first: number;
+  page: number;
 }
