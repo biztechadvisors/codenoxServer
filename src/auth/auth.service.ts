@@ -191,7 +191,7 @@ export class AuthService {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${1}`) // user.type OR 1
+      .where(`permission.id = ${5}`) // user.type OR 1
       .select([
         'permission.id',
         'permission.type_name',

@@ -29,7 +29,7 @@ export class PaymentMethodService {
     private readonly stripeService: StripePaymentService,
     private readonly settingService: SettingsService,
   ) { }
-  private setting: Setting = this.settingService.findAll();
+  // private setting: Setting = this.settingService.findAll();
 
   async create(createPaymentMethodDto: CreatePaymentMethodDto, user: User) {
     try {
