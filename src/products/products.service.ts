@@ -21,7 +21,10 @@ import { CategoryRepository } from 'src/categories/categories.repository';
 import { Category } from 'src/categories/entities/category.entity';
 import { AttributeValueRepository } from 'src/attributes/attribute.repository';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
-import { error } from 'console';
+import { Dealer, DealerCategoryMargin, DealerProductMargin } from 'src/users/entities/dealer.entity';
+import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, UserRepository } from 'src/users/users.repository';
+import { User } from 'src/users/entities/user.entity';
+
 
 const options = {
   keys: [
@@ -52,6 +55,10 @@ export class ProductsService {
     @InjectRepository(Category) private readonly categoryRepository: CategoryRepository,
     @InjectRepository(AttributeValue) private readonly attributeValueRepository: AttributeValueRepository,
     @InjectRepository(File) private readonly fileRepository: FileRepository,
+    @InjectRepository(Dealer) private readonly dealerRepository: DealerRepository,
+    @InjectRepository(DealerProductMargin) private readonly dealerProductMarginRepository: DealerProductMarginRepository,
+    @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
+    @InjectRepository(User) private readonly userRepository: UserRepository,
 
   ) { }
 
@@ -145,10 +152,11 @@ export class ProductsService {
     return product;
   }
 
-  async getProducts({ limit = 30, page = 1, search }: GetProductsDto): Promise<ProductPaginator> {
+  async getProducts({ limit = 30, page = 1, search, userId }: GetProductsDto): Promise<ProductPaginator> {
 
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
+    let productsWithMargins: any
 
     const productQueryBuilder = this.productRepository.createQueryBuilder('product');
     productQueryBuilder
@@ -201,9 +209,54 @@ export class ProductsService {
         });
       }
     }
-    productQueryBuilder.skip(startIndex).take(limit);
+      const dealer = await this.dealerRepository.find({
+        where: { id: userId },
+        relations: ['dealerProductMargins', 'dealerCategoryMargins']
+      })
+      console.log("dealer", dealer)
 
-    const products = await productQueryBuilder.getMany();
+      if(dealer){
+        for (const dealerId of dealer){
+           
+          if(dealerId.dealerProductMargins){
+            console.log("margin", dealerId.dealerProductMargins)
+            const marginFind = await this.dealerProductMarginRepository.find({
+              relations: ['product']
+            })
+             productsWithMargins = marginFind.reduce((result, margin) => {
+              const product = margin.product;
+              product.margin = margin.margin; // Add margin to the product object
+              result.push(product);
+              return result;
+            }, []);
+            console.log("dealer Product Margin", marginFind)
+            console.log("dealer Product Margin", productsWithMargins)
+          }         
+          // }else{
+          //   if(dealerId.dealerCategoryMargins){
+          //     console.log("margin", dealerId.dealerCategoryMargins)
+          //     const marginFind = await this.dealerCategoryMarginRepository.find({
+          //       relations: ['category']
+          //     })
+          //     //  productsWithMargins = marginFind.reduce((result, margin) => {
+          //     //   const product = margin.product;
+          //     //   product.margin = margin.margin; // Add margin to the product object
+          //     //   result.push(product);
+          //     //   return result;
+          //     // }, []);
+          //     console.log("dealer Product Margin", marginFind)
+          //     // console.log("dealer Product Margin", productsWithMargins)
+                       
+          //   }
+          // }
+          // console.log("dealerId", dealerId)
+        }
+         
+      }
+
+    productQueryBuilder.skip(startIndex).take(limit);
+    const products = productsWithMargins;
+    // const products = await productQueryBuilder.getMany();
     const url = `/products?search=${search}&limit=${limit}`;
     const paginator = paginate(products.length, page, limit, products.length, url);
 
