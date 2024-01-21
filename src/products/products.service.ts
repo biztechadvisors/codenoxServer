@@ -218,7 +218,7 @@ export class ProductsService {
       if(dealer){
         for (const dealerId of dealer){
            
-          if(dealerId.dealerProductMargins){
+          if(!dealerId.dealerProductMargins){
             console.log("margin", dealerId.dealerProductMargins)
             const marginFind = await this.dealerProductMarginRepository.find({
               relations: ['product']
@@ -231,32 +231,33 @@ export class ProductsService {
             }, []);
             console.log("dealer Product Margin", marginFind)
             console.log("dealer Product Margin", productsWithMargins)
-          }         
-          // }else{
-          //   if(dealerId.dealerCategoryMargins){
-          //     console.log("margin", dealerId.dealerCategoryMargins)
-          //     const marginFind = await this.dealerCategoryMarginRepository.find({
-          //       relations: ['category']
-          //     })
-          //     //  productsWithMargins = marginFind.reduce((result, margin) => {
-          //     //   const product = margin.product;
-          //     //   product.margin = margin.margin; // Add margin to the product object
-          //     //   result.push(product);
-          //     //   return result;
-          //     // }, []);
-          //     console.log("dealer Product Margin", marginFind)
-          //     // console.log("dealer Product Margin", productsWithMargins)
+                  
+          }else{
+            if(dealerId.dealerCategoryMargins){
+              console.log("margin", dealerId.dealerCategoryMargins)
+              const marginFind = await this.dealerCategoryMarginRepository.find({
+                relations: ['category']
+              })
+              
+              //  productsWithMargins = marginFind.reduce((result, margin) => {
+              //   const product = margin.product;
+              //   product.margin = margin.margin; // Add margin to the product object
+              //   result.push(product);
+              //   return result;
+              // }, []);
+              console.log("dealer Product Margin", marginFind)
+              // console.log("dealer Product Margin", productsWithMargins)
                        
-          //   }
-          // }
+            }
+          }
           // console.log("dealerId", dealerId)
         }
          
       }
 
     productQueryBuilder.skip(startIndex).take(limit);
-    const products = productsWithMargins;
-    // const products = await productQueryBuilder.getMany();
+    // const products = productsWithMargins;
+    const products = await productQueryBuilder.getMany();
     const url = `/products?search=${search}&limit=${limit}`;
     const paginator = paginate(products.length, page, limit, products.length, url);
 
