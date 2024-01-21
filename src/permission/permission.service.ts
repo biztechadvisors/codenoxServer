@@ -22,7 +22,7 @@ export class PermissionService{
         if(existingPermission){
           return 'Already exist'
         }
-    
+
         if (createPermission && createPermission.type_name) {
             const permissions = new Permission();
             permissions.type_name = createPermission.type_name;
@@ -66,7 +66,7 @@ export class PermissionService{
       const groupedPermissions = permissionsWithTypeName.reduce((acc, permission) => {
         console.log(permission)
         const typeName = permission.permissions.type_name;
-    
+
         if (!acc[typeName]) {
           acc[typeName] = {
             id: permission.permissions.id,
@@ -132,7 +132,7 @@ export class PermissionService{
         }
     
         permissionToUpdate.type_name = updatePermissionDto.type_name;
-    
+
         if (Array.isArray(updatePermissionDto.permission) && updatePermissionDto.permission.length > 0) {
           for (const updatedPermission of updatePermissionDto.permission) {
             permissionToUpdate.permissions.forEach(async (permissionType) => {
@@ -175,6 +175,5 @@ export class PermissionService{
     }
 
     return result;
-    }
-    
+    } 
 }
