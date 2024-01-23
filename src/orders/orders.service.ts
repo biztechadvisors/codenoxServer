@@ -602,6 +602,7 @@ export class OrdersService {
 
   async verifyCheckout(input: CheckoutVerificationDto): Promise<VerifiedCheckoutData> {
     // Initialize variables
+    console.log("input daat", input)
     let total_tax = 0;
     let shipping_charge = 0;
     let unavailable_products: number[] = [];
