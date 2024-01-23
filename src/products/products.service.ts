@@ -24,6 +24,8 @@ import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from 'src/users/entities/dealer.entity';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, UserRepository } from 'src/users/users.repository';
 import { User } from 'src/users/entities/user.entity';
+import items from 'razorpay/dist/types/items';
+import { clearConfigCache } from 'prettier';
 
 
 const options = {
@@ -150,7 +152,7 @@ export class ProductsService {
     }
     console.log("createProductDto", createProductDto.shop_id)
     return product;
-  }
+  }; 
 
   async getProducts({ limit = 30, page = 1, search, userId }: GetProductsDto): Promise<ProductPaginator> {
 
