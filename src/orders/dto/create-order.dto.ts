@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity'
 import { PaymentGatewayType } from '../entities/order.entity'
 

@@ -20,4 +20,4 @@ import { Shop } from 'src/shops/entities/shop.entity'
   controllers: [WithdrawsController],
   providers: [WithdrawsService],
 })
-export class WithdrawsModule { }
+export class WithdrawsModule {}

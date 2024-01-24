@@ -18,11 +18,8 @@ import { User, UserType } from 'src/users/entities/user.entity'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { AttachmentRepository } from 'src/common/common.repository'
 import { ShopSettings } from './entities/shopSettings.entity'
-// import {  } from 'src/settings/settings.repository'
-// ShopSocialsRepository
 import { AddressesService } from 'src/addresses/addresses.service'
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto'
-import { error } from 'console'
 import { UserAddressRepository } from 'src/addresses/addresses.repository'
 
 @Injectable()
@@ -62,7 +59,7 @@ export class ShopsService {
     const newBalance = new Balance();
     const newSetting = new ShopSettings();
     try {
-      let userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
+      const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
       // Check if the user exists and is a vendor
       if (!userToUpdate && userToUpdate.type !== UserType.Vendor) {
         throw new Error('User does not exist or is not a vendor');
@@ -143,7 +140,7 @@ export class ShopsService {
         shp.managed_shop = shop;
 
         // Find the user by id
-        let userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
+        const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
 
         // If the user exists, update the fields
         if (userToUpdate) {

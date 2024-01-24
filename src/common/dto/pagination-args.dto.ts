@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export class PaginationArgs {
   // FIX ME
   first?: number = 15

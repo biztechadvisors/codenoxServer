@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Body, Controller, Post } from '@nestjs/common'
 import { NewslettersService } from './newsletters.service'
 import { CreateNewSubscriberDto } from './dto/create-new-subscriber.dto'

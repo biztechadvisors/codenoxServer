@@ -7,12 +7,11 @@ import {
   Put,
   Param,
   Delete,
-  Query,
 } from '@nestjs/common';
 import { TaxesService } from './taxes.service';
 import { CreateTaxDto, ValidateGstDto } from './dto/create-tax.dto';
 import { UpdateTaxDto } from './dto/update-tax.dto';
-import { GetTaxesDto } from './dto/get-taxes.dto';
+
 
 @Controller('taxes')
 export class TaxesController {

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Product } from "src/products/entities/product.entity";
 import { SubscriptionType } from "../entities/dealer.entity";
 import { User } from "../entities/user.entity";

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export class Paginator<T> {
   data: T[]
   count: number

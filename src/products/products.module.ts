@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import {
@@ -19,9 +20,10 @@ import { TypeRepository } from 'src/types/types.repository';
 import { TagRepository } from 'src/tags/tags.repository';
 import { AttributeValueRepository } from 'src/attributes/attribute.repository';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
+import { Tax } from 'src/taxes/entities/tax.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, OrderProductPivot, Variation, VariationOption, Attachment, Category, Shop, Type, Tag, AttributeValue, File])],
+  imports: [TypeOrmModule.forFeature([Product, OrderProductPivot, Variation, VariationOption, Attachment, Category, Shop, Type, Tag, AttributeValue, File,Tax])],
   controllers: [ProductsController, PopularProductsController],
   providers: [ProductsService, ProductRepository, VariationOptionRepository, VariationRepository, OrderProductPivotRepository, AttachmentRepository, CategoryRepository, ShopRepository, TypeRepository, TagRepository, AttributeValueRepository, FileRepository],
 })
