@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common'
 import { NewslettersController } from './newsletters.controller'
 import { NewslettersService } from './newsletters.service'

@@ -6,6 +6,7 @@ import { CartRepository } from './carts.repository'
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Cart } from './entities/cart.entity'
+import { MailService } from 'src/mail/mail.service'
 
 @Module({
   imports: [
@@ -13,6 +14,6 @@ import { Cart } from './entities/cart.entity'
     TypeOrmModule.forFeature([Cart]),
   ],
   controllers: [AbandonedCartController],
-  providers: [AbandonedCartService],
+  providers: [AbandonedCartService, MailService],
 })
 export class CartsModule {}

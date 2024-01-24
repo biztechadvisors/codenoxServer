@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PickType } from '@nestjs/swagger'
 import { StoreNotice } from '../entities/store-notices.entity'
 

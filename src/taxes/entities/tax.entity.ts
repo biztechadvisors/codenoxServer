@@ -25,9 +25,8 @@ export class Tax extends CoreEntity {
   compensation_Cess: number;
   @Column()
   gst_Name: string;  //goods - service
-
-  // @OneToMany(()=>Product, products=> products.id)
-  // products:Product
+  @OneToMany(()=>Product, products=> products.id)
+  products:Product
   // @Column()
   // is_global: boolean;
   // @Column()

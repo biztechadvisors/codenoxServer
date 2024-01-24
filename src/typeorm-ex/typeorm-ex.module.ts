@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { DynamicModule, Provider } from '@nestjs/common'
 import { getDataSourceToken } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'

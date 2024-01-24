@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { AttributeValueDto, CreateAttributeDto } from './dto/create-attribute.dto';
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
@@ -157,7 +158,6 @@ export class AttributesService {
         message: 'Attribute not found',
       };
     }
-
     // Update the attribute values
     attribute.name = updateAttributeDto.name;
     attribute.slug = await this.convertToSlug(updateAttributeDto.name);

@@ -82,13 +82,13 @@ export class ProductsService {
     const tags = await this.tagRepository.findByIds(createProductDto.tags);
     product.tags = tags;
     if (createProductDto.image) {
-      let image = await this.attachmentRepository.findOne({ where: { id: createProductDto.image.id } });
+      const image = await this.attachmentRepository.findOne({ where: { id: createProductDto.image.id } });
       product.image = image;
     }
     if (createProductDto.gallery) {
       const galleryAttachments = [];
       for (const galleryImage of createProductDto.gallery) {
-        let image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
+        const image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
         galleryAttachments.push(image);
       }
       product.gallery = galleryAttachments;
@@ -259,11 +259,10 @@ export class ProductsService {
     return product;
   }
 
-
   async getPopularProducts(query: GetPopularProductsDto): Promise<Product[]> {
     const { limit = 10, type_slug, shop_id } = query;
 
-    let productsQueryBuilder = this.productRepository.createQueryBuilder('product');
+    const productsQueryBuilder = this.productRepository.createQueryBuilder('product');
 
     if (type_slug) {
       productsQueryBuilder.innerJoinAndSelect('product.type', 'type', 'type.slug = :typeSlug', { typeSlug: type_slug });

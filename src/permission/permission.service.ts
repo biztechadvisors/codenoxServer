@@ -60,17 +60,19 @@ export class PermissionService{
         const permissionsWithTypeName = await this.permissionTypeRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissions')
-        .select(['permission.id', 'permissions.type_name', 'permissions.id', 'permission.type', 'permission.read', 'permission.write'])
+        .select(['permission.id', 'permissions.type_name', 'permissions.permission_name','permissions.id', 'permission.type', 'permission.read', 'permission.write'])
         .getMany();
 
       const groupedPermissions = permissionsWithTypeName.reduce((acc, permission) => {
         console.log(permission)
         const typeName = permission.permissions.type_name;
+        const permissionName = permission.permissions.permission_name;
 
         if (!acc[typeName]) {
           acc[typeName] = {
             id: permission.permissions.id,
             type_name: typeName,
+            permission_name: permissionName,
             permission: [],
           };
         }
@@ -97,6 +99,7 @@ export class PermissionService{
           .select([
             'permission.id',
             'permission.type_name',
+            'permission.permission_name',
             'permissions.id as permissionId',
             'permissions.type',
             'permissions.read',
@@ -107,6 +110,7 @@ export class PermissionService{
         const formattedResult = result.map(permission => ({
           id: permission.id,
           type_name: permission.type_name,
+          permissionName: permission.permission_name,
           permission: permission.permissions.map(p => ({
             id: p.permissionId,
             type: p.type,
@@ -132,6 +136,7 @@ export class PermissionService{
         }
     
         permissionToUpdate.type_name = updatePermissionDto.type_name;
+        permissionToUpdate.permission_name = updatePermissionDto.permission_name;
 
         if (Array.isArray(updatePermissionDto.permission) && updatePermissionDto.permission.length > 0) {
           for (const updatedPermission of updatePermissionDto.permission) {
@@ -148,7 +153,6 @@ export class PermissionService{
             });
           }
         }
-
         const savePermissionToUpdate = await this.permissionRepository.save(permissionToUpdate);
     
         return savePermissionToUpdate;

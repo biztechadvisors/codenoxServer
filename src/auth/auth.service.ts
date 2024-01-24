@@ -178,9 +178,7 @@ export class AuthService {
   }
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
-
     const user = await this.userRepository.findOne({ where: { email: loginInput.email } })
-
     if (!user || !user.isVerified) {
       return {
         message: 'User Is Not Regesired !'
@@ -191,7 +189,7 @@ export class AuthService {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${5}`) // user.type OR 1
+      .where(`permission.id = ${1}`) // user.type OR 1
       .select([
         'permission.id',
         'permission.type_name',
@@ -201,7 +199,6 @@ export class AuthService {
         'permissions.write',
       ])
       .getMany();
-
 
     console.log('result')
     console.log(result)
@@ -216,7 +213,6 @@ export class AuthService {
         write: p.write,
       })),
     }));
-
 
     console.log(formattedResult[0].type_name)
     // if (loginInput.email === 'store_owner@demo.com') {
@@ -442,7 +438,6 @@ export class AuthService {
   }
 
   async verifyOtpCode(verifyOtpInput: VerifyOtpDto): Promise<CoreResponse> {
-
     const result = await this.verifyOtp(verifyOtpInput.code);
 
     if (typeof result === 'boolean') {

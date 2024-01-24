@@ -20,6 +20,7 @@ import { ShopSettings } from './shopSettings.entity'
 export class Shop extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+  
   @Column()
   owner_id: number;
 
@@ -31,8 +32,10 @@ export class Shop extends CoreEntity {
 
   @Column()
   is_active: boolean;
+
   @Column()
   orders_count: number;
+
   @Column()
   products_count: number;
 
@@ -41,8 +44,10 @@ export class Shop extends CoreEntity {
 
   @Column()
   name: string;
+
   @Column()
   slug: string;
+
   @Column()
   description?: string;
 
@@ -64,6 +69,9 @@ export class Shop extends CoreEntity {
 
   @Column({ type: 'timestamp' })
   createdAt: Date;
+
+  @Column()
+  gst_number: string;
 }
 
 @Entity()

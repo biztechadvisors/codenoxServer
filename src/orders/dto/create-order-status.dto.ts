@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PartialType, PickType } from '@nestjs/swagger'
 import { OrderStatus } from '../entities/order-status.entity'
 

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common'
 import { plainToClass } from 'class-transformer'
 import { GetStoreNoticesDto } from './dto/get-store-notices.dto'

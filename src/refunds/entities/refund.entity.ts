@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity'
 import { Order } from 'src/orders/entities/order.entity'
 import { Shop } from 'src/shops/entities/shop.entity'

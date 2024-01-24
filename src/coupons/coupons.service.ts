@@ -5,8 +5,6 @@ import { plainToClass } from 'class-transformer';
 import { CreateCouponDto, pagination } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { Coupon, CouponType } from './entities/coupon.entity';
-import couponsJson from '@db/coupons.json';
-import Fuse from 'fuse.js';
 import { GetCouponsDto } from './dto/get-coupons.dto';
 // import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';

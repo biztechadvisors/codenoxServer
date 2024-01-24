@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { SortOrder } from 'src/common/dto/generic-conditions.dto'
 
 export class GetTypesDto {
