@@ -99,18 +99,24 @@ export class AuthService {
   }
 
   async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
-    const emailExist = await this.userRepository.findOne({
+    const existingUser = await this.userRepository.findOne({
       where: { email: createUserInput.email },
     });
-    if (emailExist) {
+
+    if (existingUser) {
       const otp = await this.generateOtp();
       const token = Math.floor(100 + Math.random() * 900).toString();
-      emailExist.otp = otp;
-      emailExist.createdAt = new Date();
-      await this.userRepository.save(emailExist);
-      if (emailExist.type === UserType.Customer) {
-        await this.mailService.sendUserConfirmation(emailExist, token);
+
+      existingUser.otp = otp;
+      existingUser.createdAt = new Date();
+
+      await this.userRepository.save(existingUser);
+
+      if (existingUser.type === UserType.Customer) {
+        // Send confirmation email for customers
+        await this.mailService.sendUserConfirmation(existingUser, token);
       }
+
       return {
         message: 'OTP sent to your email.',
       };
@@ -121,10 +127,10 @@ export class AuthService {
     userData.name = createUserInput.name;
     userData.email = createUserInput.email;
     userData.password = hashPass;
-    userData.type = createUserInput.type ? createUserInput.type : UserType.Customer; // 1
+    userData.type = createUserInput.type || UserType.Customer; // Use specified type or default to UserType.Customer
     userData.createdAt = new Date();
 
-    if (createUserInput.type !== UserType.Customer) {
+    if (userData.type !== UserType.Customer) {
       userData.isVerified = true;
     }
 
@@ -132,15 +138,17 @@ export class AuthService {
 
     if (userData.type === UserType.Customer) {
       const token = Math.floor(100 + Math.random() * 900).toString();
+      // Send confirmation email for customers
       await this.mailService.sendUserConfirmation(userData, token);
     }
 
-    const access_token = await this.signIn(userData.email, userData.password);
+    const access_token = await this.signIn(userData.email, createUserInput.password);
 
+    // Fetch permissions based on user type
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${1}`) //createUserInput.type OR 1
+      .where(`permission.type_name = :typeName`, { typeName: userData.type })
       .select([
         'permission.id',
         'permission.type_name',
@@ -151,15 +159,16 @@ export class AuthService {
       ])
       .getMany();
 
+    if (result.length === 0) {
+      return {
+        message: 'Permissions not found for the specified user type.',
+      };
+    }
 
-    console.log('result')
-    console.log(result)
-
-
-    const formattedResult = result.map(permission => ({
+    const formattedResult = result.map((permission) => ({
       id: permission.id,
       type_name: permission.type_name,
-      permission: permission.permissions.map(p => ({
+      permission: permission.permissions.map((p) => ({
         id: p.id,
         type: p.type,
         read: p.read,
@@ -167,31 +176,42 @@ export class AuthService {
       })),
     }));
 
-
-    console.log(formattedResult[0])
     return {
       token: access_token.access_token,
       type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission
+      permissions: formattedResult[0].permission,
     };
-
   }
 
+
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
-    const user = await this.userRepository.findOne({ where: { email: loginInput.email } })
-    const permission = await this.permissionRepository.findOne({ where: { permission_name: user.type } })
+    const user = await this.userRepository.findOne({ where: { email: loginInput.email } });
 
     if (!user || !user.isVerified) {
       return {
-        message: 'User Is Not Regesired !'
-      }
+        message: 'User Is Not Registered!',
+      };
     }
-    const access_token = await this.signIn(loginInput.email, loginInput.password)
+
+    const permission = await this.permissionRepository.findOne({ where: { permission_name: user.type } });
+
+    let access_token: { access_token: string }; // Move the declaration here
+
+    if (!permission || permission.id === null) {
+      access_token = await this.signIn(loginInput.email, loginInput.password);
+      console.log("access_token.access_token", access_token.access_token)
+      return {
+        token: access_token.access_token,
+        permissions: ['customer', 'admin'],
+      };
+    }
+
+    access_token = await this.signIn(loginInput.email, loginInput.password);
 
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${permission.id}`) // user.type OR 1
+      .where(`permission.id = ${permission.id}`)
       .select([
         'permission.id',
         'permission.type_name',
@@ -202,13 +222,10 @@ export class AuthService {
       ])
       .getMany();
 
-    console.log('result')
-    console.log(result)
-
-    const formattedResult = result.map(permission => ({
+    const formattedResult = result.map((permission) => ({
       id: permission.id,
       type_name: permission.type_name,
-      permission: permission.permissions.map(p => ({
+      permission: permission.permissions.map((p) => ({
         id: p.id,
         type: p.type,
         read: p.read,
@@ -216,21 +233,11 @@ export class AuthService {
       })),
     }));
 
-    console.log(formattedResult[0].type_name)
-
-    if (!UserType.Customer) {
-      return {
-        token: access_token.access_token,
-        type_name: [`${formattedResult[0].type_name}`],
-        permissions: formattedResult[0].permission //['super_admin', 'customer'],
-      };
-    } else {
-      return {
-        token: access_token.access_token,
-        // type_name: [`${formattedResult[0].type_name}`],
-        permissions: ['customer'],
-      };
-    }
+    return {
+      token: access_token.access_token,
+      type_name: [`${formattedResult[0].type_name}`],
+      permissions: formattedResult[0].permission,
+    };
   }
 
   async changePassword(
