@@ -191,9 +191,8 @@ export class ProductsService {
             qb.orWhere('categories.name LIKE :searchTerm', { searchTerm: `%${searchTerm}%` });
             qb.orWhere('categories.description LIKE :searchTerm', { searchTerm: `%${searchTerm}%` });
           });
-        } else if (key === 'slug' && value.includes('category:')) {
-          const categorySlug = value.split('category:')[1];
-          productQueryBuilder.andWhere(`categories.slug LIKE :searchParam`, { searchParam: `%${categorySlug}%` });
+        } else if (key === 'categories.slug') {
+          productQueryBuilder.andWhere(`categories.slug LIKE :searchParam`, { searchParam: `%${value}%` });
         }
         else if (key === 'type.slug') {
           productQueryBuilder.andWhere(`type.slug LIKE :searchParam`, { searchParam: `%${value}%` });
@@ -333,8 +332,8 @@ export class ProductsService {
         'tags',
         'gallery',
         'related_products',
-        'variations.attribute', // Include attribute for variations
-        'variation_options.options', // Include options for variation_options
+        'variations.attribute',
+        'variation_options.options',
       ],
     });
 
@@ -343,7 +342,7 @@ export class ProductsService {
       // Destructuring variations
       product.variations = product.variations.map((variation) => ({
         ...variation,
-        attribute: variation.attribute, // Extract attribute value
+        attribute: variation.attribute,
       }));
 
       // Destructuring variation_options

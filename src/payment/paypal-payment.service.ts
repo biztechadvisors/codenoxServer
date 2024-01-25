@@ -88,7 +88,7 @@ export class PaypalPaymentService {
         {
           amount: {
             currency_code: "USD",
-            value: order.total * 100
+            value: order.total
           },
           description: 'Order From Marvel',
           reference_id: reference_id,

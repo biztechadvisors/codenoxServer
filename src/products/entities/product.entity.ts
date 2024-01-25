@@ -108,7 +108,7 @@ export class Product extends CoreEntity {
 }
 
 @Entity()
-export class OrderProductPivot {
+export class OrderProductPivot extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
   @Column()
@@ -124,6 +124,7 @@ export class OrderProductPivot {
   @ManyToOne(() => Order)
   @JoinColumn({ name: 'order_id' })
   order_id: Order;
+  order: Order;
 }
 
 @Entity()

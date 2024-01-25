@@ -178,58 +178,6 @@ export class AuthService {
   }
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
-    const user = await this.userRepository.findOne({ where: { email: loginInput.email } })
-    const permission = await this.permissionRepository.findOne({where:{permission_name:user.type}})
-    
-    if (!user || !user.isVerified) {
-      return {
-        message: 'User Is Not Regesired !'
-      }
-    }
-    const access_token = await this.signIn(loginInput.email, loginInput.password)
-
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${permission.id}`) // user.type OR 1
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
-
-    console.log('result')
-    console.log(result)
-
-    const formattedResult = result.map(permission => ({
-      id: permission.id,
-      type_name: permission.type_name,
-      permission: permission.permissions.map(p => ({
-        id: p.id,
-        type: p.type,
-        read: p.read,
-        write: p.write,
-      })),
-    }));
-
-    console.log(formattedResult[0].type_name)
-    // if (loginInput.email === 'store_owner@demo.com') {
-    //   return {
-    //     token: access_token.access_token,
-    //     type_name: [`${formattedResult[0].type_name[0]}`, `${formattedResult[0].type_name}`],
-    //     permissions: formattedResult[0].permission
-    //   };
-    // } else {
-      return {
-        token: access_token.access_token,
-        type_name: [`${formattedResult[0].type_name}`],
-        permissions: formattedResult[0].permission //['super_admin', 'customer'],
-      };
-    // }
   }
 
   async changePassword(
@@ -287,10 +235,6 @@ export class AuthService {
         message: 'OTP sent to your email.',
       };
     }
-    // return {
-    //   success: true,
-    //   message: 'Password change successful',
-    // };
   }
 
   async verifyForgetPasswordToken(
