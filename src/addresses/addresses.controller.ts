@@ -17,6 +17,7 @@ export class AddressesController {
 
   @Post()
   createAddress(@Body() createAddressDto: CreateAddressDto) {
+    console.log("createAddressDto*********", createAddressDto)
     return this.addressesService.create(createAddressDto);
   }
 
@@ -35,6 +36,7 @@ export class AddressesController {
     @Param('id') id: string,
     @Body() updateAddressDto: UpdateAddressDto,
   ) {
+    console.log("updateAddressDto*********", updateAddressDto)
     return this.addressesService.update(+id, updateAddressDto);
   }
 

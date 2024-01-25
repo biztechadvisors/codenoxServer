@@ -1,32 +1,58 @@
-/* eslint-disable prettier/prettier */
-import { CoreEntity } from 'src/common/entities/core.entity';
+// total-year-sale-by-month.entity.ts
 import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { forwardRef } from '@nestjs/common';
+import { Order } from 'src/orders/entities/order.entity';
 
 @Entity()
-export class TotalYearSaleByMonth {
+export class TotalYearSaleByMonth extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  total?: number
+  total: number;
+
   @Column()
-  month?: string
+  month: string;
+
+  @ManyToMany(
+    type => Analytics,
+    analytics => analytics.totalYearSaleByMonth,
+  )
+  @JoinTable()
+  analytics: Promise<Analytics[]>;
 }
+
+// analytics.entity.ts
 
 @Entity()
 export class Analytics extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  totalRevenue?: number
+  totalRevenue?: number;
+
+  @Column({ type: 'int', default: 0 })
+  totalRefunds: number;
+
   @Column()
-  totalShops?: number
+  totalShops?: number;
+
   @Column()
-  todaysRevenue?: number
+  todaysRevenue?: number;
+
   @Column()
-  totalOrders?: number
+  totalOrders?: number;
+
   @Column()
   newCustomers?: number;
-  @ManyToMany(() => TotalYearSaleByMonth)
+
+  @ManyToMany(
+    type => TotalYearSaleByMonth,
+    totalYearSaleByMonth => totalYearSaleByMonth.analytics,
+    { eager: true },
+  )
   @JoinTable()
-  totalYearSaleByMonth?: TotalYearSaleByMonth[];
+  totalYearSaleByMonth?: Promise<TotalYearSaleByMonth[]>;
 }

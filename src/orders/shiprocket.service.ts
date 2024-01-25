@@ -1,205 +1,231 @@
-import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
-import { lastValueFrom } from 'rxjs';
+// shiprocket.service.ts
+
+import { Injectable, Logger } from '@nestjs/common';
+import axios from 'axios';
 
 @Injectable()
 export class ShiprocketService {
-    constructor(private httpService: HttpService) { }
+
+    private apiUrl = 'https://apiv2.shiprocket.in/v1/external/';
+    private headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
+    };
+    private logger = new Logger(ShiprocketService.name);
+
+    private async makeShiprocketRequest(url: string, method: 'get' | 'post', data?: any) {
+        try {
+            const response = await axios.request({
+                method,
+                url,
+                data,
+                headers: this.headers,
+            });
+
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.status === 401) {
+                this.logger.error('Shiprocket API Authentication Error:', error.response.data);
+                throw new Error('Shiprocket API Authentication Error. Check your credentials.');
+            } else {
+                this.handleApiError(error);
+            }
+            return undefined;
+        }
+    }
+
+    private handleApiError(error: any) {
+        if (error.response) {
+            const shiprocketError = error.response.data;
+            this.logger.error('Shiprocket API Error:', shiprocketError);
+            throw shiprocketError;
+        } else if (error.request) {
+            this.logger.error('Network Error:', error.request);
+            throw new Error('Network error. Please check your internet connection.');
+        } else {
+            this.logger.error('Unexpected error:', error);
+            throw error;
+        }
+    }
 
     async generateToken(email: string, password: string) {
-        try {
-            const response = await lastValueFrom(this.httpService.post('https://apiv2.shiprocket.in/v1/external/auth/login', {
-                email,
-                password,
-            }));
-            return response.data.token;
-        } catch (error) {
-            throw new Error('Error generating Shiprocket token');
-        }
+        return this.makeShiprocketRequest(this.apiUrl + 'auth/login', 'post', { email, password });
     }
 
     async createOrder(order: any) {
-        try {
-            const response = await lastValueFrom(this.httpService.post('https://apiv2.shiprocket.in/v1/external/orders/create/adhoc', order, {
-                headers: {
-                    'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
-                },
-            }));
-            return (response as any).data;
-        } catch (error) {
-            console.log("error.response.data", error.response.data)
-            throw new Error(`Error creating Shiprocket order ${error.response.data}`);
-        }
+        return this.makeShiprocketRequest(this.apiUrl + 'orders/create/adhoc', 'post', order);
     }
 
     async generateLabel(orderId: number) {
-        try {
-            const response = await lastValueFrom(this.httpService.post(`https://apiv2.shiprocket.in/v1/external/courier/generate/label/${orderId}`, null, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
-                },
-            }));
-
-            return response.data;
-        } catch (error) {
-            throw new Error('Error generating Shiprocket label');
-        }
+        return this.makeShiprocketRequest(`${this.apiUrl}courier/generate/label/${orderId}`, 'get');
     }
 
     async trackOrderByOrderId(orderId: string | number) {
-        try {
-            const response = await lastValueFrom(this.httpService.get(`https://apiv2.shiprocket.in/v1/external/courier/track/awb/${orderId}`, {
-                headers: {
-                    'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
-                },
-            }));
-            return response.data;
-        } catch (error) {
-            throw new Error('Error tracking Shiprocket order');
-        }
+        return this.makeShiprocketRequest(`${this.apiUrl}courier/track/awb/${orderId}`, 'get');
     }
 
     async trackOrderByShipment_id(shipment_id: string | number) {
+        return this.makeShiprocketRequest(`${this.apiUrl}courier/track/shipment/${shipment_id}`, 'get');
+    }
+
+
+    async calculateShippingCostAndChoosePartner(
+        pickup_postcode: number,
+        delivery_postcode: number,
+        weight: string = "1",
+        cod: boolean = true,
+    ): Promise<{ partner: string; shippingDetails: any }> {
         try {
-            const response = await lastValueFrom(this.httpService.get(`https://apiv2.shiprocket.in/v1/external/courier/track/shipment/${shipment_id}`, {
-                headers: {
-                    'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
-                },
-            }));
-            return response.data;
+            const shippingDetails = await this.calculateShippingCost({
+                pickup_postcode,
+                delivery_postcode,
+                weight,
+                cod,
+            });
+
+            const minShippingDetails = this.findMinimumShippingCost(shippingDetails);
+
+            // Map the minimum shipping details to the desired response structure
+            const courierDetails = {
+                id: minShippingDetails.courier_company_id,
+                currency: minShippingDetails.currency,
+                city: minShippingDetails.city,
+                cod: minShippingDetails.cod,
+                courier_company_id: minShippingDetails.courier_company_id,
+                courier_name: minShippingDetails.courier_name,
+                min_weight: minShippingDetails.min_weight,
+                cod_charges: minShippingDetails.cod_charges,
+                postcode: minShippingDetails.postcode,
+                region: minShippingDetails.region,
+                state: minShippingDetails.state,
+                zone: minShippingDetails.zone,
+                shippingCost: minShippingDetails.shippingCost,
+                estimated_delivery_days: minShippingDetails.estimated_delivery_days,
+                etd: minShippingDetails.etd,
+            };
+
+            return { partner: minShippingDetails.courier_name, shippingDetails: courierDetails };
         } catch (error) {
-            throw new Error('Error tracking Shiprocket order');
+            this.logger.error('Error calculating shipping cost and choosing partner:', error);
+            throw error;
         }
     }
 
-    async calculateShippingCost(shippingData: any) {
+    private findMinimumShippingCost(shippingDetails: any[]): any {
+        if (shippingDetails.length === 0) {
+            this.logger.error('No shipping details available.');
+            throw new Error('No shipping details available.');
+        }
+
+        const minShippingDetails = shippingDetails.reduce((min, current) => {
+            return current.shippingCost < min.shippingCost ? current : min;
+        }, shippingDetails[0]);
+
+        // Extract relevant data from the minimum shipping details
+        const {
+            city,
+            cod,
+            courier_company_id,
+            courier_name,
+            postcode,
+            region,
+            state,
+            zone,
+            estimated_delivery_days,
+            etd,
+        } = minShippingDetails;
+
+        return {
+            city,
+            cod,
+            courier_company_id,
+            courier_name,
+            postcode,
+            region,
+            state,
+            zone,
+            shippingCost: minShippingDetails.shippingCost,
+            currency: minShippingDetails.currency,
+            min_weight: minShippingDetails.min_weight,
+            cod_charges: minShippingDetails.cod_charges,
+            estimated_delivery_days,
+            etd,
+        };
+    }
+
+    async calculateShippingCost(shippingData: any): Promise<any[]> {
+        const { pickup_postcode, delivery_postcode, weight, cod } = shippingData;
+        const url = `${this.apiUrl}courier/serviceability/?pickup_postcode=${pickup_postcode}&delivery_postcode=${delivery_postcode}&weight=${weight}&cod=${cod}`;
+
         try {
-            const { pickup_postcode, delivery_postcode, weight, cod } = shippingData;
-            const url = `https://apiv2.shiprocket.in/v1/external/courier/serviceability/?pickup_postcode=${pickup_postcode}&delivery_postcode=${delivery_postcode}&weight=${weight}&cod=${cod}`;
-            const response = await lastValueFrom(this.httpService.get(url, {
-                headers: {
-                    'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
-                },
-            }));
-            return response.data;
+            const response = await this.makeShiprocketRequest(url, 'get');
+
+            if (response && response.data && response.data.available_courier_companies) {
+                // Extract and filter the relevant data for each courier company
+                return response.data.available_courier_companies.map((courier) => ({
+                    id: courier.id,
+                    currency: response.currency,
+                    city: courier.city,
+                    cod: courier.cod,
+                    courier_company_id: courier.courier_company_id,
+                    courier_name: courier.courier_name,
+                    min_weight: courier.min_weight,
+                    cod_charges: courier.cod_charges,
+                    postcode: courier.postcode,
+                    region: courier.region,
+                    state: courier.state,
+                    zone: courier.zone,
+                    shippingCost: courier.rate,
+                    estimated_delivery_days: courier.estimated_delivery_days,
+                    etd: courier.etd
+                }));
+            } else {
+                this.logger.error('Invalid response format from Shiprocket API.');
+                throw new Error('Invalid response format from Shiprocket API.');
+            }
         } catch (error) {
-            throw new Error('Error during Services calculateShippingCost ');
+            this.logger.error('Error calculating shipping cost:', error);
+            throw error;
         }
     }
 
     async cancelOrder(order_id: string | number) {
         try {
             const ids = [order_id];
-            const response = await lastValueFrom(this.httpService.post(
-                'https://apiv2.shiprocket.in/v1/external/orders/cancel',
-                { ids },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
-                    },
-                }
-            ));
-            return response.data;
+            return this.makeShiprocketRequest(`${this.apiUrl}orders/cancel`, 'post', { ids });
         } catch (error) {
             if (error.response && error.response.status === 401) {
-                console.error('Shiprocket API Error: Authentication failed. Check your credentials.');
+                this.logger.error('Shiprocket API Error: Authentication failed. Check your credentials.');
                 throw new Error('Authentication failed. Check your credentials.');
             } else {
-                throw error;
+                this.handleApiError(error);
             }
         }
     }
 
     async updateCustomerAddress(orderData: any) {
-        try {
-            const response = await lastValueFrom(this.httpService.post(
-                'https://apiv2.shiprocket.in/v1/external/orders/address/update',
-                orderData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
-                    },
-                }
-            ));
-            console.log('Shiprocket API Response:', (response as any).data);
-            return (response as any).data;
-        } catch (error) {
-            if (error.response) {
-                const shiprocketError = error.response.data;
-                console.error('Shiprocket API Error:', shiprocketError);
-                throw shiprocketError;
-            } else {
-                throw error;
-            }
-        }
+        return this.makeShiprocketRequest(`${this.apiUrl}orders/address/update`, 'post', orderData);
     }
 
     async returnShiprocketOrder(orderData: any) {
-        try {
-            const response = await lastValueFrom(this.httpService.post(
-                'https://apiv2.shiprocket.in/v1/external/orders/create/return',
-                { orderData },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
-                    },
-                }
-            ));
-            return (response as any).data;
-        } catch (error) {
-            if (error.response) {
-                const shiprocketError = error.response.data;
-                console.error('Shiprocket API Error:', shiprocketError);
-                throw shiprocketError;
-            } else {
-                throw error;
-            }
-        }
+        return this.makeShiprocketRequest(`${this.apiUrl}orders/create/return`, 'post', { orderData });
     }
 
     async getShiprocketOrders() {
-        try {
-            const response = await lastValueFrom(this.httpService.get(
-                'https://apiv2.shiprocket.in/v1/external/orders',
-                {
-                    headers: {
-                        'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
-                    },
-                }
-            ));
-            if ((response as any).status !== 200) {
-                const error = (response as any);
-                console.error('Shiprocket API Error:', error);
-                throw error;
-            }
-            return (response as any).data;
-        } catch (error) {
-            console.error(error);
-            throw error;
+        const response = await axios.get(`${this.apiUrl}orders`, {
+            headers: {
+                Authorization: `Bearer ${process.env.SHIPROCKET_TOKEN || ''}`,
+            },
+        });
+
+        if (response.status !== 200) {
+            this.handleApiError(response);
         }
+
+        return response.data;
     }
 
     async returnAllShiprocketOrder() {
-        try {
-            const response = await lastValueFrom(this.httpService.post(
-                'https://apiv2.shiprocket.in/v1/external/orders/processing/return',
-                {},
-                {
-                    headers: {
-                        'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
-                    },
-                }
-            ));
-            return (response as any).data;
-        } catch (error) {
-            if (error.response) {
-                const shiprocketError = error.response.data;
-                console.error('Shiprocket API Error:', shiprocketError);
-                throw shiprocketError;
-            } else {
-                throw error;
-            }
-        }
+        return this.makeShiprocketRequest(`${this.apiUrl}orders/processing/return`, 'post', {});
     }
 }
