@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export class PaypalCreateIntentPram {
   intent: string
   purchase_units: PurchaseUnit[]

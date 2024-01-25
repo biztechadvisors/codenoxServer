@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { PaginationArgs } from 'src/common/dto/pagination-args.dto';

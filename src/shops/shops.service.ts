@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { ApproveShopDto, CreateShopDto } from './dto/create-shop.dto'
 import { UpdateShopDto } from './dto/update-shop.dto'
@@ -6,7 +7,7 @@ import Fuse from 'fuse.js'
 import { GetShopsDto } from './dto/get-shops.dto'
 import { paginate } from 'src/common/pagination/paginate'
 import { GetStaffsDto } from './dto/get-staffs.dto'
-import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository } from './shops.repository'
+import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository, ShopSocialsRepository } from './shops.repository'
 import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
 import { Balance } from './entities/balance.entity'
@@ -17,10 +18,8 @@ import { User, UserType } from 'src/users/entities/user.entity'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { AttachmentRepository } from 'src/common/common.repository'
 import { ShopSettings } from './entities/shopSettings.entity'
-import { ShopSocialsRepository } from 'src/settings/settings.repository'
 import { AddressesService } from 'src/addresses/addresses.service'
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto'
-import { error } from 'console'
 import { UserAddressRepository } from 'src/addresses/addresses.repository'
 
 @Injectable()
@@ -60,7 +59,7 @@ export class ShopsService {
     const newBalance = new Balance();
     const newSetting = new ShopSettings();
     try {
-      let userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
+      const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
       // Check if the user exists and is a vendor
       if (!userToUpdate && userToUpdate.type !== UserType.Vendor) {
         throw new Error('User does not exist or is not a vendor');
@@ -141,7 +140,7 @@ export class ShopsService {
         shp.managed_shop = shop;
 
         // Find the user by id
-        let userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
+        const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
 
         // If the user exists, update the fields
         if (userToUpdate) {

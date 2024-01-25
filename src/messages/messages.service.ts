@@ -49,7 +49,6 @@ export class MessagesService {
       } else {
         console.log("Latest Message Not Found");
       }
-
       message.conversation = conversationCheck;
       message.conversation_id = conversationCheck.id;
       message.body = createMessageDto.conversation.latest_message.body;
@@ -90,7 +89,6 @@ export class MessagesService {
     }
     const url = `/message?limit=${limit}`;
     const paginatedData = paginate(messages.length, page, limit, messages.length, url);
-
     return {
       data: message.slice(paginatedData.firstItem, paginatedData.lastItem + 1),
       ...paginatedData,

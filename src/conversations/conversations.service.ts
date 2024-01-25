@@ -100,11 +100,14 @@ export class ConversationsService {
   async getAllConversations({ page, limit, search }: GetConversationsDto) {
     if (!page) page = 1;
 
+
     let conversations = await this.conversationRepository.find({ relations: ['latest_message', 'user', 'shop', 'shop.balance', 'shop.cover_image', 'shop.logo', 'shop.address'] });
+
 
     if (search) {
       const parseSearchParams = search.split(';');
       const searchText: any = [];
+
 
       for (const searchParam of parseSearchParams) {
         const [key, value] = searchParam.split(':');
@@ -116,6 +119,7 @@ export class ConversationsService {
         }
       }
 
+
       conversations = conversations.filter((con) =>
         searchText.every((searchItem) =>
           Object.entries(searchItem).every(([key, value]) => con[key] === value)
@@ -123,8 +127,10 @@ export class ConversationsService {
       );
     }
 
+
     const url = `/conversations?limit=${limit}`;
     const paginatedData = paginate(conversations.length, page, limit, conversations.length, url);
+
 
     return {
       data: conversations.slice(paginatedData.firstItem, paginatedData.lastItem + 1),

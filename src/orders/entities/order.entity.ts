@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { UserAddress } from 'src/addresses/entities/address.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
@@ -27,6 +28,7 @@ export enum OrderStatusType {
   FAILED = 'order-failed',
   AT_LOCAL_FACILITY = 'order-at-local-facility',
   OUT_FOR_DELIVERY = 'order-out-for-delivery',
+  // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
   DEFAULT_ORDER_STATUS = 'order-pending',
 }
 
@@ -126,7 +128,7 @@ export class Order extends CoreEntity {
   @Column()
   language: string;
 
-  @Column({ type: 'json' })
+  @Column({ type: "json" })
   translated_languages: string[];
 
   @OneToOne(() => PaymentIntent)

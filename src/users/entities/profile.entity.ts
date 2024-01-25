@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./user.entity";
 import { Attachment } from "src/common/entities/attachment.entity";

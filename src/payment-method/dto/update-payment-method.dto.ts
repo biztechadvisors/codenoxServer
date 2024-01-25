@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { CreatePaymentMethodDto } from './create-payment-method.dto'
 import { PartialType } from '@nestjs/swagger'
 

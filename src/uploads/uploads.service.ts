@@ -12,7 +12,6 @@ export class UploadsService {
     @InjectRepository(AttachmentRepository) private attachmentRepository: AttachmentRepository,
   ) { }
 
-
   async uploadFile(attachment: Array<Express.Multer.File>): Promise<AttachmentDTO[]> {
     const attachmentData = [];
     for (const file of attachment) {

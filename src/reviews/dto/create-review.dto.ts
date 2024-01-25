@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Attachment } from '../../common/entities/attachment.entity';
 
 export class CreateReviewDto {

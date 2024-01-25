@@ -11,6 +11,7 @@ import Fuse from 'fuse.js'
 // import { Balance } from 'src/shops/entities/balance.entity'
 import { BalanceRepository, ShopRepository } from 'src/shops/shops.repository'
 
+
 @Injectable()
 export class WithdrawsService {
   constructor(
@@ -21,14 +22,15 @@ export class WithdrawsService {
     @InjectRepository(ShopRepository)
     private shopRepository: ShopRepository,
   ) { }
-  private withdraw: Withdraw[] = []
+  // private withdraw: Withdraw[] = []
 
   async create(createWithdrawDto: CreateWithdrawDto) {
+    console.log("entered")
     const newWithdraw = new Withdraw()
     // const newWithdrawBalance = new Balance()
 
     try {
-
+console.log("working")
       const findId = await this.withdrawRepository.find({
         where: {
           shop_id: createWithdrawDto.shop_id
@@ -36,7 +38,7 @@ export class WithdrawsService {
       })
 
       console.log("findShop", findId)
-      if (!findId) {
+      if (findId) {
 
         newWithdraw.amount = createWithdrawDto.amount
         newWithdraw.details = createWithdrawDto.details
@@ -74,7 +76,7 @@ export class WithdrawsService {
         console.log("add data", addWithdraw)
         return addWithdraw
       } else {
-        console.log("Already have pending Request")
+        console.error()
         return 'You Already Have Pending Request'
       }
     } catch (error) {
@@ -203,20 +205,20 @@ export class WithdrawsService {
         id: id
       }
     })
-    // Check if the object exists
+   
     if (!idFind) {
-      // Throw an error if the object is not found
+    
       throw new Error(`Withdraw with ID ${id} not found`)
     }
-    // Create a new object with only the ID
+  
     const deleteData = {
       id: idFind.id
     }
-    // Use `delete` with the filtered data object
+   
     await this.withdrawRepository.delete(deleteData)
-    // Log the deleted data
+  
     console.log("0", deleteData)
-    // Return the deleted data (optional)
+   
     return deleteData
   }
 
