@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Type } from 'class-transformer';
 import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
 

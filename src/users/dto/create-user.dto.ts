@@ -10,7 +10,6 @@ enum Permission {
   STORE_OWNER = 'Store owner',
   STAFF = 'Staff',
   CUSTOMER = 'Customer',
-  DEALER = 'Dealer',
 }
 export class CreateUserDto extends PickType(User, [
   'name',

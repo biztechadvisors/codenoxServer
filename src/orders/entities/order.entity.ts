@@ -128,7 +128,7 @@ export class Order extends CoreEntity {
   @Column()
   language: string;
 
-  @Column({ type: 'json' })
+  @Column({ type: "json" })
   translated_languages: string[];
 
   @OneToOne(() => PaymentIntent)

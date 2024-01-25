@@ -48,12 +48,11 @@ export interface PermissionItem {
 
 export class AuthResponse {
   token: string;
-  permissions: any[];
-  type_name?: string[]
+  permissions: PermissionItem[];
+  type_name: string[]
   success?: boolean;
   message?: string;
 }
-
 export class CoreResponse extends CoreMutationOutput { }
 
 export class VerifyOtpDto {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity'
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
