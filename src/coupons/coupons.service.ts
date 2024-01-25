@@ -5,8 +5,6 @@ import { plainToClass } from 'class-transformer';
 import { CreateCouponDto, pagination } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { Coupon, CouponType } from './entities/coupon.entity';
-import couponsJson from '@db/coupons.json';
-import Fuse from 'fuse.js';
 import { GetCouponsDto } from './dto/get-coupons.dto';
 // import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -163,46 +161,25 @@ export class CouponsService {
     await this.couponRepository.remove(existingCoupons);
   }
 
-  async verifyCoupon(code: string): Promise<Coupon | null> {
+  async verifyCoupon(code: string): Promise<Coupon | null>{
     console.log(code)
     const currentDate = new Date();
-    const coupon = await this.couponRepository.findOne({ where: { code: code } });
-    console.log(coupon)
+  const coupon = await this.couponRepository.findOne({where:{ code:code }});
+  console.log(coupon)
 
-    if (coupon && coupon.expire_at) {
-      const expirationDate = new Date(coupon.expire_at);
+  if (coupon && coupon.expire_at) {
+    const expirationDate = new Date(coupon.expire_at);
 
-      if (expirationDate > currentDate) {
-        return coupon;
-      } else {
-        return null;
-      }
+    if (expirationDate > currentDate) {
+      console.log('Work')
+      return coupon;
+    } else {
+      console.log('Work-Not')
+      return null;
     }
+  }
 
-    return null;
-    // return {
-    //   is_valid: true,
-    //   coupon: {
-    //     id: 9,
-    //     code: code,
-    //     description: null,
-    //     image: {
-    //       id: 925,
-    //       original:
-    //         'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/925/5x2x.png',
-    //       thumbnail:
-    //         'https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/925/conversions/5x2x-thumbnail.jpg',
-    //     },
-    //     type: 'fixed',
-    //     amount: 5,
-    //     active_from: '2021-03-28T05:46:42.000Z',
-    //     expire_at: '2024-06-23T05:46:42.000Z',
-    //     created_at: '2021-03-28T05:48:16.000000Z',
-    //     updated_at: '2021-08-19T03:58:34.000000Z',
-    //     deleted_at: null,
-    //     is_valid: true,
-    //   },
-    // };
+  return null;
   }
 }
 function paginate(totalItems: number, currentPage: number, pageSize: number, totalResults: number, url: string): pagination {

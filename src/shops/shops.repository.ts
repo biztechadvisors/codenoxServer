@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Repository } from 'typeorm';
 import { CustomRepository } from 'src/typeorm-ex/typeorm-ex.decorator';
 import { PaymentInfo, Shop } from './entities/shop.entity';

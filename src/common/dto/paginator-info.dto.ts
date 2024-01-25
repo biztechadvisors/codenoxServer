@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export class PaginatorInfo {
   count: number
   current_page: number

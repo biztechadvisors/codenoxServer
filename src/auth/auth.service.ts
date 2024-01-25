@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import {
   AuthResponse,
@@ -120,7 +121,7 @@ export class AuthService {
     userData.name = createUserInput.name;
     userData.email = createUserInput.email;
     userData.password = hashPass;
-    userData.type = createUserInput.type ? createUserInput.type : UserType.Customer;
+    userData.type = createUserInput.type ? createUserInput.type : UserType.Customer; // 1
     userData.createdAt = new Date();
 
     if (createUserInput.type !== UserType.Customer) {
@@ -139,7 +140,7 @@ export class AuthService {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${6}`)
+      .where(`permission.id = ${1}`) //createUserInput.type OR 1
       .select([
         'permission.id',
         'permission.type_name',
@@ -177,8 +178,8 @@ export class AuthService {
   }
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
-
     const user = await this.userRepository.findOne({ where: { email: loginInput.email } })
+    const permission = await this.permissionRepository.findOne({ where: { permission_name: user.type } })
 
     if (!user || !user.isVerified) {
       return {
@@ -187,52 +188,49 @@ export class AuthService {
     }
     const access_token = await this.signIn(loginInput.email, loginInput.password)
 
-    // if (loginInput.type) {
-    //   const result = await this.permissionRepository
-    //     .createQueryBuilder('permission')
-    //     .leftJoinAndSelect('permission.permissions', 'permissions')
-    //     .where(`permission.id = ${6}`)
-    //     .select([
-    //       'permission.id',
-    //       'permission.type_name',
-    //       'permissions.id',
-    //       'permissions.type',
-    //       'permissions.read',
-    //       'permissions.write',
-    //     ])
-    //     .getMany();
+    const result = await this.permissionRepository
+      .createQueryBuilder('permission')
+      .leftJoinAndSelect('permission.permissions', 'permissions')
+      .where(`permission.id = ${permission.id}`) // user.type OR 1
+      .select([
+        'permission.id',
+        'permission.type_name',
+        'permissions.id',
+        'permissions.type',
+        'permissions.read',
+        'permissions.write',
+      ])
+      .getMany();
 
-    //   const formattedResult = result.map(permission => ({
-    //     id: permission.id,
-    //     type_name: permission.type_name,
-    //     permission: permission.permissions.map(p => ({
-    //       id: p.id,
-    //       type: p.type,
-    //       read: p.read,
-    //       write: p.write,
-    //     })),
-    //   }));
+    console.log('result')
+    console.log(result)
 
-    //   if (loginInput.email === 'store_owner@demo.com') {
-    //     return {
-    //       token: access_token.access_token,
-    //       type_name: [`${formattedResult[0].type_name[0]}`, `${formattedResult[0].type_name}`],
-    //       permissions: formattedResult[0].permission
-    //     };
-    //   } else {
-    //     return {
-    //       token: access_token.access_token,
-    //       type_name: [`${formattedResult[0].type_name}`],
-    //       permissions: formattedResult[0].permission //['super_admin', 'customer'],
-    //     };
-    //   }
-    // }
+    const formattedResult = result.map(permission => ({
+      id: permission.id,
+      type_name: permission.type_name,
+      permission: permission.permissions.map(p => ({
+        id: p.id,
+        type: p.type,
+        read: p.read,
+        write: p.write,
+      })),
+    }));
 
-    return {
-      token: access_token.access_token,
-      permissions: ['customer','super_admin']
+    console.log(formattedResult[0].type_name)
+
+    if (!UserType.Customer) {
+      return {
+        token: access_token.access_token,
+        type_name: [`${formattedResult[0].type_name}`],
+        permissions: formattedResult[0].permission //['super_admin', 'customer'],
+      };
+    } else {
+      return {
+        token: access_token.access_token,
+        // type_name: [`${formattedResult[0].type_name}`],
+        permissions: ['customer'],
+      };
     }
-
   }
 
   async changePassword(
@@ -443,7 +441,6 @@ export class AuthService {
   }
 
   async verifyOtpCode(verifyOtpInput: VerifyOtpDto): Promise<CoreResponse> {
-
     const result = await this.verifyOtp(verifyOtpInput.code);
 
     if (typeof result === 'boolean') {

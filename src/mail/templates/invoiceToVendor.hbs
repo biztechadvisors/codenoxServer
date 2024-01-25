@@ -1,0 +1,13 @@
+<p>Hello, {{ email }}</p>
+<p>Your order is Successful.</p>
+
+<p>Products:</p>
+  <ul>
+    {{#each products}}
+      <strong>Product Name: </strong><li>{{name}}</li>
+      <strong>product Price: </strong><li>{{price}}</li>
+      <strong>product Quantity: </strong><li>{{quantity}}</li>
+      {{!-- <li> {{image}}</li> --}}
+    {{/each}}
+  </ul>
+

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common'
 import { CreateNewSubscriberDto } from './dto/create-new-subscriber.dto'
 

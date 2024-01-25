@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   BadRequestException,
   Body,
@@ -30,6 +31,7 @@ export class OrdersController {
 
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
+    console.log(createOrderDto)
     return this.ordersService.create(createOrderDto);
   }
 
@@ -113,6 +115,7 @@ export class OrderStatusController {
 
   @Get(':param')
   findOne(@Param('param') param: string, @Query('language') language: string) {
+    console.log('param = '+param)
     return this.ordersService.getOrderStatus(param, language);
   }
 
@@ -161,8 +164,8 @@ export class DownloadInvoiceController {
   constructor(private ordersService: OrdersService) { }
 
   @Post()
-  async downloadInvoiceUrl(@Body('shop_id') shop_id: string) {
-    return this.ordersService.downloadInvoiceUrl(shop_id);
+  async downloadInvoiceUrl(@Body('order_id') order_id: string) {
+    return this.ordersService.downloadInvoiceUrl(order_id);
   }
 }
 

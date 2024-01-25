@@ -1,0 +1,14 @@
+
+<p>Hello, {{ email }}</p>
+<p>Please check your left items in cart. <br>Come and complete your purchase!</p>
+<p>Items are listed below</p>
+<p>Products:</p>
+  <ul>
+    {{#each products}}
+      <strong>Product Name: </strong><li>{{name}}</li>
+      <strong>product Price: </strong><li>{{price}}</li>
+      {{!-- <li> {{image}}</li> --}}
+    {{/each}}
+  </ul>
+<p>{{ cartUrl }}</p>
+<p>If you did not request this email you can safely ignore it.</p>

@@ -14,7 +14,6 @@ import { convertToSlug } from 'src/helpers';
 import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { UploadsService } from 'src/uploads/uploads.service';
-import { error } from 'console';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 
 const types = plainToClass(Type, typesJson);

@@ -1,16 +1,9 @@
+/* eslint-disable prettier/prettier */
 import { OmitType } from '@nestjs/swagger';
 import { File, Product, Variation } from '../entities/product.entity';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 
-export
-
-  class
-
-  CreateProductDto
-
-  extends
-
-  OmitType(Product, [
+export class CreateProductDto extends OmitType(Product, [
     'id',
     'slug',
     'created_at',
@@ -25,6 +18,7 @@ export
     'variations',
     'variation_options',
     'translated_languages',
+    'taxes'
   ]) {
   categories: number[];
   tags: number[];

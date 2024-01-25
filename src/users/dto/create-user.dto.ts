@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PickType } from '@nestjs/swagger';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { User, UserType } from '../entities/user.entity';

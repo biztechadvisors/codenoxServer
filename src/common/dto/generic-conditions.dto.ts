@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export class WhereHasConditions {
   operator: SQLOperator
   value: string
