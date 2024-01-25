@@ -1,6 +1,8 @@
+/* eslint-disable prettier/prettier */
 import { CustomRepository } from "src/typeorm-ex/typeorm-ex.decorator";
 import { Repository } from "typeorm";
 import { File, OrderProductPivot, Product, Variation, VariationOption } from "./entities/product.entity";
+import { Tax } from "src/taxes/entities/tax.entity";
 
 
 @CustomRepository(Product)
@@ -17,3 +19,6 @@ export class VariationOptionRepository extends Repository<VariationOption> { }
 
 @CustomRepository(File)
 export class FileRepository extends Repository<File> { }
+
+@CustomRepository(Tax)
+export class TaxRepository extends Repository<Tax> { }

@@ -428,8 +428,9 @@ export class SettingsService {
 
   //find all settings
  async findAll() {
-    console.log("first")
-    const settingData = await this.settingRepository.find({
+
+    const settingData = await this.settingRepository.find({ 
+
       relations: [
         'options.contactDetails',
         'options.contactDetails.socials',

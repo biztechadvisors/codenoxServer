@@ -18,6 +18,7 @@ export class CreateProductDto extends OmitType(Product, [
     'variations',
     'variation_options',
     'translated_languages',
+    'taxes'
   ]) {
   categories: number[];
   tags: number[];

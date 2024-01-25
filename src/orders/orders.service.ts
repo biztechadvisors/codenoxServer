@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
 import exportOrderJson from '@db/order-export.json';
 import orderFilesJson from '@db/order-files.json';
@@ -43,6 +44,8 @@ import { OrderProductPivot, Product } from 'src/products/entities/product.entity
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { RazorpayService } from 'src/payment/razorpay-payment.service';
 import { ShiprocketService } from 'src/orders/shiprocket.service';
+import { stateCode } from 'src/taxes/state_code.tax';
+import { Shop } from 'src/shops/entities/shop.entity';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -76,10 +79,13 @@ export class OrdersService {
     private readonly paymentIntentRepository: Repository<PaymentIntent>,
     @InjectRepository(OrderProductPivot)
     private readonly orderProductPivotRepository: Repository<OrderProductPivot>,
-
+    // @InjectRepository(Shop)
+    // private readonly shopRepository:Repository<Shop>
   ) { }
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
+    console.log("Work")
+    console.log(createOrderInput)
     const order = plainToClass(Order, createOrderInput);
     const newOrderStatus = new OrderStatus();
     const newOrderFile = new OrderFiles();
@@ -90,6 +96,7 @@ export class OrdersService {
       : PaymentGatewayType.CASH_ON_DELIVERY;
     order.payment_gateway = paymentGatewayType;
     order.payment_intent = null;
+    order.sales_tax = createOrderInput.sales_tax
     order.customerId = order.customerId;
     order.customer_id = order.customerId;
     switch (paymentGatewayType) {
@@ -185,8 +192,8 @@ export class OrdersService {
       height: 10,
       weight: 1
     };
-    const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
-    order.tracking_number = shiprocketResponse.shipment_id ? shiprocketResponse.shipment_id : shiprocketResponse.order_id;
+    // const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
+    // order.tracking_number = shiprocketResponse.shipment_id ? shiprocketResponse.shipment_id : shiprocketResponse.order_id;
     const savedOrder = await this.orderRepository.save(order);
     if (order.products) {
       const productEntities = await this.productRepository.find({
@@ -602,7 +609,8 @@ export class OrdersService {
 
   async verifyCheckout(input: CheckoutVerificationDto): Promise<VerifiedCheckoutData> {
     // Initialize variables
-    console.log("input daat", input)
+    console.log(input)
+
     let total_tax = 0;
     let shipping_charge = 0;
     let unavailable_products: number[] = [];
@@ -610,17 +618,54 @@ export class OrdersService {
     // Verify each product in the order
     for (const product of input.products) {
       // Fetch the product from the database
-      const productEntity = await this.productRepository.findOne({ where: { id: product.product_id } });
-
+      const productEntity = await this.productRepository.findOne({ where: { id: product.product_id }, relations:['shop.address']});
+console.log(productEntity)
       // Check if the product is available
       if (!productEntity || productEntity.stock < product.quantity) {
         unavailable_products.push(product.product_id);
       } else {
         // Calculate the total tax and shipping charge
-        total_tax += productEntity.tax * product.quantity;
+        total_tax= product.subtotal * productEntity.taxes.rate/100  //IGST
+        console.log(total_tax)  
+        console.log(total_tax/2)
         shipping_charge += productEntity.shipping_fee;
+
+          // if(productEntity.shop.address.state === input.shipping_address.state){
+          //   const shippingState = input.shipping_address.state;
+          //   if (stateCode.hasOwnProperty(shippingState)) {
+          //     const stateCodeValue = stateCode[shippingState];
+          //     tax_type = {
+          //       CGST: total_tax/2,
+          //       SGST: total_tax/2,
+          //       state_code: stateCodeValue,
+          //       GST_number: "SHOPGST_NO_COLOUM"
+          //     }
+          //     console.log('stateCodeValue');
+          //     console.log(stateCodeValue);
+          //   } else {
+          //     console.log('Invalid state name in shipping address');
+          //   }
+            
+
+          // }else{
+          //   const stateCodeValue = stateCode[input.shipping_address.state];
+          //   tax_type = {
+          //     state_code: stateCodeValue,
+          //     GST_number: "SHOPGST_NO_COLOUM"
+          //   }
+            
+          // }
+          
+          // console.log('true')
+        // }else{
+        //   console.log('false')
+        // }
       }
     }
+    console.log(input.billing_address.city +" === "+ input.shipping_address.city)
+    console.log(input.billing_address.state +" === "+ input.shipping_address.state)
+    
+    console.log(total_tax)
 
     // Return the verified data
     return {
@@ -702,8 +747,49 @@ export class OrdersService {
     return exportOrderJson.url;
   }
 
-  async downloadInvoiceUrl(shop_id: string) {
-    return orderInvoiceJson[0].url;
+  async downloadInvoiceUrl(Order_id: string) {
+    console.log(Order_id)
+    let taxType
+    const Invoice = await this.orderRepository.findOne({ where: { id: +Order_id }, relations:['coupon','status','billing_address','shipping_address','shop','shop.address','products'] });
+    if(Invoice.shop.address.state === Invoice.shipping_address.state){
+      const shippingState = Invoice.shipping_address.state;
+      if (stateCode.hasOwnProperty(shippingState)) {
+        const stateCodeValue = stateCode[shippingState];
+        taxType={
+          CGST:Invoice.sales_tax/2,
+          SGST:Invoice.sales_tax/2,  // state- ut code 
+          state_code:stateCodeValue,
+          billing_address:Invoice.billing_address,
+          shipping_address:Invoice.shipping_address,
+          shop_address:Invoice.shop.address,
+          product:Invoice.products,
+          created_at:'Order_date',
+          order_no: Invoice.id,
+          invoice_date:'Order_date'
+
+        }
+        return taxType
+        console.log('stateCodeValue:', stateCodeValue);
+      } else {
+        return 'Invalid state name in shipping address';
+      }
+      
+    }else{
+      const stateCodeValue = stateCode[Invoice.shipping_address.state];
+      taxType={
+        IGST:Invoice.sales_tax,
+        state_code:stateCodeValue, 
+        billing_address:Invoice.billing_address,
+        shipping_address:Invoice.shipping_address,
+        shop_address:Invoice.shop.address,
+        product:Invoice.products,
+        created_at:'Order_date',
+        order_no: Invoice.id,
+        invoice_date:'Order_date'
+      }
+      return taxType
+    }
+    // return orderInvoiceJson[0].url;
   }
 
   /**
@@ -737,7 +823,7 @@ export class OrdersService {
     try {
       const pI = await this.savePaymentIntent(order);
       const is_redirect = pI.redirect_url ? true : false;
-      let redirect_url = pI.redirect_url ? pI.redirect_url : null;
+      const redirect_url = pI.redirect_url ? pI.redirect_url : null;
       const paymentIntentInfo = this.paymentIntentInfoRepository.create({
         order_id: pI.id,
         client_secret: pI.client_secret,
@@ -745,7 +831,7 @@ export class OrdersService {
         is_redirect,
       });
       await this.paymentIntentInfoRepository.save(paymentIntentInfo);
-      let paymentIntent = this.paymentIntentRepository.create({
+      const paymentIntent = this.paymentIntentRepository.create({
         order_id: order.id,
         tracking_number: order.tracking_number ? order.tracking_number : order.id.toString(),
         payment_gateway: order.payment_gateway.toString().toLowerCase(),
