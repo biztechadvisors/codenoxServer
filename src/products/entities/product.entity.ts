@@ -122,7 +122,7 @@ export class Product extends CoreEntity {
 }
 
 @Entity()
-export class OrderProductPivot {
+export class OrderProductPivot extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
   @Column()
@@ -133,13 +133,12 @@ export class OrderProductPivot {
   unit_price: number;
   @Column()
   subtotal: number;
-
   @ManyToOne(() => Product)
   product: Product;
-
   @ManyToOne(() => Order)
   @JoinColumn({ name: 'order_id' })
   order_id: Order;
+  order: Order;
 }
 
 @Entity()

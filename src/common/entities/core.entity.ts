@@ -1,9 +1,13 @@
 import { Type } from 'class-transformer';
+import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 export class CoreEntity {
-  id: number;
+  @CreateDateColumn()
   @Type(() => Date)
   created_at: Date;
+
+  @UpdateDateColumn()
   @Type(() => Date)
   updated_at: Date;
 }
+

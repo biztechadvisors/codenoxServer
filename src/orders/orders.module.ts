@@ -7,11 +7,12 @@ import {
   OrderFilesController,
   OrdersController,
   OrderStatusController,
+  ShiprocketController,
 } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order, OrderFiles } from './entities/order.entity';
-import { OrderStatus } from './entities/order-status.entity'; // Import OrderStatus entity
+import { OrderStatus } from './entities/order-status.entity';
 import { User } from 'src/users/entities/user.entity';
 import { OrderProductPivot, Product } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
@@ -29,7 +30,7 @@ import { HttpModule } from '@nestjs/axios';
       OrderProductPivotRepository
     ]),
     TypeOrmModule.forFeature([Order, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo]), // Include Order and OrderStatus here
-    HttpModule, // Add this line
+    HttpModule,
   ],
   controllers: [
     OrdersController,
@@ -37,6 +38,7 @@ import { HttpModule } from '@nestjs/axios';
     OrderFilesController,
     OrderExportController,
     DownloadInvoiceController,
+    ShiprocketController,
   ],
   providers: [OrdersService, ShiprocketService],
   exports: [OrdersService],

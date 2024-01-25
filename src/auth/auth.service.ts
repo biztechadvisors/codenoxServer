@@ -187,50 +187,52 @@ export class AuthService {
     }
     const access_token = await this.signIn(loginInput.email, loginInput.password)
 
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${6}`)
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
+    // if (loginInput.type) {
+    //   const result = await this.permissionRepository
+    //     .createQueryBuilder('permission')
+    //     .leftJoinAndSelect('permission.permissions', 'permissions')
+    //     .where(`permission.id = ${6}`)
+    //     .select([
+    //       'permission.id',
+    //       'permission.type_name',
+    //       'permissions.id',
+    //       'permissions.type',
+    //       'permissions.read',
+    //       'permissions.write',
+    //     ])
+    //     .getMany();
 
+    //   const formattedResult = result.map(permission => ({
+    //     id: permission.id,
+    //     type_name: permission.type_name,
+    //     permission: permission.permissions.map(p => ({
+    //       id: p.id,
+    //       type: p.type,
+    //       read: p.read,
+    //       write: p.write,
+    //     })),
+    //   }));
 
-    console.log('result')
-    console.log(result)
+    //   if (loginInput.email === 'store_owner@demo.com') {
+    //     return {
+    //       token: access_token.access_token,
+    //       type_name: [`${formattedResult[0].type_name[0]}`, `${formattedResult[0].type_name}`],
+    //       permissions: formattedResult[0].permission
+    //     };
+    //   } else {
+    //     return {
+    //       token: access_token.access_token,
+    //       type_name: [`${formattedResult[0].type_name}`],
+    //       permissions: formattedResult[0].permission //['super_admin', 'customer'],
+    //     };
+    //   }
+    // }
 
-    const formattedResult = result.map(permission => ({
-      id: permission.id,
-      type_name: permission.type_name,
-      permission: permission.permissions.map(p => ({
-        id: p.id,
-        type: p.type,
-        read: p.read,
-        write: p.write,
-      })),
-    }));
-
-
-    console.log(formattedResult[0].type_name)
-    if (loginInput.email === 'store_owner@demo.com') {
-      return {
-        token: access_token.access_token,
-        type_name: [`${formattedResult[0].type_name[0]}`, `${formattedResult[0].type_name}`],
-        permissions: formattedResult[0].permission
-      };
-    } else {
-      return {
-        token: access_token.access_token,
-        type_name: [`${formattedResult[0].type_name}`],
-        permissions: formattedResult[0].permission //['super_admin', 'customer'],
-      };
+    return {
+      token: access_token.access_token,
+      permissions: ['customer','super_admin']
     }
+
   }
 
   async changePassword(

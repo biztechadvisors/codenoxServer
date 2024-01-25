@@ -79,162 +79,171 @@ export class OrdersService {
   ) { }
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
-    const order = plainToClass(Order, createOrderInput);
-    const newOrderStatus = new OrderStatus();
-    const newOrderFile = new OrderFiles();
-    newOrderStatus.name = 'Order Processing';
-    newOrderStatus.color = '#d87b64';
-    const paymentGatewayType = createOrderInput.payment_gateway
-      ? createOrderInput.payment_gateway
-      : PaymentGatewayType.CASH_ON_DELIVERY;
-    order.payment_gateway = paymentGatewayType;
-    order.payment_intent = null;
-    order.customerId = order.customerId;
-    order.customer_id = order.customerId;
-    switch (paymentGatewayType) {
-      case PaymentGatewayType.CASH_ON_DELIVERY:
-        order.order_status = OrderStatusType.PROCESSING;
-        order.payment_status = PaymentStatusType.CASH_ON_DELIVERY;
-        newOrderStatus.slug = OrderStatusType.PROCESSING;
-        break;
-      case PaymentGatewayType.CASH:
-        order.order_status = OrderStatusType.PROCESSING;
-        order.payment_status = PaymentStatusType.CASH;
-        newOrderStatus.slug = OrderStatusType.PROCESSING;
-        break;
-      case PaymentGatewayType.FULL_WALLET_PAYMENT:
-        order.order_status = OrderStatusType.COMPLETED;
-        order.payment_status = PaymentStatusType.WALLET;
-        newOrderStatus.slug = OrderStatusType.COMPLETED;
-        break;
-      default:
-        order.order_status = OrderStatusType.PENDING;
-        order.payment_status = PaymentStatusType.PENDING;
-        newOrderStatus.slug = OrderStatusType.PENDING;
-        break;
-    }
-    if (order.customerId && order.customer) {
-      const customer = await this.userRepository.findOne({
-        where: { id: order.customerId, email: order.customer.email },
-      });
-      if (customer) {
+    try {
+      const order = plainToClass(Order, createOrderInput);
+      const newOrderStatus = new OrderStatus();
+      const newOrderFile = new OrderFiles();
+      newOrderStatus.name = 'Order Processing';
+      newOrderStatus.color = '#d87b64';
+      const paymentGatewayType = createOrderInput.payment_gateway
+        ? createOrderInput.payment_gateway
+        : PaymentGatewayType.CASH_ON_DELIVERY;
+      order.payment_gateway = paymentGatewayType;
+      order.payment_intent = null;
+      order.customerId = order.customerId;
+      order.customer_id = order.customerId;
+      switch (paymentGatewayType) {
+        case PaymentGatewayType.CASH_ON_DELIVERY:
+          order.order_status = OrderStatusType.PROCESSING;
+          order.payment_status = PaymentStatusType.CASH_ON_DELIVERY;
+          newOrderStatus.slug = OrderStatusType.PROCESSING;
+          break;
+        case PaymentGatewayType.CASH:
+          order.order_status = OrderStatusType.PROCESSING;
+          order.payment_status = PaymentStatusType.CASH;
+          newOrderStatus.slug = OrderStatusType.PROCESSING;
+          break;
+        case PaymentGatewayType.FULL_WALLET_PAYMENT:
+          order.order_status = OrderStatusType.COMPLETED;
+          order.payment_status = PaymentStatusType.WALLET;
+          newOrderStatus.slug = OrderStatusType.COMPLETED;
+          break;
+        default:
+          order.order_status = OrderStatusType.PENDING;
+          order.payment_status = PaymentStatusType.PENDING;
+          newOrderStatus.slug = OrderStatusType.PENDING;
+          break;
+      }
+      if (order.customerId && order.customer) {
+        const customer = await this.userRepository.findOne({
+          where: { id: order.customerId, email: order.customer.email },
+        });
+        if (!customer) {
+          throw new NotFoundException('Customer not found');
+        }
         order.customer = customer;
         newOrderFile.customer_id = customer.id;
-      } else {
-        throw new NotFoundException('Customer not found');
       }
-    }
-    const Invoice = "OD" + Math.floor(Math.random() * Date.now());
-    if (!order.products) {
-      throw new Error('order.products is undefined');
-    }
 
-    const productEntities = await Promise.all(
-      order.products
-        .filter((product: any) => product.product_id !== undefined) // Filter out products with undefined id
-        .map((product: any) => this.productRepository.findOne({ where: { id: product.product_id } }))
-    );
+      const Invoice = "OD" + Math.floor(Math.random() * Date.now());
 
-    const orderData = {
-      order_id: Invoice,
-      order_date: new Date().toISOString(),
-      pickup_location: "Primary",
-      channel_id: "",
-      comment: "",
-      billing_customer_name: order.billing_address.name ? order.billing_address.name : "John",
-      billing_last_name: order.billing_address.lastName ? order.billing_address.lastName : "Doe",
-      billing_address: order.billing_address.street_address,
-      billing_address_2: order.billing_address.ShippingAddress ? order.billing_address.ShippingAddress : "indore",
-      billing_city: order.billing_address.city,
-      billing_pincode: order.billing_address.zip,
-      billing_state: order.billing_address.state,
-      billing_country: order.billing_address.country,
-      billing_email: order.customer.email,
-      billing_phone: order.customer_contact,
-      shipping_is_billing: true,
-      shipping_customer_name: order.shipping_address.name ? order.shipping_address.name : "John",
-      shipping_last_name: order.shipping_address.lastName ? order.shipping_address.lastName : "Doe",
-      shipping_address: order.shipping_address.street_address,
-      shipping_address_2: order.shipping_address.ShippingAddress ? order.shipping_address.ShippingAddress : "indore",
-      shipping_city: order.shipping_address.city,
-      shipping_pincode: order.shipping_address.zip,
-      shipping_country: order.shipping_address.country,
-      shipping_state: order.shipping_address.state,
-      shipping_email: order.customer.email,
-      shipping_phone: order.customer_contact,
-      order_items: productEntities.map((product: Product, index: number) => ({
-        name: product.name,
-        sku: product.sku ? product.sku : Math.random(),
-        units: order.products[index].order_quantity,
-        selling_price: product.sale_price,
-        unit_price: order.products[index].unit_price,
-        subtotal: order.products[index].subtotal,
-        discount: product.discount ? product.discount : 0,
-        tax: product.tax ? product.tax : 0,
-        hsn: product.hsn ? product.hsn : 0
-      })),
-      payment_method: order.payment_gateway,
-      shipping_charges: 0,
-      giftwrap_charges: 0,
-      transaction_charges: 0,
-      total_discount: 0,
-      sub_total: order.total,
-      length: 10,
-      breadth: 10,
-      height: 10,
-      weight: 1
-    };
-    const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
-    order.tracking_number = shiprocketResponse.shipment_id ? shiprocketResponse.shipment_id : shiprocketResponse.order_id;
-    const savedOrder = await this.orderRepository.save(order);
-    if (order.products) {
-      const productEntities = await this.productRepository.find({
-        where: { id: In(order.products.map(product => product.product_id)) },
-      });
-      if (productEntities.length > 0) {
-        for (const product of order.products) {
-          if (product) {
-            const newPivot = new OrderProductPivot();
-            newPivot.order_quantity = product.order_quantity;
-            newPivot.unit_price = product.unit_price;
-            newPivot.subtotal = product.subtotal;
-            newPivot.variation_option_id = product.variation_option_id;
-            newPivot.order_id = savedOrder;
-            const productEntity = productEntities.find(entity => entity.id === product.product_id);
-            newPivot.product = productEntity;
-            await this.orderProductPivotRepository.save(newPivot);
+      if (!order.products || order.products.some(product => product.product_id === undefined)) {
+        throw new Error('Invalid order.products');
+      }
+
+      const productEntities = await Promise.all(
+        order.products
+          .map(product => product.product_id)
+          .filter(product_id => product_id !== undefined)
+          .map(product_id => this.productRepository.findOne({ where: { id: product_id } }))
+      );
+
+      const orderData = {
+        order_id: Invoice,
+        order_date: new Date().toISOString(),
+        pickup_location: "Primary",
+        channel_id: "",
+        comment: "",
+        billing_customer_name: order.billing_address.name ? order.billing_address.name : "John",
+        billing_last_name: order.billing_address.lastName ? order.billing_address.lastName : "Doe",
+        billing_address: order.billing_address.street_address,
+        billing_address_2: order.billing_address.ShippingAddress ? order.billing_address.ShippingAddress : "indore",
+        billing_city: order.billing_address.city,
+        billing_pincode: order.billing_address.zip,
+        billing_state: order.billing_address.state,
+        billing_country: order.billing_address.country,
+        billing_email: order.customer.email,
+        billing_phone: order.customer_contact,
+        shipping_is_billing: true,
+        shipping_customer_name: order.shipping_address.name ? order.shipping_address.name : "John",
+        shipping_last_name: order.shipping_address.lastName ? order.shipping_address.lastName : "Doe",
+        shipping_address: order.shipping_address.street_address,
+        shipping_address_2: order.shipping_address.ShippingAddress ? order.shipping_address.ShippingAddress : "indore",
+        shipping_city: order.shipping_address.city,
+        shipping_pincode: order.shipping_address.zip,
+        shipping_country: order.shipping_address.country,
+        shipping_state: order.shipping_address.state,
+        shipping_email: order.customer.email,
+        shipping_phone: order.customer_contact,
+        order_items: productEntities.map((product: Product, index: number) => ({
+          name: product.name,
+          sku: product.sku ? product.sku : Math.random(),
+          units: order.products[index].order_quantity,
+          selling_price: product.sale_price,
+          unit_price: order.products[index].unit_price,
+          subtotal: order.products[index].subtotal,
+          discount: product.discount ? product.discount : 0,
+          tax: product.tax ? product.tax : 0,
+          hsn: product.hsn ? product.hsn : 0
+        })),
+        payment_method: order.payment_gateway,
+        shipping_charges: 0,
+        giftwrap_charges: 0,
+        transaction_charges: 0,
+        total_discount: 0,
+        sub_total: order.total,
+        length: 10,
+        breadth: 10,
+        height: 10,
+        weight: 1
+      };
+      const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
+      console.log("shiprocketResponse***", shiprocketResponse);
+
+      order.tracking_number = shiprocketResponse.shipment_id || shiprocketResponse.order_id;
+
+      await this.orderRepository.save(order);
+
+      if (order.products) {
+        const productEntities = await this.productRepository.find({
+          where: { id: In(order.products.map(product => product.product_id)) },
+        });
+        if (productEntities.length > 0) {
+          for (const product of order.products) {
+            if (product) {
+              const newPivot = new OrderProductPivot();
+              newPivot.order_quantity = product.order_quantity;
+              newPivot.unit_price = product.unit_price;
+              newPivot.subtotal = product.subtotal;
+              newPivot.variation_option_id = product.variation_option_id;
+              // newPivot.order_id = savedOrder;
+              const productEntity = productEntities.find(entity => entity.id === product.product_id);
+              newPivot.product = productEntity;
+              await this.orderProductPivotRepository.save(newPivot);
+            }
           }
+          order.products = productEntities;
+        } else {
+          throw new NotFoundException('Product not found');
         }
-        order.products = productEntities;
-      } else {
-        throw new NotFoundException('Product not found');
       }
-    }
-    if (order.coupon) {
-      const getCoupon = await this.couponRepository.findOne({ where: { id: order.coupon.id } });
-      if (getCoupon) {
-        order.coupon = getCoupon;
+      if (order.coupon) {
+        const getCoupon = await this.couponRepository.findOne({ where: { id: order.coupon.id } });
+        if (getCoupon) {
+          order.coupon = getCoupon;
+        }
       }
-    }
-    try {
-      if (
-        [PaymentGatewayType.STRIPE, PaymentGatewayType.PAYPAL, PaymentGatewayType.RAZORPAY].includes(paymentGatewayType)
-      ) {
+
+      if ([PaymentGatewayType.STRIPE, PaymentGatewayType.PAYPAL, PaymentGatewayType.RAZORPAY].includes(paymentGatewayType)) {
         const paymentIntent = await this.processPaymentIntent(order);
         order.payment_intent = paymentIntent;
       }
+
       const createdOrderStatus = await this.orderStatusRepository.save(newOrderStatus);
       order.status = createdOrderStatus;
       order.children = this.processChildrenOrder(order);
+
       const savedOrder = await this.orderRepository.save(order);
       newOrderFile.order_id = savedOrder.id;
       await this.orderFilesRepository.save(newOrderFile);
+
       return savedOrder;
     } catch (error) {
       console.error('Error creating order:', error);
       throw error;
     }
   }
+
 
   async getOrders({
     limit,
@@ -248,50 +257,20 @@ export class OrdersService {
       if (!page) page = 1;
       if (!limit) limit = 15;
       const startIndex = (page - 1) * limit;
-
-      // Adjusted query for necessary fields and structure
+      const endIndex = page * limit;
       let query = this.orderRepository.createQueryBuilder('order');
-      query = query
-        .select([
-          'order.id',
-          'order.tracking_number',
-          'order.customer_id',
-          'order.customer_contact',
-          'customer.name', // Changed 'order.customer_name' to 'customer.name'
-          'order.amount',
-          'order.sales_tax',
-          'order.paid_total',
-          'order.total',
-          'order.cancelled_amount',
-          'order.language',
-          // Removed 'order.coupon_id'
-          'order.parent_id',
-          'order.shop_id',
-          'order.discount',
-          'order.payment_gateway',
-          'order.shipping_address',
-          'order.billing_address',
-          'order.logistics_provider',
-          'order.delivery_fee',
-          'order.delivery_time',
-          'order.order_status',
-          'order.payment_status',
-          'order.created_at',
-          'customer.name AS customer_name',
-          'customer.email AS customer_email',
-          'products.*', // Include all product fields
-          'pivot.*', // Include all pivot fields
-        ])
-        .leftJoinAndSelect('order.customer', 'customer')
-        .leftJoinAndSelect('order.products', 'products')
+      query = query.leftJoinAndSelect('order.status', 'status');
+      query = query.leftJoinAndSelect('order.billing_address', 'billing_address');
+      query = query.leftJoinAndSelect('order.shipping_address', 'shipping_address');
+      query = query.leftJoinAndSelect('order.customer', 'customer');
+      query = query.leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot');
-
-      // Apply filters as needed
+      query = query.leftJoinAndSelect('order.payment_intent', 'payment_intent');
       if (shop_id && shop_id !== 'undefined') {
         query = query.andWhere('products.shop_id = :shopId', { shopId: Number(shop_id) });
       }
       if (search) {
-        query = query.andWhere('(order.tracking_number ILIKE :searchValue OR customer.name ILIKE :searchValue)', { searchValue: `%${search}%` });
+        query = query.andWhere('(status.name ILIKE :searchValue OR order.fieldName ILIKE :searchValue)', { searchValue: `%${search}%` });
       }
       if (customer_id) {
         query = query.andWhere('order.customer_id = :customerId', { customerId: customer_id });
@@ -299,18 +278,104 @@ export class OrdersService {
       if (tracking_number) {
         query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
       }
-
       const [data, totalCount] = await query
         .skip(startIndex)
         .take(limit)
         .getManyAndCount();
-
-      // Structure the response with pagination and nested child orders
-      const results = data.map((order) => ({
-        ...order,
-        children: order.children?.map((child) => ({ ...child, products: child.products })), // Include products in child orders
-      }));
-
+      const results = data.map((order) => {
+        return {
+          id: order.id,
+          tracking_number: order.tracking_number,
+          customer_id: order.customer_id,
+          customer_contact: order.customer_contact,
+          amount: order.amount,
+          sales_tax: order.sales_tax,
+          paid_total: order.paid_total,
+          total: order.total,
+          cancelled_amount: order?.cancelled_amount,
+          language: order?.language,
+          coupon_id: order.coupon,
+          parent_id: order?.parentOrder,
+          shop_id: order?.shop_id,
+          discount: order?.discount,
+          payment_gateway: order.payment_gateway,
+          shipping_address: order.shipping_address,
+          billing_address: order.billing_address,
+          logistics_provider: order.logistics_provider,
+          delivery_fee: order.delivery_fee,
+          delivery_time: order.delivery_time,
+          order_status: order.order_status,
+          payment_status: order.payment_status,
+          created_at: order.created_at,
+          payment_intent: order.payment_intent,
+          customer: {
+            id: order.customer.id,
+            name: order.customer.name,
+            email: order.customer.email,
+            email_verified_at: order.customer.email_verified_at,
+            created_at: order.customer.created_at,
+            updated_at: order.customer.updated_at,
+            is_active: order.customer.is_active,
+            shop_id: null
+          },
+          products: order.products.map(product => ({
+            id: product.id,
+            name: product.name,
+            slug: product.slug,
+            description: product.description,
+            type_id: product.type_id,
+            price: product.price,
+            shop_id: product.shop_id,
+            sale_price: product.sale_price,
+            language: product.language,
+            min_price: product.min_price,
+            max_price: product.max_price,
+            sku: product.sku,
+            quantity: product.quantity,
+            in_stock: product.in_stock,
+            is_taxable: product.is_taxable,
+            shipping_class_id: null,
+            status: product.status,
+            product_type: product.product_type,
+            unit: product.unit,
+            height: product.height ? product.height : null,
+            width: product.width ? product.width : null,
+            length: product.length ? product.length : null,
+            image: product.image,
+            video: null,
+            gallery: product.gallery,
+            deleted_at: null,
+            created_at: product.created_at,
+            updated_at: product.updated_at,
+            author_id: null,
+            manufacturer_id: null,
+            is_digital: 0,
+            is_external: 0,
+            external_product_url: null,
+            external_product_button_text: null,
+            ratings: product.ratings,
+            total_reviews: product.my_review,
+            rating_count: product.ratings,
+            my_review: product.my_review,
+            in_wishlist: product.in_wishlist,
+            blocked_dates: [],
+            translated_languages: product.translated_languages,
+            pivot: product.pivot && product.pivot.length > 0 ? {
+              order_id: product.pivot[0].order_id,
+              product_id: product.pivot[0].product?.id,
+              order_quantity: product.pivot[0].order_quantity,
+              unit_price: product.pivot[0].unit_price,
+              subtotal: product.pivot[0].subtotal,
+              variation_option_id: product.pivot[0].variation_option_id,
+              created_at: product.pivot[0].created_at,
+              updated_at: product.pivot[0].updated_at,
+            } : null,
+            variation_options: product.variation_options
+          })),
+          children: order.children,
+          wallet_point: order?.wallet_point
+        }
+      });
       const url = `/orders?search=${search}&limit=${limit}`;
       return {
         data: results,
@@ -321,7 +386,6 @@ export class OrdersService {
       throw error;
     }
   }
-
 
   private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
     try {
@@ -358,7 +422,7 @@ export class OrdersService {
     }
   }
 
-  async getOrderByIdOrTrackingNumber(id: number): Promise<Order> {
+  async getOrderByIdOrTrackingNumber(id: number): Promise<any> {
     console.log("getOrderByIdOrTrackingNumber", id);
     try {
       const order = await this.orderRepository.createQueryBuilder('order')
@@ -382,7 +446,100 @@ export class OrdersService {
         throw new NotFoundException('Order not found');
       }
 
-      return order;
+      const transformedOrder = {
+        id: order.id,
+        tracking_number: order.tracking_number,
+        customer_id: order.customer_id,
+        customer_contact: order.customer_contact,
+        amount: order.amount,
+        sales_tax: order.sales_tax,
+        paid_total: order.paid_total,
+        total: order.total,
+        cancelled_amount: order.cancelled_amount,
+        language: order.language,
+        coupon_id: order.coupon,
+        parent_id: order.parentOrder,
+        shop_id: order.shop_id,
+        discount: order.discount,
+        payment_gateway: order.payment_gateway,
+        shipping_address: order.shipping_address,
+        billing_address: order.billing_address,
+        logistics_provider: order.logistics_provider,
+        delivery_fee: order.delivery_fee,
+        delivery_time: order.delivery_time,
+        order_status: order.order_status,
+        payment_status: order.payment_status,
+        created_at: order.created_at,
+        payment_intent: order.payment_intent,
+        customer: {
+          id: order.customer.id,
+          name: order.customer.name,
+          email: order.customer.email,
+          email_verified_at: order.customer.email_verified_at,
+          created_at: order.customer.created_at,
+          updated_at: order.customer.updated_at,
+          is_active: order.customer.is_active,
+          shop_id: null
+        },
+        products: order.products.map(product => ({
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          description: product.description,
+          type_id: product.type_id,
+          price: product.price,
+          shop_id: product.shop_id,
+          sale_price: product.sale_price,
+          language: product.language,
+          min_price: product.min_price,
+          max_price: product.max_price,
+          sku: product.sku,
+          quantity: product.quantity,
+          in_stock: product.in_stock,
+          is_taxable: product.is_taxable,
+          shipping_class_id: null,
+          status: product.status,
+          product_type: product.product_type,
+          unit: product.unit,
+          height: product.height ? product.height : null,
+          width: product.width ? product.width : null,
+          length: product.length ? product.length : null,
+          image: product.image,
+          video: null,
+          gallery: product.gallery,
+          deleted_at: null,
+          created_at: product.created_at,
+          updated_at: product.updated_at,
+          author_id: null,
+          manufacturer_id: null,
+          is_digital: 0,
+          is_external: 0,
+          external_product_url: null,
+          external_product_button_text: null,
+          ratings: product.ratings,
+          total_reviews: product.my_review,
+          rating_count: product.ratings,
+          my_review: product.my_review,
+          in_wishlist: product.in_wishlist,
+          blocked_dates: [],
+          translated_languages: product.translated_languages,
+          pivot: product.pivot && product.pivot.length > 0 ? {
+            order_id: product.pivot[0].order_id,
+            product_id: product.pivot[0].product?.id,
+            order_quantity: product.pivot[0].order_quantity,
+            unit_price: product.pivot[0].unit_price,
+            subtotal: product.pivot[0].subtotal,
+            variation_option_id: product.pivot[0].variation_option_id,
+            created_at: product.pivot[0].created_at,
+            updated_at: product.pivot[0].updated_at,
+          } : null,
+          variation_options: product.variation_options
+        })),
+        children: order.children,
+        wallet_point: order.wallet_point
+      };
+
+      return transformedOrder;
     } catch (error) {
       console.error('Error in getOrderByIdOrTrackingNumber:', error);
       throw error;
