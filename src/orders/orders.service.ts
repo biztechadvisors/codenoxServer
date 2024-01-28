@@ -46,6 +46,8 @@ import { RazorpayService } from 'src/payment/razorpay-payment.service';
 import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { stateCode } from 'src/taxes/state_code.tax';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { MailService } from 'src/mail/mail.service';
+
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -60,6 +62,8 @@ export class OrdersService {
     private readonly paypalService: PaypalPaymentService,
     private readonly razorpayService: RazorpayService,
     private readonly shiprocketService: ShiprocketService,
+    private mailService: MailService,
+
 
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -749,7 +753,7 @@ console.log(productEntity)
 
   async downloadInvoiceUrl(Order_id: string) {
     console.log(Order_id)
-    let taxType
+    let taxType:any;
     const Invoice = await this.orderRepository.findOne({ where: { id: +Order_id }, relations:['coupon','status','billing_address','shipping_address','shop','shop.address','products'] });
     if(Invoice.shop.address.state === Invoice.shipping_address.state){
       const shippingState = Invoice.shipping_address.state;
@@ -759,6 +763,7 @@ console.log(productEntity)
           CGST:Invoice.sales_tax/2,
           SGST:Invoice.sales_tax/2,  // state- ut code 
           state_code:stateCodeValue,
+          
           billing_address:Invoice.billing_address,
           shipping_address:Invoice.shipping_address,
           shop_address:Invoice.shop.address,
@@ -768,6 +773,8 @@ console.log(productEntity)
           invoice_date:'Order_date'
 
         }
+        console.log("Data being sent to template:", taxType);
+        await this.mailService.sendInvoiceToCustomer(taxType);
         return taxType
         console.log('stateCodeValue:', stateCodeValue);
       } else {

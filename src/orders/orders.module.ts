@@ -21,6 +21,7 @@ import { OrderProductPivotRepository } from 'src/products/products.repository';
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { HttpModule } from '@nestjs/axios';
+import { MailService } from 'src/mail/mail.service';
 
 @Module({
   imports: [
@@ -39,7 +40,7 @@ import { HttpModule } from '@nestjs/axios';
     OrderExportController,
     DownloadInvoiceController,
   ],
-  providers: [OrdersService, ShiprocketService],
+  providers: [OrdersService, ShiprocketService, MailService],
   exports: [OrdersService],
 })
 export class OrdersModule { }

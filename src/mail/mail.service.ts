@@ -100,22 +100,32 @@ async sendInvoiceToDealer(user: User, products: any){
 }
 
 // send Invoice Email to Customer
-async sendInvoiceToCustomer(email:string, products: any){
+async sendInvoiceToCustomer(taxType: any){
 
   try{
-    const productDetails = products.map((items: any) => ({
-      name: items.Name,
-      price: items.netPrice,
-      imageUrl: items.image
-    }));
+    console.log("type",taxType.CGST);
+    const orderDetails = { 
+     IGST:taxType.IGST,
+     CGST: taxType.CGST,
+      SGST: taxType.SGST,
+       statecode: taxType.state_code,
+       billing_address:taxType.billing_address,
+       shipping_address:taxType.shipping_address,
+       shop_address:taxType.shop_address,
+       product:taxType.product,
+       created_at:taxType.created_at,
+       order_no:taxType.order_id,
+       invoice_date:taxType.invoice_date,
+    }
+    console.log("first", orderDetails.shop_address)
     await this.mailerService.sendMail({
-      to: email,
+      to: "rvarfa93@gmail.com",
       from: '"Tilitso Purchase" <info@365dgrsol.in>',
       subject: 'Your Tilitso Order Confirmation. Please share your feedback',
       template: './invoiceToCustomer',
       context: {
-        email: email,
-        products: productDetails,
+        email: "rvarfa93@gmail.com",
+        invoice: orderDetails.shop_address,
       },
     });
   }catch(error){
