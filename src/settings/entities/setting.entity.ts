@@ -21,9 +21,9 @@ export class SeoSettings {
   id: number
   @Column({ nullable: true })
   metaTitle?: string
-  @Column({ nullable: true})
+  @Column({ nullable: true })
   metaDescription?: string
-  @Column({ nullable: true})
+  @Column({ nullable: true })
   ogTitle?: string
   @Column({ nullable: true })
   ogDescription?: string
@@ -32,7 +32,7 @@ export class SeoSettings {
   ogImage?: Attachment;
   @Column({ nullable: true })
   twitterHandle?: string
-  @Column({ nullable:true })
+  @Column({ nullable: true })
   twitterCardType?: string
   @Column({ nullable: true })
   metaTags?: string
@@ -254,7 +254,7 @@ export class ContactDetails {
 }
 
 @Entity()
-export class SettingsOptions {
+export class SettingsOptions extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
   @ManyToOne(() => ContactDetails)
@@ -323,10 +323,6 @@ export class SettingsOptions {
   useMustVerifyEmail: boolean
   @Column()
   useOtp: boolean
-  @Column({ type: 'timestamp'})
-  created_at: Date;
-  @Column({ type: 'timestamp'})
-  updated_at: Date;
 }
 
 @Entity()
@@ -339,8 +335,4 @@ export class Setting extends CoreEntity {
   language: string
   @Column({ type: 'json' })
   translated_languages: string[]
-  @Column({ type: 'timestamp'})
-  created_at: Date;
-  @Column({ type: 'timestamp'})
-  updated_at: Date;
 }
