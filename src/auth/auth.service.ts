@@ -500,7 +500,7 @@ export class AuthService {
   async me(email: string, id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: email ? { email: email } : { id: id },
-      relations: ["profile", "address", "shops", "orders", "profile.socials", "address.address"]
+      relations: ["profile", "address", "shops", "orders", "profile.socials", "address.address", "dealer"]
     });
     if (!user) {
       throw new NotFoundException(`User with email ${email} and id ${id} not found`);
