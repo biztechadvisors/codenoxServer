@@ -426,49 +426,44 @@ export class SettingsService {
 
   }
 
-  // Assuming you have the necessary imports and decorators in place
-
+  //find all settings
   async findAll() {
-    try {
-      const settingsData = await this.settingRepository.find({
-        relations: [
-          'options.contactDetails',
-          'options.contactDetails.socials',
-          'options.contactDetails.location',
-          'options.currencyOptions',
-          'options.emailEvent',
-          'options.emailEvent.admin',
-          'options.emailEvent.vendor',
-          'options.emailEvent.customer',
-          'options.smsEvent',
-          'options.smsEvent.admin',
-          'options.smsEvent.vendor',
-          'options.smsEvent.customer',
-          'options.seo',
-          'options.seo.ogImage',
-          'options.deliveryTime',
-          'options.paymentGateway',
-          'options.logo',
-        ],
-      });
 
-      if (!settingsData || settingsData.length === 0) {
-        return null;
+    const settingData = await this.settingRepository.find({
+
+      relations: [
+        'options.contactDetails',
+        'options.contactDetails.socials',
+        'options.contactDetails.location',
+        'options.currencyOptions',
+        'options.emailEvent',
+        'options.emailEvent.admin',
+        'options.emailEvent.vendor',
+        'options.emailEvent.customer',
+        'options.smsEvent',
+        'options.smsEvent.admin',
+        'options.smsEvent.vendor',
+        'options.smsEvent.customer',
+        'options.seo',
+        'options.seo.ogImage',
+        'options.deliveryTime',
+        'options.paymentGateway',
+        'options.logo',
+      ]
+    })
+
+    if (!settingData) {
+      return null
+    } else {
+
+      for (let index = 0; index < settingData.length; index++) {
+        const setting = settingData[index];
+        //  console.log("Setting data", setting);
+        return setting;
       }
-
-      // If you want to return all settings, remove the loop and return the array
-      // console.log("All settings", settingsData);
-      return settingsData;
-
-      // If you want to return only the first setting, keep the loop
-      // console.log("First setting", settingsData[0]);
-      // return settingsData[0];
-    } catch (error) {
-      console.error("Error fetching settings", error);
-      return null;
+      console.log("first", settingData)
     }
   }
-
 
   //find one setting 
   async findOne(id: number) {
@@ -833,6 +828,27 @@ export class SettingsService {
                 updateSeo.twitterHandle = updateSettingDto.options.seo.twitterHandle ? updateSettingDto.options.seo.twitterHandle : null
                 updateSeo.canonicalUrl = updateSettingDto.options.seo.canonicalUrl ? updateSettingDto.options.seo.canonicalUrl : null
 
+                //update seo Image
+                // if(updateSettingDto.options.seo.ogImage){
+                //   if(updateSeo.ogImage == null ){
+                //     updateSeo.ogImage = updateSettingDto.options.seo.ogImage
+                //   } else  {
+
+                //    const ImgId = await this.attachmentRepository.findOne({
+                //     where: { id: updateSeo.ogImage.id }
+                //   })
+                //   console.log("ImgIDdddddddddddddd", ImgId)
+
+                //    updateSeo.ogImage = null
+                //    const setNUl = await this.seoSettingsRepository.save(updateSeo)
+                //    console.log("null", setNUl)
+                //    const del = await this.attachmentRepository.delete(ImgId)
+                //    console.log("delete", del)
+                //   updateSeo.ogImage = updateSettingDto.options.seo.ogImage
+                //   await this.seoSettingsRepository.save(updateSeo)
+                // }
+                // } 
+
                 const seoId = await this.seoSettingsRepository.save(updateSeo)
                 console.log("seoId", seoId)
               } catch (error) {
@@ -916,6 +932,28 @@ export class SettingsService {
                   where: { id: findOption.logo.id }
                 })
                 console.log("Logoooooo", updateLogo)
+                //  if(updateLogo){
+                //   const findAttachment = await this.attachmentRepository.findOne({
+                //     where: { original: updateLogo.original }
+                //   })
+                //   console.log("Attachmentssssssssss", findAttachment)
+
+                //   const del1 = await this.attachmentRepository.delete(findAttachment)
+                //     console.log("del1", del1)
+
+
+                //    const del2 = await this.logoSettingsRepository.delete(updateLogo)
+                //       console.log("del2", del2)
+
+                //    const updates = this.logoSettingsRepository.create(updateSettingDto.options.logo)
+                //    const savedLogo = await this.logoSettingsRepository.save(updates)
+                //    console.log("saveedLogoooo**************", savedLogo)
+                // } else {
+                //   const updates = this.logoSettingsRepository.create(updateSettingDto.options.logo)
+                //   const createLogo = await this.logoSettingsRepository.save(updates)
+                //   console.log("createLogoooo**************", createLogo)
+                // }
+
 
               } catch (error) {
                 console.error("Error saving logo:", error);

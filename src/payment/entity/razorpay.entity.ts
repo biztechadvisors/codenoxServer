@@ -63,5 +63,5 @@ export class Payment {
     @Column({ type: "json" })
     acquirer_data: object;
     @Column()
-    created_at: number;
+    created_at: Date;
 }

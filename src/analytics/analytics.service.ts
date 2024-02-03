@@ -12,6 +12,7 @@ import { Dealer } from 'src/users/entities/dealer.entity';
 
 @Injectable()
 export class AnalyticsService {
+  refundRepository: any;
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -23,12 +24,12 @@ export class AnalyticsService {
     private readonly totalYearSaleByMonthRepository: Repository<TotalYearSaleByMonth>,
   ) { }
 
-  async findAll(): Promise<AnalyticsResponseDTO> {
+  async findAll(customerId: string): Promise<AnalyticsResponseDTO> {
     const totalRevenue = await this.calculateTotalRevenue();
     const totalRefunds = await this.calculateTotalRefunds();
     const totalShops = await this.calculateTotalShops();
     const todaysRevenue = await this.calculateTodaysRevenue();
-    const totalOrders = await this.calculateTotalOrders();
+    const totalOrders = await this.calculateTotalOrders(customerId);
     const newCustomers = await this.calculateNewCustomers();
 
     const totalYearSaleByMonth = await this.calculateTotalYearSaleByMonth();
@@ -43,6 +44,16 @@ export class AnalyticsService {
       totalYearSaleByMonth,
     };
 
+    console.log("analyticsResponse***",
+      totalRevenue,
+      totalRefunds,
+      totalShops,
+      todaysRevenue,
+      totalOrders,
+      newCustomers,
+      totalYearSaleByMonth
+    )
+
     return analyticsResponse;
   }
 
@@ -52,6 +63,12 @@ export class AnalyticsService {
   }
 
   private async calculateTotalRefunds(): Promise<number> {
+    // const refunds = await this.refundRepository.find({});
+
+    // Calculate total refunds
+    // const totalRefunds = refunds.reduce((sum, refund) => sum + refund.amount, 0);
+
+    // return totalRefunds;
     return 0;
   }
 
@@ -87,8 +104,8 @@ export class AnalyticsService {
     return todayRevenue;
   }
 
-  private async calculateTotalOrders(): Promise<number> {
-    return this.orderRepository.count();
+  private async calculateTotalOrders(customerId: string): Promise<number> {
+    return this.orderRepository.count({ where: { customerId: customerId } });
   }
 
   private async calculateNewCustomers(): Promise<number> {

@@ -84,7 +84,7 @@ export class UsersService {
     }
     usr.is_active = createUserDto.is_active;
     usr.type = createUserDto.type;
-    usr.createdAt = new Date();
+    usr.created_at = new Date();
 
     await this.userRepository.save(usr);
 
