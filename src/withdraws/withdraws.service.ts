@@ -30,7 +30,7 @@ export class WithdrawsService {
     // const newWithdrawBalance = new Balance()
 
     try {
-console.log("working")
+      console.log("working")
       const findId = await this.withdrawRepository.find({
         where: {
           shop_id: createWithdrawDto.shop_id
@@ -46,8 +46,8 @@ console.log("working")
         newWithdraw.payment_method = createWithdrawDto.payment_method
         newWithdraw.shop_id = createWithdrawDto.shop_id
         newWithdraw.status = WithdrawStatus.PROCESSING
-        newWithdraw.createdAt = new Date()
-        newWithdraw.updatedAt = new Date()
+        newWithdraw.created_at = new Date()
+        newWithdraw.updated_at = new Date()
 
         const shop = await this.shopRepository.findOne({
           where: {
@@ -205,20 +205,20 @@ console.log("working")
         id: id
       }
     })
-   
+
     if (!idFind) {
-    
+
       throw new Error(`Withdraw with ID ${id} not found`)
     }
-  
+
     const deleteData = {
       id: idFind.id
     }
-   
+
     await this.withdrawRepository.delete(deleteData)
-  
+
     console.log("0", deleteData)
-   
+
     return deleteData
   }
 

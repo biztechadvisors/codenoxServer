@@ -20,7 +20,7 @@ import { ShopSettings } from './shopSettings.entity'
 export class Shop extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
-  
+
   @Column()
   owner_id: number;
 
@@ -66,9 +66,6 @@ export class Shop extends CoreEntity {
   @OneToOne(() => ShopSettings, { cascade: true })
   @JoinColumn()
   settings?: ShopSettings;
-
-  @Column({ type: 'timestamp' })
-  createdAt: Date;
 
   @Column()
   gst_number: string;

@@ -62,9 +62,6 @@ export class User extends CoreEntity {
   @JoinColumn()
   orders: Order[];
 
-  @Column({ type: 'timestamp' })
-  createdAt: Date;
-
   @Column()
   type: UserType;
 

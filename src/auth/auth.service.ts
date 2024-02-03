@@ -42,14 +42,14 @@ export class AuthService {
     return otp;
   }
 
-  async destroyOtp(otp: number, createdAt: Date): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { otp, createdAt } });
+  async destroyOtp(otp: number, created_at: Date): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { otp, created_at } });
     if (!user) {
       return;
     }
     // Destroy the OTP.
     user.otp = null;
-    user.createdAt = null;
+    user.created_at = null;
     await this.userRepository.save(user);
   }
 
@@ -60,7 +60,7 @@ export class AuthService {
       return false;
     }
     // Check if the OTP is older than 1 minute.
-    const otpCreatedAt = new Date(user.createdAt);
+    const otpCreatedAt = new Date(user.created_at);
     const now = new Date();
     const elapsedTime = now.getTime() - otpCreatedAt.getTime();
     const oneMinuteInMilliseconds = 60 * 1000;
@@ -108,7 +108,7 @@ export class AuthService {
       const token = Math.floor(100 + Math.random() * 900).toString();
 
       existingUser.otp = otp;
-      existingUser.createdAt = new Date();
+      existingUser.created_at = new Date();
 
       await this.userRepository.save(existingUser);
 
@@ -128,7 +128,7 @@ export class AuthService {
     userData.email = createUserInput.email;
     userData.password = hashPass;
     userData.type = createUserInput.type || UserType.Customer; // Use specified type or default to UserType.Customer
-    userData.createdAt = new Date();
+    userData.created_at = new Date();
 
     if (userData.type !== UserType.Customer) {
       userData.isVerified = true;
@@ -286,7 +286,7 @@ export class AuthService {
       const otp = await this.generateOtp();
       const token = Math.floor(100 + Math.random() * 900).toString();
       user.otp = otp;
-      user.createdAt = new Date();
+      user.created_at = new Date();
       await this.userRepository.save(user);
 
       await this.mailService.sendUserConfirmation(user, token);

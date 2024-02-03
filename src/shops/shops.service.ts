@@ -117,7 +117,7 @@ export class ShopsService {
       newShop.logo = createShopDto.logo;
       newShop.address = addressId;
       newShop.settings = settingId;
-      newShop.createdAt = new Date()
+      newShop.created_at = new Date()
       const shop = await this.shopRepository.save(newShop)
       let saved;
       if (createShopDto.balance) {
@@ -345,7 +345,7 @@ export class ShopsService {
       }
     }
 
-    existingShop.createdAt = new Date()
+    existingShop.created_at = new Date()
 
     return await this.shopRepository.save(existingShop);
   }
