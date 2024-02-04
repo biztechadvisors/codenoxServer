@@ -700,10 +700,11 @@ export class OrdersService {
 
   async verifyCheckout(input: CheckoutVerificationDto): Promise<VerifiedCheckoutData> {
     // Initialize variables
-
+console.log("input", input)
     let total_tax = 0;
     let shipping_charge = 0;
-    let unavailable_products: number[] = [];
+    const unavailable_products: number[] = [];
+
 
     // Verify each product in the order
     for (const product of input.products) {
@@ -719,43 +720,14 @@ export class OrdersService {
         console.log(total_tax)
         console.log(total_tax / 2)
         shipping_charge += productEntity.shipping_fee;
-
-        // if(productEntity.shop.address.state === input.shipping_address.state){
-        //   const shippingState = input.shipping_address.state;
-        //   if (stateCode.hasOwnProperty(shippingState)) {
-        //     const stateCodeValue = stateCode[shippingState];
-        //     tax_type = {
-        //       CGST: total_tax/2,
-        //       SGST: total_tax/2,
-        //       state_code: stateCodeValue,
-        //       GST_number: "SHOPGST_NO_COLOUM"
-        //     }
-        //     console.log('stateCodeValue');
-        //     console.log(stateCodeValue);
-        //   } else {
-        //     console.log('Invalid state name in shipping address');
-        //   }
-
-
-        // }else{
-        //   const stateCodeValue = stateCode[input.shipping_address.state];
-        //   tax_type = {
-        //     state_code: stateCodeValue,
-        //     GST_number: "SHOPGST_NO_COLOUM"
-        //   }
-
-        // }
-
-        // console.log('true')
-        // }else{
-        //   console.log('false')
-        // }
       }
     }
     console.log(input.billing_address.city + " === " + input.shipping_address.city)
     console.log(input.billing_address.state + " === " + input.shipping_address.state)
 
+
     console.log(total_tax)
+
 
     // Return the verified data
     return {

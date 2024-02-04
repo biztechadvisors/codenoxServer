@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common'
 import { UpdateAuthorDto } from './dto/update-author.dto'
 import { plainToClass } from 'class-transformer'
@@ -8,6 +9,9 @@ import { GetAuthorDto } from './dto/get-author.dto'
 import { paginate } from '../common/pagination/paginate'
 import { GetTopAuthorsDto } from './dto/get-top-authors.dto'
 import { CreateAuthorDto } from './dto/create-author.dto'
+import { InjectRepository } from '@nestjs/typeorm'
+import { AuthorRepository } from './authors.repository'
+
 
 const authors = plainToClass(Author, authorsJson)
 
@@ -20,10 +24,17 @@ const fuse = new Fuse(authors, options)
 
 @Injectable()
 export class AuthorsService {
-  private authors: Author[] = authors
+  constructor(
+    @InjectRepository(AuthorRepository)
+    private authorRepository: AuthorRepository,
+    ){}
+    private authors: Author[] = authors
 
-  create(createAuthorDto: CreateAuthorDto) {
-    return this.authors[0]
+   create(createAuthorDto: CreateAuthorDto): Promise<Author> {
+    
+    console.log("createAuthorDto", createAuthorDto)
+    
+    return 
   }
 
   getAuthors({ page, limit, search }: GetAuthorDto) {
