@@ -34,14 +34,10 @@ export class MessagesService {
       relations: ['latest_message']
     });
 
-    console.log(conversationCheck);
-
     if (conversationCheck) {
       const latestMessage = await this.latestMessageRepository.findOne({
         where: { conversation_id: conversationCheck.id, user_id: createMessageDto.conversation.latest_message.user_id }
       });
-
-      console.log(latestMessage);
 
       if (latestMessage) {
         latestMessage.body = createMessageDto.conversation.latest_message.body;

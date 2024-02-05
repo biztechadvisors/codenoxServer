@@ -125,7 +125,7 @@ export class AttributesService {
   // }
 
   async findOne(param: GetAttributeArgs): Promise<{ message: string } | Attribute | undefined> {
-    console.log("testing?")
+
     const result = await this.attributeRepository.findOne({
       where: [
         { id: param.id },

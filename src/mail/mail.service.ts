@@ -11,8 +11,6 @@ export class MailService {
 async sendUserConfirmation(user: User, token: string) {
     const url = `example.com/auth/confirm?token=${token}`
 
-    console.log('OTP:', user.otp)
-
     await this.mailerService.sendMail({
       to: user.email,
       from: '"Support Team" <info@365dgrsol.in>', // override default from
@@ -30,8 +28,6 @@ async sendUserConfirmation(user: User, token: string) {
   // Resend OTP for verify Registration 
 async resendUserConfirmation(user: User, token: string) {
     const url = `example.com/auth/confirm?token=${token}`
-
-    console.log('OTP:', user.otp)
 
     await this.mailerService.sendMail({
       to: user.email,
@@ -229,7 +225,7 @@ async sendAbandonmenCartReminder(email: string, products: any) {
         imageUrl: items.image
     }));
       const CartUrl = `https://www.tilitso.in/shop-cart`
-      console.log("mapped data", productDetails)
+
       await this.mailerService.sendMail({
         to: email,
         from: '"Support Team" <info@365dgrsol.in>',

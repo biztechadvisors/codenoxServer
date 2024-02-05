@@ -20,7 +20,7 @@ export class AddressesService {
 
 
   async create(createAddressDto: CreateAddressDto): Promise<Address> {
-    console.log("createAddressDto****", createAddressDto)
+
     // Create a new UserAddress with the provided data
     const userAddress = new UserAddress();
     userAddress.street_address = createAddressDto.address.street_address;
@@ -65,11 +65,8 @@ export class AddressesService {
   }
 
   async update(id: number, updateAddressDto: UpdateAddressDto): Promise<Address> {
-
-    console.log("updateAddressDto****", updateAddressDto)
-
     const address = await this.addressRepository.findOne({ where: { id }, relations: ['address'] });
-    console.log("address**update", address)
+
     if (!address) {
       throw new NotFoundException(`Address with ID ${id} not found`);
     }

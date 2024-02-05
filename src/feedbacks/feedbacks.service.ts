@@ -36,7 +36,7 @@ export class FeedbackService {
   async create(
     createFeedBackDto: CreateFeedBackDto,
   ) {
-    console.log(createFeedBackDto)
+
     const feedback = new Feedback();
     feedback.model_id = createFeedBackDto.model_id;
     feedback.model_type = createFeedBackDto.model_type;

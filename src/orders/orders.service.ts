@@ -193,7 +193,6 @@ export class OrdersService {
         weight: 1
       };
       const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
-      console.log("shiprocketResponse***", shiprocketResponse);
 
       order.tracking_number = shiprocketResponse.shipment_id || shiprocketResponse.order_id;
 
@@ -258,10 +257,25 @@ export class OrdersService {
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
     try {
+      const usr = await this.userRepository.findOne({ where: { id: customer_id } });
+
+      if (!usr) {
+        throw new Error('User not found');
+      }
+
       if (!page) page = 1;
       if (!limit) limit = 15;
       const startIndex = (page - 1) * limit;
-      const endIndex = page * limit;
+
+      // Find all users in the repository based on user IDs
+      const usrByIdUsers = await this.userRepository.find({
+        where: { UsrBy: { id: usr.id } },
+      });
+
+      // Extract user IDs from usrByIdUsers and include the original user ID
+      const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
+
+      // Query orders for all related users and usrByIdUsers
       let query = this.orderRepository.createQueryBuilder('order');
       query = query.leftJoinAndSelect('order.status', 'status');
       query = query.leftJoinAndSelect('order.billing_address', 'billing_address');
@@ -270,6 +284,9 @@ export class OrdersService {
       query = query.leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot');
       query = query.leftJoinAndSelect('order.payment_intent', 'payment_intent');
+      query = query.where('order.customer_id IN (:...userIds)', { userIds });
+
+      // Additional filtering conditions
       if (shop_id && shop_id !== 'undefined') {
         query = query.andWhere('products.shop_id = :shopId', { shopId: Number(shop_id) });
       }
@@ -278,17 +295,15 @@ export class OrdersService {
         query = query.andWhere('(status.name ILIKE :searchValue OR order.fieldName ILIKE :searchValue)', { searchValue: `%${search}%` });
       }
 
-      if (customer_id) {
-        query = query.andWhere('order.customer_id = :customerId', { customerId: customer_id });
-      }
-
       if (tracking_number) {
         query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
       }
+
       const [data, totalCount] = await query
         .skip(startIndex)
         .take(limit)
         .getManyAndCount();
+
       const results = data.map((order) => {
         return {
           id: order.id,
@@ -383,6 +398,7 @@ export class OrdersService {
           wallet_point: order?.wallet_point
         }
       });
+
       const url = `/orders?search=${search}&limit=${limit}`;
 
       return {
@@ -431,7 +447,7 @@ export class OrdersService {
   }
 
   async getOrderByIdOrTrackingNumber(id: number): Promise<any> {
-    console.log("getOrderByIdOrTrackingNumber", id);
+
     try {
       const order = await this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
@@ -612,7 +628,6 @@ export class OrdersService {
 
   async update(id: number, updateOrderInput: UpdateOrderDto): Promise<Order> {
 
-    console.log("update-Order", id, updateOrderInput)
     try {
       // Update the order in the database
       const updatedOrder = await this.updateOrderInDatabase(id, updateOrderInput);
@@ -709,22 +724,17 @@ export class OrdersService {
     for (const product of input.products) {
       // Fetch the product from the database
       const productEntity = await this.productRepository.findOne({ where: { id: product.product_id }, relations: ['shop.address'] });
-      console.log(productEntity)
+
       // Check if the product is available
       if (!productEntity || productEntity.stock < product.quantity) {
         unavailable_products.push(product.product_id);
       } else {
         // Calculate the total tax and shipping charge
         total_tax = product.subtotal * productEntity.taxes.rate / 100  //IGST
-        console.log(total_tax)
-        console.log(total_tax / 2)
+
         shipping_charge += productEntity.shipping_fee;
       }
     }
-    console.log(input.billing_address.city + " === " + input.shipping_address.city)
-    console.log(input.billing_address.state + " === " + input.shipping_address.state)
-
-    console.log(total_tax)
 
     // Return the verified data
     return {
@@ -752,7 +762,6 @@ export class OrdersService {
   }
 
   async createOrderStatus(createOrderStatusInput: CreateOrderStatusDto): Promise<OrderStatus> {
-    console.log("first", createOrderStatusInput)
 
     // Create a new OrderStatus entity from the input data
     const orderStatus = this.orderStatusRepository.create(createOrderStatusInput);
@@ -807,16 +816,17 @@ export class OrdersService {
   }
 
   async downloadInvoiceUrl(Order_id: string) {
-    console.log(Order_id)
+
     let taxType
     const Invoice = await this.orderRepository.findOne({ where: { id: +Order_id }, relations: ['coupon', 'status', 'billing_address', 'shipping_address', 'shop', 'shop.address', 'products'] });
+
     if (Invoice.shop.address.state === Invoice.shipping_address.state) {
       const shippingState = Invoice.shipping_address.state;
       if (stateCode.hasOwnProperty(shippingState)) {
         const stateCodeValue = stateCode[shippingState];
         taxType = {
           CGST: Invoice.sales_tax / 2,
-          SGST: Invoice.sales_tax / 2,  // state- ut code 
+          SGST: Invoice.sales_tax / 2,
           state_code: stateCodeValue,
           billing_address: Invoice.billing_address,
           shipping_address: Invoice.shipping_address,
@@ -828,7 +838,6 @@ export class OrdersService {
 
         }
         return taxType
-        console.log('stateCodeValue:', stateCodeValue);
       } else {
         return 'Invalid state name in shipping address';
       }
@@ -941,17 +950,17 @@ export class OrdersService {
   }
 
   async paypalPay(order: Order) {
-    console.log("paypalPay**", order);
+
     order.order_status = OrderStatusType.PROCESSING;
     try {
       const response = await this.paypalService.verifyOrder(order.payment_intent.payment_intent_info.order_id);
-      console.log("response-paypal", order);
+
       if (response.status === 'COMPLETED') {
-        console.log('Payment Success');
+
         order.payment_status = PaymentStatusType.SUCCESS;
         order.payment_intent = null;
       } else {
-        console.log('Payment Failed');
+
         order.payment_status = PaymentStatusType.FAILED;
       }
       await this.orderRepository.save(order);

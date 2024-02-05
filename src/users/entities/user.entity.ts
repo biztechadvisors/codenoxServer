@@ -9,6 +9,7 @@ import { Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany
 import { Dealer } from './dealer.entity';
 
 export enum UserType {
+  Super_Admin = 'Super_Admin',
   Admin = 'Admin',
   Dealer = 'Dealer',
   Vendor = 'Vendor',
@@ -45,6 +46,9 @@ export class User extends CoreEntity {
   @OneToOne(() => Dealer, (dealer) => dealer)
   @JoinColumn()
   dealer?: Dealer;
+
+  @ManyToOne(() => User, (user) => user)
+  UsrBy?: User;
 
   @OneToMany(() => Shop, (shop) => shop.owner, { cascade: true })
   shops?: Shop[];

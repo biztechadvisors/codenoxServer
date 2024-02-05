@@ -20,7 +20,6 @@ export class CouponsController {
 
   @Post()
   createCoupon(@Body() createCouponDto: CreateCouponDto) {
-    console.log(createCouponDto)
     return this.couponsService.create(createCouponDto);
   }
 
@@ -41,7 +40,6 @@ async verifyCoupon(@Body('code') code: string) {
   try {
     // Assuming this.couponsService.verifyCoupon returns a promise
     const verifiedCoupon = await this.couponsService.verifyCoupon(code);
-    console.log('Promise resolved:', verifiedCoupon);
 
     if (verifiedCoupon) {
       return { message: 'Coupon is valid.', coupon: verifiedCoupon };

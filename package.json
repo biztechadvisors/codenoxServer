@@ -47,6 +47,7 @@
     "multer-s3": "^3.0.1",
     "mysql2": "^3.6.1",
     "nestjs-stripe": "^1.0.0",
+    "nestjs-typeorm-paginate": "^4.0.4",
     "nodemailer": "^6.9.6",
     "passport-jwt": "^4.0.1",
     "paypal-rest-sdk": "^1.8.1",

@@ -1,6 +1,5 @@
 /* eslint-disable prettier/prettier */
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-// import { Permission } from "./Permission.entity"; // Import the Permission entity
 
 @Entity()
 export class Permission {
@@ -12,7 +11,6 @@ export class Permission {
   @Column()
   permission_name: string
 
-  
   @OneToMany(() => PermissionType, PermissionType => PermissionType.permissions)
   permissions: PermissionType[];
 }

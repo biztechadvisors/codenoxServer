@@ -25,19 +25,16 @@ export class WithdrawsService {
   // private withdraw: Withdraw[] = []
 
   async create(createWithdrawDto: CreateWithdrawDto) {
-    console.log("entered")
     const newWithdraw = new Withdraw()
     // const newWithdrawBalance = new Balance()
 
     try {
-      console.log("working")
       const findId = await this.withdrawRepository.find({
         where: {
           shop_id: createWithdrawDto.shop_id
         }
       })
 
-      console.log("findShop", findId)
       if (findId) {
 
         newWithdraw.amount = createWithdrawDto.amount
@@ -55,25 +52,23 @@ export class WithdrawsService {
           },
           relations: ['balance'],
         });
-        console.log("shopId", shop)
 
         newWithdraw.shop = shop
 
         const addWithdraw = await this.withdrawRepository.save(newWithdraw)
-        console.log("data", addWithdraw)
+
         const findBalanceId = await this.balanceRepository.findOne({
           where: {
             id: addWithdraw.shop.balance.id
           }
         })
-        console.log("id", findBalanceId)
+
         if (findBalanceId) {
 
           findBalanceId.withdrawn_amount = addWithdraw.amount
           const addWithdraBalance = await this.balanceRepository.save(findBalanceId)
-          console.log("updatedWithdraw", addWithdraBalance)
         }
-        console.log("add data", addWithdraw)
+
         return addWithdraw
       } else {
         console.error()
@@ -110,10 +105,8 @@ export class WithdrawsService {
 
       const fuseSearchResult = fuse.search(status);
       data = fuseSearchResult?.map(({ item }) => item) || [];
-      console.log("search", data)
-    }
 
-    // console.log("first", data);
+    }
 
     if (shop_id) {
 
@@ -123,12 +116,10 @@ export class WithdrawsService {
         },
         relations: ['shop']
       });
-      console.log("find", data)
     }
-    console.log("data", data)
     const results = data.slice(startIndex, endIndex);
     const url = `/withdraws?limit=${limit}`;
-    console.log("result", results)
+
     return {
       data: results,
       ...paginate(data.length, page, limit, results.length, url),
@@ -137,19 +128,17 @@ export class WithdrawsService {
 
 
   async findOne(id: number) {
-    console.log("id", id)
+
     const getWthdraw = await this.withdrawRepository.findOne({
       where: { id: id },
       relations: ['shop']
     })
 
-    console.log("withdrawe=sssssss", getWthdraw)
-
     return getWthdraw
   }
 
   async update(id: number, updateWithdrawDto: ApproveWithdrawDto) {
-    console.log("change", updateWithdrawDto)
+
     const findWithdraw = await this.withdrawRepository.findOne({
       where: {
         id: updateWithdrawDto.id,
@@ -160,12 +149,8 @@ export class WithdrawsService {
       ]
     })
 
-    // console.log("findwithdraw++++++++++++", findWithdraw.status)
-    findWithdraw.status = updateWithdrawDto.status
-    // console.log("inserted Status",findWithdraw.status)
-    // console.log("already have status",WithdrawStatus.APPROVED)
 
-    // console.log(findWithdraw.status === WithdrawStatus.APPROVED)
+    findWithdraw.status = updateWithdrawDto.status
 
     if (findWithdraw.status === WithdrawStatus.APPROVED) {
       const shop = await this.shopRepository.findOne({
@@ -181,16 +166,10 @@ export class WithdrawsService {
         }
       })
 
-      console.log("shopId", shop)
-      console.log("balance", shop.balance.current_balance)
-
       balance.current_balance -= findWithdraw.amount
-
-      console.log("blance", shop.balance.current_balance)
 
       const final = await this.balanceRepository.save(balance)
 
-      console.log("final", final)
     }
 
     const updatedStatus = await this.withdrawRepository.save(findWithdraw)
@@ -216,8 +195,6 @@ export class WithdrawsService {
     }
 
     await this.withdrawRepository.delete(deleteData)
-
-    console.log("0", deleteData)
 
     return deleteData
   }
