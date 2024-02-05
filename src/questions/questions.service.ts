@@ -51,7 +51,6 @@ export class QuestionService {
     const endIndex = page * limit;
 
     const findquestions = await this.questionRepository.find(); // Assuming questionRepository is a typeorm repository
-    console.log(findquestions);
 
     for (const question of findquestions) {
       const feedbackCount = await this.feedbackRepository.find({
@@ -107,7 +106,7 @@ export class QuestionService {
       const feedbackCount = await this.feedbackRepository.find({
         where: { model_id: question.id, model_type: 'question' },
       });
-      console.log(feedbackCount);
+
       for (const data of feedbackCount) {
         const { positive, negative } = data
         if (positive) {
@@ -119,7 +118,7 @@ export class QuestionService {
       }
       question.positive_feedbacks_count = positiveCount
       question.negative_feedbacks_count = negativeCount
-      // console.log(question.id);
+
     }
     return question
   }
@@ -159,7 +158,6 @@ export class QuestionService {
       }
     }
 
-    console.log(question.user + ' ' + question.product)
     return await this.questionRepository.save(question)
     // return this.question[0];
   }
@@ -205,7 +203,7 @@ export class QuestionService {
             existingQuestion.user_id = data.id
           }
         }
-        console.log(existingQuestion.user + ' ' + existingQuestion.product)
+    
         return await this.questionRepository.save(existingQuestion)
       }
     } catch (error) {

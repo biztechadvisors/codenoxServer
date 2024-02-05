@@ -27,7 +27,7 @@ export class AbandonedCartController {
     @Param() param: GetCartData,
   ){
       const retrive = await this.abandonedCartService.getCartData(param);
-      console.log("email", param)
+
       return retrive;
   }
   // { message: string; status: boolean; }

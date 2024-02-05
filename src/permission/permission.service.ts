@@ -16,8 +16,6 @@ export class PermissionService{
     ){}
 
     async create(createPermission: CreatePermissionDto) {
-        console.log('createPermission-Work');
-        console.log(createPermission);
         const existingPermission = await this.permissionRepository.findOne({where:{permission_name: createPermission.permission_name}})
         if(existingPermission){
           return 'Already exist'
@@ -29,10 +27,9 @@ export class PermissionService{
             permissions.permission_name = createPermission.permission_name;
         
             const savedPermission = await this.permissionRepository.save(permissions);
-            console.log(createPermission.permission)
         
             if (Array.isArray(createPermission.permission) && createPermission.permission.length > 0) {
-                console.log(createPermission.permission)
+
                 for (const permissionData of createPermission.permission) {
                     const permissionType = new PermissionType();
                     
@@ -42,14 +39,12 @@ export class PermissionService{
                     permissionType.permissions = savedPermission;
                   
                     await this.permissionTypeRepository.save(permissionType);
-                  
-                    console.log(permissionType);
+
                   }
             } else {
                 console.error('Permission types array is empty or not provided.');
             }
-            console.log(savedPermission);
-            console.log(permissions);
+
         } else {
             console.error('Invalid createPermission object.');
         }
@@ -64,7 +59,7 @@ export class PermissionService{
         .getMany();
 
       const groupedPermissions = permissionsWithTypeName.reduce((acc, permission) => {
-        console.log(permission)
+
         const typeName = permission.permissions.type_name;
         const permissionName = permission.permissions.permission_name;
 

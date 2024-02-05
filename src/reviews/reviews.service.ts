@@ -67,7 +67,6 @@ export class ReviewService {
         where: ({ name: review.user.name, email: review.user.email }),
       });
       if (getUser.length > 0) {
-        console.log("firstUser", getUser)
         review.user = getUser[0];
       }
     }

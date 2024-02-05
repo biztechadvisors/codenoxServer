@@ -35,7 +35,6 @@ export class AbandonedCartService {
 
 
         if (existingCart) {
-         console.log("dadta",existingCart)
 
           await this.cartRepository.update(
             { id: existingCart.id },
@@ -43,7 +42,6 @@ export class AbandonedCartService {
               cartQuantity: totalQuantity },
           );
 
-      console.log("user exist")
     } else {
       const newCart = new Cart()
       newCart.customerId = createCartDto.customerId
@@ -66,10 +64,9 @@ export class AbandonedCartService {
 
   async getCartData(param: GetCartData): Promise<{ products: any[]; totalCount: number }> {
     const existingCart = await this.cartRepository.findOne({ where: { customerId: param.customerId, email: param.email } });
-    console.log("id", param.customerId, param.email)
-    console.log("cart", existingCart)
+
     if (!existingCart) {
-      console.log("empty")
+
       return { products: [], totalCount: 0 };
     }
 
@@ -77,7 +74,7 @@ export class AbandonedCartService {
     try {
        const exist = JSON.stringify(existingCart.cartData)
       existingCartData = JSON.parse(exist);
-      console.log("CartData")
+
     } catch (err) {
       console.error(`Error parsing cart data: ${err.message}`);
       return { products: [], totalCount: 0 };
@@ -134,7 +131,7 @@ export class AbandonedCartService {
             if (existingCartData[itemsId].quantity > 1) {
               existingCartData[itemsId].quantity -= 1;
               cartQuantity -= 1;
-              console.log("cartQuantity", cartQuantity)
+         
             } else {
               delete existingCartData[itemsId];
               cartQuantity -= 1;
@@ -150,7 +147,7 @@ export class AbandonedCartService {
           if (existingCartData[itemsId].quantity > 1) {
             existingCartData[itemsId].quantity -= 1;
             cartQuantity -= 1;
-            // console.log("Quantity", quantity)
+
           } else {
             delete existingCartData[itemsId];
             cartQuantity -= 1;
@@ -207,7 +204,7 @@ async sendAbandonedCartReminder() {
         const products = JSON.parse(pro);
         const email = cart.email;      
         const res = await this.mailService.sendAbandonmenCartReminder(email, products);
-        console.log(res)
+   
       } catch (error) {
         console.log("erroor___________", error)
       }

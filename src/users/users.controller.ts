@@ -49,7 +49,6 @@ export class UsersController {
 
   @Post('unblock-user')
   activeUser(@Body('id') id: number) {
-    console.log("activeUser")
     return this.usersService.activeUser(+id);
   }
 
@@ -70,14 +69,10 @@ export class ProfilesController {
 
   @Post()
   createProfile(@Body() createProfileDto: CreateProfileDto) {
-    console.log("createProfile")
-    console.log(createProfileDto);
   }
 
   @Put(':id')
   updateProfile(@Body() updateProfileDto: UpdateProfileDto) {
-    console.log("updateProfile")
-    console.log(updateProfileDto);
   }
 
   @Delete(':id')
@@ -92,7 +87,6 @@ export class DealerController {
 
   @Post()
   async createDealer(@Body() dealerData: DealerDto) {
-    console.log("dealerData", dealerData)
     return this.usersService.createDealer(dealerData);
   }
 

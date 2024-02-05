@@ -36,7 +36,6 @@ export class WithdrawsController {
     @Param('id') id: string,
     @Body() updateWithdrawDto: ApproveWithdrawDto,
   ) {
-    console.log("first", id, updateWithdrawDto)
     return this.withdrawsService.update(+id, updateWithdrawDto)
   }
 

@@ -162,7 +162,6 @@ export class SettingsService {
           //contact Detail
           if (createSettingDto.options.contactDetails) {
             const newcontact = new ContactDetails()
-            console.log("first", createSettingDto.options.contactDetails)
             newcontact.contact = createSettingDto.options.contactDetails.contact
             newcontact.website = createSettingDto.options.contactDetails.website
 
@@ -193,16 +192,15 @@ export class SettingsService {
 
                 socials.push(socialId);
 
-                console.log("dekjoo", newcontact.socials)
               }
               newcontact.socials = socials
-              console.log("All socials saved with ids: ", socials);
+
             }
             newcontact.location = value6
 
             const contacts = await this.contactDetailRepository.save(newcontact)
             const socialIds = contacts.socials.map((social) => social.id);
-            console.log("try", contacts, socialIds)
+
             value5 = contacts.id
 
           }
@@ -356,7 +354,7 @@ export class SettingsService {
                 const newDelivery = this.deliveryTimeRepository.create(delivery)
                 const deliveryTimeId = await this.deliveryTimeRepository.save(newDelivery)
                 newDeliveryTime.push(deliveryTimeId);
-                console.log("deliverytime", newDeliveryTime)
+
               }
               newOptions.deliveryTime = newDeliveryTime
             } catch (error) {
@@ -368,7 +366,7 @@ export class SettingsService {
           if (createSettingDto.options.logo) {
             try {
               const newLogo = new LogoSettings()
-              console.log("Logoooooo", createSettingDto.options.logo)
+
               newLogo.original = createSettingDto.options.logo.original
               newLogo.thumbnail = createSettingDto.options.logo.thumbnail
 
@@ -389,7 +387,7 @@ export class SettingsService {
                 const newPayment = this.paymentGatewayRepository.create(payment)
                 const paymentGatewayId = await this.paymentGatewayRepository.save(newPayment)
                 newPaymentGateway.push(paymentGatewayId);
-                console.log("gatewayy", newPaymentGateway)
+
               }
               newOptions.paymentGateway = newPaymentGateway
             } catch (error) {
@@ -409,14 +407,13 @@ export class SettingsService {
           const option = await this.settingsOptionsRepository.save(newOptions)
           const deliveryIds = option.deliveryTime.map((delivery) => delivery.id);
           const paymentGateWayIds = option.paymentGateway.map((gateway) => gateway.id);
-          console.log("second", option, deliveryIds, paymentGateWayIds)
+
           value4 = option
         }
 
         //setting table insertion
         newSettings.options = value4
         const setting = await this.settingRepository.save(newSettings)
-        console.log("first", setting)
 
         return setting
       }
@@ -458,10 +455,10 @@ export class SettingsService {
 
       for (let index = 0; index < settingData.length; index++) {
         const setting = settingData[index];
-        //  console.log("Setting data", setting);
+
         return setting;
       }
-      console.log("first", settingData)
+
     }
   }
 
@@ -492,6 +489,7 @@ export class SettingsService {
     if (!settingData) {
       return null
     } else {
+
       return settingData
     }
   }
@@ -522,7 +520,6 @@ export class SettingsService {
           'options.logo',
         ]
       })
-      console.log("secocnd", findSetting)
 
       if (findSetting) {
 
@@ -531,8 +528,6 @@ export class SettingsService {
           setting.language = updateSettingDto.language
           setting.translated_languages = updateSettingDto.translated_languages
           setting.updated_at = new Date()
-
-
 
           //update Options
           if (updateSettingDto.options) {
@@ -551,7 +546,7 @@ export class SettingsService {
                 'logo'
               ]
             })
-            //  console.log("Data", findOption)
+
             findOption.currency = updateSettingDto.options.currency
             findOption.currencyToWalletRatio = updateSettingDto.options.currencyToWalletRatio
             findOption.freeShipping = updateSettingDto.options.freeShipping
@@ -577,8 +572,6 @@ export class SettingsService {
             findOption.useOtp = updateSettingDto.options.useOtp
             findOption.updated_at = new Date()
 
-            console.log("receive Data", updateSettingDto.options.emailEvent)
-
             //update contact Details
             if (updateSettingDto.options.contactDetails) {
               try {
@@ -587,7 +580,7 @@ export class SettingsService {
                   where: { id: findOption.contactDetails.id },
                   relations: ['location', 'socials']
                 })
-                console.log("updatessssss", updateContact)
+
                 updateContact.contact = updateSettingDto.options.contactDetails.contact
                 updateContact.website = updateSettingDto.options.contactDetails.website
 
@@ -597,16 +590,16 @@ export class SettingsService {
                   const updateLocation = await this.locationRepository.findOne({
                     where: { id: updateContact.location.id }
                   })
-                  console.log("updateLocation", updateLocation)
+
                   if (updateLocation) {
-                    console.log("++++++++++++++++++")
+
                     updateLocation.lat = updateSettingDto.options.contactDetails.location.lat
                     updateLocation.lng = updateSettingDto.options.contactDetails.location.lng
                     updateLocation.city = updateSettingDto.options.contactDetails.location.city
                     updateLocation.country = updateSettingDto.options.contactDetails.location.country
                     updateLocation.formattedAddress = updateSettingDto.options.contactDetails.location.formattedAddress
                     const final = await this.locationRepository.save(updateLocation)
-                    console.log("final+++++++++++++++++++++", final)
+
                   }
                 } else {
                   console.error("id not found")
@@ -621,22 +614,22 @@ export class SettingsService {
                     const existingSocial = updateContact.socials.find(
                       (social) => social.icon === updateSocial.icon
                     );
-                    console.log("*******", existingSocial)
+
 
                     if (existingSocial) {
 
                       const final = this.shopSocialRepository.create({ ...existingSocial, ...updateSocial })
                       const updatedSocial = await this.shopSocialRepository.save(final);
-                      console.log("Updated Social:", updatedSocial);
+
                       socials.push(updatedSocial);
 
                     } else {
 
                       const newSocial = this.shopSocialRepository.create({ ...updateSocial });
                       const savedSocial = await this.shopSocialRepository.save(newSocial);
-                      console.log("New Social:", savedSocial);
+
                       socials.push(savedSocial);
-                      console.log("new element", socials)
+
                     }
                   }
                   updateContact.socials = socials;
@@ -644,7 +637,7 @@ export class SettingsService {
                   throw new NotFoundException("Invalid action Performed");
                 }
                 const contactfinal = await this.contactDetailRepository.save(updateContact)
-                console.log("contactFInal", contactfinal)
+
               } catch (error) {
                 console.log(error)
               }
@@ -657,14 +650,13 @@ export class SettingsService {
                 const updateCurency = await this.currencyOptionRepository.findOne({
                   where: { id: findOption.currencyOptions.id }
                 })
-                console.log("updateCurrency+++++++++++", updateCurency)
+
                 if (updateCurency) {
                   updateCurency.formation = updateSettingDto.options.currencyOptions.formation
                   updateCurency.fractions = updateSettingDto.options.currencyOptions.fractions
 
                   const updatedCurrencyOption = await this.currencyOptionRepository.save(updateCurency)
 
-                  console.log("updatedCurrencyOption", updatedCurrencyOption)
                 }
               } catch (error) {
                 console.log(error)
@@ -679,7 +671,6 @@ export class SettingsService {
                   where: { id: findOption.emailEvent.id },
                   relations: ['admin', 'vendor', 'customer']
                 })
-                console.log("updateEvent", updateEvent)
 
                 if (updateEvent) {
 
@@ -706,7 +697,7 @@ export class SettingsService {
                     const updateVendor = await this.emailVendorRepository.findOne({
                       where: { id: updateEvent.vendor.id }
                     })
-                    console.log("Vendor------------", updateVendor)
+
                     updateVendor.paymentOrder = updateSettingDto.options.emailEvent.vendor.paymentOrder ? updateSettingDto.options.emailEvent.vendor.paymentOrder : false
                     updateVendor.refundOrder = updateSettingDto.options.emailEvent.vendor.refundOrder ? updateSettingDto.options.emailEvent.vendor.refundOrder : false
                     updateVendor.statusChangeOrder = updateSettingDto.options.emailEvent.vendor.statusChangeOrder ? updateSettingDto.options.emailEvent.vendor.statusChangeOrder : false
@@ -725,7 +716,7 @@ export class SettingsService {
                     const updateCustomer = await this.emailCustomerRepository.findOne({
                       where: { id: updateEvent.customer.id }
                     })
-                    console.log("Customer------------", updateCustomer)
+
                     updateCustomer.paymentOrder = updateSettingDto.options.emailEvent.customer.paymentOrder ? updateSettingDto.options.emailEvent.customer.paymentOrder : false
                     updateCustomer.refundOrder = updateSettingDto.options.emailEvent.customer.refundOrder ? updateSettingDto.options.emailEvent.customer.refundOrder : false
                     updateCustomer.statusChangeOrder = updateSettingDto.options.emailEvent.customer.statusChangeOrder ? updateSettingDto.options.emailEvent.customer.statusChangeOrder : false
@@ -750,7 +741,6 @@ export class SettingsService {
                   where: { id: findOption.smsEvent.id },
                   relations: ['admin', 'vendor', 'customer']
                 })
-                // console.log("updateEvent", updateSms)
 
                 if (updateSms) {
 
@@ -777,7 +767,7 @@ export class SettingsService {
                     const updateVendor = await this.smsVendorRepository.findOne({
                       where: { id: updateSms.vendor.id }
                     })
-                    // console.log("Vendor------------",updateVendor)
+                 
                     updateVendor.paymentOrder = updateSettingDto.options.smsEvent.vendor.paymentOrder ? updateSettingDto.options.smsEvent.vendor.paymentOrder : false
                     updateVendor.refundOrder = updateSettingDto.options.smsEvent.vendor.refundOrder ? updateSettingDto.options.smsEvent.vendor.refundOrder : false
                     updateVendor.statusChangeOrder = updateSettingDto.options.smsEvent.vendor.statusChangeOrder ? updateSettingDto.options.smsEvent.vendor.statusChangeOrder : false
@@ -794,7 +784,7 @@ export class SettingsService {
                     const updateCustomer = await this.smsCustomerRepository.findOne({
                       where: { id: updateSms.customer.id }
                     })
-                    console.log("Customer------------", updateCustomer)
+              
                     updateCustomer.paymentOrder = updateSettingDto.options.smsEvent.customer.paymentOrder ? updateSettingDto.options.smsEvent.customer.paymentOrder : false
                     updateCustomer.refundOrder = updateSettingDto.options.smsEvent.customer.refundOrder ? updateSettingDto.options.smsEvent.customer.refundOrder : false
                     updateCustomer.statusChangeOrder = updateSettingDto.options.smsEvent.customer.statusChangeOrder ? updateSettingDto.options.smsEvent.customer.statusChangeOrder : false
@@ -850,7 +840,7 @@ export class SettingsService {
                 // } 
 
                 const seoId = await this.seoSettingsRepository.save(updateSeo)
-                console.log("seoId", seoId)
+
               } catch (error) {
                 console.error("Error saving SEO:", error);
               }
@@ -864,13 +854,12 @@ export class SettingsService {
                 const updateServerInfo = await this.serverInfoRepository.findOne({
                   where: { id: findOption.server_info.id }
                 })
-                console.log("updateServerInfo", updateServerInfo)
 
                 if (updateServerInfo === null) {
 
                   const createServer = this.serverInfoRepository.create(updateSettingDto.options.server_info)
                   const insertedValue = await this.serverInfoRepository.save(createServer)
-                  console.log("first/////////////", insertedValue)
+
                   //  valueId = insertedValue.id
                 } else {
                   updateServerInfo.max_execution_time = updateSettingDto.options.server_info.max_execution_time
@@ -880,7 +869,7 @@ export class SettingsService {
                   updateServerInfo.upload_max_filesize = updateSettingDto.options.server_info.upload_max_filesize
 
                   const serverInfoId = await this.serverInfoRepository.save(updateServerInfo)
-                  console.log("serverinfoId************", serverInfoId)
+
                 }
 
               } catch (error) {
@@ -900,22 +889,21 @@ export class SettingsService {
                   const existingTime = findOption.deliveryTime.find(
                     (time) => time.title === updates.title
                   );
-                  console.log("*******", existingTime)
 
                   if (existingTime) {
 
                     // if(remove){ } 
                     const final = this.deliveryTimeRepository.create({ ...existingTime, ...updates })
                     const updatedTime = await this.deliveryTimeRepository.save(final);
-                    console.log("Updated Social:", updatedTime);
+
                     updateDeliveryTime.push(updatedTime);
 
                   } else {
                     const newTime = this.deliveryTimeRepository.create({ ...updates });
                     const savedTime = await this.deliveryTimeRepository.save(newTime);
-                    console.log("New Social:", savedTime);
+
                     updateDeliveryTime.push(savedTime);
-                    console.log("new element", updateDeliveryTime)
+
                   }
                 }
                 findOption.deliveryTime = updateDeliveryTime
@@ -931,7 +919,7 @@ export class SettingsService {
                 const updateLogo = await this.logoSettingsRepository.findOne({
                   where: { id: findOption.logo.id }
                 })
-                console.log("Logoooooo", updateLogo)
+
                 //  if(updateLogo){
                 //   const findAttachment = await this.attachmentRepository.findOne({
                 //     where: { original: updateLogo.original }
@@ -969,21 +957,20 @@ export class SettingsService {
                   const existingPayment = findOption.paymentGateway.find(
                     (time) => time.title === updates.title
                   );
-                  console.log("*******", existingPayment)
 
                   if (existingPayment) {
 
                     const final = this.paymentGatewayRepository.create({ ...existingPayment, ...updates })
                     const updatedTime = await this.paymentGatewayRepository.save(final);
-                    console.log("Updated Social:", updatedTime);
+
                     updatePaymentGateway.push(updatedTime);
 
                   } else {
                     const newTime = this.paymentGatewayRepository.create({ ...updates });
                     const savedTime = await this.paymentGatewayRepository.save(newTime);
-                    console.log("New Social:", savedTime);
+
                     updatePaymentGateway.push(savedTime);
-                    console.log("new element", updatePaymentGateway)
+
                   }
                 }
                 findOption.paymentGateway = updatePaymentGateway
@@ -994,7 +981,6 @@ export class SettingsService {
             }
 
             await this.settingsOptionsRepository.save(findOption)
-            // console.log("first", findOption, updatedValue)
 
           }
           const updateSetting = await this.settingRepository.save(setting)
@@ -1016,10 +1002,10 @@ export class SettingsService {
       const findId = await this.deliveryTimeRepository.findOne({
         where: { id: id }
       })
-      // console.log("id", findId)
+
       if (findId) {
         const del1 = await this.deliveryTimeRepository.delete(findId)
-        console.log("first", del1)
+
       }
       else {
         const find2Id = await this.shopSocialRepository.findOne({
@@ -1027,7 +1013,7 @@ export class SettingsService {
         })
         if (find2Id) {
           const del2 = await this.shopSocialRepository.delete(find2Id)
-          console.log("DELETE", del2)
+
         } else {
           console.error('Related data is not exist!')
         }

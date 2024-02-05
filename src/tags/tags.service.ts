@@ -109,7 +109,7 @@ export class TagsService {
     });
 
     const url = `/tags?search=${search}&limit=${numericLimit}`;
-    // console.log("****search-Tag****", formattedData)
+
     return {
       data: formattedData,
       ...paginate(total, numericPage, numericLimit, formattedData.length, url),
@@ -136,7 +136,7 @@ export class TagsService {
 
   async update(id: number, updateTagDto: UpdateTagDto): Promise<Tag> {
     const tag = await this.tagRepository.findOne({ where: { id }, relations: ['image', 'type'] });
-    // console.log("Ram********************", tag)
+
     if (!tag) {
       throw new Error(`Tag with ID ${id} not found`);
     }

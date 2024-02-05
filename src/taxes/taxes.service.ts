@@ -13,7 +13,6 @@ import { Category } from 'src/categories/entities/category.entity';
 import { CategoryRepository } from 'src/categories/categories.repository';
 // import {gstinValidator } from 'gstin-validator';
 import { stateCode } from './state_code.tax';
-console.log(stateCode)
 
 export enum GST_NAME {
   GOODS = 'goods',
@@ -149,7 +148,6 @@ export class TaxesService {
   async validateGST(gstNumber: string) {
     const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/;
     const isValidGST = gstRegex.test(gstNumber);
-    console.log(isValidGST)
     return isValidGST;
   }
 }

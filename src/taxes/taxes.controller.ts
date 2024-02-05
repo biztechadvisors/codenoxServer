@@ -25,7 +25,6 @@ export class TaxesController {
 
   @Post('/validate-gst')
   createValidateGST(@Body() validateGstDto:ValidateGstDto) {
-    console.log(validateGstDto);
     return this.taxesService.validateGST(validateGstDto.gstNumber);
   }
 

@@ -9,17 +9,14 @@ export class ImportsController {
 
   @Post('import-attributes')
   importAttributes(@Body() importAttributesDto: ImportDto) {
-    console.log(importAttributesDto)
     return true
   }
   @Post('import-products')
   importProducts(@Body() importProductsDto: ImportDto) {
-    console.log(importProductsDto)
     return true
   }
   @Post('import-variation-options')
   importVariationOptions(@Body() importVariationOptionsDto: ImportDto) {
-    console.log(importVariationOptionsDto)
     return true
   }
 }

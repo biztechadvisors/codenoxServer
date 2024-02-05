@@ -86,17 +86,20 @@ export class AuthService {
 
   async signIn(email, pass) {
     const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
-    const isMatch = await bcrypt.compare(pass, user.password);
-    if (isMatch) {
-      // The password is correct.
-      const payload = { sub: user.id, username: user.email };
-      return {
-        access_token: await this.jwtService.signAsync(payload),
-      };
-    } else {
-      throw new UnauthorizedException();
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
+    const isMatch = await bcrypt.compare(pass, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid password');
+    }
+    // The password is correct.
+    const payload = { sub: user.id, username: user.email };
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+    };
   }
+
 
   async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
     const existingUser = await this.userRepository.findOne({
@@ -129,6 +132,7 @@ export class AuthService {
     userData.password = hashPass;
     userData.type = createUserInput.type || UserType.Customer; // Use specified type or default to UserType.Customer
     userData.created_at = new Date();
+    userData.UsrBy = createUserInput.UsrBy; // Save the registerer who is registering it
 
     if (userData.type !== UserType.Customer) {
       userData.isVerified = true;
@@ -145,19 +149,22 @@ export class AuthService {
     const access_token = await this.signIn(userData.email, createUserInput.password);
 
     // Fetch permissions based on user type
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.type_name = :typeName`, { typeName: userData.type })
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
+    let result = [];
+    if (userData.type !== UserType.Customer) {
+      result = await this.permissionRepository
+        .createQueryBuilder('permission')
+        .leftJoinAndSelect('permission.permissions', 'permissions')
+        .where(`permission.type_name = :typeName`, { typeName: userData.type })
+        .select([
+          'permission.id',
+          'permission.type_name',
+          'permissions.id',
+          'permissions.type',
+          'permissions.read',
+          'permissions.write',
+        ])
+        .getMany();
+    }
 
     if (result.length === 0) {
       return {
@@ -183,7 +190,6 @@ export class AuthService {
     };
   }
 
-
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
     const user = await this.userRepository.findOne({ where: { email: loginInput.email } });
 
@@ -199,7 +205,7 @@ export class AuthService {
 
     if (!permission || permission.id === null) {
       access_token = await this.signIn(loginInput.email, loginInput.password);
-      console.log("access_token.access_token", access_token.access_token)
+
       return {
         token: access_token.access_token,
         permissions: ['customer', 'admin'],
@@ -379,11 +385,6 @@ export class AuthService {
       ])
       .getMany();
 
-
-    console.log('result')
-    console.log(result)
-
-
     const formattedResult = result.map(permission => ({
       id: permission.id,
       type_name: permission.type_name,
@@ -395,8 +396,6 @@ export class AuthService {
       })),
     }));
 
-
-    console.log(formattedResult[0])
     return {
       // token: access_token.access_token,
       token: "jwt token",
@@ -421,11 +420,6 @@ export class AuthService {
       ])
       .getMany();
 
-
-    console.log('result')
-    console.log(result)
-
-
     const formattedResult = result.map(permission => ({
       id: permission.id,
       type_name: permission.type_name,
@@ -437,8 +431,6 @@ export class AuthService {
       })),
     }));
 
-
-    console.log(formattedResult[0])
     return {
       // token: access_token.access_token,
       token: "jwt token",

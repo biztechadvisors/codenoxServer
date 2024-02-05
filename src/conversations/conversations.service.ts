@@ -45,15 +45,12 @@ export class ConversationsService {
           user_id: createConversationDto.latest_message.user_id
         }
       });
-      console.log(latestMessage);
-      console.log(createConversationDto.latest_message.body);
 
       if (latestMessage) {
-        // console.log("Work")
+
         latestMessage.body = createConversationDto.latest_message.body;
         await this.latestMessageRepository.save(latestMessage);
       } else {
-        // console.log("Work1")
 
         const latestMessage = new LatestMessage();
         latestMessage.body = createConversationDto.latest_message.body;
@@ -67,9 +64,8 @@ export class ConversationsService {
       message.conversation_id = conversationCheck.id
       message.user_id = createConversationDto.latest_message.user_id
       await this.messageRepository.save(message)
-      // console.log("first")
+   
     } else {
-      // console.log("first==========else")
 
       const conversation = new Conversation();
       conversation.unseen = createConversationDto.unseen;
@@ -84,7 +80,7 @@ export class ConversationsService {
       conversation.shop = createConversationDto.shop
       conversation.user = createConversationDto.user
       conversation.user_id = createConversationDto.user_id
-      console.log(conversation)
+
       await this.conversationRepository.save(savedConversation);
 
       const message = new Message()

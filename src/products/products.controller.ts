@@ -27,7 +27,6 @@ export class ProductsController {
 
   @Get()
   async getProducts(@Query() query: GetProductsDto): Promise<ProductPaginator> {
-    console.log("getProducts****", query)
     return this.productsService.getProducts(query);
   }
 
@@ -42,7 +41,6 @@ export class ProductsController {
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    console.log("Update-Product", id, updateProductDto)
     return this.productsService.update(+id, updateProductDto);
   }
 

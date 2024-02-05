@@ -41,7 +41,6 @@ export class ManufacturersService {
     const endIndex = page * limit
     let data: Manufacturer[] = this.manufacturers
     if (search) {
-      console.log('search', search)
       const parseSearchParams = search.split(';')
       for (const searchParam of parseSearchParams) {
         const [key, value] = searchParam.split(':')

@@ -12,7 +12,6 @@ export class PermissionController {
 
   @Post()
   createPermission(@Body() createPermission: CreatePermissionDto) {
-    console.log(createPermission);
     return this.permissionService.create(createPermission);
 }
 

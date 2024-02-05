@@ -40,8 +40,7 @@ export class CategoriesService {
   private categories: Category[] = categories
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-    // console.log('CreateCategoryDto***************', createCategoryDto);
-
+  
     // Check if the image exists
     const imageAttachment = await this.attachmentRepository.findOne({ where: { id: createCategoryDto.image.id } });
     if (!imageAttachment) {
@@ -119,7 +118,7 @@ export class CategoriesService {
     });
 
     const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}`;
-    // console.log("*Categories***", formattedData)
+
     return {
       data,
       ...paginate(total, numericPage, numericLimit, data.length, url),
@@ -150,13 +149,11 @@ export class CategoriesService {
       relations: ['type', 'image'],
     });
 
-    // console.log("Update_category***", id, updateCategoryDto)
-
+  
     if (!category) {
       throw new NotFoundException('Category not found');
     }
 
-    // console.log("**updateCategory**", updateCategoryDto.image, category.image)
     if (updateCategoryDto.image) {
       const image = await this.attachmentRepository.findOne({ where: { id: updateCategoryDto.image.id } });
       if (!image) {
@@ -173,10 +170,8 @@ export class CategoriesService {
       category.image = image;
     }
 
-
-    // console.log("Type****Category", updateCategoryDto.type_id)
     if (updateCategoryDto.type_id) {
-      // console.log("**updateCategoryDto.type_id**", updateCategoryDto.type_id)
+
       const type = await this.typeRepository.findOne({ where: { id: updateCategoryDto.type_id } });
       if (!type) {
         // Handle the case when the type is not found
@@ -191,7 +186,7 @@ export class CategoriesService {
     category.parent = updateCategoryDto.parent;
     category.icon = updateCategoryDto.icon;
     category.language = updateCategoryDto.language;
-    // console.log("**category_data**", category)
+
     return this.categoryRepository.save(category);
   }
 

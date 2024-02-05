@@ -35,7 +35,6 @@ export class SettingsController {
 
   @Delete(':id')
   remove( @Param('id') id:number) {
-    console.log("first", id)
     return this.settingsService.remove(id)
   }
 }

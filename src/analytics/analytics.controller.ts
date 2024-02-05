@@ -8,8 +8,7 @@ export class AnalyticsController {
 
   @Get(':customerId')
   async analytics(@Param('customerId') customerId: string) {
-    console.log("customerId**", customerId);
-    return await this.analyticsService.findAll(customerId);
+    return await this.analyticsService.findAll(parseInt(customerId));
   }
 
   @Get('/calculate-orders')

@@ -30,7 +30,7 @@ export class CouponsService {
   ) { }
 
   async create(createCouponDto: CreateCouponDto): Promise<Coupon> {
-    console.log('Coupon Work')
+
     const coupon = new Coupon();
     coupon.code = createCouponDto.code
     coupon.language = createCouponDto.language
@@ -69,7 +69,6 @@ export class CouponsService {
       coupon.translated_languages = [createCouponDto.translated_languages];
     }
     const saveCoupon = await this.couponRepository.save(coupon)
-    // console.log(saveCoupon)
     // coupon.translated_languages = createCouponDto.translated_languages
     return saveCoupon
   }
@@ -121,7 +120,7 @@ export class CouponsService {
     if (!existingCoupons) {
       throw new NotFoundException('Address not found');
     }
-    console.log(existingCoupons)
+
     existingCoupons.code = updateCouponDto.code
     existingCoupons.language = updateCouponDto.language
     existingCoupons.description = updateCouponDto.description
@@ -162,19 +161,16 @@ export class CouponsService {
   }
 
   async verifyCoupon(code: string): Promise<Coupon | null>{
-    console.log(code)
+  
     const currentDate = new Date();
   const coupon = await this.couponRepository.findOne({where:{ code:code }});
-  console.log(coupon)
 
   if (coupon && coupon.expire_at) {
     const expirationDate = new Date(coupon.expire_at);
 
     if (expirationDate > currentDate) {
-      console.log('Work')
       return coupon;
     } else {
-      console.log('Work-Not')
       return null;
     }
   }

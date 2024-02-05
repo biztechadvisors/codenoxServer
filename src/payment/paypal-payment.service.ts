@@ -55,7 +55,7 @@ export class PaypalPaymentService {
   }
 
   async verifyOrder(orderId: string | number) {
-    console.log("verifyOrder***request", orderId)
+
     const request = await new this.paypal.orders.OrdersCaptureRequest(orderId);
     request.requestBody({});
     const response = await this.client.execute(request);
@@ -71,7 +71,7 @@ export class PaypalPaymentService {
     if (order.tracking_number || order.id) {
       reference_id = order.tracking_number ? order.tracking_number : order.id.toString();
     }
-    console.log("call-paypal*****")
+  
     return {
       intent: 'CAPTURE',
       payment_source: {

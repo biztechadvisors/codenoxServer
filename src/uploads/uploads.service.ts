@@ -21,7 +21,7 @@ export class UploadsService {
       attachmentData.push(attachmentDTO);
     }
     await this.attachmentRepository.save(attachmentData);
-    console.log("AttachmentData", attachmentData)
+
     return attachmentData;
   }
 

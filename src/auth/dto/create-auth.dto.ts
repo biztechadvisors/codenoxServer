@@ -9,7 +9,7 @@ enum Permission {
   STAFF = 'Staff',
   CUSTOMER = 'Customer',
 }
-export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type']) {
+export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type', 'UsrBy']) {
   permission: Permission = Permission.CUSTOMER;
   isVerified: boolean;
 }
