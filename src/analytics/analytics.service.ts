@@ -84,7 +84,7 @@ export class AnalyticsService {
 
     let orders;
 
-    if (userType === UserType.Super_Admin) {
+    if (userType === UserType.Super_Admin || UserType.Admin) {
       // No need to filter by customer_id for Super_Admin
       // Fetch all orders
       orders = await this.orderRepository.find();
@@ -140,13 +140,25 @@ export class AnalyticsService {
       const todayEnd = new Date();
       todayEnd.setHours(23, 59, 59, 999);
 
-      // Query orders placed today for the specified users
-      const todayOrders = await this.orderRepository.find({
-        where: {
-          created_at: Between(todayStart, todayEnd),
-          customer_id: In(userIds),
-        },
-      });
+      let todayOrders;
+
+      if (userType === UserType.Super_Admin || userType === UserType.Admin) {
+        // No need to filter by customer_id for Super_Admin and Admin
+        // Fetch all orders placed today
+        todayOrders = await this.orderRepository.find({
+          where: {
+            created_at: Between(todayStart, todayEnd),
+          },
+        });
+      } else {
+        // Filter orders by customer_id for other user types
+        todayOrders = await this.orderRepository.find({
+          where: {
+            created_at: Between(todayStart, todayEnd),
+            customer_id: In(userIds),
+          },
+        });
+      }
 
       // Calculate total revenue from today's orders
       const todayRevenue = todayOrders.reduce((total, order) => total + order.total, 0);
@@ -157,6 +169,7 @@ export class AnalyticsService {
       return 0; // Handle the error gracefully, return 0 or throw an appropriate exception
     }
   }
+
 
   private async calculateTotalOrders(customerId: number, userType: UserType): Promise<number> {
     // Find the user by customer_id
@@ -172,7 +185,7 @@ export class AnalyticsService {
 
     let query = this.orderRepository.createQueryBuilder('order');
 
-    if (userType === UserType.Super_Admin) {
+    if (userType === UserType.Super_Admin || UserType.Admin) {
       // No need to filter by customer_id for Super_Admin
       // Just count all orders
       return query.getCount();
@@ -184,29 +197,38 @@ export class AnalyticsService {
   }
 
   private async calculateNewCustomers(userId: number, userType: UserType): Promise<number> {
-    // Assuming "new customer" means created within the last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    try {
+      // Assuming "new customer" means created within the last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Query shops created within the last 30 days based on user type and their related users
-    const newShops = userType === UserType.Super_Admin
-      ? await this.shopRepository.find({
-        where: {
-          created_at: MoreThanOrEqual(thirtyDaysAgo),
-          owner: { UsrBy: { id: userId } },
-        },
-      })
-      : await this.shopRepository.find({
-        where: {
-          created_at: MoreThanOrEqual(thirtyDaysAgo),
-          owner: { id: userId },
-        },
-      });
+      let newShops;
 
-    // Count the number of new shops (new customers)
-    const numberOfNewCustomers = newShops.length;
+      if (userType === UserType.Super_Admin || userType === UserType.Admin) {
+        // For Super_Admin and Admin, fetch all new shops created within the last 30 days
+        newShops = await this.shopRepository.find({
+          where: {
+            created_at: MoreThanOrEqual(thirtyDaysAgo),
+          },
+        });
+      } else {
+        // For other user types, filter new shops based on user's ownership
+        newShops = await this.shopRepository.find({
+          where: {
+            created_at: MoreThanOrEqual(thirtyDaysAgo),
+            owner: { id: userId },
+          },
+        });
+      }
 
-    return numberOfNewCustomers;
+      // Count the number of new shops (new customers)
+      const numberOfNewCustomers = newShops.length;
+
+      return numberOfNewCustomers;
+    } catch (error) {
+      console.error('Error calculating new customers:', error.message);
+      return 0; // Handle the error gracefully, return 0 or throw an appropriate exception
+    }
   }
 
   private async calculateTotalYearSaleByMonth(userId: number, userType: UserType): Promise<TotalYearSaleByMonthDTO[]> {
