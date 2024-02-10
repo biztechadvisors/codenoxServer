@@ -20,11 +20,13 @@ import { TypeRepository } from 'src/types/types.repository';
 import { TagRepository } from 'src/tags/tags.repository';
 import { AttributeValueRepository } from 'src/attributes/attribute.repository';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
-import { Tax } from 'src/taxes/entities/tax.entity';
+import { DealerProductMarginRepository, DealerRepository, UserRepository } from 'src/users/users.repository';
+import { Dealer, DealerCategoryMargin, DealerProductMargin } from 'src/users/entities/dealer.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, OrderProductPivot, Variation, VariationOption, Attachment, Category, Shop, Type, Tag, AttributeValue, File,Tax])],
+  imports: [TypeOrmModule.forFeature([Product, OrderProductPivot, Variation, VariationOption, Attachment, Category, Shop, Type, Tag, AttributeValue, File, Dealer, DealerProductMargin, DealerCategoryMargin, User])],
   controllers: [ProductsController, PopularProductsController],
-  providers: [ProductsService, ProductRepository, VariationOptionRepository, VariationRepository, OrderProductPivotRepository, AttachmentRepository, CategoryRepository, ShopRepository, TypeRepository, TagRepository, AttributeValueRepository, FileRepository],
+  providers: [ProductsService, DealerProductMarginRepository, DealerProductMarginRepository, DealerRepository, UserRepository, ProductRepository, VariationOptionRepository, VariationRepository, OrderProductPivotRepository, AttachmentRepository, CategoryRepository, ShopRepository, TypeRepository, TagRepository, AttributeValueRepository, FileRepository],
 })
 export class ProductsModule { }

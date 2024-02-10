@@ -27,19 +27,20 @@ export class ProductsController {
 
   @Get()
   async getProducts(@Query() query: GetProductsDto): Promise<ProductPaginator> {
-    console.log("getProducts****", query)
     return this.productsService.getProducts(query);
   }
 
-  @Get(':slug')
-  async getProductBySlug(@Param('slug') slug: string): Promise<Product> {
-    return this.productsService.getProductBySlug(slug);
+  @Get(':slug/:id')
+  async getProductBySlug(
+    @Param('slug') slug: string,
+    @Param('id') id: number
+  ): Promise<Product> {
+    return this.productsService.getProductBySlug(slug, id);
   }
 
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    console.log("Update-Product", id, updateProductDto)
     return this.productsService.update(+id, updateProductDto);
   }
 

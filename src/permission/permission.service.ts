@@ -35,15 +35,15 @@ export class PermissionService{
                 console.log(createPermission.permission)
                 for (const permissionData of createPermission.permission) {
                     const permissionType = new PermissionType();
-                    
+                    if(permissionData.read !==false){
                     permissionType.read = permissionData.read;
                     permissionType.write = permissionData.write;
                     permissionType.type = permissionData.type;
                     permissionType.permissions = savedPermission;
-                  
+
                     await this.permissionTypeRepository.save(permissionType);
-                  
-                    console.log(permissionType);
+                  }
+                    // console.log(permissionType);
                   }
             } else {
                 console.error('Permission types array is empty or not provided.');
@@ -58,35 +58,45 @@ export class PermissionService{
         const permissionsWithTypeName = await this.permissionTypeRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissions')
-        .select(['permission.id', 'permissions.type_name', 'permissions.permission_name','permissions.id', 'permission.type', 'permission.read', 'permission.write'])
+        .select(['permissions.id','permissions.type_name', 'permissions.permission_name','permission.id',  'permission.type', 'permission.read', 'permission.write'])
         .getMany();
 
-      const groupedPermissions = permissionsWithTypeName.reduce((acc, permission) => {
-        console.log(permission)
-        const typeName = permission.permissions.type_name;
-        const permissionName = permission.permissions.permission_name;
-
-        if (!acc[typeName]) {
-          acc[typeName] = {
-            id: permission.permissions.id,
-            type_name: typeName,
-            permission_name: permissionName,
-            permission: [],
-          };
-        }
-    
-        acc[typeName].permission.push({
-          id: permission.id,
-          type: permission.type,
-          read: permission.read,
-          write: permission.write,
-        });
-    
-        return acc;
+        const groupedPermissions = permissionsWithTypeName.reduce((acc, permission) => {
+          console.log(permission);
+      
+          // Check if permission.permissions is defined before accessing its properties
+          const typeName = permission.permissions ? permission.permissions.type_name : null;
+          const permissionName = permission.permissions ? permission.permissions.permission_name : null;
+      
+          if (!typeName || !permissionName) {
+              // Handle the case where typeName or permissionName is not defined
+              // You might want to skip this permission or handle it differently
+              return acc;
+          }
+      
+          if (!acc[typeName]) {
+              acc[typeName] = {
+                  id: permission.permissions.id,
+                  type_name: typeName,
+                  permission_name: permissionName,
+                  permission: [],
+              };
+          }
+      
+          acc[typeName].permission.push({
+              id: permission.id,
+              type: permission.type,
+              read: permission.read,
+              write: permission.write,
+          });
+      
+          return acc;
       }, {});
+      
       const result = Object.values(groupedPermissions);
-    
+      console.log(result);
       return result;
+      
     }
 
     async getPermissionID(id: number) {

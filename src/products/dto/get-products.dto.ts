@@ -31,6 +31,7 @@ export class GetProductsDto extends PaginationArgs {
   date_range?: string;
   language?: string;
   with: string;
+  userId?: number; 
 }
 
 export enum QueryProductsOrderByColumn {

@@ -289,7 +289,6 @@ export class UsersService {
     return `User with id ${id} has been removed`;
   }
 
-
   async makeAdmin(user_id: number) {
     const user = await this.userRepository.findOne({ where: { id: user_id } });
 
@@ -304,7 +303,6 @@ export class UsersService {
     return user;
   }
 
-
   async banUser(id: number) {
     const user = await this.userRepository.findOne({ where: { id: id } });
 
@@ -318,8 +316,6 @@ export class UsersService {
 
     return user;
   }
-
-
 
   async activeUser(id: number) {
     const user = await this.userRepository.findOne({ where: { id: id } });
@@ -336,7 +332,6 @@ export class UsersService {
   }
 
   // -------------------------------Dealer Services----------------------
-
   async createDealer(dealerData: DealerDto) {
     const user = await this.userRepository.findOne({ where: { id: dealerData.user.id } });
 
@@ -484,7 +479,6 @@ export class UsersService {
     await this.dealerRepository.delete(dealer.id);
   }
 
-
   async DealerToCustomer(dealerToCustomer: DealertoCustomer){
      const users = await this.userRepository.find({ where: { email: dealerToCustomer.email }||{contact:dealerToCustomer.contact} });
       console.log(users)
@@ -500,17 +494,10 @@ export class UsersService {
       const registerDto = new RegisterDto();
       registerDto.email = dealerToCustomer.email;
       registerDto.contact = dealerToCustomer.contact;
+      registerDto.type = UserType.Customer
       await this.userRepository.save(registerDto);
     }
 
-
-    // .createQueryBuilder('order')
-    // .leftJoinAndSelect('order.status', 'status')
-    // .leftJoinAndSelect('order.customer', 'customer')
-    // .leftJoinAndSelect('order.products', 'products')
-    // .leftJoinAndSelect('products.pivot', 'pivot')
-    // .where('order.id = :Order_id', { Order_id })
-    // .getOne();
   }
 
 }

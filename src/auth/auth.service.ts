@@ -319,6 +319,7 @@ export class AuthService {
         write: p.write,
       })),
     }));
+    console.log(access_token.access_token , formattedResult[0].type_name, formattedResult[0].permission)
   
     return {
       token: access_token.access_token,
@@ -507,86 +508,88 @@ export class AuthService {
 
   async socialLogin(socialLoginDto: SocialLoginDto): Promise<AuthResponse> {
 
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${6}`)
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
+    // const result = await this.permissionRepository
+    //   .createQueryBuilder('permission')
+    //   .leftJoinAndSelect('permission.permissions', 'permissions')
+    //   .where(`permission.id = ${6}`)
+    //   .select([
+    //     'permission.id',
+    //     'permission.type_name',
+    //     'permissions.id',
+    //     'permissions.type',
+    //     'permissions.read',
+    //     'permissions.write',
+    //   ])
+    //   .getMany();
 
 
-    console.log('result')
-    console.log(result)
+    // console.log('result')
+    // console.log(result)
 
 
-    const formattedResult = result.map(permission => ({
-      id: permission.id,
-      type_name: permission.type_name,
-      permission: permission.permissions.map(p => ({
-        id: p.id,
-        type: p.type,
-        read: p.read,
-        write: p.write,
-      })),
-    }));
+    // const formattedResult = result.map(permission => ({
+    //   id: permission.id,
+    //   type_name: permission.type_name,
+    //   permission: permission.permissions.map(p => ({
+    //     id: p.id,
+    //     type: p.type,
+    //     read: p.read,
+    //     write: p.write,
+    //   })),
+    // }));
 
 
-    console.log(formattedResult[0])
-    return {
-      // token: access_token.access_token,
-      token: "jwt token",
-      type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission
-    };
+    // console.log(formattedResult[0])
+    return 
+    // {
+    //   // token: access_token.access_token,
+    //   token: "jwt token",
+    //   type_name: [`${formattedResult[0].type_name}`],
+    //   permissions: formattedResult[0].permission
+    // };
 
   }
 
   async otpLogin(otpLoginDto: OtpLoginDto): Promise<AuthResponse> {
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${6}`)
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
+    // const result = await this.permissionRepository
+    //   .createQueryBuilder('permission')
+    //   .leftJoinAndSelect('permission.permissions', 'permissions')
+    //   .where(`permission.id = ${6}`)
+    //   .select([
+    //     'permission.id',
+    //     'permission.type_name',
+    //     'permissions.id',
+    //     'permissions.type',
+    //     'permissions.read',
+    //     'permissions.write',
+    //   ])
+    //   .getMany();
 
 
-    console.log('result')
-    console.log(result)
+    // console.log('result')
+    // console.log(result)
 
 
-    const formattedResult = result.map(permission => ({
-      id: permission.id,
-      type_name: permission.type_name,
-      permission: permission.permissions.map(p => ({
-        id: p.id,
-        type: p.type,
-        read: p.read,
-        write: p.write,
-      })),
-    }));
+    // const formattedResult = result.map(permission => ({
+    //   id: permission.id,
+    //   type_name: permission.type_name,
+    //   permission: permission.permissions.map(p => ({
+    //     id: p.id,
+    //     type: p.type,
+    //     read: p.read,
+    //     write: p.write,
+    //   })),
+    // }));
 
 
-    console.log(formattedResult[0])
-    return {
+    // console.log(formattedResult[0])
+    return 
+    // {
       // token: access_token.access_token,
-      token: "jwt token",
-      type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission
-    };
+      // token: "jwt token",
+      // type_name: [`${formattedResult[0].type_name}`],
+      // permissions: formattedResult[0].permission
+    // };
   }
 
   async verifyOtpCode(verifyOtpInput: VerifyOtpDto): Promise<CoreResponse> {
