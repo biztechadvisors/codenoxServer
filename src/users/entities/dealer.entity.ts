@@ -72,6 +72,7 @@ export class DealerProductMargin {
 
     @Column({ type: 'decimal', precision: 5, scale: 2 })
     margin: number;
+    
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
 }

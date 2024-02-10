@@ -11,11 +11,12 @@ import { MailModule } from 'src/mail/mail.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { User } from 'src/users/entities/user.entity';
+import { Dealer } from 'src/users/entities/dealer.entity';
 
 @Module({
   imports: [
     TypeOrmExModule.forCustomRepository([UserRepository]),
-    TypeOrmModule.forFeature([Permission, User]),
+    TypeOrmModule.forFeature([Permission, User,Dealer]),
     UsersModule,
     MailModule,
     JwtModule.register({

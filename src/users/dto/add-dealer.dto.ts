@@ -34,3 +34,9 @@ export class DealerDto {
     dealerProductMargins: DealerProductMarginDto[];
     dealerCategoryMargins: DealerCategoryMarginDto[];
 }
+
+export class DealertoCustomer{
+    id: number;
+    email: string;
+    contact: string;
+}

@@ -15,7 +15,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
-import { DealerDto } from './dto/add-dealer.dto';
+import { DealerDto, DealertoCustomer } from './dto/add-dealer.dto';
 import { Dealer } from './entities/dealer.entity';
 
 @Controller('users')
@@ -116,4 +116,10 @@ export class DealerController {
     return this.usersService.deleteDealer(id);
   }
 
+  @Post('customer')
+  async DealerToCustomer(@Body() dealerToCustomer: DealertoCustomer){
+    console.log('dealerToCustomer = '+ dealerToCustomer)
+    return this.usersService.DealerToCustomer(dealerToCustomer);
+  }
+  
 }

@@ -23,6 +23,7 @@ import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
+import { Dealer } from 'src/users/entities/dealer.entity';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +34,7 @@ export class AuthService {
   constructor(
     @InjectRepository(UserRepository) private userRepository: UserRepository,
     @InjectRepository(Permission) private permissionRepository: Repository<Permission>,
+    @InjectRepository(Dealer) private dealerRepository: Repository<Dealer>,
     private jwtService: JwtService,
     private mailService: MailService
   ) { }
@@ -84,33 +86,41 @@ export class AuthService {
     return true;
   }
 
-  async signIn(email, pass) {
+ async signIn(email, pass) {
     const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
-    const isMatch = await bcrypt.compare(pass, user.password);
-    if (isMatch) {
-      // The password is correct.
-      const payload = { sub: user.id, username: user.email };
-      return {
-        access_token: await this.jwtService.signAsync(payload),
-      };
-    } else {
-      throw new UnauthorizedException();
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
+    const isMatch = await bcrypt.compare(pass, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid password');
+    }
+    // The password is correct.
+    const payload = { sub: user.id, username: user.email };
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+    };
   }
 
   async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
-    const emailExist = await this.userRepository.findOne({
+    const existingUser = await this.userRepository.findOne({
       where: { email: createUserInput.email },
     });
-    if (emailExist) {
+
+    if (existingUser) {
       const otp = await this.generateOtp();
       const token = Math.floor(100 + Math.random() * 900).toString();
-      emailExist.otp = otp;
-      emailExist.createdAt = new Date();
-      await this.userRepository.save(emailExist);
-      if (emailExist.type === UserType.Customer) {
-        await this.mailService.sendUserConfirmation(emailExist, token);
+
+      existingUser.otp = otp;
+      existingUser.created_at = new Date();
+
+      await this.userRepository.save(existingUser);
+
+      if (existingUser.type === UserType.Customer) {
+        // Send confirmation email for customers
+        await this.mailService.sendUserConfirmation(existingUser, token);
       }
+
       return {
         message: 'OTP sent to your email.',
       };
@@ -121,10 +131,11 @@ export class AuthService {
     userData.name = createUserInput.name;
     userData.email = createUserInput.email;
     userData.password = hashPass;
-    userData.type = createUserInput.type ? createUserInput.type : UserType.Customer; // 1
-    userData.createdAt = new Date();
+    userData.type = createUserInput.type || UserType.Customer; // Use specified type or default to UserType.Customer
+    userData.created_at = new Date();
+    userData.UsrBy = createUserInput.UsrBy; // Save the registerer who is registering it
 
-    if (createUserInput.type !== UserType.Customer) {
+    if (userData.type !== UserType.Customer) {
       userData.isVerified = true;
     }
 
@@ -132,34 +143,40 @@ export class AuthService {
 
     if (userData.type === UserType.Customer) {
       const token = Math.floor(100 + Math.random() * 900).toString();
+      // Send confirmation email for customers
       await this.mailService.sendUserConfirmation(userData, token);
     }
 
-    const access_token = await this.signIn(userData.email, userData.password);
+    const access_token = await this.signIn(userData.email, createUserInput.password);
 
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${1}`) //createUserInput.type OR 1
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
+    // Fetch permissions based on user type
+    let result = [];
+    if (userData.type !== UserType.Customer) {
+      result = await this.permissionRepository
+        .createQueryBuilder('permission')
+        .leftJoinAndSelect('permission.permissions', 'permissions')
+        .where(`permission.type_name = :typeName`, { typeName: userData.type })
+        .select([
+          'permission.id',
+          'permission.type_name',
+          'permissions.id',
+          'permissions.type',
+          'permissions.read',
+          'permissions.write',
+        ])
+        .getMany();
+    }
 
+    if (result.length === 0) {
+      return {
+        message: 'Permissions not found for the specified user type.',
+      };
+    }
 
-    console.log('result')
-    console.log(result)
-
-
-    const formattedResult = result.map(permission => ({
+    const formattedResult = result.map((permission) => ({
       id: permission.id,
       type_name: permission.type_name,
-      permission: permission.permissions.map(p => ({
+      permission: permission.permissions.map((p) => ({
         id: p.id,
         type: p.type,
         read: p.read,
@@ -167,31 +184,121 @@ export class AuthService {
       })),
     }));
 
-
-    console.log(formattedResult[0])
     return {
       token: access_token.access_token,
       type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission
+      permissions: formattedResult[0].permission,
     };
-
   }
 
+  // async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
+  //   const emailExist = await this.userRepository.findOne({
+  //     where: { email: createUserInput.email },
+  //   });
+  //   if (emailExist) {
+  //     const otp = await this.generateOtp();
+  //     const token = Math.floor(100 + Math.random() * 900).toString();
+  //     emailExist.otp = otp;
+  //     emailExist.createdAt = new Date();
+  //     await this.userRepository.save(emailExist);
+  //     if (emailExist.type === UserType.Customer) {
+  //       await this.mailService.sendUserConfirmation(emailExist, token);
+  //     }
+  //     return {
+  //       message: 'OTP sent to your email.',
+  //     };
+  //   }
+
+  //   const hashPass = await bcrypt.hash(createUserInput.password, 12);
+  //   const userData = new User();
+  //   userData.name = createUserInput.name;
+  //   userData.email = createUserInput.email;
+  //   userData.password = hashPass;
+  //   userData.type = createUserInput.type ? createUserInput.type : UserType.Customer; // 1
+  //   userData.createdAt = new Date();
+
+  //   if (createUserInput.type !== UserType.Customer) {
+  //     userData.isVerified = true;
+  //   }
+
+  //   await this.userRepository.save(userData);
+
+  //   if (userData.type === UserType.Customer) {
+  //     const token = Math.floor(100 + Math.random() * 900).toString();
+  //     await this.mailService.sendUserConfirmation(userData, token);
+  //   }
+
+  //   const access_token = await this.signIn(userData.email, userData.password);
+
+  //   const result = await this.permissionRepository
+  //     .createQueryBuilder('permission')
+  //     .leftJoinAndSelect('permission.permissions', 'permissions')
+  //     .where(`permission.id = ${1}`) //createUserInput.type OR 1
+  //     .select([
+  //       'permission.id',
+  //       'permission.type_name',
+  //       'permissions.id',
+  //       'permissions.type',
+  //       'permissions.read',
+  //       'permissions.write',
+  //     ])
+  //     .getMany();
+
+
+  //   console.log('result')
+  //   console.log(result)
+
+
+  //   const formattedResult = result.map(permission => ({
+  //     id: permission.id,
+  //     type_name: permission.type_name,
+  //     permission: permission.permissions.map(p => ({
+  //       id: p.id,
+  //       type: p.type,
+  //       read: p.read,
+  //       write: p.write,
+  //     })),
+  //   }));
+
+
+  //   console.log(formattedResult[0])
+  //   return {
+  //     token: access_token.access_token,
+  //     type_name: [`${formattedResult[0].type_name}`],
+  //     permissions: formattedResult[0].permission
+  //   };
+
+  // }
+
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
-    const user = await this.userRepository.findOne({ where: { email: loginInput.email } })
-    const permission = await this.permissionRepository.findOne({where:{permission_name:user.type}})
-    
+    const user = await this.userRepository.findOne({ where: { email: loginInput.email } });
+  
     if (!user || !user.isVerified) {
       return {
-        message: 'User Is Not Regesired !'
-      }
+        message: 'User Is Not Registered!',
+      };
     }
-    const access_token = await this.signIn(loginInput.email, loginInput.password)
+
+    const permission = await this.permissionRepository.findOne({ where: { permission_name: user.type } });
+
+    let access_token: { access_token: string }; // Move the declaration here
+
+    if (!permission || permission.id === null) {
+      access_token = await this.signIn(loginInput.email, loginInput.password);
+      console.log("access_token.access_token", access_token.access_token);
+      return {
+        token: access_token.access_token,
+        permissions: ['customer', 'admin'],
+        type_name: ['Customer'],
+      };
+    }
+
+    access_token = await this.signIn(loginInput.email, loginInput.password);
 
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${permission.id}`) // user.type OR 1
+      .where(`permission.id = ${permission.id}`)
       .select([
         'permission.id',
         'permission.type_name',
@@ -201,36 +308,79 @@ export class AuthService {
         'permissions.write',
       ])
       .getMany();
-
-    console.log('result')
-    console.log(result)
-
-    const formattedResult = result.map(permission => ({
+  
+    const formattedResult = result.map((permission) => ({
       id: permission.id,
       type_name: permission.type_name,
-      permission: permission.permissions.map(p => ({
+      permission: permission.permissions.map((p) => ({
         id: p.id,
         type: p.type,
         read: p.read,
         write: p.write,
       })),
     }));
-
-    console.log(formattedResult[0].type_name)
-    // if (loginInput.email === 'store_owner@demo.com') {
-    //   return {
-    //     token: access_token.access_token,
-    //     type_name: [`${formattedResult[0].type_name[0]}`, `${formattedResult[0].type_name}`],
-    //     permissions: formattedResult[0].permission
-    //   };
-    // } else {
-      return {
-        token: access_token.access_token,
-        type_name: [`${formattedResult[0].type_name}`],
-        permissions: formattedResult[0].permission //['super_admin', 'customer'],
-      };
-    // }
+  
+    return {
+      token: access_token.access_token,
+      type_name: [`${formattedResult[0].type_name}`],
+      permissions: formattedResult[0].permission,
+    };
   }
+  
+  // async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
+  //   const user = await this.userRepository.findOne({ where: { email: loginInput.email } })
+  //   const permission = await this.permissionRepository.findOne({where:{permission_name:user.type}})
+  //   console.log(user,permission)
+  //   if (!user || !user.isVerified) {
+  //     return {
+  //       message: 'User Is Not Regesired !'
+  //     }
+  //   }
+  //   const access_token = await this.signIn(loginInput.email, loginInput.password)
+
+  //   const result = await this.permissionRepository
+  //     .createQueryBuilder('permission')
+  //     .leftJoinAndSelect('permission.permissions', 'permissions')
+  //     .where(`permission.id = ${permission.id}`) // user.type OR 1
+  //     .select([
+  //       'permission.id',
+  //       'permission.type_name',
+  //       'permissions.id',
+  //       'permissions.type',
+  //       'permissions.read',
+  //       'permissions.write',
+  //     ])
+  //     .getMany();
+
+  //   console.log('result')
+  //   console.log(result)
+
+  //   const formattedResult = result.map(permission => ({
+  //     id: permission.id,
+  //     type_name: permission.type_name,
+  //     permission: permission.permissions.map(p => ({
+  //       id: p.id,
+  //       type: p.type,
+  //       read: p.read,
+  //       write: p.write,
+  //     })),
+  //   }));
+
+  //   console.log(formattedResult[0].type_name)
+  //   // if (loginInput.email === 'store_owner@demo.com') {
+  //   //   return {
+  //   //     token: access_token.access_token,
+  //   //     type_name: [`${formattedResult[0].type_name[0]}`, `${formattedResult[0].type_name}`],
+  //   //     permissions: formattedResult[0].permission
+  //   //   };
+  //   // } else {
+  //     return {
+  //       token: access_token.access_token,
+  //       type_name: [`${formattedResult[0].type_name}`],
+  //       permissions: formattedResult[0].permission //['super_admin', 'customer'],
+  //     };
+  //   // }
+  // }
 
   async changePassword(
     changePasswordInput: ChangePasswordDto,

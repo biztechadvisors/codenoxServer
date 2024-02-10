@@ -9,9 +9,11 @@ enum Permission {
   STAFF = 'Staff',
   CUSTOMER = 'Customer',
 }
-export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type']) {
+export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type', 'dealer', 'UsrBy','contact']) {
   permission: Permission = Permission.CUSTOMER;
   isVerified: boolean;
+  data:any
+  typeName:any
 }
 
 export class LoginDto extends PartialType(
@@ -48,8 +50,8 @@ export interface PermissionItem {
 
 export class AuthResponse {
   token: string;
-  permissions: PermissionItem[];
-  type_name: string[]
+  permissions: any[]; //PermissionItem[];
+  type_name: string[];
   success?: boolean;
   message?: string;
 }

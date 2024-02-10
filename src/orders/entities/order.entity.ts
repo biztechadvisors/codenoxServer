@@ -3,7 +3,7 @@ import { UserAddress } from 'src/addresses/entities/address.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
-import { File, Product } from 'src/products/entities/product.entity';
+import { File, OrderProductPivot, Product } from 'src/products/entities/product.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { User } from 'src/users/entities/user.entity';
 import { OrderStatus } from './order-status.entity';
@@ -118,6 +118,13 @@ export class Order extends CoreEntity {
   shop_id: number;
   @Column('decimal', { precision: 5, scale: 2, nullable: true })
   cancelled_amount: number;
+
+  // @ManyToOne(() => OrderProductPivot, pivot => pivot.id, { nullable: true })
+  // @JoinColumn()
+  // pivot: OrderProductPivot;
+  @Column()
+  wallet_point: number;
+
 }
 
 @Entity()

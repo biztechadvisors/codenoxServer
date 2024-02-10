@@ -46,6 +46,9 @@ export class User extends CoreEntity {
   @JoinColumn()
   dealer?: Dealer;
 
+  @ManyToOne(() => User, (user) => user)
+  UsrBy?: User;
+
   @OneToMany(() => Shop, (shop) => shop.owner, { cascade: true })
   shops?: Shop[];
 
@@ -73,6 +76,7 @@ export class User extends CoreEntity {
 
   @Column('varchar', { length: 200, nullable: true })
   contact: string;
+  
   @Column('datetime', { nullable: true })
   email_verified_at: Date;
 }

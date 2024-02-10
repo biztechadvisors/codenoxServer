@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import exportOrderJson from '@db/order-export.json';
 import orderFilesJson from '@db/order-files.json';
 import orderInvoiceJson from '@db/order-invoice.json';
@@ -396,7 +396,6 @@ export class OrdersService {
     }
   }
 
-
   private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
     try {
       // Find the order in the database
@@ -503,7 +502,6 @@ export class OrdersService {
     };
   }
 
-
   async getOrderStatus(param: string, language: string): Promise<OrderStatus> {
     const orderStatus = await this.orderStatusRepository.findOne({
       where: {
@@ -604,8 +602,6 @@ export class OrdersService {
   private async findOrderStatusInDatabase(id: number): Promise<OrderStatus | undefined> {
     return this.orderStatusRepository.findOne({ where: { id: id } });
   }
-
-
 
   async verifyCheckout(input: CheckoutVerificationDto): Promise<VerifiedCheckoutData> {
     // Initialize variables
@@ -719,7 +715,6 @@ console.log(productEntity)
     }
   }
 
-
   async getOrderFileItems({ page, limit }: GetOrderFilesDto) {
     if (!page) page = 1;
     if (!limit) limit = 30;
@@ -747,60 +742,206 @@ console.log(productEntity)
     return exportOrderJson.url;
   }
 
-  async downloadInvoiceUrl(Order_id: string) {
-    console.log(Order_id)
-    let taxType
-    const Invoice = await this.orderRepository.findOne({ where: { id: +Order_id }, relations:['coupon','status','billing_address','shipping_address','shop','shop.address','products'] });
-    if(Invoice.shop.address.state === Invoice.shipping_address.state){
-      const shippingState = Invoice.shipping_address.state;
-      if (stateCode.hasOwnProperty(shippingState)) {
-        const stateCodeValue = stateCode[shippingState];
-        taxType={
-          CGST:Invoice.sales_tax/2,
-          SGST:Invoice.sales_tax/2,  // state- ut code 
-          state_code:stateCodeValue,
-          billing_address:Invoice.billing_address,
-          shipping_address:Invoice.shipping_address,
-          shop_address:Invoice.shop.address,
-          product:Invoice.products,
-          created_at:'Order_date',
-          order_no: Invoice.id,
-          invoice_date:'Order_date'
-
+  async numberToWords(number) {
+    // Arrays for one-digit, two-digit, and tens multiples
+    const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+    
+    // Function to convert two-digit numbers to words
+    function convertTens(num) {
+        if (num < 10) return ones[num];
+        else if (num >= 10 && num < 20) return teens[num - 10];
+        else {
+          const digit = num % 10;
+          const ten = Math.floor(num / 10);
+            return tens[ten] + ' ' + ones[digit];
         }
-        return taxType
-        console.log('stateCodeValue:', stateCodeValue);
-      } else {
-        return 'Invalid state name in shipping address';
-      }
-      
-    }else{
-      const stateCodeValue = stateCode[Invoice.shipping_address.state];
-      taxType={
-        IGST:Invoice.sales_tax,
-        state_code:stateCodeValue, 
-        billing_address:Invoice.billing_address,
-        shipping_address:Invoice.shipping_address,
-        shop_address:Invoice.shop.address,
-        product:Invoice.products,
-        created_at:'Order_date',
-        order_no: Invoice.id,
-        invoice_date:'Order_date'
-      }
-      return taxType
     }
-    // return orderInvoiceJson[0].url;
+    
+    // Function to convert three-digit numbers to words
+    function convertHundreds(num) {
+      const hundred = Math.floor(num / 100);
+      const remainder = num % 100;
+      let result = '';
+        if (hundred > 0) {
+            result += ones[hundred] + ' hundred';
+            if (remainder > 0) result += ' and ';
+        }
+        if (remainder > 0) result += convertTens(remainder);
+        return result;
+    }
+    
+    // Main function to convert numbers to words
+    function convert(num) {
+        if (num === 0) return 'zero';
+        const billion = Math.floor(num / 1000000000);
+        const million = Math.floor((num % 1000000000) / 1000000);
+        const thousand = Math.floor((num % 1000000) / 1000);
+        const hundred = num % 1000;
+        let result = '';
+        if (billion > 0) result += convertHundreds(billion) + ' billion ';
+        if (million > 0) result += convertHundreds(million) + ' million ';
+        if (thousand > 0) result += convertHundreds(thousand) + ' thousand ';
+        if (hundred > 0) result += convertHundreds(hundred);
+       console.log(result)
+        return result;
+    }
+ 
+    // Call the main function with the provided number
+    return convert(number);
+}
+
+  // async downloadInvoiceUrl(Order_id: string) {
+  //   console.log(Order_id)
+  //   let taxType:any
+  //   // const Invoice = await this.orderRepository.createQueryBuilder('order')
+  //   // .leftJoinAndSelect('order.status', 'status')
+  //   // .leftJoinAndSelect('order.customer', 'customer')
+  //   // .leftJoinAndSelect('order.products', 'products')
+  //   // .leftJoinAndSelect('products.pivot', 'pivot')
+  //   // .leftJoinAndSelect('order.payment_intent', 'payment_intent')
+  //   // .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info') // Add this line
+  //   // .leftJoinAndSelect('order.shop', 'shop')
+  //   // .leftJoinAndSelect('shop.address', 'shop.address')
+  //   // .leftJoinAndSelect('order.billing_address', 'billing_address')
+  //   // .leftJoinAndSelect('order.shipping_address', 'shipping_address')
+  //   // .leftJoinAndSelect('order.parentOrder', 'parentOrder')
+  //   // .leftJoinAndSelect('order.children', 'children')
+  //   // .leftJoinAndSelect('order.coupon', 'coupon')
+  //   // .where('order.id = :Order_id', { Order_id })
+  //   // .getOne();
+  //   // console.log(Invoice)
+  //   const Invoice = await this.orderRepository.findOne({ where: { id: +Order_id }, relations:['coupon','status','billing_address','shipping_address','shop','shop.address','products','payment_intent','payment_intent.payment_intent_info'] });
+  //   if(Invoice.shop.address.state === Invoice.shipping_address.state){
+  //     const shippingState = Invoice.shipping_address.state;
+  //     if (stateCode.hasOwnProperty(shippingState)) {
+  //       const stateCodeValue = stateCode[shippingState];
+  //       const totalAmountInWords = this.numberToWords(Invoice.total)
+  //       // console.log(Invoice.sales_tax)
+  //       taxType={
+  //         CGST:Invoice.sales_tax/2,
+  //         SGST:Invoice.sales_tax/2,  // state- ut code 
+  //         state_code:stateCodeValue,
+  //         net_amount:Invoice.amount,
+  //         total_amount:Invoice.total,
+  //         // pivot:Invoice.p,
+  //         total_amount_word: await totalAmountInWords,
+  //         billing_address:Invoice.billing_address,
+  //         payment_Mode:Invoice.payment_gateway,
+  //         paymentInfo: Invoice.payment_intent.payment_intent_info,
+  //         shipping_address:Invoice.shipping_address,
+  //         shop_address:Invoice.shop.address,
+  //         product:Invoice.products,
+  //         created_at:'Order_date',
+  //         order_no: Invoice.id,
+  //         invoice_date:'Order_date'
+  //       }
+  //       return taxType
+  //     } else {
+  //       return 'Invalid state name in shipping address';
+  //     }
+      
+  //   }else{
+  //     const stateCodeValue = stateCode[Invoice.shipping_address.state];
+  //     const totalAmountInWords = this.numberToWords(Invoice.total)
+  //     taxType={
+  //       IGST:Invoice.sales_tax,
+  //       state_code:stateCodeValue,
+  //       net_amount:Invoice.amount,
+  //       total_amount:Invoice.total,
+  //       total_amount_word: await totalAmountInWords,
+  //       billing_address:Invoice.billing_address,
+  //       payment_Mode:Invoice.payment_gateway,
+  //       // pivot:Invoice.pivot,
+  //       paymentInfo: Invoice.payment_intent.payment_intent_info,
+  //       shipping_address:Invoice.shipping_address,
+  //       shop_address:Invoice.shop.address,
+  //       product:Invoice.products,
+  //       created_at:'Order_date',
+  //       order_no: Invoice.id,
+  //       invoice_date:'Order_date'
+  //     }
+  //     return taxType
+  //   }
+  //   // return orderInvoiceJson[0].url;
+  // }
+  async downloadInvoiceUrl(Order_id: string) {
+    console.log(Order_id);
+    let taxType: any;
+    // const Invoice =await this.getOrderByIdOrTrackingNumber(parseInt(Order_id))
+    const Invoice = await this.orderRepository.findOne({ where: { id: +Order_id }, relations: ['coupon', 'status', 'billing_address', 'shipping_address', 'shop', 'shop.address', 'products', 'products.pivot', 'payment_intent', 'payment_intent.payment_intent_info'] });
+   
+    const numberToWords = (num: number) => {
+        const a = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+        const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+
+        if (num < 20) return a[num];
+        const digit = num % 10;
+        if (num < 100) return b[Math.floor(num / 10)] + (digit ? '-' + a[digit] : '');
+        if (num < 1000) return a[Math.floor(num / 100)] + ' hundred' + (num % 100 === 0 ? '' : ' and ' + numberToWords(num % 100));
+        return numberToWords(Math.floor(num / 1000)) + ' thousand' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '');
+    };
+  //   let result= {}
+  //   Invoice.products.forEach(product => {
+  //     result = product.subtotal * product.taxes.rate / 100;
+  //     product.result = result;
+  // });
+  // console.log(result)
+    if (Invoice.shop.address.state === Invoice.shipping_address.state) {
+        const shippingState = Invoice.shipping_address.state;
+        if (stateCode.hasOwnProperty(shippingState)) {
+            const stateCodeValue = stateCode[shippingState];
+            taxType = {
+              CGST: Invoice.sales_tax / 2,
+              SGST: Invoice.sales_tax / 2, // state- ut code
+              sales_tax_total: Invoice.sales_tax,
+              // product_tax: result,
+              state_code: stateCodeValue,
+              net_amount: Invoice.amount,
+              total_amount: Invoice.total,
+              total_amount_in_words: numberToWords(Invoice.total),
+              billing_address: Invoice.billing_address,
+              payment_Mode: Invoice.payment_gateway,
+              paymentInfo: Invoice.payment_intent.payment_intent_info,
+              shipping_address: Invoice.shipping_address,
+              shop_address: Invoice.shop.address,
+              product: Invoice.products,
+              created_at: 'Order_date',
+              order_no: Invoice.id,
+              invoice_date: 'Order_date'
+          };
+          console.log("Data being sent to template:", taxType);
+          // await this.mailService.sendInvoiceToCustomer(taxType);
+          return taxType;
+      } else {
+          return 'Invalid state name in shipping address';
+      }
+  } else {
+      const stateCodeValue = stateCode[Invoice.shipping_address.state];
+      taxType = {
+          IGST: Invoice.sales_tax,
+          state_code: stateCodeValue,
+          net_amount: Invoice.amount,
+          total_amount: Invoice.total,
+          // product_tax: result,
+          sales_tax_total: Invoice.sales_tax,
+          total_amount_in_words: numberToWords(Invoice.total),
+          billing_address: Invoice.billing_address,
+          payment_Mode: Invoice.payment_gateway,
+          paymentInfo: Invoice.payment_intent.payment_intent_info,
+          shipping_address: Invoice.shipping_address,
+          shop_address: Invoice.shop.address,
+          product: Invoice.products,
+          created_at: 'Order_date',
+          order_no: Invoice.id,
+          invoice_date: 'Order_date'
+      };
+      return taxType;
   }
-
-  /**
-   * helper methods from here
-   */
-
-  /**
-   * this method will process children of Order Object
-   * @param order
-   * @returns Children[]
-   */
+}
+  
   processChildrenOrder(order: Order) {
     if (order.children && Array.isArray(order.children)) {
       return [...order.children].map((child) => {
@@ -843,7 +984,6 @@ console.log(productEntity)
       console.error(error);
     }
   }
-
 
   /**
    * Trailing method of ProcessPaymentIntent Method
@@ -915,7 +1055,5 @@ console.log(productEntity)
     order.payment_status = paymentStatus;
     await this.orderRepository.save(order);
   }
-
-
 }
 

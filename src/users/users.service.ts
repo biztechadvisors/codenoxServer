@@ -18,7 +18,7 @@ import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
-import { DealerDto } from './dto/add-dealer.dto';
+import { DealerDto, DealertoCustomer } from './dto/add-dealer.dto';
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from './entities/dealer.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { ProductRepository } from 'src/products/products.repository';
@@ -31,6 +31,8 @@ import { AuthService } from 'src/auth/auth.service';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
+import { Permission } from 'src/permission/entities/permission.entity';
+import { Repository } from 'typeorm';
 
 const users = plainToClass(User, usersJson);
 
@@ -54,6 +56,7 @@ export class UsersService {
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
     @InjectRepository(Social) private readonly socialRepository: SocialRepository,
+    @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
     private readonly authService: AuthService,
     private readonly addressesService: AddressesService,
 
@@ -67,6 +70,14 @@ export class UsersService {
     if (user) {
       throw new NotFoundException(`User with email ${createUserDto.email} already exists`);
     }
+
+    // if('createUserdto.Superadmin===true'){
+    //   const permissions = new Permission();
+    //   permissions.type_name = 'super_admin';
+    //   permissions.permission_name = createUserDto.type;
+
+    //   await this.permissionRepository.save(permissions)
+    // }
 
     const registerDto = new RegisterDto();
     registerDto.name = createUserDto.name;
@@ -471,6 +482,35 @@ export class UsersService {
       await this.dealerCategoryMarginRepository.delete(margin.id);
     }
     await this.dealerRepository.delete(dealer.id);
+  }
+
+
+  async DealerToCustomer(dealerToCustomer: DealertoCustomer){
+     const users = await this.userRepository.find({ where: { email: dealerToCustomer.email }||{contact:dealerToCustomer.contact} });
+      console.log(users)
+    if (users && users.length > 0) {
+        const userId = users[0].id;
+        const addresses = await this.addressRepository.find({
+          where: { customer: { id: userId } },
+          relations: ['address',]
+      });
+        console.log(addresses)
+        return addresses;
+    }else{
+      const registerDto = new RegisterDto();
+      registerDto.email = dealerToCustomer.email;
+      registerDto.contact = dealerToCustomer.contact;
+      await this.userRepository.save(registerDto);
+    }
+
+
+    // .createQueryBuilder('order')
+    // .leftJoinAndSelect('order.status', 'status')
+    // .leftJoinAndSelect('order.customer', 'customer')
+    // .leftJoinAndSelect('order.products', 'products')
+    // .leftJoinAndSelect('products.pivot', 'pivot')
+    // .where('order.id = :Order_id', { Order_id })
+    // .getOne();
   }
 
 }

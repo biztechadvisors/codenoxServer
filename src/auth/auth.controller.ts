@@ -39,6 +39,7 @@ export class AuthController {
 
   @Post('register')
   createAccount(@Body() registerDto: RegisterDto) {
+    console.log(registerDto)
     return this.authService.register(registerDto);
   }
 
