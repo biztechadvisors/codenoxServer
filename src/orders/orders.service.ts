@@ -46,6 +46,7 @@ import { RazorpayService } from 'src/payment/razorpay-payment.service';
 import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { stateCode } from 'src/taxes/state_code.tax';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { Permission } from 'src/permission/entities/permission.entity';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -79,8 +80,10 @@ export class OrdersService {
     private readonly paymentIntentRepository: Repository<PaymentIntent>,
     @InjectRepository(OrderProductPivot)
     private readonly orderProductPivotRepository: Repository<OrderProductPivot>,
-    // @InjectRepository(Shop)
-    // private readonly shopRepository:Repository<Shop>
+    @InjectRepository(Shop)
+    private readonly shopRepository: Repository<Shop>,
+    @InjectRepository(Permission)
+    private readonly permissionRepository: Repository<Permission>
   ) { }
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
@@ -192,6 +195,7 @@ export class OrdersService {
         height: 10,
         weight: 1
       };
+
       const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
 
       order.tracking_number = shiprocketResponse.shipment_id || shiprocketResponse.order_id;
@@ -263,19 +267,11 @@ export class OrdersService {
         throw new Error('User not found');
       }
 
-      if (!page) page = 1;
-      if (!limit) limit = 15;
-      const startIndex = (page - 1) * limit;
-
-      // Find all users in the repository based on user IDs
-      const usrByIdUsers = await this.userRepository.find({
-        where: { UsrBy: { id: usr.id } },
+      // Fetch permissions for the user
+      const permsn = await this.permissionRepository.findOne({
+        where: { permission_name: usr.type },
       });
 
-      // Extract user IDs from usrByIdUsers and include the original user ID
-      const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
-
-      // Query orders for all related users and usrByIdUsers
       let query = this.orderRepository.createQueryBuilder('order');
       query = query.leftJoinAndSelect('order.status', 'status');
       query = query.leftJoinAndSelect('order.billing_address', 'billing_address');
@@ -284,25 +280,46 @@ export class OrdersService {
       query = query.leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot');
       query = query.leftJoinAndSelect('order.payment_intent', 'payment_intent');
-      query = query.where('order.customer_id IN (:...userIds)', { userIds });
+      query = query.leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info');
+      query = query.leftJoinAndSelect('order.shop', 'shop');
+      query = query.leftJoinAndSelect('order.coupon', 'coupon');
 
-      // Additional filtering conditions
+
+      if (!(permsn && (permsn.type_name === 'Admin' || permsn.type_name === 'super_admin'))) {
+        // If user has other permissions, filter orders by customer_id
+        const usrByIdUsers = await this.userRepository.find({
+          where: { UsrBy: { id: usr.id } },
+        });
+
+        const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
+        query = query.andWhere('order.customer_id IN (:...userIds)', { userIds });
+      }
+
+      // Handle additional filtering conditions
       if (shop_id && shop_id !== 'undefined') {
         query = query.andWhere('products.shop_id = :shopId', { shopId: Number(shop_id) });
       }
 
       if (search) {
-        query = query.andWhere('(status.name ILIKE :searchValue OR order.fieldName ILIKE :searchValue)', { searchValue: `%${search}%` });
+        query = query.andWhere('(status.name ILIKE :searchValue OR order.fieldName ILIKE :searchValue)', {
+          searchValue: `%${search}%`,
+        });
       }
 
       if (tracking_number) {
         query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
       }
 
+      // Handle pagination
+      if (!page) page = 1;
+      if (!limit) limit = 15;
+      const startIndex = (page - 1) * limit;
+
       const [data, totalCount] = await query
         .skip(startIndex)
         .take(limit)
         .getManyAndCount();
+
 
       const results = data.map((order) => {
         return {
@@ -470,6 +487,7 @@ export class OrdersService {
         throw new NotFoundException('Order not found');
       }
 
+      console.log("order-getOrders************", order)
       const transformedOrder = {
         id: order.id,
         tracking_number: order.tracking_number,
@@ -818,7 +836,8 @@ export class OrdersService {
   async downloadInvoiceUrl(Order_id: string) {
 
     let taxType
-    const Invoice = await this.orderRepository.findOne({ where: { id: +Order_id }, relations: ['coupon', 'status', 'billing_address', 'shipping_address', 'shop', 'shop.address', 'products'] });
+
+    const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id))
 
     if (Invoice.shop.address.state === Invoice.shipping_address.state) {
       const shippingState = Invoice.shipping_address.state;

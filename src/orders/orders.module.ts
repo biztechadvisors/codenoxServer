@@ -22,6 +22,8 @@ import { OrderProductPivotRepository } from 'src/products/products.repository';
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { HttpModule } from '@nestjs/axios';
+import { Shop } from 'src/shops/entities/shop.entity';
+import { Permission } from 'src/permission/entities/permission.entity';
 
 @Module({
   imports: [
@@ -30,7 +32,7 @@ import { HttpModule } from '@nestjs/axios';
     TypeOrmExModule.forCustomRepository([
       OrderProductPivotRepository
     ]),
-    TypeOrmModule.forFeature([Order, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo]), // Include Order and OrderStatus here
+    TypeOrmModule.forFeature([Order, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission]), // Include Order and OrderStatus here
     HttpModule,
   ],
   controllers: [

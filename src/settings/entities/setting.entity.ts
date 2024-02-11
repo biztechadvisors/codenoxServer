@@ -6,38 +6,50 @@ import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne,
 @Entity()
 export class SmsAdmin {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  refundOrder: boolean
+  refundOrder: boolean;
+
   @Column()
-  paymentOrder: boolean
+  paymentOrder: boolean;
+
   @Column()
-  statusChangeOrder: boolean
+  statusChangeOrder: boolean;
 }
 
 @Entity()
 export class SeoSettings {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column({ nullable: true })
-  metaTitle?: string
+  metaTitle?: string;
+
   @Column({ nullable: true })
-  metaDescription?: string
+  metaDescription?: string;
+
   @Column({ nullable: true })
-  ogTitle?: string
+  ogTitle?: string;
+
   @Column({ nullable: true })
-  ogDescription?: string
+  ogDescription?: string;
+
   @OneToOne(() => Attachment)
   @JoinColumn()
   ogImage?: Attachment;
+
   @Column({ nullable: true })
-  twitterHandle?: string
+  twitterHandle?: string;
+
   @Column({ nullable: true })
-  twitterCardType?: string
+  twitterCardType?: string;
+
   @Column({ nullable: true })
-  metaTags?: string
+  metaTags?: string;
+
   @Column({ nullable: true })
-  canonicalUrl?: string
+  canonicalUrl?: string;
 }
 
 @Entity()
@@ -75,45 +87,55 @@ export class ShopSocials {
 @Entity()
 export class DeliveryTime {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  title: string
+  title: string;
+
   @Column()
-  description: string
+  description: string;
 }
 
 @Entity()
 export class LogoSettings {
   @PrimaryGeneratedColumn()
-  id: string
+  id: string;
+
   @Column()
-  original: string
+  original: string;
+
   @Column()
-  thumbnail: string
+  thumbnail: string;
 }
 
 @Entity()
 export class SmsVendor {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  refundOrder: boolean
+  refundOrder: boolean;
+
   @Column()
-  paymentOrder: boolean
+  paymentOrder: boolean;
+
   @Column()
-  statusChangeOrder: boolean
+  statusChangeOrder: boolean;
 }
 
 @Entity()
 export class SmsCustomer {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  refundOrder: boolean
+  refundOrder: boolean;
+
   @Column()
-  paymentOrder: boolean
+  paymentOrder: boolean;
+
   @Column()
-  statusChangeOrder: boolean
+  statusChangeOrder: boolean;
 }
 
 @Entity()
@@ -161,49 +183,63 @@ export class EmailCustomer {
 @Entity()
 export class ServerInfo {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  memory_limit: string
+  memory_limit: string;
+
   @Column()
-  post_max_size: number
+  post_max_size: number;
+
   @Column()
-  max_input_time: string
+  max_input_time: string;
+
   @Column()
-  max_execution_time: string
+  max_execution_time: string;
+
   @Column()
-  upload_max_filesize: number
+  upload_max_filesize: number;
 }
 
 @Entity()
 export class PaymentGateway {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  name: string
+  name: string;
+
   @Column()
-  title: string
+  title: string;
 }
 
 @Entity()
 export class SmsEvent {
   @PrimaryGeneratedColumn()
   id: number;
+
   @ManyToOne(() => SmsAdmin)
   admin: SmsAdmin;
+
   @ManyToOne(() => SmsVendor)
   vendor: SmsVendor;
+
   @ManyToOne(() => SmsCustomer)
   customer: SmsCustomer;
 }
+
 
 @Entity()
 export class EmailEvent {
   @PrimaryGeneratedColumn()
   id: number;
+
   @ManyToOne(() => EmailAdmin)
   admin: EmailAdmin;
+
   @ManyToOne(() => EmailVendor)
   vendor: EmailVendor;
+
   @ManyToOne(() => EmailCustomer)
   customer: EmailCustomer;
 }
@@ -211,128 +247,176 @@ export class EmailEvent {
 @Entity()
 export class CurrencyOptions {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  formation: string
+  formation: string;
+
   @Column()
-  fractions: number
+  fractions: number;
 }
 
 @Entity()
 export class Location {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  lat: number
+  lat: number;
+
   @Column()
-  lng: number
+  lng: number;
+
+  @Column({ nullable: true })
+  city?: string;
+
   @Column()
-  city?: string
+  state: string;
+
   @Column()
-  state: string
+  country: string;
+
+  @Column({ nullable: true })
+  zip?: string;
+
   @Column()
-  country: string
-  @Column()
-  zip?: string
-  @Column()
-  formattedAddress: string
+  formattedAddress: string;
 }
 
 @Entity()
 export class ContactDetails {
   @PrimaryGeneratedColumn()
   id: number;
+
   @ManyToMany(() => ShopSocials)
   @JoinTable()
   socials: ShopSocials[];
+
   @Column()
   contact: string;
+
   @ManyToOne(() => Location)
   location: Location;
+
   @Column()
-  website: string
+  website: string;
 }
 
 @Entity()
 export class SettingsOptions extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
   @ManyToOne(() => ContactDetails)
   contactDetails: ContactDetails;
+
   @Column()
   currency: string;
+
   @ManyToOne(() => CurrencyOptions)
   currencyOptions: CurrencyOptions;
+
   @Column({ nullable: true })
-  currencyToWalletRatio: number
+  currencyToWalletRatio: number;
+
   @Column()
-  defaultAi: string
+  defaultAi: string;
+
   @Column()
   defaultPaymentGateway: string;
+
   @ManyToMany(() => DeliveryTime)
   @JoinTable()
   deliveryTime: DeliveryTime[];
+
   @ManyToOne(() => EmailEvent)
   emailEvent: EmailEvent;
+
   @Column()
-  freeShipping: boolean
+  freeShipping: boolean;
+
   @Column({ type: 'float', nullable: true })
-  freeShippingAmount: number
+  freeShippingAmount: number;
+
   @Column()
-  guestCheckout: boolean
+  guestCheckout: boolean;
+
   @Column()
   isProductReview: boolean;
+
   @ManyToOne(() => LogoSettings)
   logo: LogoSettings;
+
   @Column()
-  maximumQuestionLimit: number
+  maximumQuestionLimit: number;
+
   @Column()
-  maxShopDistance: number
+  maxShopDistance: number;
+
   @Column({ nullable: true })
   minimumOrderAmount: number;
+
   @ManyToMany(() => PaymentGateway)
   @JoinTable()
   paymentGateway: PaymentGateway[];
+
   @ManyToOne(() => SeoSettings)
   seo: SeoSettings;
+
   @ManyToOne(() => ServerInfo)
   server_info: ServerInfo;
+
   @Column({ nullable: true })
-  shippingClass: number
+  shippingClass: number;
+
   @Column({ nullable: true })
-  signupPoints: number
+  signupPoints: number;
+
   @Column({ nullable: true })
-  siteSubtitle: string
+  siteSubtitle: string;
+
   @Column()
   siteTitle: string;
+
   @ManyToOne(() => SmsEvent)
   smsEvent: SmsEvent;
+
   @Column()
-  StripeCardOnly: boolean
+  StripeCardOnly: boolean;
+
   @Column()
-  taxClass: number
+  taxClass: number;
+
   @Column()
-  useAi: boolean
+  useAi: boolean;
+
   @Column()
-  useCashOnDelivery: boolean
+  useCashOnDelivery: boolean;
+
   @Column()
-  useEnableGateway: boolean
+  useEnableGateway: boolean;
+
   @Column()
-  useGoogleMap: boolean
+  useGoogleMap: boolean;
+
   @Column()
-  useMustVerifyEmail: boolean
+  useMustVerifyEmail: boolean;
+
   @Column()
-  useOtp: boolean
+  useOtp: boolean;
 }
 
 @Entity()
 export class Setting extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
   @ManyToOne(() => SettingsOptions)
   options: SettingsOptions;
+
   @Column()
-  language: string
+  language: string;
+
   @Column({ type: 'json' })
-  translated_languages: string[]
+  translated_languages: string[];
 }
