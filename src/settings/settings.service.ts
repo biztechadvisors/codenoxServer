@@ -93,341 +93,413 @@ export class SettingsService {
     private attachmentRepository: AttachmentRepository,
   ) { }
 
-  //create setting
   async create(id: number, createSettingDto: CreateSettingDto): Promise<Setting> {
-
-    let value4: any
-    let value5: any
-    let value6: any
-    let value7: any
-    let value8: any
-    let value9: any
-    let value10: any
-    let value11: any
-    let value12: any
-    let value13: any
-    let value14: any
-    let value15: any
-    let value16: any
-    let value17: any
-    let value18: any
-
-    const newSettings = new Setting()
-    const newOptions = new SettingsOptions()
-
     try {
-
-      const existingSetting = await this.settingRepository.find()
+      const existingSetting = await this.settingRepository.findOne({ where: { id: id } });
 
       if (existingSetting) {
-        await this.update(id, createSettingDto)
-      } else {
-
-        newSettings.created_at = new Date()
-        newSettings.language = createSettingDto.language
-        newSettings.translated_languages = createSettingDto.translated_languages
-        newSettings.updated_at = new Date()
-
-        // const setting = await this.settingRepository.save(newSettings)
-
-        //options
-        if (createSettingDto.options) {
-
-          newOptions.currency = createSettingDto.options.currency
-          newOptions.currencyToWalletRatio = createSettingDto.options.currencyToWalletRatio
-          newOptions.freeShipping = createSettingDto.options.freeShipping
-          newOptions.freeShippingAmount = createSettingDto.options.freeShippingAmount ? createSettingDto.options.freeShippingAmount : null
-          newOptions.guestCheckout = createSettingDto.options.guestCheckout
-          newOptions.defaultAi = createSettingDto.options.defaultAi
-          newOptions.defaultPaymentGateway = createSettingDto.options.defaultPaymentGateway
-          newOptions.isProductReview = createSettingDto.options.isProductReview
-          newOptions.maximumQuestionLimit = createSettingDto.options.maximumQuestionLimit
-          newOptions.maxShopDistance = createSettingDto.options.maxShopDistance
-          newOptions.minimumOrderAmount = createSettingDto.options.minimumOrderAmount
-          newOptions.shippingClass = createSettingDto.options.shippingClass
-          newOptions.signupPoints = createSettingDto.options.signupPoints
-          newOptions.siteSubtitle = createSettingDto.options.siteSubtitle
-          newOptions.siteTitle = createSettingDto.options.siteTitle
-          newOptions.StripeCardOnly = createSettingDto.options.StripeCardOnly
-          newOptions.taxClass = createSettingDto.options.taxClass
-          newOptions.useAi = createSettingDto.options.useAi
-          newOptions.useCashOnDelivery = createSettingDto.options.useCashOnDelivery
-          newOptions.useEnableGateway = createSettingDto.options.useEnableGateway
-          newOptions.useGoogleMap = createSettingDto.options.useGoogleMap
-          newOptions.useMustVerifyEmail = createSettingDto.options.useMustVerifyEmail
-          newOptions.useOtp = createSettingDto.options.useOtp
-          newOptions.created_at = new Date()
-          newOptions.updated_at = new Date()
-
-          //contact Detail
-          if (createSettingDto.options.contactDetails) {
-            const newcontact = new ContactDetails()
-            newcontact.contact = createSettingDto.options.contactDetails.contact
-            newcontact.website = createSettingDto.options.contactDetails.website
-
-            if (createSettingDto.options.contactDetails.location) {
-              const newLocation = new Location()
-
-              newLocation.lat = createSettingDto.options.contactDetails.location.lat ? createSettingDto.options.contactDetails.location.lat : null
-              newLocation.lng = createSettingDto.options.contactDetails.location.lng ? createSettingDto.options.contactDetails.location.lng : null
-              newLocation.city = createSettingDto.options.contactDetails.location.city ? createSettingDto.options.contactDetails.location.city : null
-              newLocation.state = createSettingDto.options.contactDetails.location.state ? createSettingDto.options.contactDetails.location.state : null
-              newLocation.zip = createSettingDto.options.contactDetails.location.zip ? createSettingDto.options.contactDetails.location.zip : null
-              newLocation.country = createSettingDto.options.contactDetails.location.country ? createSettingDto.options.contactDetails.location.country : null
-              newLocation.formattedAddress = createSettingDto.options.contactDetails.location.formattedAddress ? createSettingDto.options.contactDetails.location.formattedAddress : null
-              // const newLocation = createSettingDto.options.contactDetails.location
-              const locations = await this.locationRepository.save(newLocation)
-              value6 = locations
-
-            }
-
-            if (createSettingDto.options.contactDetails.socials) {
-              const socials: ShopSocials[] = [];
-
-              for (const social of createSettingDto.options.contactDetails.socials) {
-
-                const newSocial = this.shopSocialRepository.create(social)
-                const socialId = await this.shopSocialRepository.save(newSocial)
-
-
-                socials.push(socialId);
-
-              }
-              newcontact.socials = socials
-
-            }
-            newcontact.location = value6
-
-            const contacts = await this.contactDetailRepository.save(newcontact)
-            const socialIds = contacts.socials.map((social) => social.id);
-
-            value5 = contacts.id
-
-          }
-
-          //curremcy Option
-          if (createSettingDto.options.currencyOptions) {
-            const newCurrency = new CurrencyOptions()
-
-            newCurrency.formation = createSettingDto.options.currencyOptions.formation
-            newCurrency.fractions = createSettingDto.options.currencyOptions.fractions
-
-            const currencyId = await this.currencyOptionRepository.save(newCurrency)
-            value7 = currencyId.id
-          }
-
-          //Email Event
-          if (createSettingDto.options.emailEvent) {
-            const newEmail = new EmailEvent()
-
-            if (createSettingDto.options.emailEvent.admin) {
-              const newAdmin = new EmailAdmin()
-
-              newAdmin.paymentOrder = createSettingDto.options.emailEvent.admin.paymentOrder
-              newAdmin.refundOrder = createSettingDto.options.emailEvent.admin.refundOrder
-              newAdmin.statusChangeOrder = createSettingDto.options.emailEvent.admin.statusChangeOrder
-
-              const adminId = await this.emailAdminRepository.save(newAdmin)
-              value9 = adminId.id
-            }
-
-            if (createSettingDto.options.emailEvent.vendor) {
-              const newVendor = new EmailVendor()
-
-              newVendor.paymentOrder = createSettingDto.options.emailEvent.vendor.paymentOrder
-              newVendor.refundOrder = createSettingDto.options.emailEvent.vendor.refundOrder
-              newVendor.statusChangeOrder = createSettingDto.options.emailEvent.vendor.statusChangeOrder
-              newVendor.createQuestion = createSettingDto.options.emailEvent.vendor.createQuestion
-              newVendor.createReview = createSettingDto.options.emailEvent.vendor.createReview
-
-              const vendorId = await this.emailVendorRepository.save(newVendor)
-              value10 = vendorId.id
-            }
-
-            if (createSettingDto.options.emailEvent.customer) {
-              const newCustomer = new EmailCustomer()
-
-              newCustomer.paymentOrder = createSettingDto.options.emailEvent.customer.paymentOrder
-              newCustomer.refundOrder = createSettingDto.options.emailEvent.customer.refundOrder
-              newCustomer.statusChangeOrder = createSettingDto.options.emailEvent.customer.statusChangeOrder
-              newCustomer.answerQuestion = createSettingDto.options.emailEvent.customer.answerQuestion
-
-              const customerId = await this.emailCustomerRepository.save(newCustomer)
-              value11 = customerId.id
-            }
-            newEmail.admin = value9
-            newEmail.vendor = value10
-            newEmail.customer = value11
-
-            const emailId = await this.emailEventRepository.save(newEmail)
-            value8 = emailId.id
-          }
-
-          //sms Event
-          if (createSettingDto.options.smsEvent) {
-            const newSms = new SmsEvent()
-
-            if (createSettingDto.options.smsEvent.admin) {
-              const newSmsAdmin = new SmsAdmin()
-
-              newSmsAdmin.paymentOrder = createSettingDto.options.smsEvent.admin.paymentOrder
-              newSmsAdmin.refundOrder = createSettingDto.options.smsEvent.admin.refundOrder
-              newSmsAdmin.statusChangeOrder = createSettingDto.options.smsEvent.admin.statusChangeOrder
-
-              const smsAdminId = await this.smsAdminRepository.save(newSmsAdmin)
-              value12 = smsAdminId.id
-            }
-
-            if (createSettingDto.options.smsEvent.vendor) {
-              const newSmsVendor = new SmsVendor()
-
-              newSmsVendor.paymentOrder = createSettingDto.options.smsEvent.vendor.paymentOrder
-              newSmsVendor.refundOrder = createSettingDto.options.smsEvent.vendor.refundOrder
-              newSmsVendor.statusChangeOrder = createSettingDto.options.smsEvent.vendor.statusChangeOrder
-
-
-              const smsVendorId = await this.smsVendorRepository.save(newSmsVendor)
-              value13 = smsVendorId.id
-            }
-
-            if (createSettingDto.options.smsEvent.customer) {
-              const newSmsCustomer = new SmsCustomer()
-
-              newSmsCustomer.paymentOrder = createSettingDto.options.smsEvent.customer.paymentOrder
-              newSmsCustomer.refundOrder = createSettingDto.options.smsEvent.customer.refundOrder
-              newSmsCustomer.statusChangeOrder = createSettingDto.options.smsEvent.customer.statusChangeOrder
-
-              const smsCustomerId = await this.smsCustomerRepository.save(newSmsCustomer)
-              value14 = smsCustomerId.id
-            }
-            newSms.admin = value12
-            newSms.vendor = value13
-            newSms.customer = value14
-
-            const smsId = await this.smsEventRepository.save(newSms)
-            value15 = smsId.id
-          }
-
-          //seo Setting
-          if (createSettingDto.options.seo) {
-            try {
-              const newSeo = new SeoSettings()
-
-              newSeo.ogImage = createSettingDto.options.seo.ogImage ? createSettingDto.options.seo.ogImage : null
-              newSeo.ogTitle = createSettingDto.options.seo.ogTitle ? createSettingDto.options.seo.ogTitle : null
-              newSeo.ogDescription = createSettingDto.options.seo.ogDescription ? createSettingDto.options.seo.ogDescription : null
-              newSeo.metaTitle = createSettingDto.options.seo.metaTitle ? createSettingDto.options.seo.metaTitle : null
-              newSeo.metaDescription = createSettingDto.options.seo.metaDescription ? createSettingDto.options.seo.metaDescription : null
-              newSeo.metaTags = createSettingDto.options.seo.metaTags ? createSettingDto.options.seo.metaTags : null
-              newSeo.twitterCardType = createSettingDto.options.seo.twitterCardType ? createSettingDto.options.seo.twitterCardType : null
-              newSeo.twitterHandle = createSettingDto.options.seo.twitterHandle ? createSettingDto.options.seo.twitterHandle : null
-              newSeo.canonicalUrl = createSettingDto.options.seo.canonicalUrl ? createSettingDto.options.seo.canonicalUrl : null
-
-              const seoId = await this.seoSettingsRepository.save(newSeo)
-              value16 = seoId.id
-            } catch (error) {
-              console.error("Error saving SEO:", error);
-            }
-          }
-          // serverInfo
-          if (createSettingDto.options.server_info) {
-            const newServerInfo = new ServerInfo()
-
-            newServerInfo.max_execution_time = createSettingDto.options.server_info.max_execution_time
-            newServerInfo.max_input_time = createSettingDto.options.server_info.max_input_time
-            newServerInfo.memory_limit = createSettingDto.options.server_info.memory_limit
-            newServerInfo.post_max_size = createSettingDto.options.server_info.post_max_size
-            newServerInfo.upload_max_filesize = createSettingDto.options.server_info.upload_max_filesize
-
-            const serverInfoId = await this.serverInfoRepository.save(newServerInfo)
-
-            value17 = serverInfoId.id
-          }
-
-          //delivery Time
-          if (createSettingDto.options.deliveryTime) {
-            try {
-              const newDeliveryTime: DeliveryTime[] = []
-
-              for (const delivery of createSettingDto.options.deliveryTime) {
-
-                const newDelivery = this.deliveryTimeRepository.create(delivery)
-                const deliveryTimeId = await this.deliveryTimeRepository.save(newDelivery)
-                newDeliveryTime.push(deliveryTimeId);
-
-              }
-              newOptions.deliveryTime = newDeliveryTime
-            } catch (error) {
-              console.error("Error saving DeliveryTime:", error);
-            }
-          }
-
-          //logo
-          if (createSettingDto.options.logo) {
-            try {
-              const newLogo = new LogoSettings()
-
-              newLogo.original = createSettingDto.options.logo.original
-              newLogo.thumbnail = createSettingDto.options.logo.thumbnail
-
-              const logoId = await this.logoSettingsRepository.save(newLogo)
-              value18 = logoId.id
-            } catch (error) {
-              console.error("Error saving logo:", error);
-            }
-          }
-
-          //paymentGateway
-          if (createSettingDto.options.paymentGateway) {
-            try {
-              const newPaymentGateway: PaymentGateway[] = []
-
-              for (const payment of createSettingDto.options.paymentGateway) {
-
-                const newPayment = this.paymentGatewayRepository.create(payment)
-                const paymentGatewayId = await this.paymentGatewayRepository.save(newPayment)
-                newPaymentGateway.push(paymentGatewayId);
-
-              }
-              newOptions.paymentGateway = newPaymentGateway
-            } catch (error) {
-              console.error("Error saving PaymentGateway:", error);
-            }
-
-          }
-          //option table insertion
-          newOptions.contactDetails = value5
-          newOptions.emailEvent = value8
-          newOptions.currencyOptions = value7
-          newOptions.smsEvent = value15
-          newOptions.seo = value16
-          newOptions.server_info = value17
-          newOptions.logo = value18
-
-          const option = await this.settingsOptionsRepository.save(newOptions)
-          const deliveryIds = option.deliveryTime.map((delivery) => delivery.id);
-          const paymentGateWayIds = option.paymentGateway.map((gateway) => gateway.id);
-
-          value4 = option
-        }
-
-        //setting table insertion
-        newSettings.options = value4
-        const setting = await this.settingRepository.save(newSettings)
-
-        return setting
+        await this.update(id, createSettingDto);
+        return existingSetting;
       }
-    } catch (error) {
-      console.error(error)
-    }
 
+      const newSettings = new Setting();
+      newSettings.created_at = new Date();
+      newSettings.language = createSettingDto.language;
+      newSettings.translated_languages = createSettingDto.translated_languages;
+      newSettings.updated_at = new Date();
+
+      const newOptions = new SettingsOptions();
+      const [location, currencyId, emailId, smsId, seoId, serverInfoId, logoId, option] = await Promise.all([
+        createSettingDto.options.contactDetails
+          ? this.saveContactDetails(createSettingDto.options.contactDetails)
+          : null,
+        createSettingDto.options.currencyOptions
+          ? this.saveCurrencyOptions(createSettingDto.options.currencyOptions)
+          : null,
+        createSettingDto.options.emailEvent
+          ? this.saveEmailEvent(createSettingDto.options.emailEvent)
+          : null,
+        createSettingDto.options.smsEvent
+          ? this.saveSmsEvent(createSettingDto.options.smsEvent)
+          : null,
+        createSettingDto.options.seo
+          ? this.saveSeoSettings(createSettingDto.options.seo)
+          : null,
+        createSettingDto.options.server_info
+          ? this.saveServerInfo(createSettingDto.options.server_info)
+          : null,
+        createSettingDto.options.logo
+          ? this.saveLogoSettings(createSettingDto.options.logo)
+          : null,
+        createSettingDto.options.paymentGateway
+          ? this.savePaymentGateway(createSettingDto.options.paymentGateway)
+          : null,
+      ]);
+
+      newOptions.contactDetails = location;
+      newOptions.emailEvent = emailId;
+      newOptions.currencyOptions = currencyId;
+      newOptions.smsEvent = smsId;
+      newOptions.seo = seoId;
+      newOptions.server_info = serverInfoId;
+      newOptions.logo = logoId;
+      newOptions.paymentGateway = option.paymentGateway;
+
+      const savedOptions = await this.settingsOptionsRepository.save(newOptions);
+      newSettings.options = savedOptions;
+
+      const savedSetting = await this.settingRepository.save(newSettings);
+      return savedSetting;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
+
+  async savePaymentGateway(paymentGateway: PaymentGateway[]): Promise<any> {
+    try {
+      return await this.paymentGatewayRepository.save(paymentGateway);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async saveContactDetails(contactDetails: any): Promise<ContactDetails> {
+    try {
+      return await this.contactDetailRepository.save(contactDetails);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async saveCurrencyOptions(currencyOptions: any): Promise<CurrencyOptions> {
+    try {
+      return await this.currencyOptionRepository.save(currencyOptions);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async saveEmailEvent(emailEvent: any): Promise<EmailEvent> {
+    try {
+      console.log("emailEvent*********", emailEvent)
+
+      return await this.emailEventRepository.save(emailEvent);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async saveSmsEvent(smsEvent: any): Promise<SmsEvent> {
+    try {
+      console.log("smsEvent*********", smsEvent)
+
+      return await this.smsEventRepository.save(smsEvent);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async saveSeoSettings(seoSettings: any): Promise<SeoSettings> {
+    try {
+      console.log("seoSettings*********", seoSettings)
+      return await this.seoSettingsRepository.save(seoSettings);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async saveServerInfo(serverInfo: any): Promise<ServerInfo> {
+    try {
+      console.log("serverInfo*********", serverInfo)
+
+      return await this.serverInfoRepository.save(serverInfo);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async saveLogoSettings(logoSettings: any): Promise<LogoSettings> {
+    try {
+      console.log("logoSettings*********", logoSettings)
+
+      return await this.logoSettingsRepository.save(logoSettings);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+
+  // //create setting
+  // async create(id: number, createSettingDto: CreateSettingDto): Promise<Setting> {
+  //   let value4: any
+  //   let value5: any
+  //   let value6: any
+  //   let value7: any
+  //   let value8: any
+  //   let value9: any
+  //   let value10: any
+  //   let value11: any
+  //   let value12: any
+  //   let value13: any
+  //   let value14: any
+  //   let value15: any
+  //   let value16: any
+  //   let value17: any
+  //   let value18: any
+
+  //   const newSettings = new Setting()
+  //   const newOptions = new SettingsOptions()
+  //   try {
+  //     const existingSetting = await this.settingRepository.find()
+  //     if (existingSetting) {
+  //       await this.update(id, createSettingDto)
+  //     } else {
+  //       newSettings.created_at = new Date()
+  //       newSettings.language = createSettingDto.language
+  //       newSettings.translated_languages = createSettingDto.translated_languages
+  //       newSettings.updated_at = new Date()
+  //       // const setting = await this.settingRepository.save(newSettings)
+  //       //options
+  //       if (createSettingDto.options) {
+  //         newOptions.currency = createSettingDto.options.currency
+  //         newOptions.currencyToWalletRatio = createSettingDto.options.currencyToWalletRatio
+  //         newOptions.freeShipping = createSettingDto.options.freeShipping
+  //         newOptions.freeShippingAmount = createSettingDto.options.freeShippingAmount ? createSettingDto.options.freeShippingAmount : null
+  //         newOptions.guestCheckout = createSettingDto.options.guestCheckout
+  //         newOptions.defaultAi = createSettingDto.options.defaultAi
+  //         newOptions.defaultPaymentGateway = createSettingDto.options.defaultPaymentGateway
+  //         newOptions.isProductReview = createSettingDto.options.isProductReview
+  //         newOptions.maximumQuestionLimit = createSettingDto.options.maximumQuestionLimit
+  //         newOptions.maxShopDistance = createSettingDto.options.maxShopDistance
+  //         newOptions.minimumOrderAmount = createSettingDto.options.minimumOrderAmount
+  //         newOptions.shippingClass = createSettingDto.options.shippingClass
+  //         newOptions.signupPoints = createSettingDto.options.signupPoints
+  //         newOptions.siteSubtitle = createSettingDto.options.siteSubtitle
+  //         newOptions.siteTitle = createSettingDto.options.siteTitle
+  //         newOptions.StripeCardOnly = createSettingDto.options.StripeCardOnly
+  //         newOptions.taxClass = createSettingDto.options.taxClass
+  //         newOptions.useAi = createSettingDto.options.useAi
+  //         newOptions.useCashOnDelivery = createSettingDto.options.useCashOnDelivery
+  //         newOptions.useEnableGateway = createSettingDto.options.useEnableGateway
+  //         newOptions.useGoogleMap = createSettingDto.options.useGoogleMap
+  //         newOptions.useMustVerifyEmail = createSettingDto.options.useMustVerifyEmail
+  //         newOptions.useOtp = createSettingDto.options.useOtp
+  //         newOptions.created_at = new Date()
+  //         newOptions.updated_at = new Date()
+  //         //contact Detail
+  //         if (createSettingDto.options.contactDetails) {
+  //           const newcontact = new ContactDetails()
+  //           newcontact.contact = createSettingDto.options.contactDetails.contact
+  //           newcontact.website = createSettingDto.options.contactDetails.website
+  //           if (createSettingDto.options.contactDetails.location) {
+  //             const newLocation = new Location()
+  //             newLocation.lat = createSettingDto.options.contactDetails.location.lat ? createSettingDto.options.contactDetails.location.lat : null
+  //             newLocation.lng = createSettingDto.options.contactDetails.location.lng ? createSettingDto.options.contactDetails.location.lng : null
+  //             newLocation.city = createSettingDto.options.contactDetails.location.city ? createSettingDto.options.contactDetails.location.city : null
+  //             newLocation.state = createSettingDto.options.contactDetails.location.state ? createSettingDto.options.contactDetails.location.state : null
+  //             newLocation.zip = createSettingDto.options.contactDetails.location.zip ? createSettingDto.options.contactDetails.location.zip : null
+  //             newLocation.country = createSettingDto.options.contactDetails.location.country ? createSettingDto.options.contactDetails.location.country : null
+  //             newLocation.formattedAddress = createSettingDto.options.contactDetails.location.formattedAddress ? createSettingDto.options.contactDetails.location.formattedAddress : null
+  //             // const newLocation = createSettingDto.options.contactDetails.location
+  //             const locations = await this.locationRepository.save(newLocation)
+  //             value6 = locations
+  //           }
+  //           if (createSettingDto.options.contactDetails.socials) {
+  //             const socials: ShopSocials[] = [];
+  //             for (const social of createSettingDto.options.contactDetails.socials) {
+  //               const newSocial = this.shopSocialRepository.create(social)
+  //               const socialId = await this.shopSocialRepository.save(newSocial)
+  //               socials.push(socialId);
+  //             }
+  //             newcontact.socials = socials
+  //           }
+  //           newcontact.location = value6
+  //           const contacts = await this.contactDetailRepository.save(newcontact)
+  //           const socialIds = contacts.socials.map((social) => social.id);
+  //           value5 = contacts.id
+  //         }
+  //         //curremcy Option
+  //         if (createSettingDto.options.currencyOptions) {
+  //           const newCurrency = new CurrencyOptions()
+  //           newCurrency.formation = createSettingDto.options.currencyOptions.formation
+  //           newCurrency.fractions = createSettingDto.options.currencyOptions.fractions
+  //           const currencyId = await this.currencyOptionRepository.save(newCurrency)
+  //           value7 = currencyId.id
+  //         }
+  //         //Email Event
+  //         if (createSettingDto.options.emailEvent) {
+  //           const newEmail = new EmailEvent()
+  //           if (createSettingDto.options.emailEvent.admin) {
+  //             const newAdmin = new EmailAdmin()
+  //             newAdmin.paymentOrder = createSettingDto.options.emailEvent.admin.paymentOrder
+  //             newAdmin.refundOrder = createSettingDto.options.emailEvent.admin.refundOrder
+  //             newAdmin.statusChangeOrder = createSettingDto.options.emailEvent.admin.statusChangeOrder
+  //             const adminId = await this.emailAdminRepository.save(newAdmin)
+  //             value9 = adminId.id
+  //           }
+  //           if (createSettingDto.options.emailEvent.vendor) {
+  //             const newVendor = new EmailVendor()
+  //             newVendor.paymentOrder = createSettingDto.options.emailEvent.vendor.paymentOrder
+  //             newVendor.refundOrder = createSettingDto.options.emailEvent.vendor.refundOrder
+  //             newVendor.statusChangeOrder = createSettingDto.options.emailEvent.vendor.statusChangeOrder
+  //             newVendor.createQuestion = createSettingDto.options.emailEvent.vendor.createQuestion
+  //             newVendor.createReview = createSettingDto.options.emailEvent.vendor.createReview
+  //             const vendorId = await this.emailVendorRepository.save(newVendor)
+  //             value10 = vendorId.id
+  //           }
+  //           if (createSettingDto.options.emailEvent.customer) {
+  //             const newCustomer = new EmailCustomer()
+  //             newCustomer.paymentOrder = createSettingDto.options.emailEvent.customer.paymentOrder
+  //             newCustomer.refundOrder = createSettingDto.options.emailEvent.customer.refundOrder
+  //             newCustomer.statusChangeOrder = createSettingDto.options.emailEvent.customer.statusChangeOrder
+  //             newCustomer.answerQuestion = createSettingDto.options.emailEvent.customer.answerQuestion
+  //             const customerId = await this.emailCustomerRepository.save(newCustomer)
+  //             value11 = customerId.id
+  //           }
+  //           newEmail.admin = value9
+  //           newEmail.vendor = value10
+  //           newEmail.customer = value11
+  //           const emailId = await this.emailEventRepository.save(newEmail)
+  //           value8 = emailId.id
+  //         }
+  //         //sms Event
+  //         if (createSettingDto.options.smsEvent) {
+  //           const newSms = new SmsEvent()
+  //           if (createSettingDto.options.smsEvent.admin) {
+  //             const newSmsAdmin = new SmsAdmin()
+  //             newSmsAdmin.paymentOrder = createSettingDto.options.smsEvent.admin.paymentOrder
+  //             newSmsAdmin.refundOrder = createSettingDto.options.smsEvent.admin.refundOrder
+  //             newSmsAdmin.statusChangeOrder = createSettingDto.options.smsEvent.admin.statusChangeOrder
+  //             const smsAdminId = await this.smsAdminRepository.save(newSmsAdmin)
+  //             value12 = smsAdminId.id
+  //           }
+  //           if (createSettingDto.options.smsEvent.vendor) {
+  //             const newSmsVendor = new SmsVendor()
+  //             newSmsVendor.paymentOrder = createSettingDto.options.smsEvent.vendor.paymentOrder
+  //             newSmsVendor.refundOrder = createSettingDto.options.smsEvent.vendor.refundOrder
+  //             newSmsVendor.statusChangeOrder = createSettingDto.options.smsEvent.vendor.statusChangeOrder
+  //             const smsVendorId = await this.smsVendorRepository.save(newSmsVendor)
+  //             value13 = smsVendorId.id
+  //           }
+  //           if (createSettingDto.options.smsEvent.customer) {
+  //             const newSmsCustomer = new SmsCustomer()
+  //             newSmsCustomer.paymentOrder = createSettingDto.options.smsEvent.customer.paymentOrder
+  //             newSmsCustomer.refundOrder = createSettingDto.options.smsEvent.customer.refundOrder
+  //             newSmsCustomer.statusChangeOrder = createSettingDto.options.smsEvent.customer.statusChangeOrder
+  //             const smsCustomerId = await this.smsCustomerRepository.save(newSmsCustomer)
+  //             value14 = smsCustomerId.id
+  //           }
+  //           newSms.admin = value12
+  //           newSms.vendor = value13
+  //           newSms.customer = value14
+  //           const smsId = await this.smsEventRepository.save(newSms)
+  //           value15 = smsId.id
+  //         }
+  //         //seo Setting
+  //         if (createSettingDto.options.seo) {
+  //           try {
+  //             const newSeo = new SeoSettings()
+  //             newSeo.ogImage = createSettingDto.options.seo.ogImage ? createSettingDto.options.seo.ogImage : null
+  //             newSeo.ogTitle = createSettingDto.options.seo.ogTitle ? createSettingDto.options.seo.ogTitle : null
+  //             newSeo.ogDescription = createSettingDto.options.seo.ogDescription ? createSettingDto.options.seo.ogDescription : null
+  //             newSeo.metaTitle = createSettingDto.options.seo.metaTitle ? createSettingDto.options.seo.metaTitle : null
+  //             newSeo.metaDescription = createSettingDto.options.seo.metaDescription ? createSettingDto.options.seo.metaDescription : null
+  //             newSeo.metaTags = createSettingDto.options.seo.metaTags ? createSettingDto.options.seo.metaTags : null
+  //             newSeo.twitterCardType = createSettingDto.options.seo.twitterCardType ? createSettingDto.options.seo.twitterCardType : null
+  //             newSeo.twitterHandle = createSettingDto.options.seo.twitterHandle ? createSettingDto.options.seo.twitterHandle : null
+  //             newSeo.canonicalUrl = createSettingDto.options.seo.canonicalUrl ? createSettingDto.options.seo.canonicalUrl : null
+  //             const seoId = await this.seoSettingsRepository.save(newSeo)
+  //             value16 = seoId.id
+  //           } catch (error) {
+  //             console.error("Error saving SEO:", error);
+  //           }
+  //         }
+  //         // serverInfo
+  //         if (createSettingDto.options.server_info) {
+  //           const newServerInfo = new ServerInfo()
+  //           newServerInfo.max_execution_time = createSettingDto.options.server_info.max_execution_time
+  //           newServerInfo.max_input_time = createSettingDto.options.server_info.max_input_time
+  //           newServerInfo.memory_limit = createSettingDto.options.server_info.memory_limit
+  //           newServerInfo.post_max_size = createSettingDto.options.server_info.post_max_size
+  //           newServerInfo.upload_max_filesize = createSettingDto.options.server_info.upload_max_filesize
+  //           const serverInfoId = await this.serverInfoRepository.save(newServerInfo)
+  //           value17 = serverInfoId.id
+  //         }
+  //         //delivery Time
+  //         if (createSettingDto.options.deliveryTime) {
+  //           try {
+  //             const newDeliveryTime: DeliveryTime[] = []
+  //             for (const delivery of createSettingDto.options.deliveryTime) {
+  //               const newDelivery = this.deliveryTimeRepository.create(delivery)
+  //               const deliveryTimeId = await this.deliveryTimeRepository.save(newDelivery)
+  //               newDeliveryTime.push(deliveryTimeId);
+  //             }
+  //             newOptions.deliveryTime = newDeliveryTime
+  //           } catch (error) {
+  //             console.error("Error saving DeliveryTime:", error);
+  //           }
+  //         }
+  //         //logo
+  //         if (createSettingDto.options.logo) {
+  //           try {
+  //             const newLogo = new LogoSettings()
+  //             newLogo.original = createSettingDto.options.logo.original
+  //             newLogo.thumbnail = createSettingDto.options.logo.thumbnail
+  //             const logoId = await this.logoSettingsRepository.save(newLogo)
+  //             value18 = logoId.id
+  //           } catch (error) {
+  //             console.error("Error saving logo:", error);
+  //           }
+  //         }
+  //         //paymentGateway
+  //         if (createSettingDto.options.paymentGateway) {
+  //           try {
+  //             const newPaymentGateway: PaymentGateway[] = []
+  //             for (const payment of createSettingDto.options.paymentGateway) {
+  //               const newPayment = this.paymentGatewayRepository.create(payment)
+  //               const paymentGatewayId = await this.paymentGatewayRepository.save(newPayment)
+  //               newPaymentGateway.push(paymentGatewayId);
+  //             }
+  //             newOptions.paymentGateway = newPaymentGateway
+  //           } catch (error) {
+  //             console.error("Error saving PaymentGateway:", error);
+  //           }
+  //         }
+  //         //option table insertion
+  //         newOptions.contactDetails = value5
+  //         newOptions.emailEvent = value8
+  //         newOptions.currencyOptions = value7
+  //         newOptions.smsEvent = value15
+  //         newOptions.seo = value16
+  //         newOptions.server_info = value17
+  //         newOptions.logo = value18
+  //         const option = await this.settingsOptionsRepository.save(newOptions)
+  //         const deliveryIds = option.deliveryTime.map((delivery) => delivery.id);
+  //         const paymentGateWayIds = option.paymentGateway.map((gateway) => gateway.id);
+  //         value4 = option
+  //       }
+  //       //setting table insertion
+  //       newSettings.options = value4
+  //       const setting = await this.settingRepository.save(newSettings)
+  //       return setting
+  //     }
+  //   } catch (error) {
+  //     console.error(error)
+  //   }
+  // }
 
   //find all settings
   async findAll() {
-
     const settingData = await this.settingRepository.find({
-
       relations: [
         'options.contactDetails',
         'options.contactDetails.socials',
@@ -446,18 +518,86 @@ export class SettingsService {
         'options.deliveryTime',
         'options.paymentGateway',
         'options.logo',
-      ]
-    })
+      ],
+    });
 
-    if (!settingData) {
-      return null
+    if (!settingData || settingData.length === 0) {
+      return null;
     } else {
-
       for (let index = 0; index < settingData.length; index++) {
         const setting = settingData[index];
-
         return setting;
       }
+
+      // const settingsArray = settingData.map((setting) => {
+      //   return {
+      //     id: setting.id,
+      //     options: {
+      //       siteTitle: setting.options.siteTitle,
+      //       siteSubtitle: setting.options.siteSubtitle,
+      //       minimumOrderAmount: setting.options.minimumOrderAmount,
+      //       currencyToWalletRatio: setting.options.currencyToWalletRatio,
+      //       signupPoints: setting.options.signupPoints,
+      //       maximumQuestionLimit: setting.options.maximumQuestionLimit,
+      //       seo: setting.options.seo
+      //         ? {
+      //             ogImage: setting.options.seo.ogImage,
+      //             ogTitle: setting.options.seo.ogTitle,
+      //             metaTags: setting.options.seo.metaTags,
+      //             metaTitle: setting.options.seo.metaTitle,
+      //             canonicalUrl: setting.options.seo.canonicalUrl,
+      //             ogDescription: setting.options.seo.ogDescription,
+      //             twitterHandle: setting.options.seo.twitterHandle,
+      //             metaDescription: setting.options.seo.metaDescription,
+      //             twitterCardType: setting.options.seo.twitterCardType,
+      //           }
+      //         : null,
+      //       logo: setting.options.logo
+      //         ? {
+      //             id: setting.options.logo.id,
+      //             original: setting.options.logo.original,
+      //             thumbnail: setting.options.logo.thumbnail,
+      //           }
+      //         : null,
+      //       useAi: setting.options.useAi,
+      //       useOtp: setting.options.useOtp,
+      //       currency: setting.options.currency,
+      //       smsEvent: setting.options.smsEvent,
+      //       taxClass: setting.options.taxClass,
+      //       defaultAi: setting.options.defaultAi,
+      //       emailEvent: setting.options.emailEvent,
+      //       server_info: setting.options.server_info,
+      //       deliveryTime: setting.options.deliveryTime,
+      //       freeShipping: setting.options.freeShipping,
+      //       useGoogleMap: setting.options.useGoogleMap,
+      //       guestCheckout: setting.options.guestCheckout,
+      //       shippingClass: setting.options.shippingClass,
+      //       StripeCardOnly: setting.options.StripeCardOnly,
+      //       contactDetails: setting.options.contactDetails
+      //         ? {
+      //             contact: setting.options.contactDetails.contact,
+      //             socials: setting.options.contactDetails.socials,
+      //             website: setting.options.contactDetails.website,
+      //             location: setting.options.contactDetails.location,
+      //           }
+      //         : null,
+      //       paymentGateway: setting.options.paymentGateway,
+      //       currencyOptions: setting.options.currencyOptions,
+      //       isProductReview: setting.options.isProductReview,
+      //       maxShopDistance: setting.options.maxShopDistance,
+      //       useEnableGateway: setting.options.useEnableGateway,
+      //       useCashOnDelivery: setting.options.useCashOnDelivery,
+      //       freeShippingAmount: setting.options.freeShippingAmount,
+      //       useMustVerifyEmail: setting.options.useMustVerifyEmail,
+      //       defaultPaymentGateway: setting.options.defaultPaymentGateway,
+      //     },
+      //     language: setting.language,
+      //     created_at: setting.created_at,
+      //     updated_at: setting.updated_at,
+      //   };
+      // });
+
+      // return settingsArray;
 
     }
   }
@@ -767,7 +907,7 @@ export class SettingsService {
                     const updateVendor = await this.smsVendorRepository.findOne({
                       where: { id: updateSms.vendor.id }
                     })
-                 
+
                     updateVendor.paymentOrder = updateSettingDto.options.smsEvent.vendor.paymentOrder ? updateSettingDto.options.smsEvent.vendor.paymentOrder : false
                     updateVendor.refundOrder = updateSettingDto.options.smsEvent.vendor.refundOrder ? updateSettingDto.options.smsEvent.vendor.refundOrder : false
                     updateVendor.statusChangeOrder = updateSettingDto.options.smsEvent.vendor.statusChangeOrder ? updateSettingDto.options.smsEvent.vendor.statusChangeOrder : false
@@ -784,7 +924,7 @@ export class SettingsService {
                     const updateCustomer = await this.smsCustomerRepository.findOne({
                       where: { id: updateSms.customer.id }
                     })
-              
+
                     updateCustomer.paymentOrder = updateSettingDto.options.smsEvent.customer.paymentOrder ? updateSettingDto.options.smsEvent.customer.paymentOrder : false
                     updateCustomer.refundOrder = updateSettingDto.options.smsEvent.customer.refundOrder ? updateSettingDto.options.smsEvent.customer.refundOrder : false
                     updateCustomer.statusChangeOrder = updateSettingDto.options.smsEvent.customer.statusChangeOrder ? updateSettingDto.options.smsEvent.customer.statusChangeOrder : false

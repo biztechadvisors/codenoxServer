@@ -7,10 +7,11 @@ import { Order } from 'src/orders/entities/order.entity';
 import { Analytics, TotalYearSaleByMonth } from './entities/analytics.entity';
 import { AnalyticsResponseDTO, TotalYearSaleByMonthDTO } from './dto/analytics.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
-import { Address } from 'src/addresses/entities/address.entity';
+import { Address, UserAddress } from 'src/addresses/entities/address.entity';
 import { Dealer } from 'src/users/entities/dealer.entity';
 import { User, UserType } from 'src/users/entities/user.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
+import { UserAddressRepository } from 'src/addresses/addresses.repository';
 
 @Injectable()
 export class AnalyticsService {
@@ -28,112 +29,135 @@ export class AnalyticsService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
+    @InjectRepository(UserAddress) private readonly: UserAddressRepository,
   ) { }
 
-  async findAll(customerId: number): Promise<AnalyticsResponseDTO> {
+  async findAll(customerId: number, state: string): Promise<AnalyticsResponseDTO> {
     try {
-      // Find the user by ID
       const user = await this.userRepository.findOne({ where: { id: customerId } });
+
       if (!user) {
         throw new NotFoundException(`User with ID ${customerId} not found`);
       }
 
-      // Check if the user is Super_Admin or Admin
-      if (![UserType.Super_Admin, UserType.Admin].includes(user.type)) {
+      const userPermissions = await this.permissionRepository.findOne({
+        where: { permission_name: user.type },
+      });
+
+      if (!(userPermissions && ['Admin', 'super_admin', 'Dealer', 'Vendor'].includes(userPermissions.type_name))) {
         throw new ForbiddenException(`User with ID ${customerId} does not have permission to access analytics`);
       }
 
-      // Calculate various analytics metrics based on user type
-      const totalRevenue = await this.calculateTotalRevenue(user.id, user.type);
-      const totalRefunds = await this.calculateTotalRefunds();
-      const totalShops = await this.calculateTotalShops();
-      const todaysRevenue = await this.calculateTodaysRevenue(user.id, user.type);
-      const totalOrders = await this.calculateTotalOrders(user.id, user.type);
-      const newCustomers = await this.calculateNewCustomers(user.id, user.type);
-      const totalYearSaleByMonth = await this.calculateTotalYearSaleByMonth(user.id, user.type);
-
-      // Create analytics response object
+      console.log("user.id, userPermissions.type_name, state", user.id, userPermissions.type_name, state)
       const analyticsResponse: AnalyticsResponseDTO = {
-        totalRevenue,
-        totalRefunds,
-        totalShops,
-        todaysRevenue,
-        totalOrders,
-        newCustomers,
-        totalYearSaleByMonth,
+        totalRevenue: await this.calculateTotalRevenue(user.id, userPermissions.type_name, state),
+        totalRefunds: await this.calculateTotalRefunds(userPermissions.type_name, state),
+        totalShops: await this.calculateTotalShops(userPermissions.type_name, state),
+        todaysRevenue: await this.calculateTodaysRevenue(user.id, userPermissions.type_name, state),
+        totalOrders: await this.calculateTotalOrders(user.id, userPermissions.type_name, state),
+        newCustomers: await this.calculateNewCustomers(user.id, userPermissions.type_name, state),
+        totalYearSaleByMonth: await this.calculateTotalYearSaleByMonth(user.id, userPermissions.type_name, state),
       };
 
       return analyticsResponse;
     } catch (error) {
-      // Log error or handle appropriately
       throw new NotFoundException(`Error fetching analytics: ${error.message}`);
     }
   }
 
-  private async calculateTotalRevenue(userId: number, userType: UserType): Promise<number> {
-    // Find the user by userId
+  private async calculateTotalRevenue(userId: number, permissionName: string, state: string): Promise<number> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
-
-    // Find all users in the repository based on user IDs
-    const users = await this.userRepository.find({
+    const usrByIdUsers = await this.userRepository.find({
       where: { UsrBy: { id: user.id } },
     });
 
-    // Extract user IDs from users and include the original user ID
-    const userIds = [user.id, ...users.map(u => u.id)];
+    const userIds = [user.id, ...usrByIdUsers.map(u => u.id)];
 
-    let orders;
+    let query = this.orderRepository.createQueryBuilder('order');
 
-    if (userType === UserType.Super_Admin || UserType.Admin) {
-      // No need to filter by customer_id for Super_Admin
-      // Fetch all orders
-      orders = await this.orderRepository.find();
-    } else {
-      // Filter orders by customer_id for other user types
-      orders = await this.orderRepository.find({ where: { customer_id: In(userIds) } });
+    if (state && state.trim() !== '') {
+      if (permissionName === 'super_admin' || permissionName === 'Admin') {
+        query = query
+          .innerJoin('order.shipping_address', 'shipping_address')
+          .where('shipping_address.state = :state', { state });
+      } else {
+        query = query
+          .innerJoin('order.shipping_address', 'shipping_address')
+          .where('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
+      }
     }
 
-    // Calculate total revenue from orders
+    const orders = await query.getMany();
     const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
-
     return totalRevenue;
   }
 
-
-  private async calculateTotalRefunds(): Promise<number> {
-    // const refunds = await this.refundRepository.find({});
-
-    // Calculate total refunds
-    // const totalRefunds = refunds.reduce((sum, refund) => sum + refund.amount, 0);
-
-    // return totalRefunds;
-    return 0;
-  }
-
-  private async calculateTotalShops(): Promise<number> {
-    const totalShops = await this.shopRepository
-      .createQueryBuilder('shop')
-      .select('COUNT(DISTINCT shop.id)', 'totalShops')
-      .getRawOne()
-      .then(result => result.totalShops || 0);
-
-    return totalShops;
-  }
-
-  private async calculateTodaysRevenue(customerId: number, userType: UserType): Promise<number> {
+  private async calculateTotalRefunds(permissionName: string, state: string): Promise<number> {
     try {
-      // Find the user by customer_id
-      const user = await this.userRepository.findOne({ where: { id: customerId } });
+      let query = this.refundRepository.createQueryBuilder('refund');
 
-      // Find all users in the repository based on user IDs
+      if (state && state.trim() !== '') {
+        if (permissionName === 'super_admin' || permissionName === 'Admin') {
+        } else {
+          query = query
+            .innerJoin('refund.order', 'order')
+            .innerJoin('order.shipping_address', 'shipping_address')
+            .where('shipping_address.state = :state', { state });
+        }
+      }
+
+      const totalRefunds = await query
+        .select('COUNT(DISTINCT refund.id)', 'totalRefunds')
+        .getRawOne()
+        .then(result => result.totalRefunds || 0);
+
+      return totalRefunds;
+    } catch (error) {
+      console.error('Error calculating total refunds:', error.message);
+      return 0;
+    }
+  }
+
+  private async calculateTotalShops(permissionName: string, state: string): Promise<number> {
+    try {
+      let query = this.shopRepository.createQueryBuilder('shop');
+
+      if (state && state.trim() !== '') {
+        if (permissionName === 'super_admin' || permissionName === 'Admin') {
+          // No additional filtering for super_admin or Admin
+        } else {
+          query = query
+            .innerJoin('shop.owner', 'owner')
+            .innerJoin('shop.shipping_address', 'shipping_address')
+            .where({
+              'owner.permissionName': permissionName,
+              'shipping_address.state': state,
+            });
+        }
+      }
+
+      const totalShops = await query
+        .select('COUNT(DISTINCT shop.id)', 'totalShops')
+        .getRawOne()
+        .then(result => result.totalShops || 0);
+
+      return totalShops;
+    } catch (error) {
+      console.error('Error calculating total shops:', error.message);
+      return 0;
+    }
+  }
+
+
+  private async calculateTodaysRevenue(userId: number, permissionName: string, state: string): Promise<number> {
+    try {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
       const users = await this.userRepository.find({
         where: { UsrBy: { id: user.id } },
       });
 
-      // Extract user IDs from users and include the original user ID
       const userIds = [user.id, ...users.map(u => u.id)];
 
-      // Get the start and end of today
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
@@ -142,152 +166,256 @@ export class AnalyticsService {
 
       let todayOrders;
 
-      if (userType === UserType.Super_Admin || userType === UserType.Admin) {
-        // No need to filter by customer_id for Super_Admin and Admin
-        // Fetch all orders placed today
-        todayOrders = await this.orderRepository.find({
-          where: {
-            created_at: Between(todayStart, todayEnd),
-          },
-        });
+      if (state && state.trim() !== '') {
+        if (permissionName === 'super_admin' || permissionName === 'Admin') {
+          todayOrders = await this.orderRepository
+            .createQueryBuilder('order')
+            .innerJoin('order.shipping_address', 'shipping_address')
+            .where({
+              created_at: Between(todayStart, todayEnd),
+              state,
+            })
+            .getMany();
+        } else {
+          todayOrders = await this.orderRepository
+            .createQueryBuilder('order')
+            .innerJoin('order.shipping_address', 'shipping_address')
+            .where({
+              created_at: Between(todayStart, todayEnd),
+              customer_id: In(userIds),
+              'shipping_address.state': state,
+            })
+            .getMany();
+        }
       } else {
-        // Filter orders by customer_id for other user types
-        todayOrders = await this.orderRepository.find({
-          where: {
-            created_at: Between(todayStart, todayEnd),
-            customer_id: In(userIds),
-          },
-        });
+        // No state filter
+        if (permissionName === 'super_admin' || permissionName === 'Admin') {
+          todayOrders = await this.orderRepository
+            .createQueryBuilder('order')
+            .innerJoin('order.shipping_address', 'shipping_address')
+            .where({
+              created_at: Between(todayStart, todayEnd),
+            })
+            .getMany();
+        } else {
+          todayOrders = await this.orderRepository
+            .createQueryBuilder('order')
+            .innerJoin('order.shipping_address', 'shipping_address')
+            .where({
+              created_at: Between(todayStart, todayEnd),
+              customer_id: In(userIds),
+            })
+            .getMany();
+        }
       }
 
-      // Calculate total revenue from today's orders
       const todayRevenue = todayOrders.reduce((total, order) => total + order.total, 0);
-
       return todayRevenue;
     } catch (error) {
       console.error('Error calculating today\'s revenue:', error.message);
-      return 0; // Handle the error gracefully, return 0 or throw an appropriate exception
+      return 0;
     }
   }
 
 
-  private async calculateTotalOrders(customerId: number, userType: UserType): Promise<number> {
-    // Find the user by customer_id
-    const usr = await this.userRepository.findOne({ where: { id: customerId } });
-
-    // Find all users in the repository based on user IDs
+  private async calculateTotalOrders(userId: number, permissionName: string, state: string): Promise<number> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
     const usrByIdUsers = await this.userRepository.find({
-      where: { UsrBy: { id: usr.id } },
+      where: { UsrBy: { id: user.id } },
     });
 
-    // Extract user IDs from usrByIdUsers and include the original user ID
-    const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
+    const userIds = [user.id, ...usrByIdUsers.map(usr => usr.id)];
 
     let query = this.orderRepository.createQueryBuilder('order');
 
-    if (userType === UserType.Super_Admin || UserType.Admin) {
-      // No need to filter by customer_id for Super_Admin
-      // Just count all orders
-      return query.getCount();
+    if (state && state.trim() !== '') {
+      if (permissionName === 'super_admin' || permissionName === 'Admin') {
+        query = query
+          .innerJoin('order.shipping_address', 'shipping_address')
+          .where('shipping_address.state = :state', { state });
+        return query.getCount();
+      } else {
+        query = query
+          .innerJoin('order.shipping_address', 'shipping_address')
+          .where('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
+        return query.getCount();
+      }
     } else {
-      // Filter by customer_id for other user types
-      query = query.where('order.customer_id IN (:...userIds)', { userIds });
-      return query.getCount();
+      // No state filter
+      if (permissionName === 'super_admin' || permissionName === 'Admin') {
+        return query.getCount();
+      } else {
+        query = query
+          .innerJoin('order.shipping_address', 'shipping_address')
+          .where('order.customer_id IN (:...userIds)', { userIds });
+        return query.getCount();
+      }
     }
   }
 
-  private async calculateNewCustomers(userId: number, userType: UserType): Promise<number> {
+  private async calculateNewCustomers(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-      // Assuming "new customer" means created within the last 30 days
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       let newShops;
 
-      if (userType === UserType.Super_Admin || userType === UserType.Admin) {
-        // For Super_Admin and Admin, fetch all new shops created within the last 30 days
-        newShops = await this.shopRepository.find({
-          where: {
-            created_at: MoreThanOrEqual(thirtyDaysAgo),
-          },
-        });
+      if (state && state.trim() !== '') {
+        if (permissionName === 'super_admin' || permissionName === 'Admin') {
+          newShops = await this.shopRepository.find({
+            where: {
+              created_at: MoreThanOrEqual(thirtyDaysAgo),
+            },
+          });
+        } else {
+          newShops = await this.shopRepository
+            .createQueryBuilder('shop')
+            .innerJoin('shop.owner', 'owner')
+            .innerJoin('shop.shipping_address', 'shipping_address')
+            .where({
+              created_at: MoreThanOrEqual(thirtyDaysAgo),
+              'owner.id': userId,
+              'shipping_address.state': state,
+            })
+            .getMany();
+        }
       } else {
-        // For other user types, filter new shops based on user's ownership
-        newShops = await this.shopRepository.find({
-          where: {
-            created_at: MoreThanOrEqual(thirtyDaysAgo),
-            owner: { id: userId },
-          },
-        });
+        if (permissionName === 'super_admin' || permissionName === 'Admin') {
+          newShops = await this.shopRepository.find({
+            where: {
+              created_at: MoreThanOrEqual(thirtyDaysAgo),
+            },
+          });
+        } else {
+          newShops = await this.shopRepository
+            .createQueryBuilder('shop')
+            .innerJoin('shop.owner', 'owner')
+            .where({
+              created_at: MoreThanOrEqual(thirtyDaysAgo),
+              'owner.id': userId,
+            })
+            .getMany();
+        }
       }
 
-      // Count the number of new shops (new customers)
       const numberOfNewCustomers = newShops.length;
-
       return numberOfNewCustomers;
     } catch (error) {
       console.error('Error calculating new customers:', error.message);
-      return 0; // Handle the error gracefully, return 0 or throw an appropriate exception
+      return 0;
     }
   }
 
-  private async calculateTotalYearSaleByMonth(userId: number, userType: UserType): Promise<TotalYearSaleByMonthDTO[]> {
+  private async calculateTotalYearSaleByMonth(userId: number, permissionName: string, state: string): Promise<TotalYearSaleByMonthDTO[]> {
     const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
     ];
 
     return await Promise.all(
       months.map(async (month, index) => {
-        const total = await this.calculateTotalSalesForMonth(index + 1, userId, userType); // Assuming 1-based month index
+        const total = await this.calculateTotalSalesForMonth(index + 1, userId, permissionName, state);
         return { total, month };
       }),
     );
   }
 
-  private async calculateTotalSalesForMonth(month: number, customerId: number, userType: UserType): Promise<number> {
-    const firstDayOfMonth = new Date(new Date().getFullYear(), month - 1, 1);
-    const lastDayOfMonth = new Date(new Date().getFullYear(), month, 0, 23, 59, 59, 999);
+  private async calculateTotalSalesForMonth(month: number, userId: number, permissionName: string, state: string): Promise<number> {
+    try {
+      const firstDayOfMonth = new Date(new Date().getFullYear(), month - 1, 1);
+      const lastDayOfMonth = new Date(new Date().getFullYear(), month, 0, 23, 59, 59, 999);
 
-    let query = this.orderRepository.createQueryBuilder('order');
+      let query = this.orderRepository.createQueryBuilder('order');
 
-    // Adjust the query based on user type and their related users
-    if (userType !== UserType.Super_Admin) {
-      // Find the user by customerId
-      const user = await this.userRepository.findOne({ where: { id: customerId } });
+      if (state && state.trim() !== '') {
+        if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
+          const user = await this.userRepository.findOne({ where: { id: userId } });
+          const usrByIdUsers = await this.userRepository.find({
+            where: { UsrBy: { id: user.id } },
+          });
 
-      // Find all users in the repository based on user IDs
-      const usrByIdUsers = await this.userRepository.find({
-        where: { UsrBy: { id: user.id } },
-      });
+          const userIds = [user.id, ...usrByIdUsers.map(usr => usr.id)];
 
-      // Extract user IDs from usrByIdUsers and include the original user ID
-      const userIds = [user.id, ...usrByIdUsers.map(u => u.id)];
+          query = query
+            .innerJoin('order.shipping_address', 'shipping_address')
+            .where('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state })
+            .andWhere('order.created_at BETWEEN :firstDay AND :lastDay', {
+              firstDay: firstDayOfMonth,
+              lastDay: lastDayOfMonth,
+            });
+        } else {
+          query = query
+            .innerJoin('order.shipping_address', 'shipping_address')
+            .where('order.created_at BETWEEN :firstDay AND :lastDay AND shipping_address.state = :state', {
+              firstDay: firstDayOfMonth,
+              lastDay: lastDayOfMonth,
+              state,
+            });
+        }
+      } else {
+        // No state filter
+        if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
+          const user = await this.userRepository.findOne({ where: { id: userId } });
+          const usrByIdUsers = await this.userRepository.find({
+            where: { UsrBy: { id: user.id } },
+          });
 
-      // Filter by customer_id for other user types
-      query = query.where('order.customer_id IN (:...userIds)', { userIds });
+          const userIds = [user.id, ...usrByIdUsers.map(usr => usr.id)];
+
+          query = query
+            .innerJoin('order.shipping_address', 'shipping_address')
+            .where('order.customer_id IN (:...userIds)', { userIds })
+            .andWhere('order.created_at BETWEEN :firstDay AND :lastDay', {
+              firstDay: firstDayOfMonth,
+              lastDay: lastDayOfMonth,
+            });
+        } else {
+          query = query
+            .innerJoin('order.shipping_address', 'shipping_address')
+            .where('order.created_at BETWEEN :firstDay AND :lastDay', {
+              firstDay: firstDayOfMonth,
+              lastDay: lastDayOfMonth,
+            });
+        }
+      }
+
+      const orders = await query
+        .select('SUM(order.total)', 'total')
+        .getRawOne();
+
+      return parseInt(orders.total, 10) || 0;
+    } catch (error) {
+      console.error(`Error calculating total sales for month ${month}: ${error.message}`);
+      return 0;
     }
-
-    const orders = await query
-      .select('SUM(order.total)', 'total')
-      .where('order.created_at BETWEEN :firstDay AND :lastDay', {
-        firstDay: firstDayOfMonth.toISOString().slice(0, 19).replace("T", " "), // Format date for MySQL
-        lastDay: lastDayOfMonth.toISOString().slice(0, 19).replace("T", " "),  // Format date for MySQL
-      })
-      .getRawOne();
-
-    return parseInt(orders.total, 10) || 0;
   }
+
+  // async calculateOrderByODSC(filters: Record<string, any>): Promise<{ month: string; orderCount: number }[]> {
+  //   try {
+  //     const queryBuilder = this.orderRepository.createQueryBuilder('order');
+  //     queryBuilder.leftJoinAndSelect('order.shipping_address', 'shipping_address');
+
+  //     Object.keys(filters).forEach((key) => {
+  //       if (filters[key]) {
+  //         if (key === 'startDate') {
+  //           queryBuilder.andWhere(`order.created_at >= :${key}`, { [key]: filters[key] });
+  //         } else {
+  //           queryBuilder.andWhere(`${key} = :${key}`, { [key]: filters[key] });
+  //         }
+  //       }
+  //     });
+
+  //     queryBuilder.select('DATE_FORMAT(order.created_at, "%Y-%m") AS month');
+  //     queryBuilder.addSelect('COUNT(order.id) AS orderCount');
+  //     queryBuilder.groupBy('month');
+
+  //     const result = await queryBuilder.getRawMany();
+
+  //     return result.map(item => ({ month: item.month, orderCount: parseInt(item.orderCount) }));
+  //   } catch (error) {
+  //     throw new Error(`Failed to calculate order by ODSC: ${error.message}`);
+  //   }
+  // }
 
   // async calculateOrderByODSC(filters: Record<string, any>): Promise<{ month: string; orderCount: number }[]> {
   //   const queryBuilder = this.orderRepository.createQueryBuilder('order');
@@ -324,35 +452,4 @@ export class AnalyticsService {
   //   // Transform the result if needed
   //   return result.map(item => ({ month: item.month, orderCount: parseInt(item.orderCount) }));
   // }
-
-  async calculateOrderByODSC(filters: Record<string, any>): Promise<{ month: string; orderCount: number }[]> {
-    try {
-      const queryBuilder = this.orderRepository.createQueryBuilder('order');
-      queryBuilder.leftJoinAndSelect('order.shipping_address', 'shipping_address');
-
-      // Add filters based on your criteria
-      Object.keys(filters).forEach((key) => {
-        if (filters[key]) {
-          if (key === 'startDate') {
-            queryBuilder.andWhere(`order.created_at >= :${key}`, { [key]: filters[key] });
-          } else {
-            queryBuilder.andWhere(`${key} = :${key}`, { [key]: filters[key] });
-          }
-        }
-      });
-
-      // Add grouping by month and counting, considering only the filtered orders
-      queryBuilder.select('DATE_FORMAT(order.created_at, "%Y-%m") AS month');
-      queryBuilder.addSelect('COUNT(order.id) AS orderCount');
-      queryBuilder.groupBy('month');
-
-      const result = await queryBuilder.getRawMany();
-
-      // Transform the result if needed
-      return result.map(item => ({ month: item.month, orderCount: parseInt(item.orderCount) }));
-    } catch (error) {
-      throw new Error(`Failed to calculate order by ODSC: ${error.message}`);
-    }
-  }
-
 }
