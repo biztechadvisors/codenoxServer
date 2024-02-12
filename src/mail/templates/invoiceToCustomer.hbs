@@ -1,156 +1,151 @@
-{{#each invoice}}
-  <div style="font-family: Arial, sans-serif; max-width: 800px; ...">
-    <!-- Your existing structure -->
+<html lang="en">
 
-    <div style="...">
-      {{#if this.shop_address}}
-      <p style="color: red;">Hello {{this.shop_address}} {{this.shop_address.country}}</p>
-      <!-- More address details -->
-      {{/if}}
-      <!-- Additional invoice details -->
+<head>
+    <title>Invoice</title>
+</head>
+
+<body style="background-color: brown;">
+    <div class="invoice"
+        style=" font-family: Arial, sans-serif;max-width: 800px;margin: 20px auto;padding: 20px;border: 1px solid #ddd;box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);display: flex;flex-direction: column;align-items: center;">
+        <div class="invoice-header"
+            style="  display:flex; justify-content: space-between;align-items: center;width: 100%;;">
+            <img src='https://th.bing.com/th/id/OIP.Mggh2LiMwsRGTOruc9qsfwHaD4?w=284&h=180&c=7&r=0&o=5&dpr=1.5&pid=1.7'
+                alt='Amazon Logo' style="height: 90px; width: 200px;text-aling:left;">
+            <h4 style="margin-top:20px;color:red;display:block;text-aling:right;">Tax Invoice/Bill of Supply/Cash Memo
+            </h4>
+        </div>
+
+        <div class="invoice-body" style="display:flex;justify-content:space-between;width:100%;">
+            <div style="flex: 0 0 47%;text-align:left;">
+                <h4 style="text-align:left;">Sold By:</h4>
+                {{#each invoice.product}}
+                <p style="text-align: left;">{{this.shop.name}}</p>
+                {{/each}}
+                <p style="text-align:left;">{{invoice.shop_address.street_address}}</p>
+                <p style="text-align:left;">
+                    {{invoice.shop_address.city}}{{invoice.shop_address.state}}{{invoice.shop_address.country}}</p>
+                <br>
+                <p style="text-align:left;"><b>PAN No:</b>AC02BFRT56</p>
+                {{#each invoice.product}}
+                <p style="text-align:left;"><b>GST Registration No:</b>{{this.shop.gst_number}}</p>
+                {{/each}}
+                {{!-- <div class="order-details" style="margin-top: 20px;text-align:left;"> --}}
+                    <p style="text-align:left;margin-top:20px"><b>Order Number:</b> {{invoice.order_no}}</p>
+                    <p style="text-align:left;"><b>Order Date:</b>{{invoice.created_at}}3</p>
+                    {{!--
+                </div> --}}
+            </div>
+
+            <div style="flex: 0 0 50%;text-align:right;text-align:right;">
+                {{!-- <div class="buyer" style="margin-top: 20px;text-align:right;"> --}}
+                    <h4 style="margin-top: 20px;text-align:right;">Billing Address:</h4>
+                    <p style="margin-top: 20px;text-align:right;">{{invoice.billing_address.id}}</p>
+                    <p style="margin-top: 20px;text-align:right;">
+                        {{invoice.billing_address.street_address}}{{invoice.billing_address.city}}</p>
+                    <p style="margin-top: 20px;text-align:right;">
+                        {{invoice.billing_address.state}}{{invoice.billing_address.country}}{{invoice.billing_address.zip}}
+                    </p>
+                    {{!--
+                </div> --}}
+                {{!-- <div class="buyer" style="margin-top: 20px;text-align:right;"> --}}
+                    <h4 style="margin-top: 20px;text-align:right;">Shipping Address:</h4>
+                    <p style="margin-top: 20px;text-align:right;">{{invoice.shipping_address.id}}</p>
+                    <p style="margin-top: 20px;text-align:right;">{{invoice.shipping_address.street_address}}
+                        {{invoice.shipping_address.city}}</p>
+                    <p style="margin-top: 20px;text-align:right;">{{invoice.shipping_address.state}}
+                        {{invoice.shipping_address.country}} {{invoice.shipping_address.zip}}</p>
+                    {{!--
+                </div> --}}
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Number:</b>nott</p>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Details:</b> MP-FIDA-1034-2324</p>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Date:</b>{{invoice.invoice_date}}</p>
+            </div>
+        </div>
+        <table
+            style="width: 100%; border-collapse: collapse;margin-bottom: 20px; margin-top: 20px; border: 2px solid black;">
+            <thead style="border:2px solid black">
+                <tr style="border:2px solid black">
+                    <th style="border: 2px solid black;">SL No.</th>
+                    <th style="border: 2px solid black;">Description</th>
+                    <th style="border: 2px solid black;">Unit Price</th>
+                    <th style="border: 2px solid black;">Quantity</th>
+                    <th style="border: 2px solid black;">Net Amount</th>
+                    <th style="border: 2px solid black;">Tax Rate</th>
+                    <th style="border: 2px solid black;">Tax Type</th>
+                    <th style="border: 2px solid black;">Tax Amount</th>
+                    <th style="border: 2px solid black;">Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each invoice.product}}
+                <!-- Insert dynamic item rows here -->
+                <tr style="border: 2px solid black">
+                    <td style="border: 2px solid black;">Id{{this.id}}</td>
+                    <td style="border: 2px solid black;">Des.{{this.description}} </td>
+                    {{#each this.pivot}}
+                    <td style="border: 2px solid black;">Unit{{this.unit_price}}</td>
+                    <td style="border: 2px solid black;">Quantity:{{this.order_quantity}}</td>
+                    <td style="border: 2px solid black;">net amount {{this.subtotal}}</td>
+                    {{/each}}
+                    <td style="border: 2px solid black;">Rate{{this.taxes.rate}}%</td>
+                    <td style="border: 2px solid black;">Tax{{this.taxes.cgst}}%<br />{{this.taxes.sgst}}%</td>
+                     {{#each this.pivot}}
+                    <td style="border: 2px solid black;">{{this.subtotal}}</td>
+                    {{/each}}
+                     {{#each this.pivot}}
+                    <td style="border: 2px solid black;">{{this.subtotal}}</td>
+                    {{/each}}
+                    {{/each}}
+                </tr>
+
+                <tr style="border:2px solid black">
+                    <td colspan="7" style="border: 2px solid black; text-align: left;"><b>TOTAL:</b></td>
+                    <td style="border: 2px solid black;">{{invoice.sales_tax_total}}</td>
+                    <td style="border: 2px solid black;">{{invoice.total_amount}}</td>
+                </tr>
+                <tr>
+                    <td colspan="9" style="border: 2px solid black; text-align: left;"><b>Amount in Words:</b>
+                        {{invoice.total_amount_in_words}}</td>
+                </tr>
+                <tr>
+                    {{#each invoice.product}}
+                    <td colspan="7" style="text-align: right;"><b>{{this.shop.name}}</b><br></td>
+                       {{/each}}
+               </tr>
+               <tr>
+                <td colspan="7" style="text-align: right;"><b>Authorized Signatory</b></td>
+               </tr>
+            </tbody>
+        </table>
+        <!-- Payment Details Table -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; border: 2px solid black;">
+            <tbody>
+                <tr style="border:2px solid black">
+                    <td style="border:2px solid black">Payment Transaction ID: <br>
+                        <p style="font-size: 12px;">{{invoice.paymentInfo.payment_id}}</p>
+                    </td>
+                    <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">{{invoice.invoice_date}} </p> </td>
+                    <td rowSpan="2" style="border:2px solid black">Invoice Value:<p style="font-size: 12px;">
+                            {{invoice.total_amount}}</p>
+                    </td>
+                    <td style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">Gift
+                            Card{{invoice.payment_Mode}}</p>
+                    </td>
+                </tr>
+                <tr style="border:2px solid black">
+                    <td style="border:2px solid black">Payment Transaction ID: <br>
+                        <p style="font-size: 12px;">{{invoice.paymentInfo.payment_id}}</p>
+                    </td>
+                    <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">{{invoice.invoice_date}}
+                        </p>
+                    </td>
+                    <td colspan="2" style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">Credit
+                            Card{{invoice.payment_Mode}}</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
+</body>
 
-    <!-- Table for items -->
-    <table style="...">
-      <thead>
-        <!-- Table headers -->
-      </thead>
-      <tbody>
-        {{#each this.items}}
-        <tr style="...">
-          <td style="...">{{this.id}}</td>
-          <td style="...">{{this.description}}</td>
-          <!-- More data cells -->
-        </tr>
-        {{/each}}
-        <!-- Total and other rows -->
-      </tbody>
-    </table>
-    <!-- Additional sections -->
-  </div>
-{{/each}}
-
-
-
-{{!-- {{#each invoice}}
-  <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px;
-        border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; align-items: center;">
-    <div style=" display: flex;justify-content: space-between;align-items: center;width: 100%;">
-      <img src='/amazonlogo.png' alt='Amazon Logo' height="90" width="200" />
-      <h3 style="text-align: center; margin-bottom: 20px;">Tax Invoice/Bill of Supply/Cash Memo</h3>
-    </div>
-    <div style=" display: flex;justify-content: space-between;width: 100%;">
-      <div style=" width: 50%;padding-right: 20px ;">
-        {{#if this.shop_address}}
-        <p style="color: red;">hello{{this.shop_address}} {{this.shop_address.country}}</p>
-        <p>{{this.shop_address.city}}, {{this.shop_address.state}}</p>
-        <p><b>PAN No:</b></p>
-        {{/if}}
-        <br />
-        <p><b>GST Registration No:</b> billing</p>
-        <div style="margin-bottom: 20px;">
-          <br />
-          <br />
-          <p><b>Order Number:</b> orders.id</p>
-          <p><b>Order Date:</b> created_at</p>
-        </div>
-      </div>
-      <div style="text-align: right;padding-right: 20px;">
-        <div style="margin-bottom: 20px;">
-          <h3>Billing Address:</h3>
-          <p>billing address</p>
-          <p>billing address </p>
-          <p>billing</p>
-        </div>
-        <div style="margin-bottom: 20px;">
-          <h3>Shipping Address:</h3>
-          <p></p>
-          <p> </p>
-          <p></p>
-        </div>
-        {/* If the shipping address is different from the billing address, add it here */}
-        <div style="margin-bottom: 20px;">
-          <p><b> Invoice Number:</b></p>
-          <p><b> Invoice Details:</b></p>
-          <p><b>Invoice Date:</b>invoice_date</p>
-        </div>
-      </div>
-    </div>
-    <table style="   width: 100%;border-collapse: collapse;margin-bottom: 20px;border: 2px solid black;">
-      <thead>
-        <tr style="border: 2px solid black;">
-          <th style="border: 2px solid black;padding: 8px;text-align: left;">SL No.</th>
-          <th style="border: 2px solid black;padding: 8px;text-align: left;">Description</th>
-          <th style="border: 2px solid black;padding: 8px;text-align: left;">Unit Price</th>
-          <th style="border: 2px solid black;padding: 8px;text-align: left;">Quantity</th>
-          <th style="border: 2px solid black;padding: 8px;text-align: left;">Net Amount</th>
-          <th style="border: 2px solid black;padding: 8px;text-align: left;">Tax Rate</th>
-          <th style="border: 2px solid black;padding: 8px;text-align: left;">Tax Type</th>
-          <th style="border: 2px solid black;padding: 8px;text-align: left;">Tax Amount</th>
-          <th style="border: 2px solid black;padding: 8px;text-align: left;">Total Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-
-        <tr key={index} style="border: 2px solid black;">
-          <td style="border: 2px solid black;padding: 8px;text-align: left;">product.id</td>
-          <td style="border: 2px solid black;padding: 8px;text-align: left;">product.description</td>
-          <td style="border: 2px solid black;padding: 8px;text-align: left;">product.price</td>
-          <td style="border: 2px solid black;padding: 8px;text-align: left;">product.quantity</td>
-          <td style="border: 2px solid black;padding: 8px;text-align: left;"></td>
-          <td style="border: 2px solid black;padding: 8px;text-align: left;"></td>
-          <td style="border: 2px solid black;padding: 8px;text-align: left;"></td>
-          <td style="border: 2px solid black;padding: 8px;text-align: left;"></td>
-          <td style="border: 2px solid black;padding: 8px;text-align: left;"></td>
-        </tr>
-
-        <tr style="border: 2px solid black;">
-          <td colSpan="7" style="textAlign: left; padding:8px; border: 2px solid black;"><b>TOTAL:</b></td>
-          <td style="border: 2px solid black;padding: 8px;text-align: left;"></td>
-          <td style="border: 2px solid black;padding: 8px;text-align: left;"></td>
-        </tr>
-        <tr style="border: 2px solid black;">
-          <td colSpan="9" style="border: 2px solid black;padding: 8px;text-align: left;"><b>Amount in Words: </b>
-            <p style="isplay: block;border: 2px solid black;padding: 8px;text-align: left;"><b></b></p>
-          </td>
-        </tr>
-        <tr style="border: 2px solid black;">
-          <td colSpan="9" style="textAlign: right;border: 2px solid black;"><b>For Appario Retail Private Ltd:</b><br />
-            <img src='/signature.png' alt='Amazon Logo' height={40} width={100} /><br />
-            <b>Authorized Signatory</b>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <p>Total: </p>
-    {/* Second Table ============================ */}
-
-    <table style="   width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;">
-      <tbody>
-        <tr style="border: 2px solid black;">
-          <td style="border: 2px solid black;"> Payment Transaction ID: <br />
-            <p style="fontSize:12px;">112gAgOyB4ePRfETR08CxbqL</p>
-          </td>
-          <td style="border: 2px solid black;">Date & Time: <p style="fontSize:12px;">14/10/2023, 14:39:00hrs </p>
-          </td>
-          <td rowSpan={2}>Invoice Value:<p style="fontSize:12px;border: 2px solid black;">1299/-</p>
-          </td>
-          <td style="border: 2px solid black;">Mode of Payment:<p style="fontSize:12px;">Gift Card</p>
-          </td>
-        </tr>
-        <tr style="border: 2px solid black;">
-          <td style="border: 2px solid black;"> Payment Transaction ID: <br />
-            <p style="fontSize:12px;">112gAgOyB4ePRfETR08CxbqL</p>
-          </td>
-          <td style="border: 2px solid black;">Date&Time: <p style="fontSize:12px;">14/10/2023, 14:39:00hrs </p>
-          </td>
-          <td style="border: 2px solid black;">Mode of Payment:<p style="fontSize:12px;">Credit Card</p>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  {{/each}}
-  --}}
+</html>

@@ -47,6 +47,7 @@ import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { stateCode } from 'src/taxes/state_code.tax';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { MailService } from 'src/mail/mail.service';
+import invoices from 'razorpay/dist/types/invoices';
 
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
@@ -613,8 +614,7 @@ export class OrdersService {
 
   async verifyCheckout(input: CheckoutVerificationDto): Promise<VerifiedCheckoutData> {
     // Initialize variables
-    console.log(input)
-
+    console.log("input daat", input)
     let total_tax = 0;
     let shipping_charge = 0;
     let unavailable_products: number[] = [];
@@ -752,53 +752,74 @@ console.log(productEntity)
   }
 
   async downloadInvoiceUrl(Order_id: string) {
-    console.log(Order_id)
-    let taxType:any;
-    const Invoice = await this.orderRepository.findOne({ where: { id: +Order_id }, relations:['coupon','status','billing_address','shipping_address','shop','shop.address','products'] });
-    if(Invoice.shop.address.state === Invoice.shipping_address.state){
-      const shippingState = Invoice.shipping_address.state;
-      if (stateCode.hasOwnProperty(shippingState)) {
-        const stateCodeValue = stateCode[shippingState];
-        taxType={
-          CGST:Invoice.sales_tax/2,
-          SGST:Invoice.sales_tax/2,  // state- ut code 
-          state_code:stateCodeValue,
-          
-          billing_address:Invoice.billing_address,
-          shipping_address:Invoice.shipping_address,
-          shop_address:Invoice.shop.address,
-          product:Invoice.products,
-          created_at:'Order_date',
-          order_no: Invoice.id,
-          invoice_date:'Order_date'
+    console.log(Order_id);
+    let taxType: any;
+    // const Invoice =await this.getOrderByIdOrTrackingNumber(parseInt(Order_id))
+    const Invoice = await this.orderRepository.findOne({ where: { id: +Order_id }, relations: ['coupon', 'status', 'billing_address', 'shipping_address', 'shop', 'shop.address', 'products', 'products.pivot', 'payment_intent', 'payment_intent.payment_intent_info'] });
+    
+    const numberToWords = (num: number) => {
+        const a = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+        const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
 
+        if (num < 20) return a[num];
+        const digit = num % 10;
+        if (num < 100) return b[Math.floor(num / 10)] + (digit ? '-' + a[digit] : '');
+        if (num < 1000) return a[Math.floor(num / 100)] + ' hundred' + (num % 100 === 0 ? '' : ' and ' + numberToWords(num % 100));
+        return numberToWords(Math.floor(num / 1000)) + ' thousand' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '');
+    };
+
+    if (Invoice.shop.address.state === Invoice.shipping_address.state) {
+        const shippingState = Invoice.shipping_address.state;
+        if (stateCode.hasOwnProperty(shippingState)) {
+            const stateCodeValue = stateCode[shippingState];
+
+            taxType = {
+                CGST: Invoice.sales_tax / 2,
+                SGST: Invoice.sales_tax / 2, // state- ut code
+                state_code: stateCodeValue,
+                net_amount: Invoice.amount,
+                total_amount: Invoice.total,
+                sales_tax_total: Invoice.sales_tax,
+                total_amount_in_words: numberToWords(Invoice.total),
+                billing_address: Invoice.billing_address,
+                payment_Mode: Invoice.payment_gateway,
+                paymentInfo: Invoice.payment_intent.payment_intent_info,
+                shipping_address: Invoice.shipping_address,
+                shop_address: Invoice.shop.address,
+                product: Invoice.products,
+                created_at: 'Order_date',
+                order_no: Invoice.id,
+                invoice_date: 'Order_date'
+            };
+            console.log("Data being sent to template:", taxType);
+            await this.mailService.sendInvoiceToCustomer(taxType);
+            return taxType;
+        } else {
+            return 'Invalid state name in shipping address';
         }
-        console.log("Data being sent to template:", taxType);
-        await this.mailService.sendInvoiceToCustomer(taxType);
-        return taxType
-        console.log('stateCodeValue:', stateCodeValue);
-      } else {
-        return 'Invalid state name in shipping address';
-      }
-      
-    }else{
-      const stateCodeValue = stateCode[Invoice.shipping_address.state];
-      taxType={
-        IGST:Invoice.sales_tax,
-        state_code:stateCodeValue, 
-        billing_address:Invoice.billing_address,
-        shipping_address:Invoice.shipping_address,
-        shop_address:Invoice.shop.address,
-        product:Invoice.products,
-        created_at:'Order_date',
-        order_no: Invoice.id,
-        invoice_date:'Order_date'
-      }
-      return taxType
+    } else {
+        const stateCodeValue = stateCode[Invoice.shipping_address.state];
+        taxType = {
+            IGST: Invoice.sales_tax,
+            state_code: stateCodeValue,
+            net_amount: Invoice.amount,
+            total_amount: Invoice.total,
+            sales_tax_total: Invoice.sales_tax,
+            total_amount_in_words: numberToWords(Invoice.total),
+            billing_address: Invoice.billing_address,
+            payment_Mode: Invoice.payment_gateway,
+            paymentInfo: Invoice.payment_intent.payment_intent_info,
+            shipping_address: Invoice.shipping_address,
+            shop_address: Invoice.shop.address,
+            product: Invoice.products,
+            created_at: 'Order_date',
+            order_no: Invoice.id,
+            invoice_date: 'Order_date'
+        };
+        return taxType;
     }
-    // return orderInvoiceJson[0].url;
-  }
-
+}
+  
   /**
    * helper methods from here
    */

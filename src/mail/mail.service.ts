@@ -2,6 +2,7 @@
 import { MailerService } from '@nestjs-modules/mailer'
 import { Injectable } from '@nestjs/common'
 import { User } from '../users/entities/user.entity'
+import { AnyARecord } from 'dns'
 
 @Injectable()
 export class MailService {
@@ -11,7 +12,7 @@ export class MailService {
 async sendUserConfirmation(user: User, token: string) {
     const url = `example.com/auth/confirm?token=${token}`
 
-    console.log('OTP:', user.otp)
+    console.log('OTP"""""""""""""""":', user.otp)
 
     await this.mailerService.sendMail({
       to: user.email,
@@ -99,37 +100,69 @@ async sendInvoiceToDealer(user: User, products: any){
  
 }
 
-// send Invoice Email to Customer
-async sendInvoiceToCustomer(taxType: any){
+async sendInvoiceToCustomer(taxType) {
+  // console.log("work", taxType);
+ 
+  try {
+    // Destructure taxType directly
+    const {
+      CGST,
+      IGST,
+      SGST,
+      state_code,
+      net_amount,
+      total_amount,
+      sales_tax_total,
+      total_amount_in_words,
+      payment_Mode,
+      paymentInfo, 
+      billing_address,
+      shipping_address,
+      shop_address,
+      product, // This is an array of Product objects
+      created_at,
+     order_no, // Renaming order_id to order_no
+      invoice_date,
+    } = taxType;
+   
+    // console.log("type", taxType.product)
 
-  try{
-    console.log("type",taxType.CGST);
-    const orderDetails = { 
-     IGST:taxType.IGST,
-     CGST: taxType.CGST,
-      SGST: taxType.SGST,
-       statecode: taxType.state_code,
-       billing_address:taxType.billing_address,
-       shipping_address:taxType.shipping_address,
-       shop_address:taxType.shop_address,
-       product:taxType.product,
-       created_at:taxType.created_at,
-       order_no:taxType.order_id,
-       invoice_date:taxType.invoice_date,
-    }
-    console.log("first", orderDetails.shop_address)
+    // Use destructured variables to construct orderDetails
+    const orderDetails = {
+      IGST,
+      CGST,
+      SGST,
+      state_code,
+      net_amount,
+      total_amount,
+      sales_tax_total,
+      total_amount_in_words,
+      payment_Mode,
+      paymentInfo,
+      billing_address,
+      shipping_address,
+      shop_address,
+      product, // Directly use the product array
+      created_at,
+      order_no,
+      invoice_date,
+    };
+
+    // console.log("first", orderDetails);
+
     await this.mailerService.sendMail({
-      to: "rvarfa93@gmail.com",
+      to: "advisorsbiztech@gmail.com",
       from: '"Tilitso Purchase" <info@365dgrsol.in>',
       subject: 'Your Tilitso Order Confirmation. Please share your feedback',
       template: './invoiceToCustomer',
       context: {
-        email: "rvarfa93@gmail.com",
-        invoice: orderDetails.shop_address,
+        email: "advisorsbiztech@gmail.com",
+        // email: "rvarfa93@gmail.com",
+        invoice: orderDetails, // Pass the entire orderDetails object if the template expects to iterate over its properties
       },
     });
-  }catch(error){
-    console.error("Invoice sending failed to Customer", error)
+  } catch (error) {
+    console.error("Invoice sending failed to Customer", error);
   }
 }
 
@@ -230,20 +263,95 @@ async sendTransactionDeclined(user: User, products: any){
 }
 
   // Send Abandonment Cart Reminder Email
-async sendAbandonmenCartReminder(email: string, products: any) {
+// async sendAbandonmenCartReminder(email: string, products: any) {
   
-    try{
-      const productDetails = products.map((items: any) => ({
-        name: items.Name,
-        price: items.netPrice,
-        imageUrl: items.image
-    }));
-      const CartUrl = `https://www.tilitso.in/shop-cart`
-      console.log("mapped data", productDetails)
+//     try{
+//       const productDetails = products.map((items: any) => ({
+//         name: items.Name,
+//         price: items.netPrice,
+//         imageUrl: items.image
+//     }));
+//       const CartUrl = `https://www.tilitso.in/shop-cart`
+//       console.log("mapped data", productDetails)
+//       await this.mailerService.sendMail({
+//         to: email,
+//         from: '"Support Team" <info@365dgrsol.in>',
+//         subject: 'Don\'t forget your items! ️Your cart reminder from Tilitso',
+//         template: './abandonmentCartReminder',
+//         context: {
+//           email: email,
+//           products: productDetails,
+//           cartUrl: CartUrl,
+//         },
+//       });
+//     }catch(error){
+//       console.error("Email sending Failed", error)
+//     }
+//   }
+ 
+  // async sendAbandonmenCartReminder(email: string, products: any) {
+  //   console.log("==================+++++++++++",products);
+  // //  const productDetails = products
+  //     try{
+  //       // const {
+  //       //  name,
+  //       //  price,
+  //       //  image,
+  //       // } = products;
+
+  //       // const productDetails={
+  //       //   name,
+  //       //  price,
+  //       //  image,
+  //       // }
+
+  //       const productDetails = products.map((items: any) => ({
+  //         name: items.Name,
+  //         price: items.netPrice,
+  //         imageUrl: items.image
+  //     }));
+  //       const CartUrl = `https://www.tilitso.in/shop-cart`
+  //       console.log("mapped data----------------------", email, productDetails)
+  //       await this.mailerService.sendMail({
+  //         to: email,
+  //         from: '"Support Team" <info@365dgrsol.in>',
+  //         subject: 'Don\'t forget your items! ️ Your cart reminder from Tilitso',
+  //         template: './abandonmentCartReminder',
+  //         context: {
+  //           email: email,
+  //           products: productDetails,
+  //           cartUrl: CartUrl,
+  //         },
+  //       });
+  //     }catch(error){
+  //       console.error("Email sending Failed", error)
+  //     }
+  //   }
+  async sendAbandonmenCartReminder(email:any, products:any) {
+    console.log("==================+++++++++++", products);
+  
+    // Check if products is an array and has elements
+    if (!Array.isArray(products) || products.length === 0) {
+      console.error("Invalid or empty products array");
+      return; // Exit the function if products is not a valid array
+    }
+  
+    try {
+      // Correctly map product details, ensuring property names match
+      const productDetails = products.map(item => ({
+        name: item.name, // Assuming the correct property is 'name', not 'Name'
+        price: item.price, // Ensure 'netPrice' is the correct property name
+        imageUrl: item.image ,// Check if 'image' is the correct property for the image URL
+        slug:item.slug
+      }));
+  
+      const CartUrl = "https://www.tilitso.in/shop-cart";
+      console.log("mapped data----------------------", email, productDetails);
+  
       await this.mailerService.sendMail({
         to: email,
         from: '"Support Team" <info@365dgrsol.in>',
-        subject: 'Don\'t forget your items! ️ Your cart reminder from Tilitso',
+        subject: "Don't forget your items! ️ Your cart reminder from Tilitso",
         template: './abandonmentCartReminder',
         context: {
           email: email,
@@ -251,8 +359,9 @@ async sendAbandonmenCartReminder(email: string, products: any) {
           cartUrl: CartUrl,
         },
       });
-    }catch(error){
-      console.error("Email sending Failed", error)
+    } catch (error) {
+      console.error("Email sending Failed", error);
     }
   }
+  
 }

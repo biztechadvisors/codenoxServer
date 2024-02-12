@@ -8,6 +8,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
 import { Product } from '../entities/product.entity';
+import { User } from 'src/users/entities/user.entity';
 
 export enum ProductStatus {
   PUBLISH = 'publish',
@@ -31,6 +32,7 @@ export class GetProductsDto extends PaginationArgs {
   date_range?: string;
   language?: string;
   with: string;
+  userId?: number; 
 }
 
 export enum QueryProductsOrderByColumn {
