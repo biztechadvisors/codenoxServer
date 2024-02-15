@@ -47,11 +47,14 @@ export class Product extends CoreEntity {
   @ManyToMany(() => Variation, { cascade: true })
   @JoinTable()
   variation_options?: Variation[];
+
   @OneToMany(() => OrderProductPivot, orderProductPivot => orderProductPivot.product)
   pivot?: OrderProductPivot[];
-  @ManyToMany(() => Order, order => order.products, { eager: true, cascade: true })
+
+  @ManyToMany(() => Order, order => order.products)
   @JoinTable()
   orders: Order[];
+
   @ManyToOne(() => Shop, { eager: true, cascade: true })
   shop: Shop;
   @Column()
@@ -120,12 +123,15 @@ export class OrderProductPivot extends CoreEntity {
   @Column()
   subtotal: number;
   @ManyToOne(() => Product)
+  @JoinColumn()
   product: Product;
-  @ManyToOne(() => Order)
-  @JoinColumn({ name: 'order_id' })
-  order_id: Order;
+  @ManyToOne(() => Order, order => order.products)
+  @JoinColumn()
   order: Order;
+  @Column()
+  Ord_Id: number
 }
+
 
 @Entity()
 export class File extends CoreEntity {

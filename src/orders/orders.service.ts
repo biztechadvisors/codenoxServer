@@ -214,7 +214,8 @@ export class OrdersService {
               newPivot.unit_price = product.unit_price;
               newPivot.subtotal = product.subtotal;
               newPivot.variation_option_id = product.variation_option_id;
-              // newPivot.order_id = savedOrder;
+              newPivot.order = order;
+              newPivot.Ord_Id = order.id;
               const productEntity = productEntities.find(entity => entity.id === product.product_id);
               newPivot.product = productEntity;
               await this.orderProductPivotRepository.save(newPivot);
@@ -278,21 +279,21 @@ export class OrdersService {
       query = query.leftJoinAndSelect('order.shipping_address', 'shipping_address');
       query = query.leftJoinAndSelect('order.customer', 'customer');
       query = query.leftJoinAndSelect('order.products', 'products')
-        .leftJoinAndSelect('products.pivot', 'pivot');
-      query = query.leftJoinAndSelect('order.payment_intent', 'payment_intent');
-      query = query.leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info');
+        .leftJoinAndSelect('products.pivot', 'pivot')
+        .leftJoinAndSelect('products.variation_options', 'variation_options');
+      query = query.leftJoinAndSelect('order.payment_intent', 'payment_intent')
+        .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info');
       query = query.leftJoinAndSelect('order.shop', 'shop');
       query = query.leftJoinAndSelect('order.coupon', 'coupon');
 
-
       if (!(permsn && (permsn.type_name === 'Admin' || permsn.type_name === 'super_admin'))) {
-        // If user has other permissions, filter orders by customer_id
+        // If the user has other permissions, filter orders by customer_id
         const usrByIdUsers = await this.userRepository.find({
           where: { UsrBy: { id: usr.id } },
         });
 
         const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
-        query = query.andWhere('order.customer_id IN (:...userIds)', { userIds });
+        query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
       }
 
       // Handle additional filtering conditions
@@ -320,101 +321,109 @@ export class OrdersService {
         .take(limit)
         .getManyAndCount();
 
+      const results = await Promise.all(
+        data.map(async (order) => {
+          const products = await Promise.all(order.products.map(async (product) => {
+            // Fetch pivot data for the current product based on the Ord_Id
+            const pivot = await this.orderProductPivotRepository.findOne({
+              where: {
+                product: { id: product.id },
+                Ord_Id: order.id, // Use Ord_Id instead of order.id
+              },
+            });
 
-      const results = data.map((order) => {
-        return {
-          id: order.id,
-          tracking_number: order.tracking_number,
-          customer_id: order.customer_id,
-          customer_contact: order.customer_contact,
-          amount: order.amount,
-          sales_tax: order.sales_tax,
-          paid_total: order.paid_total,
-          total: order.total,
-          cancelled_amount: order?.cancelled_amount,
-          language: order?.language,
-          coupon_id: order.coupon,
-          parent_id: order?.parentOrder,
-          shop_id: order?.shop_id,
-          discount: order?.discount,
-          payment_gateway: order.payment_gateway,
-          shipping_address: order.shipping_address,
-          billing_address: order.billing_address,
-          logistics_provider: order.logistics_provider,
-          delivery_fee: order.delivery_fee,
-          delivery_time: order.delivery_time,
-          order_status: order.order_status,
-          payment_status: order.payment_status,
-          created_at: order.created_at,
-          payment_intent: order.payment_intent,
-          customer: {
-            id: order.customer.id,
-            name: order.customer.name,
-            email: order.customer.email,
-            email_verified_at: order.customer.email_verified_at,
-            created_at: order.customer.created_at,
-            updated_at: order.customer.updated_at,
-            is_active: order.customer.is_active,
-            shop_id: null
-          },
-          products: order.products.map(product => ({
-            id: product.id,
-            name: product.name,
-            slug: product.slug,
-            description: product.description,
-            type_id: product.type_id,
-            price: product.price,
-            shop_id: product.shop_id,
-            sale_price: product.sale_price,
-            language: product.language,
-            min_price: product.min_price,
-            max_price: product.max_price,
-            sku: product.sku,
-            quantity: product.quantity,
-            in_stock: product.in_stock,
-            is_taxable: product.is_taxable,
-            shipping_class_id: null,
-            status: product.status,
-            product_type: product.product_type,
-            unit: product.unit,
-            height: product.height ? product.height : null,
-            width: product.width ? product.width : null,
-            length: product.length ? product.length : null,
-            image: product.image,
-            video: null,
-            gallery: product.gallery,
-            deleted_at: null,
-            created_at: product.created_at,
-            updated_at: product.updated_at,
-            author_id: null,
-            manufacturer_id: null,
-            is_digital: 0,
-            is_external: 0,
-            external_product_url: null,
-            external_product_button_text: null,
-            ratings: product.ratings,
-            total_reviews: product.my_review,
-            rating_count: product.ratings,
-            my_review: product.my_review,
-            in_wishlist: product.in_wishlist,
-            blocked_dates: [],
-            translated_languages: product.translated_languages,
-            pivot: product.pivot && product.pivot.length > 0 ? {
-              order_id: product.pivot[0].order_id,
-              product_id: product.pivot[0].product?.id,
-              order_quantity: product.pivot[0].order_quantity,
-              unit_price: product.pivot[0].unit_price,
-              subtotal: product.pivot[0].subtotal,
-              variation_option_id: product.pivot[0].variation_option_id,
-              created_at: product.pivot[0].created_at,
-              updated_at: product.pivot[0].updated_at,
-            } : null,
-            variation_options: product.variation_options
-          })),
-          children: order.children,
-          wallet_point: order?.wallet_point
-        }
-      });
+            // If pivot is undefined, return null or handle appropriately
+            if (!pivot) {
+              return null; // Or handle this case appropriately
+            }
+
+            return {
+              id: product.id,
+              name: product.name,
+              slug: product.slug,
+              description: product.description,
+              type_id: product.type_id,
+              price: product.price,
+              shop_id: product.shop_id,
+              sale_price: product.sale_price,
+              language: product.language,
+              min_price: product.min_price,
+              max_price: product.max_price,
+              sku: product.sku,
+              quantity: product.quantity,
+              in_stock: product.in_stock,
+              is_taxable: product.is_taxable,
+              shipping_class_id: null,
+              status: product.status,
+              product_type: product.product_type,
+              unit: product.unit,
+              height: product.height ? product.height : null,
+              width: product.width ? product.width : null,
+              length: product.length ? product.length : null,
+              image: product.image,
+              video: null,
+              gallery: product.gallery,
+              deleted_at: null,
+              created_at: product.created_at,
+              updated_at: product.updated_at,
+              author_id: null,
+              manufacturer_id: null,
+              is_digital: 0,
+              is_external: 0,
+              external_product_url: null,
+              external_product_button_text: null,
+              ratings: product.ratings,
+              total_reviews: product.my_review,
+              rating_count: product.ratings,
+              my_review: product.my_review,
+              in_wishlist: product.in_wishlist,
+              blocked_dates: [],
+              translated_languages: product.translated_languages,
+              pivot: pivot, // Use the found pivot
+              variation_options: product.variation_options,
+            };
+          }));
+
+          return {
+            id: order.id,
+            tracking_number: order.tracking_number,
+            customer_id: order.customer_id,
+            customer_contact: order.customer_contact,
+            amount: order.amount,
+            sales_tax: order.sales_tax,
+            paid_total: order.paid_total,
+            total: order.total,
+            cancelled_amount: order?.cancelled_amount,
+            language: order?.language,
+            coupon_id: order.coupon,
+            shop_id: order?.shop_id,
+            discount: order?.discount,
+            payment_gateway: order.payment_gateway,
+            shipping_address: order.shipping_address,
+            billing_address: order.billing_address,
+            logistics_provider: order.logistics_provider,
+            delivery_fee: order.delivery_fee,
+            delivery_time: order.delivery_time,
+            order_status: order.order_status,
+            payment_status: order.payment_status,
+            created_at: order.created_at,
+            payment_intent: order.payment_intent,
+            customer: {
+              id: order.customer.id,
+              name: order.customer.name,
+              email: order.customer.email,
+              email_verified_at: order.customer.email_verified_at,
+              created_at: order.customer.created_at,
+              updated_at: order.customer.updated_at,
+              is_active: order.customer.is_active,
+              shop_id: null
+            },
+            products: products.filter(product => product !== null), // Exclude products for which pivot data could not be fetched
+            children: order.children,
+            wallet_point: order?.wallet_point
+          };
+        })
+      );
 
       const url = `/orders?search=${search}&limit=${limit}`;
 
@@ -464,7 +473,6 @@ export class OrdersService {
   }
 
   async getOrderByIdOrTrackingNumber(id: number): Promise<any> {
-
     try {
       const order = await this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
@@ -472,7 +480,7 @@ export class OrdersService {
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
-        .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info') // Add this line
+        .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
         .leftJoinAndSelect('order.shop', 'shop')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
         .leftJoinAndSelect('order.shipping_address', 'shipping_address')
@@ -487,7 +495,6 @@ export class OrdersService {
         throw new NotFoundException('Order not found');
       }
 
-      console.log("order-getOrders************", order)
       const transformedOrder = {
         id: order.id,
         tracking_number: order.tracking_number,
@@ -523,59 +530,67 @@ export class OrdersService {
           is_active: order.customer.is_active,
           shop_id: null
         },
-        products: order.products.map(product => ({
-          id: product.id,
-          name: product.name,
-          slug: product.slug,
-          description: product.description,
-          type_id: product.type_id,
-          price: product.price,
-          shop_id: product.shop_id,
-          sale_price: product.sale_price,
-          language: product.language,
-          min_price: product.min_price,
-          max_price: product.max_price,
-          sku: product.sku,
-          quantity: product.quantity,
-          in_stock: product.in_stock,
-          is_taxable: product.is_taxable,
-          shipping_class_id: null,
-          status: product.status,
-          product_type: product.product_type,
-          unit: product.unit,
-          height: product.height ? product.height : null,
-          width: product.width ? product.width : null,
-          length: product.length ? product.length : null,
-          image: product.image,
-          video: null,
-          gallery: product.gallery,
-          deleted_at: null,
-          created_at: product.created_at,
-          updated_at: product.updated_at,
-          author_id: null,
-          manufacturer_id: null,
-          is_digital: 0,
-          is_external: 0,
-          external_product_url: null,
-          external_product_button_text: null,
-          ratings: product.ratings,
-          total_reviews: product.my_review,
-          rating_count: product.ratings,
-          my_review: product.my_review,
-          in_wishlist: product.in_wishlist,
-          blocked_dates: [],
-          translated_languages: product.translated_languages,
-          pivot: product.pivot && product.pivot.length > 0 ? {
-            order_id: product.pivot[0].order_id,
-            product_id: product.pivot[0].product?.id,
-            order_quantity: product.pivot[0].order_quantity,
-            unit_price: product.pivot[0].unit_price,
-            subtotal: product.pivot[0].subtotal,
-            variation_option_id: product.pivot[0].variation_option_id,
-            created_at: product.pivot[0].created_at,
-            updated_at: product.pivot[0].updated_at,
-          } : null,
-          variation_options: product.variation_options
+        products: await Promise.all(order.products.map(async (product) => {
+          const pivot = product.pivot.find(p => p.Ord_Id === order.id);
+
+          if (!pivot || !product.id) {  // Ensure product.id is defined
+            return null;
+          }
+
+          return {
+            id: product.id,
+            name: product.name,
+            slug: product.slug,
+            description: product.description,
+            type_id: product.type_id,
+            price: product.price,
+            shop_id: product.shop_id,
+            sale_price: product.sale_price,
+            language: product.language,
+            min_price: product.min_price,
+            max_price: product.max_price,
+            sku: product.sku,
+            quantity: product.quantity,
+            in_stock: product.in_stock,
+            is_taxable: product.is_taxable,
+            shipping_class_id: null,
+            status: product.status,
+            product_type: product.product_type,
+            unit: product.unit,
+            height: product.height ? product.height : null,
+            width: product.width ? product.width : null,
+            length: product.length ? product.length : null,
+            image: product.image,
+            video: null,
+            gallery: product.gallery,
+            deleted_at: null,
+            created_at: product.created_at,
+            updated_at: product.updated_at,
+            author_id: null,
+            manufacturer_id: null,
+            is_digital: 0,
+            is_external: 0,
+            external_product_url: null,
+            external_product_button_text: null,
+            ratings: product.ratings,
+            total_reviews: product.my_review,
+            rating_count: product.ratings,
+            my_review: product.my_review,
+            in_wishlist: product.in_wishlist,
+            blocked_dates: [],
+            translated_languages: product.translated_languages,
+            pivot: {
+              order_id: pivot.Ord_Id,
+              product_id: product.id,
+              order_quantity: pivot.order_quantity,
+              unit_price: pivot.unit_price,
+              subtotal: pivot.subtotal,
+              variation_option_id: pivot.variation_option_id,
+              created_at: pivot.created_at,
+              updated_at: pivot.updated_at,
+            },
+            variation_options: product.variation_options,
+          };
         })),
         children: order.children,
         wallet_point: order.wallet_point
@@ -587,6 +602,7 @@ export class OrdersService {
       throw error;
     }
   }
+
 
   async getOrderStatuses({
     limit = 30,
