@@ -47,6 +47,42 @@ async resendUserConfirmation(user: User, token: string) {
       },
     })
   }
+// OTP for forgetPassword
+async forgetPasswordUserConfirmation(user: User, token: string) {
+  const url = `example.com/auth/confirm?token=${token}`
+
+  console.log('OTP:', user.otp)
+
+  await this.mailerService.sendMail({
+    to: user.email,
+    from: '"Support Team" <info@365dgrsol.in>', // override default from
+    subject: `Welcome to Tilitso! Confirm your Forgot OTP: ${user.otp}`,
+    template: './forgetPassWord', // `.hbs` extension is appended automatically
+    context: {
+      // ✏️ filling curly brackets with content
+      name: user.name,
+      otp: user.otp,
+      url,
+    },
+  })
+}
+
+// Successfully Register 
+async successfullyRegister(user: User ) {
+  await this.mailerService.sendMail({
+    to: user.email,
+    from: '"Support Team" <info@365dgrsol.in>',
+    subject: `Welcome to Our Platform! Confirm your registration.`,
+    template: './invoiceToVendor',
+    context: {
+      name: user.name,
+      email: user.email, // Including the email in the context
+      password: user.password, // Including the password in the context, be cautious with this approach
+      otp: user.otp,
+      // url,
+    },
+  });
+}
 
 // send Invoice Email to Vendor
 async sendInvoiceToVendor(user: User, products: any){

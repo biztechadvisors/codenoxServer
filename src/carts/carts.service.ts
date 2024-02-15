@@ -216,7 +216,7 @@ export class AbandonedCartService {
 //     console.log('Failed to send abandoned cart reminder emails');
 //   }
 // }
-@Interval(60000)
+@Interval(6000000)
 async sendAbandonedCartReminder() {
   // console.log("@working@")
   try {

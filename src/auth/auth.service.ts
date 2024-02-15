@@ -166,9 +166,10 @@ export class AuthService {
         write: p.write,
       })),
     }));
-
-
     console.log(formattedResult[0])
+
+    await this.mailService.successfullyRegister(userData);
+    
     return {
       token: access_token.access_token,
       type_name: [`${formattedResult[0].type_name}`],
@@ -279,7 +280,9 @@ export class AuthService {
       user.createdAt = new Date();
       await this.userRepository.save(user);
 
-      await this.mailService.sendUserConfirmation(user, token);
+      await this.mailService.forgetPasswordUserConfirmation(user, token);
+      
+      // await this.mailService.resendUserConfirmation(user, token);
       return {
         success: true,
         message: 'OTP sent to your email.',
