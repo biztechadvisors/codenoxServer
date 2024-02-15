@@ -90,7 +90,7 @@ export class OrdersController {
       default:
         throw new BadRequestException('Invalid payment gateway');
     }
-    this.ordersService.processChildrenOrder(order);
+    // this.ordersService.processChildrenOrder(order);
   }
 }
 

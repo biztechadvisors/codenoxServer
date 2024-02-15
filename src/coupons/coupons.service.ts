@@ -160,24 +160,24 @@ export class CouponsService {
     await this.couponRepository.remove(existingCoupons);
   }
 
-  async verifyCoupon(code: string): Promise<Coupon | null>{
-  
+  async verifyCoupon(code: string): Promise<Coupon | null> {
     const currentDate = new Date();
-  const coupon = await this.couponRepository.findOne({where:{ code:code }});
+    const coupon = await this.couponRepository.findOne({ where: { code: code } });
 
-  if (coupon && coupon.expire_at) {
-    const expirationDate = new Date(coupon.expire_at);
+    if (coupon && coupon.expire_at) {
+      const expirationDate = new Date(coupon.expire_at);
 
-    if (expirationDate > currentDate) {
-      return coupon;
-    } else {
-      return null;
+      if (expirationDate > currentDate) {
+        return coupon;
+      } else {
+        return null;
+      }
     }
-  }
 
-  return null;
+    return null;
   }
 }
+
 function paginate(totalItems: number, currentPage: number, pageSize: number, totalResults: number, url: string): pagination {
   const totalPages = Math.ceil(totalItems / pageSize);
 
