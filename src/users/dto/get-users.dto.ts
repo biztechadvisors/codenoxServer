@@ -14,6 +14,7 @@ export class GetUsersDto extends PaginationArgs {
   sortedBy?: SortOrder;
   text?: string;
   search?: string;
+  usrById?: string;
   type?: UserType;
 }
 
