@@ -18,5 +18,27 @@ export class AttributeValue extends CoreEntity {
 
   @ManyToOne(() => Attribute, (attribute) => attribute.values, { onDelete: 'CASCADE' })
   attribute: Attribute;
-  attribute_value_id: number | FindOperator<number>;
+
+  @Column()
+  attribute_value_id: number;
 }
+
+
+// @Entity()
+// export class AttributeValue extends CoreEntity {
+//   @PrimaryGeneratedColumn()
+//   id: number;
+
+//   @Column()
+//   shop_id: number;
+
+//   @Column()
+//   value: string;
+
+//   @Column()
+//   meta?: string;
+
+//   @ManyToOne(() => Attribute, (attribute) => attribute.values, { onDelete: 'CASCADE' })
+//   attribute: Attribute;
+//   attribute_value_id: number | FindOperator<number>;
+// }

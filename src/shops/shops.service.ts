@@ -4,7 +4,7 @@ import { ApproveShopDto, CreateShopDto } from './dto/create-shop.dto'
 import { UpdateShopDto } from './dto/update-shop.dto'
 import { PaymentInfo, Shop } from './entities/shop.entity'
 import Fuse from 'fuse.js'
-import { GetShopsDto } from './dto/get-shops.dto'
+import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto'
 import { paginate } from 'src/common/pagination/paginate'
 import { GetStaffsDto } from './dto/get-staffs.dto'
 import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository, ShopSocialsRepository } from './shops.repository'
@@ -162,22 +162,31 @@ export class ShopsService {
     }
   }
 
-  async getShops({ search, limit, page }: GetShopsDto) {
-    page = page || 1;
+  async getShops({ search, limit, page }: GetShopsDto): Promise<ShopPaginator> {
+    console.log(`${"search" + search + "page" + page + "limit" + limit}`)
+
+    page = page ? page : 1;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
     let data: Shop[] = await this.shopRepository.find({
       relations: [
         'balance',
+        'balance.shop',
+        'balance.dealer',
         'balance.payment_info',
         'settings',
         'settings.socials',
         'settings.location',
         'address',
         'owner',
+        'owner.profile',
+        'cover_image',
+        'logo',
+        'staffs',
       ],
     });
+
     if (search) {
       const fuse = new Fuse(data, {
         keys: ['name', 'id', 'slug', 'is_active', 'address.city', 'address.state', 'address.country'],
@@ -185,11 +194,87 @@ export class ShopsService {
       });
       const searchResults = fuse.search(search);
       data = searchResults.map(({ item }) => item);
+    } else {
+      // If no search query, return all shops
+      console.log("No search query, fetching all shops");
     }
 
-    const results = data.slice(startIndex, endIndex);
+    const results = search ? data.slice(startIndex, endIndex) : data;
+    const mappedResults = results.map((shop) => ({
+      created_at: shop.created_at,
+      updated_at: shop.updated_at,
+      id: shop.id,
+      owner_id: shop.owner_id,
+      is_active: shop.is_active,
+      orders_count: shop.orders_count,
+      products_count: shop.products_count,
+      name: shop.name,
+      slug: shop.slug,
+      description: shop.description,
+      gst_number: shop.gst_number,
+      balance: {
+        id: shop.balance.id,
+        admin_commission_rate: shop.balance.admin_commission_rate,
+        total_earnings: shop.balance.total_earnings,
+        withdrawn_amount: shop.balance.withdrawn_amount,
+        current_balance: shop.balance.current_balance,
+        shop: shop.balance.shop, // Adjust accordingly
+        dealer: null, // Update with actual dealer data if available
+        payment_info: {
+          id: shop.balance.payment_info.id,
+          account: shop.balance.payment_info.account,
+          name: shop.balance.payment_info.name,
+          email: shop.balance.payment_info.email,
+          bank: shop.balance.payment_info.bank,
+        },
+      },
+      settings: {
+        id: shop.settings.id,
+        contact: shop.settings.contact,
+        website: shop.settings.website,
+        socials: shop.settings.socials,
+        location: shop.settings.location,
+      },
+      address: {
+        id: shop.address.id,
+        street_address: shop.address.street_address,
+        country: shop.address.country,
+        city: shop.address.city,
+        state: shop.address.state,
+        zip: shop.address.zip,
+      },
+      owner: {
+        is_active: shop.owner.is_active,
+        created_at: shop.owner.created_at,
+        updated_at: shop.owner.updated_at,
+        id: shop.owner.id,
+        name: shop.owner.name,
+        email: shop.owner.email,
+        password: shop.owner.password,
+        otp: shop.owner.otp,
+        isVerified: shop.owner.isVerified,
+        shop_id: shop.owner.shop_id,
+        type: shop.owner.type,
+        walletPoints: shop.owner.walletPoints,
+        contact: shop.owner.contact,
+        email_verified_at: shop.owner.email_verified_at,
+        profile: shop.owner.profile, // Update with actual profile data if available
+      },
+      cover_image: {
+        id: shop.cover_image.id,
+        thumbnail: shop.cover_image.thumbnail,
+        original: shop.cover_image.original,
+      },
+      logo: {
+        id: shop.logo.id,
+        thumbnail: shop.logo.thumbnail,
+        original: shop.logo.original,
+      },
+      staffs: shop.staffs, // Update with actual staffs data if available
+    }));
+
     return {
-      data: results,
+      data: mappedResults as unknown as Shop[],
       ...paginate(data.length, page, limit, results.length, `/shops?search=${search}&limit=${limit}`),
     };
   }
@@ -212,26 +297,75 @@ export class ShopsService {
   }
 
   async getShop(slug: string): Promise<Shop | null> {
-    const existShop = await this.shopRepository.findOne({
-      where: { slug: slug },
-      relations: [
-        "balance",
-        "address",
-        "settings",
-        "cover_image",
-        "logo",
-        "balance.payment_info",
-        "settings.socials",
-        "settings.location",
-      ]
-    });
+    try {
+      const existShop = await this.shopRepository.findOne({
+        where: { slug: slug },
+        relations: [
+          'balance',
+          'balance.shop',
+          'balance.dealer',
+          'balance.payment_info',
+          'settings',
+          'settings.socials',
+          'settings.location',
+          'address',
+          'owner',
+          'owner.profile',
+          'cover_image',
+          'logo',
+          'staffs',
+        ],
+      });
 
-    if (!existShop) {
-      console.error("Shop Not Found");
+      if (!existShop) {
+        console.error("Shop Not Found");
+        return null;
+      }
+
+      // Map the retrieved shop data to the desired structure
+      const mappedShop: Shop = {
+        id: existShop.id,
+        owner_id: existShop.owner_id,
+        name: existShop.name,
+        slug: existShop.slug,
+        description: existShop.description,
+        cover_image: {
+          id: existShop.cover_image.id,
+          original: existShop.cover_image.original,
+          thumbnail: existShop.cover_image.thumbnail,
+        },
+        logo: {
+          id: existShop.logo.id,
+          original: existShop.logo.original,
+          thumbnail: existShop.logo.thumbnail,
+        },
+        is_active: existShop.is_active,
+        address: {
+          ...existShop.address,
+        },
+        settings: {
+          ...existShop.settings,
+        },
+        created_at: existShop.created_at,
+        updated_at: existShop.updated_at,
+        orders_count: existShop.orders_count,
+        products_count: existShop.products_count,
+        owner: {
+          ...existShop.owner,
+          profile: {
+            ...existShop.owner.profile,
+          },
+          walletPoints: 0,
+          contact: '', // Set an appropriate default value
+        },
+        gst_number: existShop.gst_number, // Include the missing property
+      };
+
+      return mappedShop;
+    } catch (error) {
+      console.error("Error fetching shop:", error.message);
       return null;
     }
-
-    return existShop;
   }
 
   async update(id: number, updateShopDto: UpdateShopDto): Promise<Shop> {

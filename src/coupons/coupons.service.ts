@@ -173,7 +173,6 @@ export class CouponsService {
         return null;
       }
     }
-
     return null;
   }
 }
