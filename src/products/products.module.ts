@@ -23,9 +23,10 @@ import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { DealerProductMarginRepository, DealerRepository, UserRepository } from 'src/users/users.repository';
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from 'src/users/entities/dealer.entity';
 import { User } from 'src/users/entities/user.entity';
+import { Tax } from 'src/taxes/entities/tax.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, OrderProductPivot, Variation, VariationOption, Attachment, Category, Shop, Type, Tag, AttributeValue, File, Dealer, DealerProductMargin, DealerCategoryMargin, User])],
+  imports: [TypeOrmModule.forFeature([Product, OrderProductPivot, Variation, VariationOption, Attachment, Category, Shop, Type, Tag, AttributeValue, File, Dealer, DealerProductMargin, DealerCategoryMargin, User, Tax])],
   controllers: [ProductsController, PopularProductsController],
   providers: [ProductsService, DealerProductMarginRepository, DealerProductMarginRepository, DealerRepository, UserRepository, ProductRepository, VariationOptionRepository, VariationRepository, OrderProductPivotRepository, AttachmentRepository, CategoryRepository, ShopRepository, TypeRepository, TagRepository, AttributeValueRepository, FileRepository],
 })

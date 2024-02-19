@@ -4,7 +4,7 @@ import exportOrderJson from '@db/order-export.json';
 import orderFilesJson from '@db/order-files.json';
 import orderInvoiceJson from '@db/order-invoice.json';
 import setting from '@db/settings.json';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { AuthService } from 'src/auth/auth.service';
 import { paginate } from 'src/common/pagination/paginate';
@@ -38,7 +38,7 @@ import {
   PaymentStatusType,
 } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository, UpdateResult } from 'typeorm';
+import { In, Repository, UpdateResult, getManager } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { OrderProductPivot, Product } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
@@ -47,6 +47,8 @@ import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { stateCode } from 'src/taxes/state_code.tax';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
+import { throwError } from 'rxjs';
+import { rejects, throws } from 'assert';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -85,6 +87,45 @@ export class OrdersService {
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>
   ) { }
+
+  async updateOrdQuantityProd(ordProducts: Product[]): Promise<void> {
+    const entityManager = this.productRepository.manager;
+
+    try {
+      if (!ordProducts || ordProducts.length === 0) {
+        throw new BadRequestException('Invalid input. No products provided.');
+      }
+
+      const productIds = ordProducts.map(product => product.id);
+      const productEntities = await this.productRepository.find({ where: { id: In(productIds) } });
+
+      if (productEntities.length === 0) {
+        throw new NotFoundException('Products not found');
+      }
+
+      for (const ordProduct of ordProducts) {
+        const productEntity = productEntities.find(entity => entity.id === ordProduct.id);
+
+        if (productEntity) {
+          // Validate that the order quantity does not exceed the available quantity
+          if (ordProduct.quantity > productEntity.quantity) {
+            throw new BadRequestException(`Order quantity exceeds available quantity for product ID ${productEntity.id}`);
+          }
+
+          // Update the product quantity by subtracting the order quantity
+          productEntity.quantity -= ordProduct.order_quantity;
+
+          // Save the updated product
+          await entityManager.save(productEntity);
+        }
+      }
+
+      console.log('Product quantities updated successfully');
+    } catch (error) {
+      console.error('Error updating product quantities:', error.message || error);
+      throw error;
+    }
+  }
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
@@ -226,12 +267,6 @@ export class OrdersService {
           throw new NotFoundException('Product not found');
         }
       }
-      if (order.coupon) {
-        const getCoupon = await this.couponRepository.findOne({ where: { id: order.coupon.id } });
-        if (getCoupon) {
-          order.coupon = getCoupon;
-        }
-      }
 
       if ([PaymentGatewayType.STRIPE, PaymentGatewayType.PAYPAL, PaymentGatewayType.RAZORPAY].includes(paymentGatewayType)) {
         const paymentIntent = await this.processPaymentIntent(order);
@@ -242,9 +277,37 @@ export class OrdersService {
       order.status = createdOrderStatus;
       order.children = this.processChildrenOrder(order);
 
+      if (createOrderInput.coupon_id) {
+        const getCoupon = await this.couponRepository.findOne({ where: { id: createOrderInput.coupon_id } });
+        if (getCoupon) {
+          order.coupon = getCoupon;
+        } else {
+          throw new NotFoundException('Coupon not found');
+        }
+      }
+
+      if (createOrderInput.shop_id) {
+        const getShop = await this.shopRepository.findOne({ where: { id: createOrderInput.shop_id } });
+        if (getShop) {
+          order.shop_id = getShop.id;
+          order.shop = getShop;
+        } else {
+          throw new NotFoundException('Coupon not found');
+        }
+      }
+
       const savedOrder = await this.orderRepository.save(order);
       newOrderFile.order_id = savedOrder.id;
       await this.orderFilesRepository.save(newOrderFile);
+
+      // Call the service method
+      try {
+        await this.updateOrdQuantityProd(order.products);
+        console.log('Product quantities updated successfully');
+      } catch (error) {
+        console.error('Error updating product quantities:', error.message || error);
+        throw error
+      }
 
       return savedOrder;
     } catch (error) {
@@ -280,6 +343,7 @@ export class OrdersService {
       query = query.leftJoinAndSelect('order.customer', 'customer');
       query = query.leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
+        .leftJoinAndSelect('products.taxes', 'taxes')
         .leftJoinAndSelect('products.variation_options', 'variation_options');
       query = query.leftJoinAndSelect('order.payment_intent', 'payment_intent')
         .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info');
@@ -379,6 +443,7 @@ export class OrdersService {
               in_wishlist: product.in_wishlist,
               blocked_dates: [],
               translated_languages: product.translated_languages,
+              taxes: product.taxes,
               pivot: pivot, // Use the found pivot
               variation_options: product.variation_options,
             };
@@ -426,7 +491,6 @@ export class OrdersService {
       );
 
       const url = `/orders?search=${search}&limit=${limit}`;
-
       return {
         data: results,
         ...paginate(totalCount, page, limit, results.length, url),
@@ -479,6 +543,7 @@ export class OrdersService {
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
+        .leftJoinAndSelect('products.taxes', 'taxes')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
         .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
         .leftJoinAndSelect('order.shop', 'shop')
@@ -579,6 +644,7 @@ export class OrdersService {
             in_wishlist: product.in_wishlist,
             blocked_dates: [],
             translated_languages: product.translated_languages,
+            taxes: product.taxes,
             pivot: {
               order_id: pivot.Ord_Id,
               product_id: product.id,
@@ -643,7 +709,6 @@ export class OrdersService {
       ...paginate(totalCount, page, limit, data.length, url),
     };
   }
-
 
   async getOrderStatus(param: string, language: string): Promise<OrderStatus> {
     const orderStatus = await this.orderStatusRepository.findOne({
@@ -744,8 +809,6 @@ export class OrdersService {
   private async findOrderStatusInDatabase(id: number): Promise<OrderStatus | undefined> {
     return this.orderStatusRepository.findOne({ where: { id: id } });
   }
-
-
 
   async verifyCheckout(input: CheckoutVerificationDto): Promise<VerifiedCheckoutData> {
     // Initialize variables

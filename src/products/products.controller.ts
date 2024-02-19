@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
+import { UpdateProductDto, UpdateQuantityDto } from './dto/update-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { Product } from './entities/product.entity';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
@@ -38,10 +38,19 @@ export class ProductsController {
     return this.productsService.getProductBySlug(slug, id);
   }
 
-
   @Put(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.productsService.update(+id, updateProductDto);
+  }
+
+  @Post(':id')
+  async updateQuantity(@Param('id') id: string, @Body() updateQuantityDto: UpdateQuantityDto) {
+    try {
+      await this.productsService.updateQuantity(+id, updateQuantityDto);
+      return { message: 'Quantity updated successfully' };
+    } catch (err) {
+      return { error: err.message || 'Internal Server Error' };
+    }
   }
 
   @Delete(':id')

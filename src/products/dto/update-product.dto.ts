@@ -5,3 +5,7 @@ import { CreateProductDto } from './create-product.dto';
 export class UpdateProductDto extends PartialType(CreateProductDto) {
     pivot: any;
 }
+
+export class UpdateQuantityDto {
+    quantity: any;
+}

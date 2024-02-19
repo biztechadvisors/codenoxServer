@@ -8,45 +8,92 @@ import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany
 @Entity()
 export class Category extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
   @Column()
-  name: string
+  name: string;
 
   @Column()
-  slug: string
+  slug: string;
 
   @OneToOne(() => Category, { nullable: true })
   @JoinColumn()
-  parent?: Category
+  parent?: Category;
 
-  @OneToMany(() => Category, category => category.parent)
+  @OneToMany(() => Category, (category) => category.parent)
   children?: Category[];
 
   @Column()
-  details?: string
+  details?: string;
 
-  @ManyToOne(() => Attachment, { eager: true }) // assuming you want to eagerly load the image
+  @ManyToOne(() => Attachment, { eager: true })
   @JoinColumn()
   image?: Attachment;
 
   @Column()
-  icon?: string
+  icon?: string;
 
   @ManyToOne(() => Type)
   @JoinColumn()
-  type?: Type
+  type?: Type;
 
-  @ManyToMany(() => Product, product => product.categories)
+  @ManyToMany(() => Product, (product) => product.categories)
   @JoinTable()
   products: Product[];
 
   @Column()
-  language: string
+  language: string;
 
   @Column({ type: 'json' })
-  translated_languages: string[]
+  translated_languages: string[];
 
   @Column()
-  products_count: number
+  products_count: number;
 }
+
+
+// @Entity()
+// export class Category extends CoreEntity {
+//   @PrimaryGeneratedColumn()
+//   id: number
+
+//   @Column()
+//   name: string
+
+//   @Column()
+//   slug: string
+
+//   @OneToOne(() => Category, { nullable: true })
+//   @JoinColumn()
+//   parent?: Category
+
+//   @OneToMany(() => Category, category => category.parent)
+//   children?: Category[];
+
+//   @Column()
+//   details?: string
+
+//   @ManyToOne(() => Attachment, { eager: true }) // assuming you want to eagerly load the image
+//   @JoinColumn()
+//   image?: Attachment;
+
+//   @Column()
+//   icon?: string
+
+//   @ManyToOne(() => Type)
+//   @JoinColumn()
+//   type?: Type
+
+//   @ManyToMany(() => Product, product => product.categories)
+//   @JoinTable()
+//   products: Product[];
+
+//   @Column()
+//   language: string
+
+//   @Column({ type: 'json' })
+//   translated_languages: string[]
+
+//   @Column()
+//   products_count: number
+// }
