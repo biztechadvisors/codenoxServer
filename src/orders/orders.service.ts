@@ -88,15 +88,14 @@ export class OrdersService {
     private readonly permissionRepository: Repository<Permission>
   ) { }
 
-  async updateOrdQuantityProd(ordProducts: Product[]): Promise<void> {
+  async updateOrdQuantityProd(ordProducts: any[]): Promise<void> {
     const entityManager = this.productRepository.manager;
-
     try {
       if (!ordProducts || ordProducts.length === 0) {
         throw new BadRequestException('Invalid input. No products provided.');
       }
 
-      const productIds = ordProducts.map(product => product.id);
+      const productIds = ordProducts.map(product => product.product_id);
       const productEntities = await this.productRepository.find({ where: { id: In(productIds) } });
 
       if (productEntities.length === 0) {
@@ -104,11 +103,11 @@ export class OrdersService {
       }
 
       for (const ordProduct of ordProducts) {
-        const productEntity = productEntities.find(entity => entity.id === ordProduct.id);
+        const productEntity = productEntities.find(entity => entity.id === ordProduct.product_id);
 
         if (productEntity) {
           // Validate that the order quantity does not exceed the available quantity
-          if (ordProduct.quantity > productEntity.quantity) {
+          if (ordProduct.order_quantity > productEntity.quantity) {
             throw new BadRequestException(`Order quantity exceeds available quantity for product ID ${productEntity.id}`);
           }
 
@@ -187,6 +186,7 @@ export class OrdersService {
           .map(product_id => this.productRepository.findOne({ where: { id: product_id } }))
       );
 
+      console.log("order*******", order)
       const orderData = {
         order_id: Invoice,
         order_date: new Date().toISOString(),
@@ -299,15 +299,6 @@ export class OrdersService {
       const savedOrder = await this.orderRepository.save(order);
       newOrderFile.order_id = savedOrder.id;
       await this.orderFilesRepository.save(newOrderFile);
-
-      // Call the service method
-      try {
-        await this.updateOrdQuantityProd(order.products);
-        console.log('Product quantities updated successfully');
-      } catch (error) {
-        console.error('Error updating product quantities:', error.message || error);
-        throw error
-      }
 
       return savedOrder;
     } catch (error) {
