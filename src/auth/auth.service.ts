@@ -100,6 +100,9 @@ export class AuthService {
 
 
   async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
+
+    console.log("createUserInput*******", createUserInput)
+
     const existingUser = await this.userRepository.findOne({
       where: { email: createUserInput.email },
     });
@@ -127,10 +130,11 @@ export class AuthService {
     const userData = new User();
     userData.name = createUserInput.name;
     userData.email = createUserInput.email;
+    userData.contact = createUserInput.contact;
     userData.password = hashPass;
-    userData.type = createUserInput.type || UserType.Customer; // Use specified type or default to UserType.Customer
+    userData.type = createUserInput.type || UserType.Customer;
     userData.created_at = new Date();
-    userData.UsrBy = createUserInput.UsrBy; // Save the registerer who is registering it
+    userData.UsrBy = createUserInput.UsrBy;
 
     if (userData.type !== UserType.Customer) {
       userData.isVerified = true;
