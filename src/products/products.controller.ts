@@ -27,6 +27,7 @@ export class ProductsController {
 
   @Get()
   async getProducts(@Query() query: GetProductsDto): Promise<ProductPaginator> {
+    console.log("query******", query)
     return this.productsService.getProducts(query);
   }
 
@@ -35,6 +36,8 @@ export class ProductsController {
     @Param('slug') slug: string,
     @Param('id') id: number
   ): Promise<Product> {
+
+    console.log("slug, id**************", slug, id)
     return this.productsService.getProductBySlug(slug, id);
   }
 

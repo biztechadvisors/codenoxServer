@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
@@ -28,7 +28,7 @@ import items from 'razorpay/dist/types/items';
 import { clearConfigCache } from 'prettier';
 import { Brackets, Repository } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
-
+import { Cron } from '@nestjs/schedule';
 
 const options = {
   keys: [
@@ -46,6 +46,7 @@ const options = {
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
 
   constructor(
     @InjectRepository(Product) private readonly productRepository: ProductRepository,
@@ -66,20 +67,39 @@ export class ProductsService {
     @InjectRepository(Tax) private readonly taxRepository: Repository<Tax>,
   ) { }
 
+  // Run this method when the application starts
+  async onModuleInit() {
+    this.logger.debug('ProductService initialized');
+    await this.updateProductStockStatus();
+  }
+
+  @Cron('0 * * * *')
+  async updateProductStockStatus() {
+    try {
+      this.logger.debug('Updating product stock status...');
+
+      const products = await this.productRepository.find();
+
+      for (const product of products) {
+        // Assume that 'in_stock' is a boolean property of the Product entity
+        product.in_stock = product.quantity > 0;
+      }
+
+      await this.productRepository.save(products);
+
+      this.logger.debug('Product stock status updated successfully');
+    } catch (err) {
+      // Handle errors appropriately
+      this.logger.error('Error updating product stock status:', err.message || err);
+    }
+  }
   async updateShopProductsCount(shopId: number, productId: number) {
     try {
-
-      console.log("shopId*********", shopId)
-      console.log("productId*********", productId)
-
-
       const shop = await this.shopRepository.findOne({ where: { id: shopId } });
       if (!shop) {
         throw new NotFoundException(`Shop with ID ${shopId} not found`);
       }
-
       const product = await this.productRepository.findOne({ where: { id: productId } });
-
       if (product) {
         // Product found, increase the products_count for the shop
         shop.products_count += 1;
@@ -87,7 +107,6 @@ export class ProductsService {
         // Product not found, decrease the products_count (if it's greater than 0)
         shop.products_count -= 1;
       }
-
       // Save the updated shop
       await this.shopRepository.save(shop);
     } catch (err) {

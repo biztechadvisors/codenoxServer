@@ -128,6 +128,7 @@ export class OrdersService {
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
+      console.log("createOrderInput**********", createOrderInput)
       const order = plainToClass(Order, createOrderInput);
       const newOrderStatus = new OrderStatus();
       const newOrderFile = new OrderFiles();
@@ -653,6 +654,7 @@ export class OrdersService {
         wallet_point: order.wallet_point
       };
 
+      console.log("transformedOrder************", transformedOrder)
       return transformedOrder;
     } catch (error) {
       console.error('Error in getOrderByIdOrTrackingNumber:', error);
