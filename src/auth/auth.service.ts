@@ -134,13 +134,13 @@ export class AuthService {
     userData.created_at = new Date();
     userData.UsrBy = createUserInput.UsrBy; // Save the registerer who is registering it
 
-    if (userData.type !== UserType.Customer) {
+    if (createUserInput.type !== UserType.Customer || createUserInput.UsrBy.type === UserType.Dealer) {
       userData.isVerified = true;
     }
 
     await this.userRepository.save(userData);
 
-    if (userData.type === UserType.Customer) {
+    if (userData.type === UserType.Customer && createUserInput.UsrBy.type === null || undefined) {
       const token = Math.floor(100 + Math.random() * 900).toString();
       // Send confirmation email for customers
       await this.mailService.sendUserConfirmation(userData, token);
@@ -182,6 +182,9 @@ export class AuthService {
         write: p.write,
       })),
     }));
+    console.log(formattedResult[0])
+
+    await this.mailService.successfullyRegister(userData);
 
     return {
       token: access_token.access_token,
@@ -295,7 +298,7 @@ export class AuthService {
       user.created_at = new Date();
       await this.userRepository.save(user);
 
-      await this.mailService.sendUserConfirmation(user, token);
+      await this.mailService.forgetPasswordUserConfirmation(user, token);
       return {
         success: true,
         message: 'OTP sent to your email.',
