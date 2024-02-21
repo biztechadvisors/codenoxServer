@@ -22,6 +22,7 @@ import { OrderProductPivotRepository } from 'src/products/products.repository';
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { HttpModule } from '@nestjs/axios';
+import { MailService } from 'src/mail/mail.service';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 
@@ -43,7 +44,7 @@ import { Permission } from 'src/permission/entities/permission.entity';
     DownloadInvoiceController,
     ShiprocketController,
   ],
-  providers: [OrdersService, ShiprocketService],
+  providers: [OrdersService, ShiprocketService, MailService],
   exports: [OrdersService],
 })
 export class OrdersModule { }
