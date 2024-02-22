@@ -71,8 +71,6 @@ export class User extends CoreEntity {
   @JoinColumn({ name: "permission_id" })
   type?: Permission;
 
-  // @Column()
-  // type: UserType;
 
   @Column()
   walletPoints: number;

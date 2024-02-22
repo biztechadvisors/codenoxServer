@@ -23,6 +23,7 @@ import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
+import { error } from 'console';
 
 @Injectable()
 export class AuthService {
@@ -50,7 +51,7 @@ export class AuthService {
   }
 
   async verifyOtp(otp: number): Promise<boolean> {
-    const user = await this.userRepository.findOne({ where: { otp } });
+    const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
 
     if (!user) {
       return false;
@@ -104,7 +105,7 @@ export class AuthService {
     console.log("createUserInput*******", createUserInput)
 
     const existingUser = await this.userRepository.findOne({
-      where: { email: createUserInput.email },
+      where: { email: createUserInput.email }, relations: ['type']
     });
 
     const usr_type = await this.permissionRepository.findOneBy(existingUser)
@@ -196,28 +197,31 @@ export class AuthService {
   }
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
-    const user = await this.userRepository.findOne({ where: { email: loginInput.email } });
+    const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
+
+    console.log("user#######*********202", user)
 
     if (!user || !user.isVerified) {
       return {
         message: 'User Is Not Registered!',
       };
     }
-    const usr_type = await this.permissionRepository.findOneBy(user)
 
-    const permission = await this.permissionRepository.findOne({ where: { permission_name: usr_type.permission_name } });
+    console.log("user.type*********208", user.type)
+    const permission = await this.permissionRepository.findOneBy(user.type);
 
-    let access_token: { access_token: string }; // Move the declaration here
+    let access_token: { access_token: string };
 
     if (!permission || permission.id === null) {
       access_token = await this.signIn(loginInput.email, loginInput.password);
-
+      console.log("first**********213")
       return {
         token: access_token.access_token,
         permissions: ['customer', 'admin'],
       };
     }
 
+    console.log("permission*******221", permission)
     access_token = await this.signIn(loginInput.email, loginInput.password);
 
     const result = await this.permissionRepository
@@ -234,6 +238,8 @@ export class AuthService {
       ])
       .getMany();
 
+    console.log("result---236**************", result)
+
     const formattedResult = result.map((permission) => ({
       id: permission.id,
       type_name: permission.type_name,
@@ -245,6 +251,8 @@ export class AuthService {
       })),
     }));
 
+    console.log("formattedResult---249**************", formattedResult)
+
     return {
       token: access_token.access_token,
       type_name: [`${formattedResult[0].type_name}`],
@@ -255,7 +263,7 @@ export class AuthService {
   async changePassword(
     changePasswordInput: ChangePasswordDto,
   ): Promise<{ message: string } | CoreResponse> {
-    const user = await this.userRepository.findOne({ where: { email: changePasswordInput.email } })
+    const user = await this.userRepository.findOne({ where: { email: changePasswordInput.email }, relations: ['type'] })
 
     if (!user) {
       return {
@@ -284,7 +292,7 @@ export class AuthService {
   }
 
   async forgetPassword(forgetPasswordInput: ForgetPasswordDto): Promise<CoreResponse> {
-    const user = await this.userRepository.findOne({ where: { email: forgetPasswordInput.email } });
+    const user = await this.userRepository.findOne({ where: { email: forgetPasswordInput.email }, relations: ['type'] });
 
     if (!user) {
       return {
@@ -319,7 +327,7 @@ export class AuthService {
   async verifyForgetPasswordToken(verifyForgetPasswordTokenInput: VerifyForgetPasswordDto): Promise<CoreResponse> {
 
     console.log("verifyForgetPasswordTokenInput***", verifyForgetPasswordTokenInput)
-    const existEmail = await this.userRepository.findOne({ where: { email: verifyForgetPasswordTokenInput.email } });
+    const existEmail = await this.userRepository.findOne({ where: { email: verifyForgetPasswordTokenInput.email }, relations: ['type'] });
 
     if (!existEmail) {
       return {
@@ -347,7 +355,7 @@ export class AuthService {
   async resetPassword(resetPasswordInput: ResetPasswordDto): Promise<CoreResponse> {
     console.log("resetPasswordInput****", resetPasswordInput)
 
-    const user = await this.userRepository.findOne({ where: { email: resetPasswordInput.email } });
+    const user = await this.userRepository.findOne({ where: { email: resetPasswordInput.email }, relations: ['type'] });
 
     console.log("user****reset", user)
     if (!user) {
@@ -499,7 +507,7 @@ export class AuthService {
   async me(email: string, id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: email ? { email: email } : { id: id },
-      relations: ["profile", "address", "shops", "orders", "profile.socials", "address.address", "dealer"]
+      relations: ["profile", "address", "shops", "orders", "profile.socials", "address.address", "dealer", "type"]
     });
     if (!user) {
       throw new NotFoundException(`User with email ${email} and id ${id} not found`);

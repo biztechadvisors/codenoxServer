@@ -63,7 +63,7 @@ export class ShopsService {
     const newBalance = new Balance();
     const newSetting = new ShopSettings();
     try {
-      const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
+      const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id }, relations: ['type'] });
       const usr_type = await this.permissionRepository.findOneBy(userToUpdate)
 
       // Check if the user exists and is a vendor
@@ -146,7 +146,7 @@ export class ShopsService {
         shp.managed_shop = shop;
 
         // Find the user by id
-        const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
+        const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id }, relations: ['type'] });
 
         // If the user exists, update the fields
         if (userToUpdate) {

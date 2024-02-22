@@ -34,7 +34,7 @@ export class AnalyticsService {
 
   async findAll(customerId: number, state: string): Promise<AnalyticsResponseDTO> {
     try {
-      const user = await this.userRepository.findOne({ where: { id: customerId } });
+      const user = await this.userRepository.findOne({ where: { id: customerId }, relations: ['type'] });
       console.log("customerId*******", user)
 
       if (!user) {
