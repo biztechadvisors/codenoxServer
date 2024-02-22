@@ -21,6 +21,8 @@ import { ShopSettings } from './entities/shopSettings.entity'
 import { AddressesService } from 'src/addresses/addresses.service'
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto'
 import { UserAddressRepository } from 'src/addresses/addresses.repository'
+import { Permission } from 'src/permission/entities/permission.entity'
+import { Repository } from 'typeorm'
 
 @Injectable()
 export class ShopsService {
@@ -45,6 +47,8 @@ export class ShopsService {
     private readonly userRepository: UserRepository,
     @InjectRepository(Attachment)
     private readonly attachmentRepository: AttachmentRepository,
+    @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
+
     private readonly addressesService: AddressesService,
   ) { }
 
@@ -60,8 +64,10 @@ export class ShopsService {
     const newSetting = new ShopSettings();
     try {
       const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id } });
+      const usr_type = await this.permissionRepository.findOneBy(userToUpdate)
+
       // Check if the user exists and is a vendor
-      if (!userToUpdate && userToUpdate.type !== UserType.Vendor) {
+      if (!userToUpdate && usr_type.type_name !== UserType.Vendor) {
         throw new Error('User does not exist or is not a vendor');
       }
       let addressId;

@@ -1,16 +1,17 @@
 /* eslint-disable prettier/prettier */
 import { PartialType, PickType } from '@nestjs/swagger';
 import { CoreMutationOutput } from 'src/common/dto/core-mutation-output.dto';
+import { Permission } from 'src/permission/entities/permission.entity';
 import { User } from 'src/users/entities/user.entity';
 
-enum Permission {
-  SUPER_ADMIN = 'Super admin',
-  STORE_OWNER = 'Store owner',
-  STAFF = 'Staff',
-  CUSTOMER = 'Customer',
-}
+// enum Permission {
+//   SUPER_ADMIN = 'Super admin',
+//   STORE_OWNER = 'Store owner',
+//   STAFF = 'Staff',
+//   CUSTOMER = 'Customer',
+// }
 export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type', 'UsrBy', 'contact']) {
-  permission: Permission = Permission.CUSTOMER;
+  permission: Permission
   isVerified: boolean;
 }
 

@@ -325,7 +325,7 @@ export class OrdersService {
 
       // Fetch permissions for the user
       const permsn = await this.permissionRepository.findOne({
-        where: { permission_name: usr.type },
+        where: { permission_name: usr.type.permission_name },
       });
 
       let query = this.orderRepository.createQueryBuilder('order');

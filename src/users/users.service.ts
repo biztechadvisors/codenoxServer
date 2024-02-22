@@ -31,7 +31,8 @@ import { AuthService } from 'src/auth/auth.service';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
-import { Equal, FindManyOptions, FindOptionsWhere } from 'typeorm';
+import { Equal, FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
+import { Permission } from 'src/permission/entities/permission.entity';
 
 const users = plainToClass(User, usersJson);
 
@@ -55,6 +56,8 @@ export class UsersService {
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
     @InjectRepository(Social) private readonly socialRepository: SocialRepository,
+    @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
+
     private readonly authService: AuthService,
     private readonly addressesService: AddressesService,
 
@@ -74,7 +77,7 @@ export class UsersService {
     registerDto.email = createUserDto.email;
     registerDto.password = createUserDto.password;
     registerDto.isVerified = createUserDto.isVerified;
-    registerDto.type = createUserDto.type ? createUserDto.type : UserType.Customer;
+    registerDto.type = createUserDto.type;
 
     await this.authService.register(registerDto);
 
@@ -297,7 +300,9 @@ export class UsersService {
       throw new NotFoundException(`User with id ${user_id} not found`);
     }
 
-    user.type = UserType.Admin;
+    const usr_type = await this.permissionRepository.findOneBy(user)
+
+    usr_type.type_name = UserType.Admin;
 
     await this.userRepository.save(user);
 
@@ -340,7 +345,9 @@ export class UsersService {
   async createDealer(dealerData: DealerDto) {
     const user = await this.userRepository.findOne({ where: { id: dealerData.user.id } });
 
-    if (!user && user.type === UserType.Dealer) {
+    const usr_type = await this.permissionRepository.findOneBy(user)
+
+    if (!user && usr_type.type_name !== UserType.Dealer) {
       throw new NotFoundException(`User with ID ${dealerData.user} not found`);
     }
 
