@@ -42,7 +42,7 @@ export class AnalyticsService {
       }
 
       const userPermissions = await this.permissionRepository.findOne({
-        where: { permission_name: user.type },
+        where: { permission_name: user.type.permission_name },
       });
       console.log("userPermissions***", userPermissions)
       if (!(userPermissions && ['Admin', 'super_admin', 'dealer', 'Vendor'].includes(userPermissions.type_name))) {
@@ -119,39 +119,63 @@ export class AnalyticsService {
     }
   }
 
-  private async calculateTotalShops(permissionName: string, state: string): Promise<number | null> {
+  // private async calculateTotalShops(permissionName: string, state: string): Promise<number> {
+
+  //   state = "MADHYA PRADESH"
+  //   try {
+  //     let query = this.shopRepository.createQueryBuilder('shop');
+
+  //     if (state && state.trim() !== '' && permissionName !== 'super_admin' && permissionName !== 'Admin') {
+  //       console.log("state***************", state)
+  //       query = query
+  //         .innerJoin('shop.owner', 'owner')
+  //         .innerJoin('shop.address', 'address')
+  //         .where({
+  //           // 'owner.permissionName': permissionName,
+  //           'address.state': state,
+  //         });
+  //     }
+
+  //     const totalShops = await query
+  //       .select('COUNT(DISTINCT shop.id)', 'totalShops')
+  //       .getRawOne()
+  //       .then(result => result.totalShops);
+
+  //     return totalShops;
+  //   } catch (error) {
+  //     console.error('Error calculating total shops:', error.message);
+  //     return 0;
+  //   }
+  // }
+
+  private async calculateTotalShops(permissionName: string, state: string): Promise<number> {
+    console.log("state***************", state);
+
+    state = "MADHYA PRADESH";
     try {
-      let query = this.shopRepository.createQueryBuilder('shop');
+      let condition: any = {};
 
-      if (permissionName === 'super_admin' || permissionName === 'Admin') {
-        query = query
-          .innerJoin('shop.owner', 'owner')
-          .innerJoin('owner.address', 'owner_address')
-          .innerJoin('shop.shipping_address', 'shipping_address');
-
-        if (state && state.trim() !== '') {
-          query = query.where({
-            'owner_address.state': state,
-          });
-        }
-      } else {
-        return null; // Return null for non-admin and non-super_admin permissions
+      if (state && state.trim() !== '' && permissionName !== 'super_admin' && permissionName !== 'Admin') {
+        condition = {
+          owner: { permissionName: permissionName },
+          address: { state: state },
+        };
+      } else if (permissionName === 'super_admin' || permissionName === 'Admin') {
+        condition = {
+          owner: { permissionName: permissionName },
+        };
       }
 
-      const totalShops = await query
-        .select('COUNT(DISTINCT shop.id)', 'totalShops')
-        .getRawOne()
-        .then(result => result.totalShops || 0);
+      const [shops, totalShops] = await this.shopRepository.findAndCount({
+        where: condition,
+      });
 
-      console.log("totalShops*****", totalShops);
       return totalShops;
     } catch (error) {
       console.error('Error calculating total shops:', error.message);
-      return null; // Return null in case of an error
+      return 0;
     }
   }
-
-
 
   private async calculateTodaysRevenue(userId: number, permissionName: string, state: string): Promise<number> {
     try {

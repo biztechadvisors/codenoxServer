@@ -107,6 +107,8 @@ export class AuthService {
       where: { email: createUserInput.email },
     });
 
+    const usr_type = await this.permissionRepository.findOneBy(existingUser)
+
     if (existingUser) {
       const otp = await this.generateOtp();
       const token = Math.floor(100 + Math.random() * 900).toString();
@@ -116,7 +118,8 @@ export class AuthService {
 
       await this.userRepository.save(existingUser);
 
-      if (existingUser.type === UserType.Customer) {
+
+      if (usr_type.type_name === UserType.Customer) {
         // Send confirmation email for customers
         await this.mailService.sendUserConfirmation(existingUser, token);
       }
@@ -132,17 +135,17 @@ export class AuthService {
     userData.email = createUserInput.email;
     userData.contact = createUserInput.contact;
     userData.password = hashPass;
-    userData.type = createUserInput.type || UserType.Customer;
+    userData.type = createUserInput.permission;
     userData.created_at = new Date();
     userData.UsrBy = createUserInput.UsrBy;
 
-    if (userData.type !== UserType.Customer) {
+    if (usr_type.type_name !== UserType.Customer) {
       userData.isVerified = true;
     }
 
     await this.userRepository.save(userData);
 
-    if (userData.type === UserType.Customer) {
+    if (usr_type.type_name === UserType.Customer) {
       const token = Math.floor(100 + Math.random() * 900).toString();
       // Send confirmation email for customers
       await this.mailService.sendUserConfirmation(userData, token);
@@ -152,7 +155,7 @@ export class AuthService {
 
     // Fetch permissions based on user type
     let result = [];
-    if (userData.type !== UserType.Customer) {
+    if (usr_type.type_name !== UserType.Customer) {
       result = await this.permissionRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissions')
@@ -200,8 +203,9 @@ export class AuthService {
         message: 'User Is Not Registered!',
       };
     }
+    const usr_type = await this.permissionRepository.findOneBy(user)
 
-    const permission = await this.permissionRepository.findOne({ where: { permission_name: user.type } });
+    const permission = await this.permissionRepository.findOne({ where: { permission_name: usr_type.permission_name } });
 
     let access_token: { access_token: string }; // Move the declaration here
 

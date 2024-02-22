@@ -18,7 +18,6 @@ export class AddressesService {
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
   ) { }
 
-
   async create(createAddressDto: CreateAddressDto): Promise<Address> {
 
     // Create a new UserAddress with the provided data
