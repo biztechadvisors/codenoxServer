@@ -50,7 +50,7 @@ export class ShopsService {
 
   private shops: Shop[] = []
 
-  async convertToSlug(text) {
+  async convertToSlug(text:any) {
     return await convertToSlug(text)
   }
 

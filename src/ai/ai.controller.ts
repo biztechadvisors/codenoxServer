@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Body, Controller, Post } from '@nestjs/common'
 import { AiService } from './ai.service'
 import { CreateAiDto } from './dto/create-ai.dto'

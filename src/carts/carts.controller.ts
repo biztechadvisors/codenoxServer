@@ -37,8 +37,11 @@ export class AbandonedCartController {
   async removeProductFromCart(
   //  @Param('id') id: number,
    @Param('itemId') itemId: string,
-   @Query() query: { quantity?: number, email?: string  },
-  ): Promise<{ message: string; status: boolean; }> {
+   @Query() query: { quantity: number, email: string },
+  )
+  // : Promise<{ message: string; status: boolean; }> 
+  {
+    console.log("+====================", itemId, query.email, query.quantity)
     return await this.abandonedCartService.delete(itemId, query); 
       //  { message: 'cart deleted successfully', status: true}
   }

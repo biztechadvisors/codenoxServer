@@ -344,11 +344,13 @@ export class ProductsService {
         relations: [
           'dealerProductMargins',
           'dealerProductMargins.product', 
+          'dealerProductMargins.product.tags', 
           'dealerProductMargins.product.variations', 
           'dealerProductMargins.product.variations.attribute', 
           'dealerProductMargins.product.variation_options.options', 
           'dealerProductMargins.product.related_products',
           'dealerProductMargins.product.type',
+          // 'dealerProductMargins.product.image', 
           'dealerCategoryMargins.category',
           'dealerCategoryMargins.category.products',
           'dealerCategoryMargins.category.products.variations', 
@@ -356,6 +358,7 @@ export class ProductsService {
           'dealerCategoryMargins.category.products.variation_options.options', 
           'dealerCategoryMargins.category.products.related_products',
           'dealerCategoryMargins.category.products.type',
+          
         ]
       })
  
@@ -366,15 +369,17 @@ export class ProductsService {
         if(dealer.dealerProductMargins){
 
           for(const findprod of dealer.dealerProductMargins){
+            let productWithMargin: any
+            if(findprod.product.slug === product.slug){
             const { product, margin } = findprod;
-              const productWithMargin = {
+            console.log("findPorduct", findprod.product.categories)
+               productWithMargin = {
               ...product,
               margin: margin,
             };
-
+            console.log("dealerproduct", productWithMargin)
             //checking for particular product
-            if(productWithMargin.slug === product.slug){
-              
+            
               //assign margin on variation
               productWithMargin.variations = productWithMargin.variations.map((variation) => ({
                 ...variation,
@@ -410,11 +415,10 @@ export class ProductsService {
                     productWithMargin.related_products = relatedProductsWithMargin;
                   }               
                 }
+                return productWithMargin;
             }     
-            return productWithMargin;
+           
           }
-        } else {
-
           //checking for category margin of dealer
           if(dealer.dealerCategoryMargins){
             for(const findprod of dealer.dealerCategoryMargins){
@@ -462,6 +466,81 @@ export class ProductsService {
             }
             
           }
+        } else {
+          //checking for category margin of dealer
+          if(dealer.dealerCategoryMargins){
+            for(const findprod of dealer.dealerCategoryMargins){
+                const { category, margin } = findprod;
+                const productsWithMargin = category.products.map((product) => ({
+                  ...product,
+                  margin: margin,
+                }));
+                 const findId = productsWithMargin.find((foundProduct) => {
+                  return foundProduct.slug === product.slug;
+                });
+
+                if(findId){
+                 
+                  //assign margin on variation
+                  findId.variations = findId.variations.map((variation) => ({
+                    ...variation,
+                    margin: findId.margin,
+                    attribute: variation.attribute, 
+                  }));
+                  
+                  findId.variation_options = findId.variation_options.map((option) => ({
+                    ...option,
+                    options: option.options.map((optionAttribute) => optionAttribute), 
+                  }));
+              
+                }
+
+                //assign category margin on related product
+              if (findId) {
+                const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
+                  .where('related_products.type_id = :type_id', { type_id: findId.type_id })
+                  .andWhere('related_products.id != :productId', { productId: findId.id })
+                  .limit(20)
+                  .getMany();
+
+                  const relatedProductsWithMargin = relatedProducts.map((relatedProduct) => ({
+                    ...relatedProduct,
+                    margin: margin,
+                  }));
+                  
+                  findId.related_products = relatedProductsWithMargin;
+              }
+              return findId
+            }
+            
+          } else {
+            // Destructuring variations and variation_options  
+            if (product) {
+              console.log("product", product)
+              // Destructuring variations
+              product.variations = product.variations.map((variation) => ({
+                ...variation,
+                attribute: variation.attribute, // Extract attribute value
+              }));
+        
+              // Destructuring variation_options
+              product.variation_options = product.variation_options.map((option) => ({
+                ...option,
+                options: option.options.map((optionAttribute) => optionAttribute), // Extract option values
+              }));
+            }
+           // Fetch related products using type_id
+            if (product) {
+              const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
+                .where('related_products.type_id = :type_id', { type_id: product.type_id })
+                .andWhere('related_products.id != :productId', { productId: product.id })
+                .limit(20)
+                .getMany();
+        
+              product.related_products = relatedProducts;
+            }
+            return product;
+          }
         }    
       }
       else{
@@ -470,6 +549,7 @@ export class ProductsService {
 
         // Destructuring variations and variation_options  
         if (product) {
+          console.log("product", product)
           // Destructuring variations
           product.variations = product.variations.map((variation) => ({
             ...variation,

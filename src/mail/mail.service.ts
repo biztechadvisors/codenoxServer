@@ -220,16 +220,16 @@ async sendTransactionDeclined(user: User, products: any){
 }
 
   // Send Abandonment Cart Reminder Email
-async sendAbandonmenCartReminder(email: string, products: any) {
-  
+  async sendAbandonmenCartReminder(email: string, products: any) {
+  console.log("working fine")
     try{
-      const productDetails = products.map((items: any) => ({
-        name: items.Name,
-        price: items.netPrice,
-        imageUrl: items.image
-    }));
+      const productDetails = {
+        name: products.Name,
+        price: products.netPrice,
+        // imageUrl: items.image
+    };
       const CartUrl = `https://www.tilitso.in/shop-cart`
-      console.log("mapped data", productDetails)
+      console.log("mapped data", email, productDetails)
       await this.mailerService.sendMail({
         to: email,
         from: '"Support Team" <info@365dgrsol.in>',

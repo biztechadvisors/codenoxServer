@@ -800,7 +800,7 @@ export class SettingsService {
                   updateCustomer.statusChangeOrder =  updateSettingDto.options.smsEvent.customer.statusChangeOrder ? updateSettingDto.options.smsEvent.customer.statusChangeOrder : false
                  
               
-                               await this.smsCustomerRepository.save(updateCustomer)
+                  await this.smsCustomerRepository.save(updateCustomer)
                   
                 } else {
                   console.log("No data found!")
@@ -829,25 +829,25 @@ export class SettingsService {
               updateSeo.canonicalUrl = updateSettingDto.options.seo.canonicalUrl ? updateSettingDto.options.seo.canonicalUrl : null
 
               //update seo Image
-              // if(updateSettingDto.options.seo.ogImage){
-              //   if(updateSeo.ogImage == null ){
-              //     updateSeo.ogImage = updateSettingDto.options.seo.ogImage
-              //   } else  {
+              if(updateSettingDto.options.seo.ogImage){
+                if(updateSeo.ogImage == null ){
+                  updateSeo.ogImage = updateSettingDto.options.seo.ogImage
+                } else  {
 
-              //    const ImgId = await this.attachmentRepository.findOne({
-              //     where: { id: updateSeo.ogImage.id }
-              //   })
-              //   console.log("ImgIDdddddddddddddd", ImgId)
+                 const ImgId = await this.attachmentRepository.findOne({
+                  where: { id: updateSeo.ogImage.id }
+                })
+                console.log("ImgIDdddddddddddddd", ImgId)
            
-              //    updateSeo.ogImage = null
-              //    const setNUl = await this.seoSettingsRepository.save(updateSeo)
-              //    console.log("null", setNUl)
-              //    const del = await this.attachmentRepository.delete(ImgId)
-              //    console.log("delete", del)
-              //   updateSeo.ogImage = updateSettingDto.options.seo.ogImage
-              //   await this.seoSettingsRepository.save(updateSeo)
-              // }
-              // } 
+                 updateSeo.ogImage = null
+                 const setNUl = await this.seoSettingsRepository.save(updateSeo)
+                 console.log("null", setNUl)
+                 const del = await this.attachmentRepository.delete(ImgId)
+                 console.log("delete", del)
+                updateSeo.ogImage = updateSettingDto.options.seo.ogImage
+                await this.seoSettingsRepository.save(updateSeo)
+              }
+              } 
               
             const seoId = await this.seoSettingsRepository.save(updateSeo)
             console.log("seoId", seoId)
@@ -932,27 +932,27 @@ export class SettingsService {
                 where: {id: findOption.logo.id }  
                })
                console.log("Logoooooo", updateLogo)
-              //  if(updateLogo){
-              //   const findAttachment = await this.attachmentRepository.findOne({
-              //     where: { original: updateLogo.original }
-              //   })
-              //   console.log("Attachmentssssssssss", findAttachment)
+               if(updateLogo){
+                const findAttachment = await this.attachmentRepository.findOne({
+                  where: { original: updateLogo.original }
+                })
+                console.log("Attachmentssssssssss", findAttachment)
 
-              //   const del1 = await this.attachmentRepository.delete(findAttachment)
-              //     console.log("del1", del1)
+                const del1 = await this.attachmentRepository.delete(findAttachment)
+                  console.log("del1", del1)
 
 
-              //    const del2 = await this.logoSettingsRepository.delete(updateLogo)
-              //       console.log("del2", del2)
+                 const del2 = await this.logoSettingsRepository.delete(updateLogo)
+                    console.log("del2", del2)
 
-              //    const updates = this.logoSettingsRepository.create(updateSettingDto.options.logo)
-              //    const savedLogo = await this.logoSettingsRepository.save(updates)
-              //    console.log("saveedLogoooo**************", savedLogo)
-              // } else {
-              //   const updates = this.logoSettingsRepository.create(updateSettingDto.options.logo)
-              //   const createLogo = await this.logoSettingsRepository.save(updates)
-              //   console.log("createLogoooo**************", createLogo)
-              // }
+                 const updates = this.logoSettingsRepository.create(updateSettingDto.options.logo)
+                 const savedLogo = await this.logoSettingsRepository.save(updates)
+                 console.log("saveedLogoooo**************", savedLogo)
+              } else {
+                const updates = this.logoSettingsRepository.create(updateSettingDto.options.logo)
+                const createLogo = await this.logoSettingsRepository.save(updates)
+                console.log("createLogoooo**************", createLogo)
+              }
              
               
             } catch(error) {

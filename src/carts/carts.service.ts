@@ -37,29 +37,31 @@ export class AbandonedCartService {
         if (existingCart) {
          console.log("dadta",existingCart)
 
-          await this.cartRepository.update(
+           await this.cartRepository.update(
             { id: existingCart.id },
             { cartData: JSON.stringify(createCartDto.cartData), 
               cartQuantity: totalQuantity },
           );
 
       console.log("user exist")
+      return existingCart
+
     } else {
       const newCart = new Cart()
       newCart.customerId = createCartDto.customerId
       newCart.email = createCartDto.email
       newCart.phone = createCartDto.phone
-      newCart.cartData = JSON.stringify(createCartDto.cartData)
+      newCart.cartData = createCartDto.cartData
       newCart.cartQuantity = totalQuantity
       newCart.created_at = new Date()
       newCart.updated_at = new Date()
 
 
-      await this.cartRepository.save(newCart)
-      return newCart
+      const cartAdded = await this.cartRepository.save(newCart)
+      return cartAdded
     }
 
-    return existingCart
+    
   }
 
   // ---------------------------------GET CART-----------------------------------------------------------
@@ -98,11 +100,12 @@ export class AbandonedCartService {
 
   // -----------------------------------DELETE----------------------------------------------------
 
-  async delete(itemId: string, query?: any): Promise<any> {
+  async delete(itemId: string, query: any): Promise<any> {
     const itemsId = parseInt(itemId)
 
 
     const existingCart = await this.cartRepository.findOne({ where: { email: query.email } });
+    console.log("existingCart", existingCart)
 
     if (!existingCart) {
       return { error: 'Cart not found for the provided email' }; // Handle non-existent cart
@@ -110,18 +113,19 @@ export class AbandonedCartService {
   
     const quantity = query.quantity; 
     let existingCartData: any = {};
+    // let fi:any = {}
 
     try {
   
       if (typeof existingCart.cartData === 'object') {
         existingCartData = existingCart.cartData;
+        console.log("existingCartData", existingCartData)
       } else {
         existingCartData = JSON.parse(existingCart.cartData);
       }
       
     } catch (err) {
       console.error(`Error parsing cart data: ${err.message}`);
-      return null; // Handle error parsing cart data
     }
   
     let itemRemoved = false;
@@ -129,18 +133,22 @@ export class AbandonedCartService {
 
     if(quantity){
       for(let i=0; i < quantity; i++) {
-
+        // for( fi of existingCartData){
+          console.log("first", existingCartData[itemsId])
           if (existingCartData[itemsId]) {
+          console.log("second", existingCartData[itemsId])
             if (existingCartData[itemsId].quantity > 1) {
               existingCartData[itemsId].quantity -= 1;
               cartQuantity -= 1;
-              console.log("cartQuantity", cartQuantity)
+              console.log("cartQuantity", existingCartData[itemsId])
             } else {
-              delete existingCartData[itemsId];
+              const del = delete existingCartData[itemsId];
               cartQuantity -= 1;
+              console.log("dellll", del)
             }
             itemRemoved = true;
           }
+        // }       
         }
        }
 
@@ -150,7 +158,7 @@ export class AbandonedCartService {
           if (existingCartData[itemsId].quantity > 1) {
             existingCartData[itemsId].quantity -= 1;
             cartQuantity -= 1;
-            // console.log("Quantity", quantity)
+            console.log("Quantity", existingCartData[itemsId])
           } else {
             delete existingCartData[itemsId];
             cartQuantity -= 1;
@@ -162,12 +170,12 @@ export class AbandonedCartService {
     if (!itemRemoved) {
       return { error: 'Item not found in cart' }; // Handle item not found
     }
-    
-    await this.cartRepository.update({ email: query.email }, {
+
+      await this.cartRepository.update({ email: query.email }, {
       cartData: JSON.stringify(existingCartData),
       cartQuantity: cartQuantity,
     });
-    
+
     return { updatedCart: existingCartData }; // Return updated cart data
   }    
   
@@ -188,24 +196,29 @@ export class AbandonedCartService {
   
 // ----------------------------ABANDONED CART REMINDER------------------------------------
 
-@Interval(60000)
+// @Interval(24000)
 async sendAbandonedCartReminder() {
   try {
+    console.log("trying to fetch data")
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
     const abandonedCartData = await this.cartRepository.find({
       where: {
         updated_at: LessThan(twentyFourHoursAgo), 
        
       },
     });
+    console.log("trying to fetch cart data", abandonedCartData)
 
     for (const cart of abandonedCartData) {
+      console.log("+++++++++++++++")
     
       try {
+    console.log("=====================")
+
         const pro = JSON.stringify(cart.cartData)
         const products = JSON.parse(pro);
-        const email = cart.email;      
+        const email = cart.email;  
+        console.log("cart service working good")    
         const res = await this.mailService.sendAbandonmenCartReminder(email, products);
         console.log(res)
       } catch (error) {
@@ -215,5 +228,6 @@ async sendAbandonedCartReminder() {
   } catch (error) {
     console.log('Failed to send abandoned cart reminder emails');
   }
+
 }
 }
