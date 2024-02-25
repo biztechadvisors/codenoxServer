@@ -24,6 +24,7 @@ import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
 import { Order, PaymentGatewayType, PaymentStatusType } from './entities/order.entity';
 import { OrdersService } from './orders.service';
 import { ShiprocketService } from './shiprocket.service';
+import { throwError } from 'rxjs';
 
 @Controller('orders')
 export class OrdersController {
@@ -31,16 +32,30 @@ export class OrdersController {
 
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
-    return this.ordersService.create(createOrderDto);
+    const OrdSuccess = await this.ordersService.create(createOrderDto);
+    // Call the service method
+    try {
+      console.log("createOrderDto.products***********", createOrderDto.products)
+      await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
+      console.log('Product quantities updated successfully');
+      throwError
+    } catch (error) {
+      console.error('Error updating product quantities:', error.message || error);
+      throw error
+    }
+
+    return OrdSuccess;
   }
 
   @Get()
   async getOrders(@Query() query: GetOrdersDto): Promise<OrderPaginator> {
+    console.log("query**************", query)
     return this.ordersService.getOrders(query);
   }
 
   @Get(':id')
   getOrderById(@Param('id') id: number) {
+    console.log("id**************", id)
     return this.ordersService.getOrderByIdOrTrackingNumber(Number(id));
   }
 

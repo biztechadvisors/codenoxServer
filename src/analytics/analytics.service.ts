@@ -35,6 +35,7 @@ export class AnalyticsService {
   async findAll(customerId: number, state: string): Promise<AnalyticsResponseDTO> {
     try {
       const user = await this.userRepository.findOne({ where: { id: customerId } });
+      console.log("customerId*******", user)
 
       if (!user) {
         throw new NotFoundException(`User with ID ${customerId} not found`);
@@ -43,12 +44,11 @@ export class AnalyticsService {
       const userPermissions = await this.permissionRepository.findOne({
         where: { permission_name: user.type },
       });
-
-      if (!(userPermissions && ['Admin', 'super_admin', 'Dealer', 'Vendor'].includes(userPermissions.type_name))) {
+      console.log("userPermissions***", userPermissions)
+      if (!(userPermissions && ['Admin', 'super_admin', 'dealer', 'Vendor'].includes(userPermissions.type_name))) {
         throw new ForbiddenException(`User with ID ${customerId} does not have permission to access analytics`);
       }
 
-      console.log("user.id, userPermissions.type_name, state", user.id, userPermissions.type_name, state)
       const analyticsResponse: AnalyticsResponseDTO = {
         totalRevenue: await this.calculateTotalRevenue(user.id, userPermissions.type_name, state),
         totalRefunds: await this.calculateTotalRefunds(userPermissions.type_name, state),
@@ -59,6 +59,7 @@ export class AnalyticsService {
         totalYearSaleByMonth: await this.calculateTotalYearSaleByMonth(user.id, userPermissions.type_name, state),
       };
 
+      console.log("customerId*******", user)
       return analyticsResponse;
     } catch (error) {
       throw new NotFoundException(`Error fetching analytics: ${error.message}`);
@@ -118,22 +119,23 @@ export class AnalyticsService {
     }
   }
 
-  private async calculateTotalShops(permissionName: string, state: string): Promise<number> {
+  private async calculateTotalShops(permissionName: string, state: string): Promise<number | null> {
     try {
       let query = this.shopRepository.createQueryBuilder('shop');
 
-      if (state && state.trim() !== '') {
-        if (permissionName === 'super_admin' || permissionName === 'Admin') {
-          // No additional filtering for super_admin or Admin
-        } else {
-          query = query
-            .innerJoin('shop.owner', 'owner')
-            .innerJoin('shop.shipping_address', 'shipping_address')
-            .where({
-              'owner.permissionName': permissionName,
-              'shipping_address.state': state,
-            });
+      if (permissionName === 'super_admin' || permissionName === 'Admin') {
+        query = query
+          .innerJoin('shop.owner', 'owner')
+          .innerJoin('owner.address', 'owner_address')
+          .innerJoin('shop.shipping_address', 'shipping_address');
+
+        if (state && state.trim() !== '') {
+          query = query.where({
+            'owner_address.state': state,
+          });
         }
+      } else {
+        return null; // Return null for non-admin and non-super_admin permissions
       }
 
       const totalShops = await query
@@ -141,12 +143,14 @@ export class AnalyticsService {
         .getRawOne()
         .then(result => result.totalShops || 0);
 
+      console.log("totalShops*****", totalShops);
       return totalShops;
     } catch (error) {
       console.error('Error calculating total shops:', error.message);
-      return 0;
+      return null; // Return null in case of an error
     }
   }
+
 
 
   private async calculateTodaysRevenue(userId: number, permissionName: string, state: string): Promise<number> {

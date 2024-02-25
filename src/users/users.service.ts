@@ -31,6 +31,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
+import { Equal, FindManyOptions, FindOptionsWhere } from 'typeorm';
 
 const users = plainToClass(User, usersJson);
 
@@ -120,41 +121,51 @@ export class UsersService {
     limit,
     page,
     search,
+    usrById,
     type,
   }: GetUsersDto): Promise<UserPaginator> {
     if (!page) page = 1;
     if (!limit) limit = 30;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-    let data: User[] = await this.userRepository.find({ relations: ["dealer", "profile", "address", "shops", "orders", "address.address"] });
-    data = data.filter(user => user.type === (type || UserType.Customer));
-    if (text?.replace(/%/g, '')) {
-      data = fuse.search(text)?.map(({ item }) => item);
-    }
-    if (search) {
-      const parseSearchParams = search.split(';');
-      const searchText: any = [];
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        if (key !== 'slug') {
-          searchText.push({
-            [key]: value,
-          });
-        }
+
+    let data: User[];
+
+    if (usrById) {
+      const user = await this.userRepository.findOne({ where: { id: Number(usrById) } });
+
+      if (user) {
+        data = await this.userRepository.find({ where: { UsrBy: Equal(user.id) }, relations: ["dealer", "profile", "address", "shops", "orders", "address.address"] });
+      } else {
+        // Handle the case where usrById doesn't correspond to any user
+        data = [];
       }
-      data = fuse
-        .search({
-          $and: searchText,
-        })
-        ?.map(({ item }) => item);
+    } else {
+      // If usrById is not provided, return all users
+      const findOptions = {
+        skip: startIndex,
+        take: limit,
+      };
+
+      data = await this.userRepository.find(findOptions);
     }
-    const results = data.slice(startIndex, endIndex);
-    const url = `/users?type=${type || 'customer'}&limit=${limit}`;
+
+    if (search) {
+      const searchKey = search.split(':')[0];
+      const searchValue = search.split(':')[1];
+
+      data = await this.userRepository
+        .createQueryBuilder("user")
+        .where(`user.${searchKey} LIKE :searchValue`, { searchValue: `%${searchValue}%` })
+        .getMany();
+    }
+
     return {
-      data: results,
-      ...paginate(data.length, page, limit, results.length, url),
+      data,
+      ...paginate(data.length, page, limit, data.length, `/users?type=${type || 'customer'}&limit=${limit}`),
     };
   }
+
 
   async getUsersNotify({ limit }: GetUsersDto): Promise<User[]> {
     const data = await this.userRepository.find({

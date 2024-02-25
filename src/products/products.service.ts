@@ -1,9 +1,9 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
+import { UpdateProductDto, UpdateQuantityDto } from './dto/update-product.dto';
 import { File, OrderProductPivot, Product, ProductType, Variation, VariationOption } from './entities/product.entity';
 import { paginate } from 'src/common/pagination/paginate';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
@@ -26,8 +26,9 @@ import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRe
 import { User } from 'src/users/entities/user.entity';
 import items from 'razorpay/dist/types/items';
 import { clearConfigCache } from 'prettier';
-import { Brackets } from 'typeorm';
-
+import { Brackets, Repository } from 'typeorm';
+import { Tax } from 'src/taxes/entities/tax.entity';
+import { Cron } from '@nestjs/schedule';
 
 const options = {
   keys: [
@@ -45,6 +46,7 @@ const options = {
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
 
   constructor(
     @InjectRepository(Product) private readonly productRepository: ProductRepository,
@@ -62,8 +64,56 @@ export class ProductsService {
     @InjectRepository(DealerProductMargin) private readonly dealerProductMarginRepository: DealerProductMarginRepository,
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
     @InjectRepository(User) private readonly userRepository: UserRepository,
-
+    @InjectRepository(Tax) private readonly taxRepository: Repository<Tax>,
   ) { }
+
+  // Run this method when the application starts
+  async onModuleInit() {
+    this.logger.debug('ProductService initialized');
+    await this.updateProductStockStatus();
+  }
+
+  @Cron('0 * * * *')
+  async updateProductStockStatus() {
+    try {
+      this.logger.debug('Updating product stock status...');
+
+      const products = await this.productRepository.find();
+
+      for (const product of products) {
+        // Assume that 'in_stock' is a boolean property of the Product entity
+        product.in_stock = product.quantity > 0;
+      }
+
+      await this.productRepository.save(products);
+
+      this.logger.debug('Product stock status updated successfully');
+    } catch (err) {
+      // Handle errors appropriately
+      this.logger.error('Error updating product stock status:', err.message || err);
+    }
+  }
+  async updateShopProductsCount(shopId: number, productId: number) {
+    try {
+      const shop = await this.shopRepository.findOne({ where: { id: shopId } });
+      if (!shop) {
+        throw new NotFoundException(`Shop with ID ${shopId} not found`);
+      }
+      const product = await this.productRepository.findOne({ where: { id: productId } });
+      if (product) {
+        // Product found, increase the products_count for the shop
+        shop.products_count += 1;
+      } else if (shop.products_count > 0) {
+        // Product not found, decrease the products_count (if it's greater than 0)
+        shop.products_count -= 1;
+      }
+      // Save the updated shop
+      await this.shopRepository.save(shop);
+    } catch (err) {
+      // Handle errors appropriately
+      throw err;
+    }
+  }
 
   async create(createProductDto: CreateProductDto) {
     const product = new Product();
@@ -78,6 +128,20 @@ export class ProductsService {
     product.price = createProductDto.max_price || createProductDto.price;
     product.sale_price = createProductDto.min_price || createProductDto.sale_price;
     product.unit = createProductDto.unit;
+    product.height = createProductDto.height;
+    product.length = createProductDto.length;
+    product.width = createProductDto.width;
+    product.sku = createProductDto.sku;
+    product.language = createProductDto.language || "en";
+    product.translated_languages = createProductDto.translated_languages || ["en"];
+
+    if (createProductDto.taxes) {
+      let tax = this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } })
+      if (tax) {
+        product.taxes = createProductDto.taxes
+      }
+    }
+
     const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
     if (!type) {
       throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
@@ -151,7 +215,9 @@ export class ProductsService {
       product.variation_options = variationOPt;
       await this.productRepository.save(product);
     }
-
+    if (product) {
+      this.updateShopProductsCount(shop.id, product.id)
+    }
     return product;
   };
 
@@ -219,62 +285,53 @@ export class ProductsService {
         });
 
         if (dealer) {
+          let products: any[] = [];
           if (dealer.dealerProductMargins) {
             const marginFind = await this.dealerProductMarginRepository.find({
               relations: ['product']
             });
-            const productsWithMargins = marginFind.map(margin => {
+
+            products = marginFind.map(margin => {
               const product = margin.product;
               product.margin = margin.margin;
               return product;
             });
-
-            productQueryBuilder.skip(startIndex).take(limit);
-            const products = productsWithMargins;
-            const url = `/products?search=${search}&limit=${limit}`;
-            const paginator = paginate(products.length, page, limit, products.length, url);
-
-            return {
-              data: products,
-              ...paginator,
-            };
           } else if (dealer.dealerCategoryMargins) {
             const marginFind = await this.dealerCategoryMarginRepository.find({
               relations: ['category']
             });
 
-            if (marginFind) {
-              const productsWithCategoryMargins: any[] = [];
+            for (const findId of marginFind) {
+              const found = findId.category.id;
+              const findCatProd = await this.categoryRepository.findOne({
+                where: { id: found },
+                relations: ['products']
+              });
 
-              for (const findId of marginFind) {
-                const found = findId.category.id;
-                const findCatProd = await this.categoryRepository.findOne({
-                  where: { id: found },
-                  relations: ['products']
+              if (findCatProd && findCatProd.products) {
+                const matchingMargin = findId.margin;
+                const categoryProducts = findCatProd.products.map(product => {
+                  product.margin = matchingMargin;
+                  return product;
                 });
 
-                if (findCatProd && findCatProd.products) {
-                  const matchingMargin = findId.margin;
-                  const products = findCatProd.products.map(product => {
-                    product.margin = matchingMargin;
-                    return product;
-                  });
+                products.push(...categoryProducts);
 
-                  productsWithCategoryMargins.push(...products);
-                }
               }
-
-              productQueryBuilder.skip(startIndex).take(limit);
-              const products = productsWithCategoryMargins;
-              const url = `/products?search=${search}&limit=${limit}`;
-              const paginator = paginate(products.length, page, limit, products.length, url);
-
-              return {
-                data: products,
-                ...paginator,
-              };
             }
           }
+          // Remove duplicate products based on their IDs
+          products = products.filter(
+            (product, index, self) => index === self.findIndex(p => p.id === product.id)
+          );
+
+          const url = `/products?search=${search}&limit=${limit}`;
+          const paginator = paginate(products.length, page, limit, products.length, url);
+
+          return {
+            data: products,
+            ...paginator,
+          };
         }
       }
 
@@ -346,12 +403,12 @@ export class ProductsService {
               let productWithMargin: any
               if (findprod.product.slug === product.slug) {
                 const { product, margin } = findprod;
-                console.log("findPorduct", findprod.product.categories)
+                // console.log("findPorduct", findprod.product.categories)
                 productWithMargin = {
                   ...product,
                   margin: margin,
                 };
-                console.log("dealerproduct", productWithMargin)
+                // console.log("dealerproduct", productWithMargin)
                 //checking for particular product
 
                 //assign margin on variation
@@ -490,7 +547,7 @@ export class ProductsService {
             } else {
               // Destructuring variations and variation_options  
               if (product) {
-                console.log("product", product)
+                // console.log("product", product)
                 // Destructuring variations
                 product.variations = product.variations.map((variation) => ({
                   ...variation,
@@ -523,7 +580,7 @@ export class ProductsService {
 
           // Destructuring variations and variation_options  
           if (product) {
-            console.log("product", product)
+            // console.log("product", product)
             // Destructuring variations
             product.variations = product.variations.map((variation) => ({
               ...variation,
@@ -604,6 +661,19 @@ export class ProductsService {
     product.max_price = updateProductDto.max_price || product.max_price;
     product.min_price = updateProductDto.min_price || product.min_price;
     product.unit = updateProductDto.unit || product.unit;
+    product.language = updateProductDto.language || product.language;
+    product.translated_languages = updateProductDto.translated_languages || product.translated_languages;
+    product.height = updateProductDto.height;
+    product.length = updateProductDto.length;
+    product.width = updateProductDto.width;
+    product.sku = updateProductDto.sku;
+
+    if (updateProductDto.taxes) {
+      let tax = this.taxRepository.findOne({ where: { id: updateProductDto.taxes.id } })
+      if (tax) {
+        product.taxes = updateProductDto.taxes
+      }
+    }
 
     if (updateProductDto.type_id) {
       const type = await this.typeRepository.findOne({ where: { id: updateProductDto.type_id } });
@@ -839,4 +909,15 @@ export class ProductsService {
     ]);
 
   }
+
+  async updateQuantity(id: number, updateQuantityDto: UpdateQuantityDto): Promise<void> {
+    try {
+      // Update only the quantity field
+      await this.productRepository.update(id, { quantity: updateQuantityDto.quantity });
+    } catch (err) {
+      // Handle errors appropriately
+      throw err;
+    }
+  }
+
 }

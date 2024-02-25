@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Param, Query } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
 import { AnalyticsService } from './analytics.service'
 import { Order } from 'src/orders/entities/order.entity';
 
@@ -6,12 +6,12 @@ import { Order } from 'src/orders/entities/order.entity';
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) { }
 
-  @Get()
-  async getAnalytics(@Query('customerId') customerId: number, @Query('state') state: string) {
+  @Post() // Change to POST method
+  async getAnalytics(@Body() query: { customerId: number; state: string }) {
     try {
-      console.log("analytics", customerId, state);
+      console.log("analytics*********", query.customerId, query.state);
 
-      const result = await this.analyticsService.findAll(customerId, state);
+      const result = await this.analyticsService.findAll(query.customerId, query.state);
       return result;
     } catch (error) {
       throw error;
