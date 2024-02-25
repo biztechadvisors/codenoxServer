@@ -28,10 +28,10 @@ export class AnalyticsController {
   }
 
   @Get('topDealers')
-  async getTopDealerWithMaxOrders(@Query() query: { userId: string }) {
+  async getTopDealer(@Query() query: { userId: string }) {
     try {
       console.log("query.customerId*****", query.userId);
-      const result = await this.analyticsService.getTopDealersWithMaxOrders(+query.userId); // Convert userId to a number if needed
+      const result = await this.analyticsService.getTopDealer(+query.userId); // Convert userId to a number if needed
       return result;
     } catch (error) {
       throw error;

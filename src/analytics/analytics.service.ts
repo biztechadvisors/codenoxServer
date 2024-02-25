@@ -332,7 +332,7 @@ export class AnalyticsService {
     }
   }
 
-  async getTopDealersWithMaxOrders(userId?: number): Promise<any[]> {
+  async getTopDealer(userId?: number): Promise<any[]> {
     try {
       // Step 1: Get all users with dealer role
       let dealerUsersQuery;
