@@ -45,10 +45,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from './mail/mail.module';
 import { PermissionModule } from './permission/permission.module';
 import { CartsModule } from './carts/carts.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule.forRoot({
         isGlobal: true,
