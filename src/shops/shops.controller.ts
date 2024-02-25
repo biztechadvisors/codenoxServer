@@ -30,12 +30,15 @@ export class ShopsController {
 
   @Get()
   async getShops(@Query() query: GetShopsDto): Promise<ShopPaginator> {
-    return this.shopsService.getShops(query)
+    console.log("query*******", query)
+
+    return this.shopsService.getShops(query);
   }
 
   @Get(':slug')
-  async getShop(@Param('slug') slug: string) {
-    return this.shopsService.getShop(slug)
+  async getShop(@Param('slug') slug: string): Promise<GetShopsDto | null> {
+    console.log("slug*******", slug)
+    return this.shopsService.getShop(slug);
   }
 
   @Put(':id')

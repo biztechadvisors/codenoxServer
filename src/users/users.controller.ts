@@ -17,6 +17,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
 import { DealerDto } from './dto/add-dealer.dto';
 import { Dealer } from './entities/dealer.entity';
+import { throwError } from 'rxjs';
 
 @Controller('users')
 export class UsersController {
@@ -29,11 +30,13 @@ export class UsersController {
 
   @Get()
   getAllUsers(@Query() query: GetUsersDto) {
+    console.log("query***********", query)
     return this.usersService.getUsers(query);
   }
 
   @Get(':id')
   getUser(@Param('id') id: string) {
+    console.log("id*************", id)
     return this.usersService.findOne(+id);
   }
 
