@@ -185,7 +185,7 @@ export class AbandonedCartService {
   
 // ----------------------------ABANDONED CART REMINDER------------------------------------
 
-@Interval(60000)
+// @Interval(60000)
 async sendAbandonedCartReminder() {
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);

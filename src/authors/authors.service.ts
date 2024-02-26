@@ -47,7 +47,7 @@ export class AuthorsService {
 
    async create(createAuthorDto: CreateAuthorDto): Promise<Author> {
     try{
-console.log("proper working code from create function")
+
       const newAuthor = new Author()
       const socials: ShopSocials[] = [];
 
@@ -78,18 +78,16 @@ console.log("proper working code from create function")
 
       if (AuthorId.socials) {
         const socialIds = AuthorId.socials.map((social) => social.id);
-        console.log("socialIds", socialIds);
     } else {
         console.log("AuthorId socials is undefined or null");
     }
-       console.log("Author", AuthorId)
        return newAuthor
     }catch(error){
       console.log("createAuthorDto", error)
     }
   }
 
- async getAuthors({ page, limit, search }: GetAuthorDto) {
+ async getAuthors({ page, limit, search, is_approved }: GetAuthorDto) {
 
     page = page || 1;
     const startIndex = (page - 1) * limit;
@@ -110,9 +108,15 @@ if (search) {
   }
 }
 
-    const results = data.slice(startIndex, endIndex)
-    console.log("results?>??????????????????????", data)
+if(is_approved){
+  const approvedData = await this.authorRepository.find({
+    where: {is_approved: true}
+  })
+  data = approvedData
+}
 
+
+    const results = data.slice(startIndex, endIndex)
     const url = `/authors?search=${search}&limit=${limit}`
     return {
       data: results,
@@ -125,8 +129,6 @@ if (search) {
       where: {slug: slug},
       relations: ['socials', 'image', 'cover_image']
     })
-
-    console.log("findAuthor+++++++++++++++++++++++", findAuthor)
     return findAuthor
   }
 
@@ -134,7 +136,6 @@ if (search) {
     const topAuthors = await this.authorRepository.find({
       take: limit
     })
-    console.log("topAuthors_____________________", topAuthors)
     return topAuthors
   }
 
