@@ -7,6 +7,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Profile } from './profile.entity';
 import { Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
 import { Dealer } from './dealer.entity';
+import { Permission } from 'src/permission/entities/permission.entity';
 
 export enum UserType {
   Super_Admin = 'Super_Admin',
@@ -66,8 +67,10 @@ export class User extends CoreEntity {
   @JoinColumn()
   orders: Order[];
 
-  @Column()
-  type: UserType;
+  @ManyToOne(() => Permission)
+  @JoinColumn({ name: "permission_id" })
+  type?: Permission;
+
 
   @Column()
   walletPoints: number;

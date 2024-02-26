@@ -64,7 +64,7 @@ export class ReviewService {
     }
     if (review.user) {
       const getUser = await this.userRepository.find({
-        where: ({ name: review.user.name, email: review.user.email }),
+        where: ({ name: review.user.name, email: review.user.email }), relations: ['type']
       });
       if (getUser.length > 0) {
         review.user = getUser[0];

@@ -168,7 +168,7 @@ export class OrdersService {
       }
       if (order.customerId && order.customer) {
         const customer = await this.userRepository.findOne({
-          where: { id: order.customerId, email: order.customer.email },
+          where: { id: order.customerId, email: order.customer.email }, relations: ['type']
         });
         if (!customer) {
           throw new NotFoundException('Customer not found');
@@ -320,16 +320,14 @@ export class OrdersService {
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
     try {
-      const usr = await this.userRepository.findOne({ where: { id: customer_id } });
+      const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
 
       if (!usr) {
         throw new Error('User not found');
       }
 
       // Fetch permissions for the user
-      const permsn = await this.permissionRepository.findOne({
-        where: { permission_name: usr.type },
-      });
+      const permsn = await this.permissionRepository.findOneBy(usr.type);
 
       let query = this.orderRepository.createQueryBuilder('order');
       query = query.leftJoinAndSelect('order.status', 'status');
@@ -348,7 +346,7 @@ export class OrdersService {
       if (!(permsn && (permsn.type_name === 'Admin' || permsn.type_name === 'super_admin'))) {
         // If the user has other permissions, filter orders by customer_id
         const usrByIdUsers = await this.userRepository.find({
-          where: { UsrBy: { id: usr.id } },
+          where: { UsrBy: { id: usr.id } }, relations: ['type']
         });
 
         const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
@@ -1097,7 +1095,7 @@ console.log("+++++++++++++++++++",Invoice);
    * @param _paymentGateway
    */
   async savePaymentIntent(order: Order, _paymentGateway?: string): Promise<any> {
-    const usr = await this.userRepository.findOne({ where: { id: order.customer.id } });
+    const usr = await this.userRepository.findOne({ where: { id: order.customer.id }, relations: ['type'] });
     const me = this.authService.me(usr.email, usr.id);
     switch (order.payment_gateway) {
       case PaymentGatewayType.STRIPE:

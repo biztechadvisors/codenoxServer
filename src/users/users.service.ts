@@ -31,7 +31,8 @@ import { AuthService } from 'src/auth/auth.service';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
-import { Equal, FindManyOptions, FindOptionsWhere } from 'typeorm';
+import { Equal, FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
+import { Permission } from 'src/permission/entities/permission.entity';
 
 const users = plainToClass(User, usersJson);
 
@@ -55,6 +56,8 @@ export class UsersService {
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
     @InjectRepository(Social) private readonly socialRepository: SocialRepository,
+    @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
+
     private readonly authService: AuthService,
     private readonly addressesService: AddressesService,
 
@@ -64,7 +67,7 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
 
-    const user = await this.userRepository.findOne({ where: { email: createUserDto.email } })
+    const user = await this.userRepository.findOne({ where: { email: createUserDto.email }, relations: ['type'] })
     if (user) {
       throw new NotFoundException(`User with email ${createUserDto.email} already exists`);
     }
@@ -74,7 +77,7 @@ export class UsersService {
     registerDto.email = createUserDto.email;
     registerDto.password = createUserDto.password;
     registerDto.isVerified = createUserDto.isVerified;
-    registerDto.type = createUserDto.type ? createUserDto.type : UserType.Customer;
+    registerDto.type = createUserDto.type;
 
     await this.authService.register(registerDto);
 
@@ -132,10 +135,10 @@ export class UsersService {
     let data: User[];
 
     if (usrById) {
-      const user = await this.userRepository.findOne({ where: { id: Number(usrById) } });
+      const user = await this.userRepository.findOne({ where: { id: Number(usrById) }, relations: ['type'] });
 
       if (user) {
-        data = await this.userRepository.find({ where: { UsrBy: Equal(user.id) }, relations: ["dealer", "profile", "address", "shops", "orders", "address.address"] });
+        data = await this.userRepository.find({ where: { UsrBy: Equal(user.id) }, relations: ["dealer", "profile", "address", "shops", "orders", "address.address", "type"] });
       } else {
         // Handle the case where usrById doesn't correspond to any user
         data = [];
@@ -175,7 +178,7 @@ export class UsersService {
   }
 
   async findOne(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id: id }, relations: ["profile", "address", "shops", "orders", "address.address"] });
+    const user = await this.userRepository.findOne({ where: { id: id }, relations: ["profile", "address", "shops", "orders", "address.address", "type"] });
 
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
@@ -186,7 +189,7 @@ export class UsersService {
 
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.userRepository.findOne({
-      where: { id: id }, relations: ["profile", "address", "address.address", "shops", "orders", "profile.socials"]
+      where: { id: id }, relations: ["profile", "address", "address.address", "shops", "orders", "profile.socials", "type"]
     });
 
     if (!user) {
@@ -270,7 +273,7 @@ export class UsersService {
 
   async removeUser(id: number) {
     const user = await this.userRepository.findOne({
-      where: { id: id }, relations: ["profile", "address", "shops", "orders"]
+      where: { id: id }, relations: ["profile", "address", "shops", "orders", "type"]
     });
 
     if (!user) {
@@ -291,13 +294,15 @@ export class UsersService {
 
 
   async makeAdmin(user_id: number) {
-    const user = await this.userRepository.findOne({ where: { id: user_id } });
+    const user = await this.userRepository.findOne({ where: { id: user_id }, relations: ['type'] });
 
     if (!user) {
       throw new NotFoundException(`User with id ${user_id} not found`);
     }
 
-    user.type = UserType.Admin;
+    const usr_type = await this.permissionRepository.findOneBy(user)
+
+    usr_type.type_name = UserType.Admin;
 
     await this.userRepository.save(user);
 
@@ -338,9 +343,11 @@ export class UsersService {
   // -------------------------------Dealer Services----------------------
 
   async createDealer(dealerData: DealerDto) {
-    const user = await this.userRepository.findOne({ where: { id: dealerData.user.id } });
+    const user = await this.userRepository.findOne({ where: { id: dealerData.user.id }, relations: ['type'] });
 
-    if (!user && user.type === UserType.Dealer) {
+    const usr_type = await this.permissionRepository.findOneBy(user)
+
+    if (!user && usr_type.type_name !== UserType.Dealer) {
       throw new NotFoundException(`User with ID ${dealerData.user} not found`);
     }
 
