@@ -148,7 +148,7 @@ export class QuestionService {
     if (createQuestionDto.user) {
       const User = createQuestionDto.user
       const existingUser = await this.userRepository.find({
-        where: { name: User.name, email: User.email }
+        where: { name: User.name, email: User.email }, relations: ['type']
       })
       if (existingUser) {
         for (const data of existingUser) {
@@ -195,7 +195,7 @@ export class QuestionService {
       if (updateQuestionDto.user) {
         const User = updateQuestionDto.user
         const existingUser = await this.userRepository.find({
-          where: { name: User.name, email: User.email }
+          where: { name: User.name, email: User.email }, relations: ['type']
         })
         if (existingUser) {
           for (const data of existingUser) {
@@ -203,7 +203,7 @@ export class QuestionService {
             existingQuestion.user_id = data.id
           }
         }
-    
+
         return await this.questionRepository.save(existingQuestion)
       }
     } catch (error) {

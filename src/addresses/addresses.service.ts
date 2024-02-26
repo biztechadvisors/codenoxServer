@@ -18,7 +18,6 @@ export class AddressesService {
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
   ) { }
 
-
   async create(createAddressDto: CreateAddressDto): Promise<Address> {
 
     // Create a new UserAddress with the provided data
@@ -39,7 +38,7 @@ export class AddressesService {
     address.default = createAddressDto.default;
     address.address = savedUserAddress;  // Use the saved UserAddress
 
-    const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id } });  // Find the user
+    const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id }, relations: ['type'] });  // Find the user
     if (!user) {
       throw new Error('User does not exist');
     }

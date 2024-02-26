@@ -21,6 +21,7 @@ import { AttachmentRepository } from 'src/common/common.repository'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { AddressesService } from 'src/addresses/addresses.service'
 import { UserAddressRepository } from 'src/addresses/addresses.repository'
+import { Permission } from 'src/permission/entities/permission.entity'
 
 @Module({
   imports: [TypeOrmExModule.forCustomRepository([
@@ -34,7 +35,7 @@ import { UserAddressRepository } from 'src/addresses/addresses.repository'
     UserRepository,
     AttachmentRepository,
     UserAddressRepository,
-  ]), TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Address, Location, ShopSocials, User, ShopSettings, Attachment, UserAddress])],
+  ]), TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Address, Location, ShopSocials, User, ShopSettings, Attachment, UserAddress, Permission])],
   controllers: [
     ShopsController,
     StaffsController,
