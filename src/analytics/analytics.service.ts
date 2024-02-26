@@ -49,7 +49,7 @@ export class AnalyticsService {
       }
 
       const analyticsResponse: AnalyticsResponseDTO = {
-        totalRevenue: await this.calculateTotalRevenue(user.id, userPermissions.type_name, state),
+        totalRevenue: await this.calculateTotalRevenue(user.id, state),
         totalRefunds: await this.calculateTotalRefunds(userPermissions.type_name, state),
         totalShops: await this.calculateTotalShops(user.id, userPermissions.type_name, state),
         todaysRevenue: await this.calculateTodaysRevenue(user.id, userPermissions.type_name, state),
@@ -64,32 +64,37 @@ export class AnalyticsService {
     }
   }
 
-  private async calculateTotalRevenue(userId: number, permissionName: string, state: string): Promise<number> {
+  private async calculateTotalRevenue(userId: number, state: string): Promise<number> {
+    try {
+      const usrByIdUsers = await this.userRepository.find({
+        where: { UsrBy: { id: userId } },
+      });
 
-    const usrByIdUsers = await this.userRepository.find({
-      where: { UsrBy: { id: userId } },
-    });
+      const userIds = [userId, ...usrByIdUsers.map(u => u.id)];
+      console.log("userIds******", userIds);
 
-    const userIds = [userId, ...usrByIdUsers.map(u => u.id)];
+      let queryBuilder = this.orderRepository.createQueryBuilder('order');
 
-    let query = this.orderRepository.createQueryBuilder('order');
-
-    if (state && state.trim() !== '') {
-      if (permissionName === 'super_admin' || permissionName === 'Admin') {
-        query = query
+      if (state && state.trim() !== '') {
+        queryBuilder = queryBuilder
           .innerJoin('order.shipping_address', 'shipping_address')
-          .where('shipping_address.state = :state', { state });
+          .andWhere('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
       } else {
-        query = query
-          .innerJoin('order.shipping_address', 'shipping_address')
-          .where('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
+        queryBuilder = queryBuilder
+          .andWhere('order.customer_id IN (:...userIds)', { userIds });
       }
-    }
 
-    const orders = await query.getMany();
-    const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
-    return totalRevenue;
+      const orders = await queryBuilder.getMany();
+      const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+
+      return totalRevenue;
+    } catch (error) {
+      console.error('Error calculating total revenue:', error.message);
+      return 0;
+    }
   }
+
+
 
   private async calculateTotalRefunds(permissionName: string, state: string): Promise<number> {
     try {
@@ -120,7 +125,7 @@ export class AnalyticsService {
   private async calculateTotalShops(userId: number, permissionName: string, state: string): Promise<number> {
     try {
 
-      if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
+      if (permissionName !== 'Admin') {
         return 0;
       }
 
@@ -298,31 +303,33 @@ export class AnalyticsService {
   }
 
 
-  async getTopUsersWithMaxOrders(userId: number): Promise<{ user: User; orderCount: number }[]> {
+  async getTopUsersWithMaxOrders(userId: number): Promise<any[]> {
     try {
-
-      const queryBuilder = this.userRepository.createQueryBuilder('user')
-        .select(['user.id', 'user.name', 'COUNT(order.id) AS orderCount'])
-        .leftJoin('user.orders', 'order')
+      const orderQueryBuilder = this.orderRepository.createQueryBuilder('order')
+        .select(['customer.UsrBy.id AS userId', 'COUNT(order.id) AS orderCount'])
+        .leftJoin('order.customer', 'customer')
+        .groupBy('customer.UsrBy.id')
+        .having('orderCount > 0') // Exclude users with no orders
+        .orderBy('orderCount', 'DESC')
+        .take(10); // Change this value to get the desired number of top users
 
       if (userId) {
         const usrByIdUsers = await this.userRepository.find({
           where: { UsrBy: { id: userId } },
         });
+
         const userIds = [userId, ...usrByIdUsers.map(u => u.id)];
+        console.log("userIds***************", userIds)
         if (userIds.length > 0) {
-          queryBuilder.where('order.customer IN (:...userIds)', { userIds });
+          const result = await orderQueryBuilder
+            .andWhere('customer.UsrBy.id IN (:...userIds)', { userIds })
+            .getRawMany();
+
+          return result.flatMap((m) => ({ userId: m.userId }));
         }
       }
 
-      const topUsers = await queryBuilder
-        .groupBy('user.id')
-        .having('orderCount > 0') // Exclude users with no orders
-        .orderBy('orderCount', 'DESC')
-        .take(10) // Change this value to get the desired number of top users
-        .getRawMany();
-
-      return topUsers;
+      return [];
     } catch (error) {
       console.error('Error getting top users with max orders:', error.message);
       return [];
@@ -333,16 +340,11 @@ export class AnalyticsService {
     try {
       // Step 1: Get all users with dealer role
       let dealerUsersQuery;
-      if (userId) {
-        dealerUsersQuery = (await this.userRepository.find({
-          where: { UsrBy: { id: Number(userId) } },
-          relations: ['dealer'],
-        })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id);
-      } else {
-        dealerUsersQuery = (await this.userRepository.find({
-          relations: ['dealer'],
-        })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id);
-      }
+      dealerUsersQuery = (await this.userRepository.find({
+        where: { UsrBy: { id: Number(userId) } },
+        relations: ['dealer'],
+      })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id);
+
       console.log("dealerUsersQuery**********", dealerUsersQuery);
 
       // Step 2: Get all users by matching UsrBy field to dealers' user ids
@@ -351,29 +353,37 @@ export class AnalyticsService {
       }))
         .filter((ordUsr) => dealerUsersQuery.includes(ordUsr.customer.UsrBy.id));
 
-      console.log("usrByDealer*************", usrByDealer.length);
+      console.log("usrByDealer*************", usrByDealer.map((v) => v.id));
 
-      // Step 3: Filter orders by the dealerUsersQuery array
-      const ordersByDealers = await this.orderRepository.find({
-        relations: ['customer', 'customer.UsrBy'],
-        where: {
-          customer: {
-            UsrBy: {
-              id: In(dealerUsersQuery),
-            },
-          },
-        },
-      });
+      // Step 3: Count orders for each customer and order them by count
+      const ordersByDealers = await this.orderRepository
+        .createQueryBuilder('order')
+        .select('customer.id', 'customerId')
+        .addSelect('COUNT(order.id)', 'orderCount')
+        .leftJoin('order.customer', 'customer')
+        .where('customer.UsrBy IN (:...dealerUserIds)', { dealerUserIds: dealerUsersQuery })
+        .groupBy('customer.id')
+        .orderBy('orderCount', 'DESC')
+        .getRawMany();
 
-      console.log("ordersByDealers***************: ", ordersByDealers.flatMap((f) => f.customer.id));
+      console.log("ordersByDealers*************", ordersByDealers)
+      // Extract customerIds from ordersByDealers
+      const customerIds = ordersByDealers.map(order => order.customerId);
 
-      return ordersByDealers
+      const topDealers = await this.userRepository
+        .createQueryBuilder('users')
+        .select('users.UsrBy', 'UsrBy')
+        .where('users.id IN (:...customerIds)', { customerIds })
+        .groupBy('users.UsrBy')
+        .limit(5)
+        .getRawMany();
+
+      return topDealers.map((m) => ({ dealerId: m.UsrBy }));
     } catch (error) {
       console.error('Error getting top dealers with max orders:', error.message);
       return [];
     }
   }
-
 
   // async calculateOrderByODSC(filters: Record<string, any>): Promise<{ month: string; orderCount: number }[]> {
   //   try {
