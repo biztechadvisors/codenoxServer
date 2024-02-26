@@ -8,25 +8,25 @@ import { PermissionService } from "./permission.service";
 
 @Controller('permission')
 export class PermissionController {
-  constructor(private readonly permissionService: PermissionService) {}
+  constructor(private readonly permissionService: PermissionService) { }
 
   @Post()
   createPermission(@Body() createPermission: CreatePermissionDto) {
     return this.permissionService.create(createPermission);
-}
+  }
 
   @Get()
-  getPermission(){
+  getPermission() {
     return this.permissionService.getPermission();
   }
 
   @Get(':id')
-  getPermissionID(@Param('id') id:number){
+  getPermissionID(@Param('id') id: number) {
     return this.permissionService.getPermissionID(+id);
   }
 
   @Put(':id')
-  updatePermission(@Param('id') id:string, @Body() updatePermissionDto:UpdatePermissionDto){
+  updatePermission(@Param('id') id: string, @Body() updatePermissionDto: UpdatePermissionDto) {
     return this.permissionService.updatePermission(+id, updatePermissionDto);
   }
 
