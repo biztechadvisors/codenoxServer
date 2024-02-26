@@ -36,7 +36,6 @@ export class AnalyticsService {
   async findAll(customerId: number, state: string): Promise<AnalyticsResponseDTO> {
     try {
       const user = await this.userRepository.findOne({ where: { id: customerId }, relations: ['type'] });
-      console.log("customerId*******", user)
 
       if (!user) {
         throw new NotFoundException(`User with ID ${customerId} not found`);
@@ -45,7 +44,6 @@ export class AnalyticsService {
       const userPermissions = await this.permissionRepository.findOne({
         where: { permission_name: user.type.permission_name },
       });
-      console.log("userPermissions***", userPermissions)
       if (!(userPermissions && ['Admin', 'super_admin', 'dealer', 'Vendor'].includes(userPermissions.type_name))) {
         throw new ForbiddenException(`User with ID ${customerId} does not have permission to access analytics`);
       }
@@ -60,7 +58,6 @@ export class AnalyticsService {
         totalYearSaleByMonth: await this.calculateTotalYearSaleByMonth(user.id, userPermissions.type_name, state),
       };
 
-      console.log("customerId*******", user)
       return analyticsResponse;
     } catch (error) {
       throw new NotFoundException(`Error fetching analytics: ${error.message}`);
@@ -337,13 +334,21 @@ export class AnalyticsService {
       // Step 1: Get all users with dealer role
       let dealerUsersQuery;
       if (userId) {
-        dealerUsersQuery = (await this.userRepository.find({ where: { UsrBy: { id: Number(userId) } }, relations: ['dealer'] })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id)
+        dealerUsersQuery = (await this.userRepository.find({
+          where: { UsrBy: { id: Number(userId) } },
+          relations: ['dealer'],
+        })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id);
       } else {
-        dealerUsersQuery = (await this.userRepository.find({ relations: ['dealer'] })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id)
+        dealerUsersQuery = (await this.userRepository.find({
+          relations: ['dealer'],
+        })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id);
       }
-      console.log("dealerUsersQuery**********", dealerUsersQuery)
+      console.log("dealerUsersQuery**********", dealerUsersQuery);
+
       // Step 2: Get all users by matching UsrBy field to dealers' user ids
-      const usrByDealer = (await this.orderRepository.find({ relations: ['customer', 'customer.UsrBy'] }))
+      const usrByDealer = (await this.orderRepository.find({
+        relations: ['customer', 'customer.UsrBy'],
+      }))
         .filter((ordUsr) => dealerUsersQuery.includes(ordUsr.customer.UsrBy.id));
 
       console.log("usrByDealer*************", usrByDealer.length);
@@ -354,37 +359,21 @@ export class AnalyticsService {
         where: {
           customer: {
             UsrBy: {
-              id: dealerUsersQuery,
+              id: In(dealerUsersQuery),
             },
           },
         },
       });
 
-      // Step 4: Calculate order count for each dealer's user
-      const orderCountByDealerUser = ordersByDealers.reduce((acc, ordUsr) => {
-        const userId = ordUsr.customer.UsrBy.id;
-        acc.set(userId, (acc.get(userId) || 0) + 1);
-        return acc;
-      }, new Map<number, number>());
+      console.log("ordersByDealers***************: ", ordersByDealers.flatMap((f) => f.customer.id));
 
-      // Step 5: Sort dealers based on order count in descending order
-      const sortedDealers = Array.from(orderCountByDealerUser.entries())
-        .sort((a, b) => b[1] - a[1]);
-
-      // Step 6: Extract dealer user ids from the sorted dealers
-      const topDealerUserIds = sortedDealers.map(([userId]) => userId);
-
-      console.log("Order Count by Dealer's User: ", orderCountByDealerUser);
-
-      // If you want to get the top 5 dealers, you can slice the array
-      console.log("Top 5 Dealers with Max Orders: ", topDealerUserIds.slice(0, 5));
-
-      return topDealerUserIds.slice(0, 5);
+      return ordersByDealers
     } catch (error) {
       console.error('Error getting top dealers with max orders:', error.message);
       return [];
     }
   }
+
 
   // async calculateOrderByODSC(filters: Record<string, any>): Promise<{ month: string; orderCount: number }[]> {
   //   try {
