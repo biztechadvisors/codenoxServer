@@ -14,6 +14,7 @@ export class GetAuthorDto extends PaginationArgs {
   sortedBy?: SortOrder
   search?: string
   language?: string
+  is_approved?: boolean
 }
 
 export enum QueryAuthorsOrderByColumn {
