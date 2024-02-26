@@ -37,6 +37,7 @@ export class AnalyticsController {
       throw error;
     }
   }
+
   // @Get('/calculate-orders')
   // // API Ex. : // http://localhost:5050/api/analytics/calculate-orders?startDate=2024-01-01&shop_id=9&customer_id=_&state=_&zip=_&dealer=_
   // async calculateOrderByODSC(@Query() filters: Record<string, any>): Promise<{ month: string; orderCount: number }[]> {

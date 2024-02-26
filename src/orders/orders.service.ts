@@ -49,6 +49,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { throwError } from 'rxjs';
 import { rejects, throws } from 'assert';
+import { error } from 'console';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -129,6 +130,7 @@ export class OrdersService {
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
       console.log("createOrderInput**********", createOrderInput)
+      throw error
       const order = plainToClass(Order, createOrderInput);
       const newOrderStatus = new OrderStatus();
       const newOrderFile = new OrderFiles();
