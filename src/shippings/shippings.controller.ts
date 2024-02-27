@@ -24,8 +24,8 @@ export class ShippingsController {
   }
 
   @Get()
-  findAll() {
-    return this.shippingsService.getShippings();
+  findAll(@Query() query: GetShippingsDto) {
+    return this.shippingsService.getShippings(query);
   }
 
   @Get(':id')

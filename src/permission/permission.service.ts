@@ -38,7 +38,8 @@ export class PermissionService {
           permissionType.type = permissionData.type;
           permissionType.permissions = savedPermission;
 
-          await this.permissionTypeRepository.save(permissionType);
+          const pre = await this.permissionTypeRepository.save(permissionType);
+          console.log("pre,os++++++++++++", pre)
 
         }
       } else {
