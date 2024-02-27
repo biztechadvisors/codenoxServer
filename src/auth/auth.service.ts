@@ -160,15 +160,12 @@ export class AuthService {
 
     console.log('149*****usr_type.type_name');
 
-    if (permission.type_name !== UserType.Customer) {
+    if (createUserInput.UsrBy) {
       userData.isVerified = true;
     }
-
     console.log("userData*******####", userData);
     await this.userRepository.save(userData);
-
     console.log('149*****usr_type.type_name');
-
     if (permission.type_name === UserType.Customer) {
       const token = Math.floor(100 + Math.random() * 900).toString();
       // Send confirmation email for customers
@@ -214,6 +211,11 @@ export class AuthService {
         write: p.write,
       })),
     }));
+    console.log("final*****register", {
+      token: access_token.access_token,
+      type_name: [`${formattedResult[0].type_name}`],
+      permissions: formattedResult[0].permission,
+    })
 
     return {
       token: access_token.access_token,
