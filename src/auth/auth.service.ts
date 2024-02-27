@@ -84,7 +84,10 @@ export class AuthService {
   }
 
   async signIn(email, pass) {
+
+    console.log("email, pass*************", email, pass)
     const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
+    console.log("user*********signIn", user)
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
@@ -124,8 +127,10 @@ export class AuthService {
       await this.userRepository.save(existingUser);
 
       console.log('127*****', usr_type.type_name);
+      console.log("usr_type.type_name === UserType.Customer**********", usr_type.type_name === UserType.Customer)
 
       if (usr_type.type_name === UserType.Customer) {
+        console.log("usr_type.type_name === UserType.Customer**********", usr_type.type_name === UserType.Customer)
         // Send confirmation email for customers
         await this.mailService.sendUserConfirmation(existingUser, token);
       }
@@ -138,7 +143,7 @@ export class AuthService {
     console.log('createUserInput.type*****138', createUserInput.type);
 
     const permission = await this.permissionRepository.findOne({
-      where: { permission_name: createUserInput.type } as unknown as { permission_name: string }, // Directly type 'where'
+      where: { permission_name: createUserInput.type.permission_name }
     });
 
     console.log("permission *******####", permission);
@@ -236,16 +241,16 @@ export class AuthService {
 
     if (!permission || permission.id === null) {
       access_token = await this.signIn(loginInput.email, loginInput.password);
-      console.log("first**********213")
+      console.log("first**********213", access_token)
       return {
         token: access_token.access_token,
-        permissions: ['customer', 'admin'],
+        permissions: ['customer', 'admin', 'super_admin'],
       };
     }
 
     console.log("permission*******221", permission)
     access_token = await this.signIn(loginInput.email, loginInput.password);
-
+    console.log("access_token*************", access_token)
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
