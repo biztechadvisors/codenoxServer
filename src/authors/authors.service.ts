@@ -16,11 +16,7 @@ import { ShopSocialsRepository } from 'src/shops/shops.repository'
 import { ShopSocials } from 'src/settings/entities/setting.entity'
 import { Social } from 'src/users/entities/profile.entity'
 import { AttachmentRepository } from 'src/common/common.repository'
-import { find } from 'rxjs'
 
-
-
-const authors = plainToClass(Author, authorsJson)
 
 const options = {
   keys: ['name', 'slug'],
