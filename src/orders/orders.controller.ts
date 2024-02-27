@@ -49,13 +49,11 @@ export class OrdersController {
 
   @Get()
   async getOrders(@Query() query: GetOrdersDto): Promise<OrderPaginator> {
-    console.log("query**************", query)
     return this.ordersService.getOrders(query);
   }
 
   @Get(':id')
   getOrderById(@Param('id') id: number) {
-    console.log("id**************", id)
     return this.ordersService.getOrderByIdOrTrackingNumber(Number(id));
   }
 

@@ -102,16 +102,20 @@ export class AuthService {
 
 
   async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
-
-    console.log("createUserInput*******", createUserInput)
+    console.log("createUserInput###*******", createUserInput);
 
     const existingUser = await this.userRepository.findOne({
-      where: { email: createUserInput.email }, relations: ['type']
+      where: { email: createUserInput.email },
+      relations: ['type'],
     });
 
-    const usr_type = await this.permissionRepository.findOneBy(existingUser)
+    console.log('first***112', existingUser);
 
     if (existingUser) {
+      const usr_type = existingUser.type;
+
+      console.log('usr_type***116', usr_type);
+
       const otp = await this.generateOtp();
       console.log("firstOTP++++++++++",otp)
       const token = Math.floor(100 + Math.random() * 900).toString();
@@ -121,6 +125,7 @@ export class AuthService {
 
       await this.userRepository.save(existingUser);
 
+      console.log('127*****', usr_type.type_name);
 
       if (usr_type.type_name === UserType.Customer) {
         // Send confirmation email for customers
@@ -132,23 +137,36 @@ export class AuthService {
       };
     }
 
+    console.log('createUserInput.type*****138', createUserInput.type);
+
+    const permission = await this.permissionRepository.findOne({
+      where: { permission_name: createUserInput.type } as unknown as { permission_name: string }, // Directly type 'where'
+    });
+
+    console.log("permission *******####", permission);
+
     const hashPass = await bcrypt.hash(createUserInput.password, 12);
     const userData = new User();
     userData.name = createUserInput.name;
     userData.email = createUserInput.email;
     userData.contact = createUserInput.contact;
     userData.password = hashPass;
-    userData.type = createUserInput.permission;
     userData.created_at = new Date();
     userData.UsrBy = createUserInput.UsrBy;
+    userData.type = permission; // Assign permission directly
 
-    if (usr_type.type_name !== UserType.Customer) {
+    console.log('149*****usr_type.type_name');
+
+    if (permission.type_name !== UserType.Customer) {
       userData.isVerified = true;
     }
 
+    console.log("userData*******####", userData);
     await this.userRepository.save(userData);
 
-    if (usr_type.type_name === UserType.Customer) {
+    console.log('149*****usr_type.type_name');
+
+    if (permission.type_name === UserType.Customer) {
       const token = Math.floor(100 + Math.random() * 900).toString();
       // Send confirmation email for customers
       await this.mailService.sendUserConfirmation(userData, token);
@@ -158,11 +176,12 @@ export class AuthService {
 
     // Fetch permissions based on user type
     let result = [];
-    if (usr_type.type_name !== UserType.Customer) {
+    if (permission.type_name !== UserType.Customer) {
+      console.log("permission.type_name****169", permission.type_name);
       result = await this.permissionRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissions')
-        .where(`permission.type_name = :typeName`, { typeName: userData.type })
+        .where(`permission.type_name = :typeName`, { typeName: userData.type.type_name })
         .select([
           'permission.id',
           'permission.type_name',
@@ -173,6 +192,8 @@ export class AuthService {
         ])
         .getMany();
     }
+
+    console.log("result******", result);
 
     if (result.length === 0) {
       return {
@@ -200,6 +221,7 @@ export class AuthService {
       permissions: formattedResult[0].permission,
     };
   }
+
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
     const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
