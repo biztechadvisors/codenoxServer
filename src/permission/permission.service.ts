@@ -82,11 +82,9 @@ export class PermissionService {
             write: permissionType.write,
           });
         }
+
         return acc;
       }, {});
-      let per = Object.values(groupedPermissions);
-
-      console.log("groupedPermissions*************", per)
 
       return Object.values(groupedPermissions);
     } catch (error) {
@@ -105,7 +103,7 @@ export class PermissionService {
         'permission.id',
         'permission.type_name',
         'permission.permission_name',
-        'permissions.id as permissionId',
+        'permissions.id',
         'permissions.type',
         'permissions.read',
         'permissions.write',
@@ -117,7 +115,7 @@ export class PermissionService {
       type_name: permission.type_name,
       permissionName: permission.permission_name,
       permission: permission.permissions.map(p => ({
-        id: p.permissionId,
+        id: p.id,
         type: p.type,
         read: p.read,
         write: p.write,
@@ -130,6 +128,9 @@ export class PermissionService {
 
   async updatePermission(id: number, updatePermissionDto: UpdatePermissionDto) {
     try {
+      console.log("id***************updatePermission", id)
+      console.log("updatePermissionDto***************updatePermission", updatePermissionDto)
+
       const permissionToUpdate = await this.permissionRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissions')
