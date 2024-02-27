@@ -125,7 +125,7 @@ export class AnalyticsService {
   private async calculateTotalShops(userId: number, permissionName: string, state: string): Promise<number> {
     try {
 
-      if (permissionName !== 'Admin') {
+      if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
         return 0;
       }
 
