@@ -49,6 +49,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { throwError } from 'rxjs';
 import { rejects, throws } from 'assert';
+import { error } from 'console';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -129,6 +130,7 @@ export class OrdersService {
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
       console.log("createOrderInput**********", createOrderInput)
+      throw error
       const order = plainToClass(Order, createOrderInput);
       const newOrderStatus = new OrderStatus();
       const newOrderFile = new OrderFiles();
@@ -202,7 +204,7 @@ export class OrdersService {
         billing_pincode: order.billing_address.zip,
         billing_state: order.billing_address.state,
         billing_country: order.billing_address.country,
-        billing_email: order.customer.email,
+        billing_email: order.customer?.email,
         billing_phone: order.customer_contact,
         shipping_is_billing: true,
         shipping_customer_name: order.shipping_address.name ? order.shipping_address.name : "John",
@@ -213,7 +215,7 @@ export class OrdersService {
         shipping_pincode: order.shipping_address.zip,
         shipping_country: order.shipping_address.country,
         shipping_state: order.shipping_address.state,
-        shipping_email: order.customer.email,
+        shipping_email: order.customer?.email,
         shipping_phone: order.customer_contact,
         order_items: productEntities.map((product: Product, index: number) => ({
           name: product.name,
