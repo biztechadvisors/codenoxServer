@@ -125,7 +125,7 @@ export class AnalyticsService {
   private async calculateTotalShops(userId: number, permissionName: string, state: string): Promise<number> {
     try {
 
-      if (permissionName !== 'Admin') {
+      if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
         return 0;
       }
 
@@ -306,7 +306,7 @@ export class AnalyticsService {
   async getTopUsersWithMaxOrders(userId: number): Promise<any[]> {
     try {
       const orderQueryBuilder = this.orderRepository.createQueryBuilder('order')
-        .select(['customer.UsrBy.id AS userId', 'COUNT(order.id) AS orderCount'])
+        .select(['customer', 'COUNT(order.id) AS orderCount'])
         .leftJoin('order.customer', 'customer')
         .groupBy('customer.UsrBy.id')
         .having('orderCount > 0') // Exclude users with no orders
@@ -319,13 +319,15 @@ export class AnalyticsService {
         });
 
         const userIds = [userId, ...usrByIdUsers.map(u => u.id)];
-        console.log("userIds***************", userIds)
+
         if (userIds.length > 0) {
           const result = await orderQueryBuilder
             .andWhere('customer.UsrBy.id IN (:...userIds)', { userIds })
             .getRawMany();
 
-          return result.flatMap((m) => ({ userId: m.userId }));
+          console.log("result*************", result)
+
+          return result.flatMap((m) => ({ userId: m.customer_id, UsrBy: m.customer_usrById, name: m.customer_name, email: m.customer_email, phone: m.customer_contact }));
         }
       }
 
@@ -345,15 +347,11 @@ export class AnalyticsService {
         relations: ['dealer'],
       })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id);
 
-      console.log("dealerUsersQuery**********", dealerUsersQuery);
-
       // Step 2: Get all users by matching UsrBy field to dealers' user ids
       const usrByDealer = (await this.orderRepository.find({
         relations: ['customer', 'customer.UsrBy'],
       }))
         .filter((ordUsr) => dealerUsersQuery.includes(ordUsr.customer.UsrBy.id));
-
-      console.log("usrByDealer*************", usrByDealer.map((v) => v.id));
 
       // Step 3: Count orders for each customer and order them by count
       const ordersByDealers = await this.orderRepository
@@ -366,19 +364,19 @@ export class AnalyticsService {
         .orderBy('orderCount', 'DESC')
         .getRawMany();
 
-      console.log("ordersByDealers*************", ordersByDealers)
       // Extract customerIds from ordersByDealers
       const customerIds = ordersByDealers.map(order => order.customerId);
 
       const topDealers = await this.userRepository
         .createQueryBuilder('users')
-        .select('users.UsrBy', 'UsrBy')
+        .select('users', 'users')
         .where('users.id IN (:...customerIds)', { customerIds })
         .groupBy('users.UsrBy')
         .limit(5)
         .getRawMany();
 
-      return topDealers.map((m) => ({ dealerId: m.UsrBy }));
+      console.log("topDealers***********", topDealers)
+      return topDealers.map((m) => ({ userId: m.users_id, UsrBy: m.users_usrById, name: m.users_name, email: m.users_email, phone: m.users_contact, dealerId: m.users_dealerId }));
     } catch (error) {
       console.error('Error getting top dealers with max orders:', error.message);
       return [];

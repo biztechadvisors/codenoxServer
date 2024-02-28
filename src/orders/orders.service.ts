@@ -276,6 +276,9 @@ export class OrdersService {
 
       if ([PaymentGatewayType.STRIPE, PaymentGatewayType.PAYPAL, PaymentGatewayType.RAZORPAY].includes(paymentGatewayType)) {
         const paymentIntent = await this.processPaymentIntent(order);
+        if(!paymentIntent){
+          // await this.mailService.sendTransactionDeclined()
+        }
         order.payment_intent = paymentIntent;
       }
 
@@ -772,7 +775,6 @@ export class OrdersService {
       const products = orderToDelete.products; 
 
       await this.mailService.sendUserRefund(customer,products);
-
 
       // Remove the related data
       orderToDelete.status = null;

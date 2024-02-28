@@ -82,6 +82,7 @@ export class PermissionService {
             write: permissionType.write,
           });
         }
+
         return acc;
       }, {});
 
@@ -102,7 +103,7 @@ export class PermissionService {
         'permission.id',
         'permission.type_name',
         'permission.permission_name',
-        'permissions.id as permissionId',
+        'permissions.id',
         'permissions.type',
         'permissions.read',
         'permissions.write',
@@ -114,7 +115,7 @@ export class PermissionService {
       type_name: permission.type_name,
       permissionName: permission.permission_name,
       permission: permission.permissions.map(p => ({
-        id: p.permissionId,
+        id: p.id,
         type: p.type,
         read: p.read,
         write: p.write,
@@ -127,6 +128,9 @@ export class PermissionService {
 
   async updatePermission(id: number, updatePermissionDto: UpdatePermissionDto) {
     try {
+      console.log("id***************updatePermission", id)
+      console.log("updatePermissionDto***************updatePermission", updatePermissionDto)
+
       const permissionToUpdate = await this.permissionRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissions')
@@ -136,28 +140,41 @@ export class PermissionService {
       if (!permissionToUpdate) {
         throw new Error('Permission not found');
       }
+      // console.log(permissionToUpdate)
 
       permissionToUpdate.type_name = updatePermissionDto.type_name;
       permissionToUpdate.permission_name = updatePermissionDto.permission_name;
 
       if (Array.isArray(updatePermissionDto.permission) && updatePermissionDto.permission.length > 0) {
         for (const updatedPermission of updatePermissionDto.permission) {
-          permissionToUpdate.permissions.forEach(async (permissionType) => {
-            if (permissionType.id === updatedPermission.id) {
-              permissionType.read = updatedPermission.read;
-              permissionType.type = updatedPermission.type;
-              permissionType.write = updatedPermission.write;
-              await this.permissionTypeRepository.save(permissionType)
-              if (!permissionType.read) {
-                await this.permissionTypeRepository.remove(permissionType);
+          if (!updatedPermission.id) {
+            const newPermissionType = new PermissionType();
+            newPermissionType.read = updatedPermission.read;
+            newPermissionType.type = updatedPermission.type;
+            newPermissionType.write = updatedPermission.write;
+            newPermissionType.permissions = permissionToUpdate
+            await this.permissionTypeRepository.save(newPermissionType);
+
+            // permissionToUpdate.permissions.push(savedPermissionType);
+          } else {
+            const existingPermissionType = permissionToUpdate.permissions.find(pt => pt.id === updatedPermission.id);
+            if (existingPermissionType) {
+              existingPermissionType.read = updatedPermission.read;
+              existingPermissionType.type = updatedPermission.type;
+              existingPermissionType.write = updatedPermission.write;
+
+              await this.permissionTypeRepository.save(existingPermissionType);
+              if (!updatedPermission.read) {
+                await this.permissionTypeRepository.remove(existingPermissionType);
+                permissionToUpdate.permissions = permissionToUpdate.permissions.filter(pt => pt !== existingPermissionType);
               }
             }
-          });
+          }
         }
       }
-      const savePermissionToUpdate = await this.permissionRepository.save(permissionToUpdate);
-
-      return savePermissionToUpdate;
+      // Return the permissionToUpdate directly, as it's already of type Permission
+      console.log(permissionToUpdate)
+      return permissionToUpdate;
     } catch (error) {
       console.error(error);
       return 'Update unsuccessful';
