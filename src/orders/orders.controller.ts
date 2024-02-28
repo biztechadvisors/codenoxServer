@@ -34,10 +34,8 @@ export class OrdersController {
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
     const OrdSuccess = await this.ordersService.create(createOrderDto);
     // Call the service method
-    try {
-      console.log("createOrderDto.products***********", createOrderDto.products)
+    try {  
       await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
-      console.log('Product quantities updated successfully');
       throwError
     } catch (error) {
       console.error('Error updating product quantities:', error.message || error);

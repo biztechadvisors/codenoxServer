@@ -22,8 +22,7 @@ export class WithdrawsService {
     @InjectRepository(ShopRepository)
     private shopRepository: ShopRepository,
   ) { }
-  // private withdraw: Withdraw[] = []
-
+ 
   async create(createWithdrawDto: CreateWithdrawDto) {
     const newWithdraw = new Withdraw()
     // const newWithdrawBalance = new Balance()
@@ -66,16 +65,15 @@ export class WithdrawsService {
         if (findBalanceId) {
 
           findBalanceId.withdrawn_amount = addWithdraw.amount
-          const addWithdraBalance = await this.balanceRepository.save(findBalanceId)
+            await this.balanceRepository.save(findBalanceId)
         }
 
         return addWithdraw
       } else {
-        console.error()
         return 'You Already Have Pending Request'
       }
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 
