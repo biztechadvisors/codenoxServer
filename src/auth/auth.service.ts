@@ -114,8 +114,6 @@ export class AuthService {
     if (existingUser) {
       const usr_type = existingUser.type;
 
-      console.log('usr_type***116', usr_type);
-
       const otp = await this.generateOtp();
       const token = Math.floor(100 + Math.random() * 900).toString();
 
@@ -124,11 +122,7 @@ export class AuthService {
 
       await this.userRepository.save(existingUser);
 
-      console.log('127*****', usr_type.type_name);
-      console.log("usr_type.type_name === UserType.Customer**********", usr_type.type_name === UserType.Customer)
-
-      if (usr_type.type_name === UserType.Customer) {
-        console.log("usr_type.type_name === UserType.Customer**********", usr_type.type_name === UserType.Customer)
+      if (usr_type?.type_name === UserType.Customer) {
         // Send confirmation email for customers
         await this.mailService.sendUserConfirmation(existingUser, token);
       }
@@ -140,7 +134,7 @@ export class AuthService {
 
     let permission;
 
-    if (createUserInput.type.permission_name) {
+    if (createUserInput.type?.permission_name) {
       permission = await this.permissionRepository.findOne({
         where: { permission_name: createUserInput.type.permission_name }
       });
@@ -166,6 +160,7 @@ export class AuthService {
 
       const token = Math.floor(100 + Math.random() * 900).toString();
       // Send confirmation email for users with permission
+
       await this.mailService.sendUserConfirmation(userData, token);
 
       const access_token = await this.signIn(userData.email, createUserInput.password);
@@ -189,10 +184,12 @@ export class AuthService {
       userData.created_at = new Date();
       userData.UsrBy = createUserInput.UsrBy;
       userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
+      const token = Math.floor(100 + Math.random() * 900).toString();
 
+
+      userData.otp = Number(token)
       await this.userRepository.save(userData);
 
-      const token = Math.floor(100 + Math.random() * 900).toString();
       // Send confirmation email for customers
       await this.mailService.sendUserConfirmation(userData, token);
 
