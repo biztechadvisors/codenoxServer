@@ -1168,7 +1168,7 @@ export class OrdersService {
   //   return false;
   // }
 
-  async razorpayPay(order: Order, paymentIntentInfo: PaymentIntentInfo,user:User): Promise<boolean> {
+  async razorpayPay(order: Order, paymentIntentInfo: PaymentIntentInfo): Promise<boolean> {
     try {
       const response = await this.razorpayService.verifyOrder(paymentIntentInfo.payment_id);
       if (response.payment.status === 'captured') {
@@ -1178,7 +1178,7 @@ export class OrdersService {
     } catch (error) {
       console.error("Error verifying Razorpay order: ", error);
   
-      await this.mailService.sendTransactionDeclined(user,order.products)
+      // await this.mailService.sendTransactionDeclined(user,order.products)
       throw error;
     }
   }
