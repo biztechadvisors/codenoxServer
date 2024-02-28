@@ -766,6 +766,13 @@ export class OrdersService {
       if (!orderToDelete) {
         throw new NotFoundException('Order not found');
       }
+       
+      // Assume orderToDelete has a customer property for the user and products property for the products
+      const customer = orderToDelete.customer; 
+      const products = orderToDelete.products; 
+
+      await this.mailService.sendUserRefund(customer,products);
+
 
       // Remove the related data
       orderToDelete.status = null;
@@ -784,6 +791,8 @@ export class OrdersService {
 
       // Remove the order from the database
       await this.orderRepository.remove(orderToDelete);
+      await this.mailService.sendCancelOrder(customer, products);
+
     } catch (error) {
       console.error('Error removing order:', error);
       throw error; // Rethrow the error for further analysis or handling
@@ -985,7 +994,7 @@ export class OrdersService {
       const shippingState = Invoice.shipping_address.state;
       if (stateCode.hasOwnProperty(shippingState)) {
         const stateCodeValue = stateCode[shippingState];
-console.log("+++++++++++++++++++",Invoice);
+        console.log("+++++++++++++++++++",Invoice);
         taxType = {
           CGST: Invoice.sales_tax / 2,
           SGST: Invoice.sales_tax / 2, // state- ut code

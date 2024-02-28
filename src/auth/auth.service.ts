@@ -337,7 +337,7 @@ export class AuthService {
     await this.userRepository.save(user);
 
     try {
-      await this.mailService.sendUserConfirmation(user, token);
+      await this.mailService.forgetPasswordUserConfirmation(user, token);
       return {
         success: true,
         message: 'OTP sent to your email.',
