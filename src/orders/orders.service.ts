@@ -52,6 +52,7 @@ import { Permission } from 'src/permission/entities/permission.entity';
 import { throwError } from 'rxjs';
 import { rejects, throws } from 'assert';
 import { error } from 'console';
+import products from 'razorpay/dist/types/products';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -133,6 +134,7 @@ export class OrdersService {
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
       console.log("createOrderInput**********", createOrderInput)
+      throw error
       const order = plainToClass(Order, createOrderInput);
       const newOrderStatus = new OrderStatus();
       const newOrderFile = new OrderFiles();
@@ -1158,12 +1160,27 @@ export class OrdersService {
     }
   }
 
-  async razorpayPay(order: Order, paymentIntentInfo: PaymentIntentInfo): Promise<boolean> {
-    const response = await this.razorpayService.verifyOrder(paymentIntentInfo.payment_id);
-    if (response.payment.status === 'captured') {
-      return true;
+  // async razorpayPay(order: Order, paymentIntentInfo: PaymentIntentInfo): Promise<boolean> {
+  //   const response = await this.razorpayService.verifyOrder(paymentIntentInfo.payment_id);
+  //   if (response.payment.status === 'captured') {
+  //     return true;
+  //   }
+  //   return false;
+  // }
+
+  async razorpayPay(order: Order, paymentIntentInfo: PaymentIntentInfo,user:User): Promise<boolean> {
+    try {
+      const response = await this.razorpayService.verifyOrder(paymentIntentInfo.payment_id);
+      if (response.payment.status === 'captured') {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error verifying Razorpay order: ", error);
+  
+      await this.mailService.sendTransactionDeclined(user,order.products)
+      throw error;
     }
-    return false;
   }
 
   async changeOrderPaymentStatus(order: Order, paymentStatus: PaymentStatusType): Promise<void> {
