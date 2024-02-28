@@ -7,7 +7,8 @@ export class CreatePermissionDto extends PickType(Permission, [
     'id',
     'type_name',
     'permission_name'
-]) { permissions: CreatePermissionTypeDto }
+]) { permissions: CreatePermissionTypeDto[] }
+
 
 
 export class CreatePermissionTypeDto extends PickType(PermissionType, [
