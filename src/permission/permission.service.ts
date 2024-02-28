@@ -168,11 +168,7 @@ export class PermissionService {
       console.log("permissionsToRemove*********168", permissionsToRemove)
       if (permissionsToRemove.length > 0) {
         await this.permissionTypeRepository.remove(permissionsToRemove);
-        // const permissionsToRemoveIds = permissionsToRemove.map(permission => permission.id);
-        // permissionToUpdate.permissions = permissionToUpdate.permissions.filter(pt => !permissionsToRemoveIds.includes(pt.id));
       }
-
-      // await this.permissionRepository.save(permissionToUpdate);
 
       return permissionToUpdate;
     } catch (error) {
