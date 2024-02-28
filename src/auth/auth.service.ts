@@ -140,66 +140,91 @@ export class AuthService {
 
     let permission;
 
-    if (createUserInput.type.permission_name !== undefined || null || "") {
+    if (createUserInput.type.permission_name) {
       permission = await this.permissionRepository.findOne({
         where: { permission_name: createUserInput.type.permission_name }
       });
     }
 
-    const hashPass = await bcrypt.hash(createUserInput.password, 12);
-    const userData = new User();
-    userData.name = createUserInput.name;
-    userData.email = createUserInput.email;
-    userData.contact = createUserInput.contact;
-    userData.password = hashPass;
-    userData.created_at = new Date();
-    userData.UsrBy = createUserInput.UsrBy;
     if (permission) {
-      userData.type = permission; // Assign permission directly
-    }
+      // User with permission
+      const hashPass = await bcrypt.hash(createUserInput.password, 12);
+      const userData = new User();
+      userData.name = createUserInput.name;
+      userData.email = createUserInput.email;
+      userData.contact = createUserInput.contact;
+      userData.password = hashPass;
+      userData.created_at = new Date();
+      userData.UsrBy = createUserInput.UsrBy;
+      userData.type = permission;
 
-    if (createUserInput.UsrBy) {
-      userData.isVerified = true;
-    }
+      if (createUserInput.UsrBy) {
+        userData.isVerified = true;
+      }
 
-    await this.userRepository.save(userData);
+      await this.userRepository.save(userData);
 
-    if (permission.type_name === UserType.Customer) {
+      const token = Math.floor(100 + Math.random() * 900).toString();
+      // Send confirmation email for users with permission
+      await this.mailService.sendUserConfirmation(userData, token);
+
+      const access_token = await this.signIn(userData.email, createUserInput.password);
+
+      // Fetch permissions based on user type
+      const result = await this.getPermissions(userData.type.type_name);
+
+      return {
+        token: access_token.access_token,
+        type_name: [`${userData.type.type_name}`],
+        permissions: result,
+      };
+    } else {
+      // Customer registration
+      const hashPass = await bcrypt.hash(createUserInput.password, 12);
+      const userData = new User();
+      userData.name = createUserInput.name;
+      userData.email = createUserInput.email;
+      userData.contact = createUserInput.contact;
+      userData.password = hashPass;
+      userData.created_at = new Date();
+      userData.UsrBy = createUserInput.UsrBy;
+      userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
+
+      await this.userRepository.save(userData);
+
       const token = Math.floor(100 + Math.random() * 900).toString();
       // Send confirmation email for customers
       await this.mailService.sendUserConfirmation(userData, token);
-    }
 
-    const access_token = await this.signIn(userData.email, createUserInput.password);
+      const access_token = await this.signIn(userData.email, createUserInput.password);
 
-    // Fetch permissions based on user type
-    let result = [];
-    if (permission.type_name !== UserType.Customer) {
-      console.log("permission.type_name****169", permission.type_name);
-      result = await this.permissionRepository
-        .createQueryBuilder('permission')
-        .leftJoinAndSelect('permission.permissions', 'permissions')
-        .where(`permission.type_name = :typeName`, { typeName: userData.type.type_name })
-        .select([
-          'permission.id',
-          'permission.type_name',
-          'permissions.id',
-          'permissions.type',
-          'permissions.read',
-          'permissions.write',
-        ])
-        .getMany();
+      return {
+        token: access_token.access_token,
+        type_name: [UserType.Customer],
+        permissions: [],
+      };
     }
+  }
+
+  async getPermissions(typeName: string): Promise<any[]> {
+    console.log("permission.type_name****169", typeName);
+    const result = await this.permissionRepository
+      .createQueryBuilder('permission')
+      .leftJoinAndSelect('permission.permissions', 'permissions')
+      .where(`permission.type_name = :typeName`, { typeName })
+      .select([
+        'permission.id',
+        'permission.type_name',
+        'permissions.id',
+        'permissions.type',
+        'permissions.read',
+        'permissions.write',
+      ])
+      .getMany();
 
     console.log("result******", result);
 
-    if (result.length === 0) {
-      return {
-        message: 'Permissions not found for the specified user type.',
-      };
-    }
-
-    const formattedResult = result.map((permission) => ({
+    return result.map((permission) => ({
       id: permission.id,
       type_name: permission.type_name,
       permission: permission.permissions.map((p) => ({
@@ -209,18 +234,8 @@ export class AuthService {
         write: p.write,
       })),
     }));
-    console.log("final*****register", {
-      token: access_token.access_token,
-      type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission,
-    })
-
-    return {
-      token: access_token.access_token,
-      type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission,
-    };
   }
+
 
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
