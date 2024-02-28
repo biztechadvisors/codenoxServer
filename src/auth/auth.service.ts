@@ -111,8 +111,6 @@ export class AuthService {
       relations: ['type'],
     });
 
-    console.log('first***112', existingUser);
-
     if (existingUser) {
       const usr_type = existingUser.type;
 
@@ -140,13 +138,13 @@ export class AuthService {
       };
     }
 
-    console.log('createUserInput.type*****138', createUserInput.type);
+    let permission;
 
-    const permission = await this.permissionRepository.findOne({
-      where: { permission_name: createUserInput.type.permission_name }
-    });
-
-    console.log("permission *******####", permission);
+    if (createUserInput.type.permission_name) {
+      permission = await this.permissionRepository.findOne({
+        where: { permission_name: createUserInput.type.permission_name }
+      });
+    }
 
     const hashPass = await bcrypt.hash(createUserInput.password, 12);
     const userData = new User();
@@ -156,16 +154,16 @@ export class AuthService {
     userData.password = hashPass;
     userData.created_at = new Date();
     userData.UsrBy = createUserInput.UsrBy;
-    userData.type = permission; // Assign permission directly
-
-    console.log('149*****usr_type.type_name');
+    if (permission) {
+      userData.type = permission; // Assign permission directly
+    }
 
     if (createUserInput.UsrBy) {
       userData.isVerified = true;
     }
-    console.log("userData*******####", userData);
+
     await this.userRepository.save(userData);
-    console.log('149*****usr_type.type_name');
+
     if (permission.type_name === UserType.Customer) {
       const token = Math.floor(100 + Math.random() * 900).toString();
       // Send confirmation email for customers

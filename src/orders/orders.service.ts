@@ -130,7 +130,6 @@ export class OrdersService {
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
       console.log("createOrderInput**********", createOrderInput)
-      throw error
       const order = plainToClass(Order, createOrderInput);
       const newOrderStatus = new OrderStatus();
       const newOrderFile = new OrderFiles();
