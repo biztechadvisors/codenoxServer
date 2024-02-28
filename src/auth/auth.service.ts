@@ -142,7 +142,7 @@ export class AuthService {
 
     let permission;
 
-    if (createUserInput.type.permission_name) {
+    if (createUserInput.type.permission_name !== undefined || null || "") {
       permission = await this.permissionRepository.findOne({
         where: { permission_name: createUserInput.type.permission_name }
       });
