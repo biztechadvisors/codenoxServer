@@ -69,7 +69,7 @@ async successfullyRegister(user: User ) {
     to: user.email,
     from: '"Support Team" <info@365dgrsol.in>',
     subject: `Welcome to Our Platform! Confirm your registration.`,
-    template: './invoiceToVendor',
+    template: './successfullyRegister',
     context: {
       name: user.name,
       email: user.email, // Including the email in the context
@@ -287,7 +287,7 @@ async sendCancelOrder(user: User, products: any){
       to: user.email,
       from: '"Dealer" <info@365dgrsol.in>',
       subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-      template: './',
+      template: './cancelOrder',
       context: {
         email: user.email,
         products: productDetails,
@@ -311,7 +311,7 @@ async sendTransactionDeclined(user: User, products: any){
       to: user.email,
       from: '"Dealer" <info@365dgrsol.in>',
       subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-      template: './',
+      template: './transactionDeclined',
       context: {
         email: user.email,
         products: productDetails,
