@@ -38,8 +38,8 @@ export class PermissionService {
           permissionType.type = permissionData.type;
           permissionType.permissions = savedPermission;
 
-          const pre = await this.permissionTypeRepository.save(permissionType);
-          console.log("pre,os++++++++++++", pre)
+           await this.permissionTypeRepository.save(permissionType);
+          
 
         }
       } else {
@@ -127,6 +127,7 @@ export class PermissionService {
 
 
   async updatePermission(id: number, updatePermissionDto: UpdatePermissionDto) {
+    
     try {
       const permissionToUpdate = await this.permissionRepository
         .createQueryBuilder('permission')
@@ -148,7 +149,7 @@ export class PermissionService {
               permissionType.read = updatedPermission.read;
               permissionType.type = updatedPermission.type;
               permissionType.write = updatedPermission.write;
-              await this.permissionTypeRepository.save(permissionType)
+               await this.permissionTypeRepository.save(permissionType)
               if (!permissionType.read) {
                 await this.permissionTypeRepository.remove(permissionType);
               }
@@ -157,7 +158,6 @@ export class PermissionService {
         }
       }
       const savePermissionToUpdate = await this.permissionRepository.save(permissionToUpdate);
-
       return savePermissionToUpdate;
     } catch (error) {
       console.error(error);
@@ -171,7 +171,7 @@ export class PermissionService {
       .delete()
       .where('permissionsId = :id', { id })
       .execute();
-    const result = await this.permissionRepository
+      const result = await this.permissionRepository
       .createQueryBuilder()
       .delete()
       .where('id = :id', { id })
