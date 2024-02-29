@@ -6,7 +6,8 @@ import { Permission, PermissionType } from "../entities/permission.entity";
 export class CreatePermissionDto extends PickType(Permission, [
     'id',
     'type_name',
-    'permission_name'
+    'permission_name',
+    'user'
 ]) { permissions: CreatePermissionTypeDto[] }
 
 
