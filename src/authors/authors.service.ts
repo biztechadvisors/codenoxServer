@@ -1,8 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { UpdateAuthorDto } from './dto/update-author.dto'
-import { plainToClass } from 'class-transformer'
-import authorsJson from '@db/authors.json'
 import { Author } from './entities/author.entity'
 import Fuse from 'fuse.js'
 import { GetAuthorDto } from './dto/get-author.dto'
@@ -73,13 +71,13 @@ export class AuthorsService {
       const AuthorId = await this.authorRepository.save(newAuthor)
 
       if (AuthorId.socials) {
-        const socialIds = AuthorId.socials.map((social) => social.id);
+        AuthorId.socials.map((social) => social.id);
     } else {
         console.log("AuthorId socials is undefined or null");
     }
        return newAuthor
     }catch(error){
-      console.log("createAuthorDto", error)
+      console.log(error)
     }
   }
 
@@ -93,7 +91,6 @@ export class AuthorsService {
       relations: ['socials']
     })
 
-    console.log("seaarch", search)
     const fuse = new Fuse(data, options)
 
 if (search) {
@@ -136,7 +133,6 @@ if(is_approved){
   }
 
   async update(id: number, updateAuthorDto: UpdateAuthorDto) {
-     console.log("first", updateAuthorDto)
 
     // if(id && updateAuthorDto){
     //   console.log("id update working")
@@ -232,12 +228,10 @@ if(is_approved){
         relations: ['socials', 'image', 'cover_image']
       })
 
-      console.log("author update", author, "update dto", updateAuthorDto)
       // Update author
         if(author){
 
             author.is_approved = updateAuthorDto.is_approved ?? true
-            console.log("updateFirst", author)
               if(updateAuthorDto){ 
             // author.is_approved = updateAuthorDto.is_approved ?? true
             author.bio = updateAuthorDto.bio
@@ -274,32 +268,27 @@ if(is_approved){
                          }
                          if(updateAuthorDto.image){
   
-                            console.log("updated images")
+
                                         try{
                                            const updateLogo = await this.attachmentRepository.findOne({
                                             where: {id: author.image.id }  
                                            })
-                                           console.log("Logoooooo", updateLogo)
+
                                            if(updateLogo){
                                             const findAttachment = await this.attachmentRepository.findOne({
                                               where: { original: updateLogo.original }
                                             })
-                                            console.log("Attachmentssssssssss", findAttachment)
+                                         
+                                              await this.attachmentRepository.delete(findAttachment)       
+                                              await this.attachmentRepository.delete(updateLogo)
                             
-                                            const del1 = await this.attachmentRepository.delete(findAttachment)
-                                              console.log("del1", del1)
-                            
-                            
-                                             const del2 = await this.attachmentRepository.delete(updateLogo)
-                                                console.log("del2", del2)
-                            
-                                             const updates = this.attachmentRepository.create(updateAuthorDto.image)
-                                             const savedLogo = await this.attachmentRepository.save(updates)
-                                             console.log("saveedLogoooo**************", savedLogo)
+                                              const updates = this.attachmentRepository.create(updateAuthorDto.image)
+                                              await this.attachmentRepository.save(updates)
+                                            
                                           } else {
                                             const updates = this.attachmentRepository.create(updateAuthorDto.image)
-                                            const createLogo = await this.attachmentRepository.save(updates)
-                                            console.log("createLogoooo**************", createLogo)
+                                            await this.attachmentRepository.save(updates)
+                                           
                                           }
                                          
                                           
@@ -316,7 +305,8 @@ if(is_approved){
   }
 
  async remove(id: number) {
-    console.log("number id+++++++++", id)
+   
+  try{
     const findId = await this.authorRepository.findOne({
       where: {id: id},
       relations: ['image', 'cover_image', 'socials']
@@ -324,24 +314,24 @@ if(is_approved){
 
     if(findId){
 
-      const del = await this.authorRepository.delete(findId.id)
-      console.log("delete", del)
+       await this.authorRepository.delete(findId.id)
+
       if(findId.cover_image){
         const findCoverImageId = await this.attachmentRepository.findOne({
           where: { id: findId.cover_image.id }
         })
-        console.log("findimage Id", findCoverImageId)
-        const del1 = await this.attachmentRepository.delete(findCoverImageId)
-        console.log("deleting cover image ", del1)
+
+         await this.attachmentRepository.delete(findCoverImageId)
+
       }
 
       if(findId.image){
         const findImageId = await this.attachmentRepository.findOne({
           where: {id: findId.image.id}
         })
-       console.log("image id", findImageId)
-       const del2 = await this.attachmentRepository.delete(findImageId)
-       console.log("deleting image ", del2)
+
+        await this.attachmentRepository.delete(findImageId)
+
       }
       if(findId.socials){
         for(const id of findId.socials){
@@ -349,10 +339,10 @@ if(is_approved){
           const findSocialId = await this.shopSocialsRepository.findOne({
             where: { id: id.id}
           })
-          console.log("find Social Id", findSocialId)
 
-          const del3 = await this.shopSocialsRepository.delete(findSocialId)
-            console.log("deleting shop social", del3)
+
+           await this.shopSocialsRepository.delete(findSocialId)
+
         }
       }
 
@@ -361,10 +351,13 @@ if(is_approved){
       const findIds = await this.shopSocialsRepository.find({
         where: {id: id}
       })
-      console.log("findIds", findIds)
-
+       return findIds
     }
-    console.log("find Id", findId)
+  } catch (error) {
+    throw new NotFoundException(error);
+  }
+
+
    
   }
 }
