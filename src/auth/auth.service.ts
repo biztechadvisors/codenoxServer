@@ -87,14 +87,17 @@ export class AuthService {
 
     console.log("email, pass*************", email, pass)
     const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
-    console.log("user*********signIn", user)
+
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+
     const isMatch = await bcrypt.compare(pass, user.password);
+    console.log("isMatch*********signIn", isMatch)
     if (!isMatch) {
       throw new UnauthorizedException('Invalid password');
     }
+
     // The password is correct.
     const payload = { sub: user.id, username: user.email };
     return {
@@ -184,7 +187,7 @@ export class AuthService {
       userData.created_at = new Date();
       userData.UsrBy = createUserInput.UsrBy;
       userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
-      const token = Math.floor(100 + Math.random() * 900).toString();
+      const token = Math.floor(100 + Math.random() * 999).toString();
 
 
       userData.otp = Number(token)
@@ -238,29 +241,27 @@ export class AuthService {
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
     const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
 
-    console.log("user#######*********202", user)
-
     if (!user || !user.isVerified) {
       return {
         message: 'User Is Not Registered!',
       };
     }
 
-    console.log("user.type*********208", user.type)
-    const permission = await this.permissionRepository.findOneBy(user.type);
+    var permission;
+    if (user.type) {
+      permission = await this.permissionRepository.findOneBy(user.type);
+    }
 
     let access_token: { access_token: string };
-
+    console.log("permission****253", permission)
     if (!permission || permission.id === null) {
       access_token = await this.signIn(loginInput.email, loginInput.password);
-      console.log("first**********213", access_token)
       return {
         token: access_token.access_token,
         permissions: ['customer', 'admin', 'super_admin'],
       };
     }
 
-    console.log("permission*******221", permission)
     access_token = await this.signIn(loginInput.email, loginInput.password);
     console.log("access_token*************", access_token)
     const result = await this.permissionRepository

@@ -6,13 +6,16 @@ import { Permission, PermissionType } from "./entities/permission.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { UpdatePermissionDto } from "./dto/update-permission.dto";
+import { User } from "src/users/entities/user.entity";
 
 @Injectable()
 export class PermissionService {
 
   constructor(
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
-    @InjectRepository(PermissionType) private readonly permissionTypeRepository: Repository<PermissionType>
+    @InjectRepository(PermissionType) private readonly permissionTypeRepository: Repository<PermissionType>,
+    // @InjectRepository(User) private readonly userRepository: Repository<User>
+
   ) { }
 
   async create(createPermission: CreatePermissionDto) {
@@ -25,6 +28,7 @@ export class PermissionService {
       const permissions = new Permission();
       permissions.type_name = createPermission.type_name;
       permissions.permission_name = createPermission.permission_name;
+      // permissions.user = createPermission.user;
 
       const savedPermission = await this.permissionRepository.save(permissions);
 
@@ -51,24 +55,31 @@ export class PermissionService {
   }
 
 
-  async getPermission() {
+  async getPermission(userId: any) {
     try {
+      // console.log("userID***************56", userId)
+      // const user = await this.userRepository.findOne({ where: { id: userId } })
+
       const permissions = await this.permissionRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissionTypes') // Use a different alias to avoid confusion
+        // .leftJoinAndSelect('permission.user', 'user')
         .select(['permission.id', 'permission.type_name', 'permission.permission_name'])
         .addSelect(['permissionTypes.id', 'permissionTypes.type', 'permissionTypes.read', 'permissionTypes.write'])
+        // .where("permission.user = :user", { user: user })
         .getMany();
 
       const groupedPermissions = permissions.reduce((acc, permission) => {
         const typeName = permission.type_name;
         const permissionName = permission.permission_name;
+        // const user = permission.user;
 
         if (!acc[permissionName]) {
           acc[permissionName] = {
             id: permission.id,
             type_name: typeName,
             permission_name: permissionName,
+            // user: user,
             permissions: [],
           };
         }
@@ -98,6 +109,7 @@ export class PermissionService {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
+      // .leftJoinAndSelect('permission.user', 'user')
       .where('permission.id = :id', { id })
       .select([
         'permission.id',
@@ -114,6 +126,7 @@ export class PermissionService {
       id: permission.id,
       type_name: permission.type_name,
       permissionName: permission.permission_name,
+      // user: permission.user,
       permission: permission.permissions.map(p => ({
         id: p.id,
         type: p.type,
@@ -192,7 +205,6 @@ export class PermissionService {
     if (result.affected === 0) {
       throw new NotFoundException('Permission not found');
     }
-
     return result;
   }
 }

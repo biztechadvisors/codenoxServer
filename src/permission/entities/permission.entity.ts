@@ -13,6 +13,9 @@ export class Permission {
 
   @OneToMany(() => PermissionType, PermissionType => PermissionType.permissions)
   permissions: PermissionType[];
+
+  @ManyToOne(() => Permission, permission => permission.id)
+  user: Permission;
 }
 
 @Entity()
