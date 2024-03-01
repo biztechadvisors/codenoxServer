@@ -87,14 +87,17 @@ export class AuthService {
 
     console.log("email, pass*************", email, pass)
     const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
-    console.log("user*********signIn", user)
+
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+
     const isMatch = await bcrypt.compare(pass, user.password);
+    console.log("isMatch*********signIn", isMatch)
     if (!isMatch) {
       throw new UnauthorizedException('Invalid password');
     }
+
     // The password is correct.
     const payload = { sub: user.id, username: user.email };
     return {
@@ -111,12 +114,8 @@ export class AuthService {
       relations: ['type'],
     });
 
-    console.log('first***112', existingUser);
-
     if (existingUser) {
       const usr_type = existingUser.type;
-
-      console.log('usr_type***116', usr_type);
 
       const otp = await this.generateOtp();
       const token = Math.floor(100 + Math.random() * 900).toString();
@@ -126,11 +125,7 @@ export class AuthService {
 
       await this.userRepository.save(existingUser);
 
-      console.log('127*****', usr_type.type_name);
-      console.log("usr_type.type_name === UserType.Customer**********", usr_type.type_name === UserType.Customer)
-
-      if (usr_type.type_name === UserType.Customer) {
-        console.log("usr_type.type_name === UserType.Customer**********", usr_type.type_name === UserType.Customer)
+      if (usr_type?.type_name === UserType.Customer) {
         // Send confirmation email for customers
         await this.mailService.sendUserConfirmation(existingUser, token);
       }
@@ -140,68 +135,96 @@ export class AuthService {
       };
     }
 
-    console.log('createUserInput.type*****138', createUserInput.type);
+    let permission;
 
-    const permission = await this.permissionRepository.findOne({
-      where: { permission_name: createUserInput.type.permission_name }
-    });
-
-    console.log("permission *******####", permission);
-
-    const hashPass = await bcrypt.hash(createUserInput.password, 12);
-    const userData = new User();
-    userData.name = createUserInput.name;
-    userData.email = createUserInput.email;
-    userData.contact = createUserInput.contact;
-    userData.password = hashPass;
-    userData.created_at = new Date();
-    userData.UsrBy = createUserInput.UsrBy;
-    userData.type = permission; // Assign permission directly
-
-    console.log('149*****usr_type.type_name');
-
-    if (createUserInput.UsrBy) {
-      userData.isVerified = true;
+    if (createUserInput.type?.permission_name) {
+      permission = await this.permissionRepository.findOne({
+        where: { permission_name: createUserInput.type.permission_name }
+      });
     }
-    console.log("userData*******####", userData);
-    await this.userRepository.save(userData);
-    console.log('149*****usr_type.type_name');
-    if (permission.type_name === UserType.Customer) {
+
+    if (permission) {
+      // User with permission
+      const hashPass = await bcrypt.hash(createUserInput.password, 12);
+      const userData = new User();
+      userData.name = createUserInput.name;
+      userData.email = createUserInput.email;
+      userData.contact = createUserInput.contact;
+      userData.password = hashPass;
+      userData.created_at = new Date();
+      userData.UsrBy = createUserInput.UsrBy;
+      userData.type = permission;
+
+      if (createUserInput.UsrBy) {
+        userData.isVerified = true;
+      }
+
+      await this.userRepository.save(userData);
+
       const token = Math.floor(100 + Math.random() * 900).toString();
+      // Send confirmation email for users with permission
+
+      await this.mailService.sendUserConfirmation(userData, token);
+
+      const access_token = await this.signIn(userData.email, createUserInput.password);
+
+      // Fetch permissions based on user type
+      const result = await this.getPermissions(userData.type.type_name);
+
+      return {
+        token: access_token.access_token,
+        type_name: [`${userData.type.type_name}`],
+        permissions: result,
+      };
+    } else {
+      // Customer registration
+      const hashPass = await bcrypt.hash(createUserInput.password, 12);
+      const userData = new User();
+      userData.name = createUserInput.name;
+      userData.email = createUserInput.email;
+      userData.contact = createUserInput.contact;
+      userData.password = hashPass;
+      userData.created_at = new Date();
+      userData.UsrBy = createUserInput.UsrBy;
+      userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
+      const token = Math.floor(100 + Math.random() * 999).toString();
+
+
+      userData.otp = Number(token)
+      await this.userRepository.save(userData);
+
       // Send confirmation email for customers
       await this.mailService.sendUserConfirmation(userData, token);
-    }
 
-    const access_token = await this.signIn(userData.email, createUserInput.password);
+      const access_token = await this.signIn(userData.email, createUserInput.password);
 
-    // Fetch permissions based on user type
-    let result = [];
-    if (permission.type_name !== UserType.Customer) {
-      console.log("permission.type_name****169", permission.type_name);
-      result = await this.permissionRepository
-        .createQueryBuilder('permission')
-        .leftJoinAndSelect('permission.permissions', 'permissions')
-        .where(`permission.type_name = :typeName`, { typeName: userData.type.type_name })
-        .select([
-          'permission.id',
-          'permission.type_name',
-          'permissions.id',
-          'permissions.type',
-          'permissions.read',
-          'permissions.write',
-        ])
-        .getMany();
+      return {
+        token: access_token.access_token,
+        type_name: [UserType.Customer],
+        permissions: [],
+      };
     }
+  }
+
+  async getPermissions(typeName: string): Promise<any[]> {
+    console.log("permission.type_name****169", typeName);
+    const result = await this.permissionRepository
+      .createQueryBuilder('permission')
+      .leftJoinAndSelect('permission.permissions', 'permissions')
+      .where(`permission.type_name = :typeName`, { typeName })
+      .select([
+        'permission.id',
+        'permission.type_name',
+        'permissions.id',
+        'permissions.type',
+        'permissions.read',
+        'permissions.write',
+      ])
+      .getMany();
 
     console.log("result******", result);
 
-    if (result.length === 0) {
-      return {
-        message: 'Permissions not found for the specified user type.',
-      };
-    }
-
-    const formattedResult = result.map((permission) => ({
+    return result.map((permission) => ({
       id: permission.id,
       type_name: permission.type_name,
       permission: permission.permissions.map((p) => ({
@@ -211,24 +234,12 @@ export class AuthService {
         write: p.write,
       })),
     }));
-    console.log("final*****register", {
-      token: access_token.access_token,
-      type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission,
-    })
-
-    return {
-      token: access_token.access_token,
-      type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission,
-    };
   }
+
 
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
     const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
-
-    console.log("user#######*********202", user)
 
     if (!user || !user.isVerified) {
       return {
@@ -236,21 +247,21 @@ export class AuthService {
       };
     }
 
-    console.log("user.type*********208", user.type)
-    const permission = await this.permissionRepository.findOneBy(user.type);
+    var permission;
+    if (user.type) {
+      permission = await this.permissionRepository.findOneBy(user.type);
+    }
 
     let access_token: { access_token: string };
-
+    console.log("permission****253", permission)
     if (!permission || permission.id === null) {
       access_token = await this.signIn(loginInput.email, loginInput.password);
-      console.log("first**********213", access_token)
       return {
         token: access_token.access_token,
         permissions: ['customer', 'admin', 'super_admin'],
       };
     }
 
-    console.log("permission*******221", permission)
     access_token = await this.signIn(loginInput.email, loginInput.password);
     console.log("access_token*************", access_token)
     const result = await this.permissionRepository
