@@ -24,7 +24,6 @@ import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
 import { Order, PaymentGatewayType, PaymentStatusType } from './entities/order.entity';
 import { OrdersService } from './orders.service';
 import { ShiprocketService } from './shiprocket.service';
-import { throwError } from 'rxjs';
 
 @Controller('orders')
 export class OrdersController {
@@ -37,8 +36,7 @@ export class OrdersController {
     try {
       console.log("createOrderDto.products***********", createOrderDto.products)
       await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
-      console.log('Product quantities updated successfully');
-      throwError
+
     } catch (error) {
       console.error('Error updating product quantities:', error.message || error);
       throw error

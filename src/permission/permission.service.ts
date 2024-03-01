@@ -59,9 +59,7 @@ export class PermissionService {
 
   async getPermission(userId: any) {
     try {
-      console.log("userID***************56", userId)
-      const user = await this.userRepository.findOne({ where: { id: userId } })
-
+      // console.log("userID***************56", userId)
       const permissions = await this.permissionRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissionTypes') // Use a different alias to avoid confusion
