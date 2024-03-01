@@ -1,18 +1,20 @@
 /* eslint-disable prettier/prettier */
-
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { CreatePermissionDto, CreatePermissionTypeDto } from "./dto/create-permission.dto";
 import { Permission, PermissionType } from "./entities/permission.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { UpdatePermissionDto } from "./dto/update-permission.dto";
+import { User } from "src/users/entities/user.entity";
 
 @Injectable()
 export class PermissionService {
 
   constructor(
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
-    @InjectRepository(PermissionType) private readonly permissionTypeRepository: Repository<PermissionType>
+    @InjectRepository(PermissionType) private readonly permissionTypeRepository: Repository<PermissionType>,
+    // @InjectRepository(User) private readonly userRepository: Repository<User>
+
   ) { }
 
   async create(createPermission: CreatePermissionDto) {
@@ -25,12 +27,13 @@ export class PermissionService {
       const permissions = new Permission();
       permissions.type_name = createPermission.type_name;
       permissions.permission_name = createPermission.permission_name;
+      // permissions.user = createPermission.user;
 
       const savedPermission = await this.permissionRepository.save(permissions);
 
-      if (Array.isArray(createPermission.permission) && createPermission.permission.length > 0) {
+      if (Array.isArray(createPermission.permissions) && createPermission.permissions.length > 0) {
 
-        for (const permissionData of createPermission.permission) {
+        for (const permissionData of createPermission.permissions) {
           const permissionType = new PermissionType();
 
           permissionType.read = permissionData.read;
@@ -52,24 +55,31 @@ export class PermissionService {
   }
 
 
-  async getPermission() {
+  async getPermission(userId: any) {
     try {
+      // console.log("userID***************56", userId)
+      // const user = await this.userRepository.findOne({ where: { id: userId } })
+
       const permissions = await this.permissionRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissionTypes') // Use a different alias to avoid confusion
+        // .leftJoinAndSelect('permission.user', 'user')
         .select(['permission.id', 'permission.type_name', 'permission.permission_name'])
         .addSelect(['permissionTypes.id', 'permissionTypes.type', 'permissionTypes.read', 'permissionTypes.write'])
+        // .where("permission.user = :user", { user: user })
         .getMany();
 
       const groupedPermissions = permissions.reduce((acc, permission) => {
         const typeName = permission.type_name;
         const permissionName = permission.permission_name;
+        // const user = permission.user;
 
         if (!acc[permissionName]) {
           acc[permissionName] = {
             id: permission.id,
             type_name: typeName,
             permission_name: permissionName,
+            // user: user,
             permissions: [],
           };
         }
@@ -99,6 +109,7 @@ export class PermissionService {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
+      // .leftJoinAndSelect('permission.user', 'user')
       .where('permission.id = :id', { id })
       .select([
         'permission.id',
@@ -115,6 +126,7 @@ export class PermissionService {
       id: permission.id,
       type_name: permission.type_name,
       permissionName: permission.permission_name,
+      // user: permission.user,
       permission: permission.permissions.map(p => ({
         id: p.id,
         type: p.type,
@@ -130,8 +142,6 @@ export class PermissionService {
   async updatePermission(id: number, updatePermissionDto: UpdatePermissionDto) {
     
     try {
-
-
       const permissionToUpdate = await this.permissionRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissions')
@@ -141,39 +151,39 @@ export class PermissionService {
       if (!permissionToUpdate) {
         throw new Error('Permission not found');
       }
-      // console.log(permissionToUpdate)
 
       permissionToUpdate.type_name = updatePermissionDto.type_name;
       permissionToUpdate.permission_name = updatePermissionDto.permission_name;
 
-      if (Array.isArray(updatePermissionDto.permission) && updatePermissionDto.permission.length > 0) {
-        for (const updatedPermission of updatePermissionDto.permission) {
-          if (!updatedPermission.id) {
-            const newPermissionType = new PermissionType();
-            newPermissionType.read = updatedPermission.read;
-            newPermissionType.type = updatedPermission.type;
-            newPermissionType.write = updatedPermission.write;
-            newPermissionType.permissions = permissionToUpdate
-            await this.permissionTypeRepository.save(newPermissionType);
+      const updatedPermissionIds = updatePermissionDto.permissions.map(p => p.id);
+      const permissionsToRemove = permissionToUpdate.permissions.filter(pt => !updatedPermissionIds.includes(pt.id));
 
-            // permissionToUpdate.permissions.push(savedPermissionType);
+      if (Array.isArray(updatePermissionDto.permissions) && updatePermissionDto.permissions.length > 0) {
+        for (const updatedPermission of updatePermissionDto.permissions) {
+          let permissionTypeToUpdate;
+
+          if (updatedPermission.id) {
+            permissionTypeToUpdate = permissionToUpdate.permissions.find(pt => pt.id === updatedPermission.id);
           } else {
-            const existingPermissionType = permissionToUpdate.permissions.find(pt => pt.id === updatedPermission.id);
-            if (existingPermissionType) {
-              existingPermissionType.read = updatedPermission.read;
-              existingPermissionType.type = updatedPermission.type;
-              existingPermissionType.write = updatedPermission.write;
+            permissionTypeToUpdate = new PermissionType();
+            permissionTypeToUpdate.permissions = permissionToUpdate;
+            permissionTypeToUpdate.id = updatedPermission.id; // Save the id of the PermissionType
+          }
 
-              await this.permissionTypeRepository.save(existingPermissionType);
-              if (!updatedPermission.read) {
-                await this.permissionTypeRepository.remove(existingPermissionType);
-                permissionToUpdate.permissions = permissionToUpdate.permissions.filter(pt => pt !== existingPermissionType);
-              }
-            }
+          if (permissionTypeToUpdate) {
+            permissionTypeToUpdate.read = updatedPermission.read;
+            permissionTypeToUpdate.type = updatedPermission.type;
+            permissionTypeToUpdate.write = updatedPermission.write;
+            await this.permissionTypeRepository.save(permissionTypeToUpdate);
           }
         }
       }
-      // Return the permissionToUpdate directly, as it's already of type Permission
+
+      console.log("permissionsToRemove*********168", permissionsToRemove)
+      if (permissionsToRemove.length > 0) {
+        await this.permissionTypeRepository.remove(permissionsToRemove);
+      }
+
       return permissionToUpdate;
     } catch (error) {
       console.error(error);
@@ -196,7 +206,6 @@ export class PermissionService {
     if (result.affected === 0) {
       throw new NotFoundException('Permission not found');
     }
-
     return result;
   }
 }
