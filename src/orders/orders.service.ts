@@ -993,6 +993,7 @@ export class OrdersService {
       return numberToWords(Math.floor(num / 1000)) + ' thousand' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '');
     };
     console.log("first",Invoice.shop[0].address.state , Invoice.shipping_address.state  )
+    
     if (Invoice.shop[0].address.state === Invoice.shipping_address.state) {
       const shippingState = Invoice.shipping_address.state;
       if (stateCode.hasOwnProperty(shippingState)) {
