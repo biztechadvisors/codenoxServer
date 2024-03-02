@@ -187,22 +187,28 @@ export class AbandonedCartService {
 
 // @Interval(60000)
 async sendAbandonedCartReminder() {
+  // console.log("@working@")
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const abandonedCartData = await this.cartRepository.find({
       where: {
-        updated_at: LessThan(twentyFourHoursAgo), 
+        updated_at: LessThan(twentyFourHoursAgo),
        
       },
     });
 
+    // console.log("@working@", abandonedCartData)
+
     for (const cart of abandonedCartData) {
-    
+  console.log("@working fine for cart data", cart)
+   
       try {
         const pro = JSON.stringify(cart.cartData)
         const products = JSON.parse(pro);
-        const email = cart.email;      
+        const email = cart.email;  
+  // console.log("r#tr============", pro, products)
+
         const res = await this.mailService.sendAbandonmenCartReminder(email, products);
    
       } catch (error) {
