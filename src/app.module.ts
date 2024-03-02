@@ -46,6 +46,7 @@ import { MailModule } from './mail/mail.module';
 import { PermissionModule } from './permission/permission.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CartsModule } from './carts/carts.module';
+import { StocksModule } from './stocks/stocks.module';
 
 @Module({
   imports: [
@@ -115,6 +116,7 @@ import { CartsModule } from './carts/carts.module';
     AiModule,
     PermissionModule,
     CartsModule,
+    StocksModule,
     MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],

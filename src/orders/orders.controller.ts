@@ -33,11 +33,8 @@ export class OrdersController {
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
     const OrdSuccess = await this.ordersService.create(createOrderDto);
-    // Call the service method
-    console.log("OrdSuccess********36", OrdSuccess.tracking_number)
 
     try {
-      console.log("createOrderDto.products***********", createOrderDto.products)
       await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
       if (OrdSuccess?.id) {
         await this.ordersService.downloadInvoiceUrl((OrdSuccess.id).toString())
@@ -46,7 +43,6 @@ export class OrdersController {
       console.error(error.message || error);
       throw error
     }
-
     return OrdSuccess;
   }
 
@@ -174,11 +170,10 @@ export class DownloadInvoiceController {
   constructor(private ordersService: OrdersService) { }
 
   @Post()
-  async downloadInvoiceUrl(@Body('order_id') order_id: string) {
-    return this.ordersService.downloadInvoiceUrl(order_id);
+  async downloadInvoiceUrl(@Body() input: { order_id: string }) {
+    return this.ordersService.downloadInvoiceUrl(input.order_id);
   }
 }
-
 
 @Controller('Shiprocket_Service')
 export class ShiprocketController {
