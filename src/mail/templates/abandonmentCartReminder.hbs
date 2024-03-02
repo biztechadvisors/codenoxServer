@@ -1,14 +1,215 @@
+<html >
+<head>
+<title>Amazon.in Email Layout</title>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f2f2f2;
+  }
+  .email-container {
+    width: fit-content;
+    margin: 20px auto;
+    background: #ffffff;
+    border: 1px solid #ddd;           
+  }
+  .email-header {
+    background-color: #ffffff;
+    color: #131921;                   
+    padding: 2px;                        
+    padding-left: 20px;
+    padding-right: 10px;               
+    text-align: center;
+    display: flex;
+    margin-bottom:10px;
+    border-top: 5px solid orange;   
+    box-shadow: 0px  5px  rgb(184, 183, 183);
+    justify-content: space-between;
+  }
+.email-second-div{
+   background-color: #ffffff;
+    color: #131921;
+    padding: 1px 20px 1px 20px;
+    box-shadow: 0px  5px rgb(184, 183, 183);
+}
+.email-third-div{
+  background-color: #ffffff;
+    padding: 1px;
+    border-bottom: 2px solid  rgb(184, 183, 183);
+}
+  .email-body {
+    padding: 20px;
+    width: fit-content;
+  }
+  .email-footer {
+    background-color: #131921;
+    color: #ffffff;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+  }
+  .product-item {
+    padding: 10px 0px;
+    display: flex;
+    /* overflow: hidden; */
+    position: relative;
+    align-items: center;
+    margin-bottom: 20px;                 
+    border-bottom: 2px solid  rgb(155, 141, 141);
+  }
+  .product-item:last-child {
+    border-bottom: none;
+  }
+  .image1{
+    width:100px;
+    height: auto;
+  }
+  .product-image {
+    width: 200px;
+    height: auto;
+  }
+  
+  .product-price {
+    color: #B12704;
+  }
+  .product-mrp {
+    text-decoration: line-through;        
+    margin-right: 5px;
+  }
+  .learn-more {                           
+    background-color: #ff9900;         
+    color: #ffffff;
+    padding: 10px;                          
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 10px;
+  }
+  .learn-button{
+    margin-left: 600px;
+    position: absolute;
+  }
+  .last-div{
+    display: flex;                                
+     justify-content: space-between;      
+  }
+  .Enddiv{
+    display: flex;
+     justify-content: space-between;
+  }
+  .color{
+    color: #ff9900;
+  }
+  @media screen and (max-width: 600px){
+    .image1{
+    width:70px;
+    /* height: auto; */
+  }
+  .email-header{
+    margin-bottom: 3px;
+  }
+  .email-second-div{
+    margin-bottom: 3px;
+  }
+  .email-third-div{
+    margin-bottom: 3px;
+  }
+  .product-image {
+    width: 100px;
+    height: auto;
+  }
+  .Enddiv{
+    display: inline;
+    text-align: center;
+  }
+ .last-div{
+  display: inline;
+ }
+  .learn-button {
+        margin-left: 10px; /* Reset margin-left */
+         /* Reset position */
+    }
+  }
+</style>
+</head>
+<body>
 
-<p>Hello, {{ email }}</p>
-<p>Please check your left items in cart. <br>Come and complete your purchase!</p>
-<p>Items are listed below</p>
-<p>Products:</p>
-  <ul>
-    {{#each products}}
-      <strong>Product Name: </strong><li>{{name}}</li>
-      <strong>product Price: </strong><li>{{price}}</li>
-      {{!-- <li> {{image}}</li> --}}
-    {{/each}}
-  </ul>
-<p>{{ cartUrl }}</p>
-<p>If you did not request this email you can safely ignore it.</p>
+<div class="email-container">
+  <div class="email-header"  >
+    <div style="text-align: left;">
+    <img src="Amazon-Logo.jpg" alt="Samsung Galaxy Z Fold4" class="image1" >
+    </div>
+  </div>
+     {{#each products}}
+<div class="email-second-div" >
+<p>Hello </p>
+<p>Are you looking foe something in our Smartphones store? If so, you might be interested in these items .</p>
+  </div>
+  <div class="email-body">
+    {{!-- <div class="email-third-div color">
+      <h3>Smartphone</h3>
+     </div> --}}
+    <!-- Product 1 -->
+    <div class="product-item">
+      <div> 
+        <img src="" alt="Samsung Galaxy Z Fold4" class="product-image" width="30px" height="30px">
+     </div>
+      <div class="last-div">
+        <div class="product-details">
+          <h3>{{this.name}}</h3>
+          <p class="product-price">
+            <span class="product-mrp">M.R.P.: ₹1,39,999.00</span>
+            Price: {{this.price}}
+          </p>
+        <a href="#" class="learn-more">Learn more</a>
+        </div>
+        {{!-- <div class="learn-button">
+
+        </div> --}}
+      </div>                         
+    </div>
+    <div class="product-item">
+      <img src="phone2.jpg" alt="Samsung Galaxy Z Fold4" class="product-image">
+      <div  class="last-div">
+        <div class="product-details">  
+          <h3>Samsung Galaxy Z Fold4</h3> 
+          <p class="product-price">
+            <span class="product-mrp">M.R.P.: ₹1,39,999.00</span>
+            Price: ₹1,19,999.00
+          </p>
+          
+          <a href="#" class="learn-more">Learn more</a>
+        </div>
+        {{!-- <div class="learn-button">
+          <a href="#" class="learn-more">Learn more</a>
+        </div> --}}
+      </div>
+    </div>
+    <div class="product-item">
+      <img src="phone4.jpg" alt="Samsung Galaxy Z Fold4" class="product-image" >
+      <div class="last-div">
+        <div class="product-details">
+          <h3>Samsung Galaxy Z Fold4</h3>
+          <p class="product-price">
+            <span class="product-mrp">M.R.P.: ₹1,39,999.00</span>
+            Price: ₹1,19,999.00
+          </p>
+          
+          <a href="#" class="learn-more">Learn more</a>
+        </div>
+        {{!-- <div class="learn-button color">
+          <a href="#" class="learn-more">Learn more</a>
+        </div> --}}
+      </div>
+    </div>  
+    <!-- Repeat for each product -->
+  </div>
+{{/each}}
+  <div class="email-footer">
+    <p>Find Great Deals on Millions of Products</p>
+    <!-- Other footer content -->
+  </div>
+</div>
+
+</body>
+</html>

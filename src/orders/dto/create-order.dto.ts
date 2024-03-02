@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity'
 import { PaymentGatewayType } from '../entities/order.entity'
+import { Dealer } from 'src/users/entities/dealer.entity'
 
 export class CreateOrderDto {
   shop_id?: number
@@ -22,6 +23,7 @@ export class CreateOrderDto {
   shipping_address?: UserAddressInput
   payment_intent: PaymentIntent
   language?: string
+  dealer?: Dealer
 }
 
 export class UserAddressInput {
