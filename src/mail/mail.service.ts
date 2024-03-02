@@ -133,12 +133,12 @@ export class MailService {
       // console.log("first", orderDetails);
 
       await this.mailerService.sendMail({
-        to: "ajayji.malviya@outlook.com",
+        to: "ajaymalviya565656@gmail.com",
         from: '"Tilitso Purchase" <info@365dgrsol.in>',
         subject: 'Your Tilitso Order Confirmation. Please share your feedback',
         template: './invoiceToCustomer',
         context: {
-          email: "ajayji.malviya@outlook.com",
+          email: "ajaymalviya565656@gmail.com",
           invoice: orderDetails,
         },
       });
