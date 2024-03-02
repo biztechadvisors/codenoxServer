@@ -9,6 +9,7 @@ import { User } from 'src/users/entities/user.entity';
 import { OrderStatus } from './order-status.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { join } from 'path';
+import { Dealer } from 'src/users/entities/dealer.entity';
 
 export enum PaymentGatewayType {
   STRIPE = 'STRIPE',
@@ -152,6 +153,9 @@ export class Order extends CoreEntity {
 
   @Column()
   wallet_point: number;
+
+  @ManyToOne(() => Dealer)
+  dealer: Dealer;
 }
 
 @Entity()

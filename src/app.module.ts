@@ -44,9 +44,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from './mail/mail.module';
 import { PermissionModule } from './permission/permission.module';
-import { CartsModule } from './carts/carts.module';
 import { ScheduleModule } from '@nestjs/schedule';
-
+import { CartsModule } from './carts/carts.module';
 
 @Module({
   imports: [

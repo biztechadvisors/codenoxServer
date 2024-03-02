@@ -29,7 +29,7 @@ export class MailService {
 
   // Resend OTP for verify Registration 
   async resendUserConfirmation(user: User, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`
+    const url = `http://localhost:3003/auth/confirm?token=${token}`
 
     await this.mailerService.sendMail({
       to: user.email,
@@ -45,79 +45,105 @@ export class MailService {
     })
   }
 
-  // send Invoice Email to Vendor
-  async sendInvoiceToVendor(user: User, products: any) {
+  // OTP for forgetPassword
+  async forgetPasswordUserConfirmation(user: User, token: string) {
+    const url = `http://localhost:3003/auth/confirm?token=${token}`
 
-    try {
-      const productDetails = products.map((items: any) => ({
-        name: items.Name,
-        price: items.netPrice,
-        imageUrl: items.image
-      }));
+    console.log('OTP:', user.otp)
 
-      await this.mailerService.sendMail({
-        to: user.email,
-        from: '"Support Team" <info@365dgrsol.in>',
-        subject: 'New Order Placed',
-        template: './invoiceToVendor',
-        context: {
-          email: user.email,
-          products: productDetails
-        },
-      });
-    } catch (error) {
-      console.error("Email sending Failed", error)
-    }
-
+    await this.mailerService.sendMail({
+      to: user.email,
+      from: '"Support Team" <info@365dgrsol.in>', // override default from
+      subject: `Welcome to Tilitso! Confirm your Forgot OTP: ${user.otp}`,
+      template: './forgetPassWord', // `.hbs` extension is appended automatically
+      context: {
+        // ✏️ filling curly brackets with content
+        name: user.name,
+        otp: user.otp,
+        url,
+      },
+    })
   }
-
-  // send Invoice Email to Dealer
-  async sendInvoiceToDealer(user: User, products: any) {
-
-    try {
-      const productDetails = products.map((items: any) => ({
-        name: items.Name,
-        price: items.netPrice,
-        imageUrl: items.image
-      }));
-
-      await this.mailerService.sendMail({
-        to: user.email,
-        from: '"Tilitso Purchase" <info@365dgrsol.in>',
-        subject: 'You have order. please check your dashboard for more details',
-        template: './invoiceToDealer',
-        context: {
-          email: user.email,
-          products: productDetails,
-        },
-      });
-    } catch (error) {
-      console.error("Invoice sending failed to Dealer", error)
-    }
-
+  // Successfully Register 
+  async successfullyRegister(user: User) {
+    await this.mailerService.sendMail({
+      to: user.email,
+      from: '"Support Team" <info@365dgrsol.in>',
+      subject: `Welcome to Our Platform! Confirm your registration.`,
+      template: './successfullyRegister',
+      context: {
+        name: user.name,
+        email: user.email, // Including the email in the context
+        password: user.password, // Including the password in the context, be cautious with this approach
+        otp: user.otp,
+        // url,
+      },
+    });
   }
 
   // send Invoice Email to Customer
-  async sendInvoiceToCustomer(email: string, products: any) {
+
+  async sendInvoiceToCustomer(taxType: any) {
 
     try {
-      const productDetails = products.map((items: any) => ({
-        name: items.Name,
-        price: items.netPrice,
-        imageUrl: items.image
-      }));
+      // Destructure taxType directly
+      const {
+        CGST,
+        IGST,
+        SGST,
+        state_code,
+        net_amount,
+        total_amount,
+        shop,
+        sales_tax_total,
+        total_amount_in_words,
+        payment_Mode,
+        paymentInfo,
+        billing_address,
+        shipping_address,
+        shop_address,
+        product,
+        created_at,
+        order_no,
+        invoice_date,
+      } = taxType;
+
+      // Use destructured variables to construct orderDetails
+      const orderDetails = {
+        IGST,
+        CGST,
+        SGST,
+        state_code,
+        net_amount,
+        total_amount,
+        shop,
+        sales_tax_total,
+        total_amount_in_words,
+        payment_Mode,
+        paymentInfo,
+        billing_address,
+        shipping_address,
+        shop_address,
+        product, // Directly use the product array
+        created_at,
+        order_no,
+        invoice_date,
+      };
+
+      // console.log("first", orderDetails);
+
       await this.mailerService.sendMail({
-        to: email,
+        to: "ajayji.malviya@outlook.com",
         from: '"Tilitso Purchase" <info@365dgrsol.in>',
         subject: 'Your Tilitso Order Confirmation. Please share your feedback',
         template: './invoiceToCustomer',
         context: {
-          email: email,
-          products: productDetails,
+          email: "ajayji.malviya@outlook.com",
+          invoice: orderDetails,
         },
       });
     } catch (error) {
-      console.error("Invoice sending failed to Customer", error)
+      console.error("Invoice sending failed to Customer", error);
     }
   }
 
@@ -182,7 +208,7 @@ export class MailService {
         to: user.email,
         from: '"Dealer" <info@365dgrsol.in>',
         subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-        template: './',
+        template: './cancelOrder',
         context: {
           email: user.email,
           products: productDetails,
@@ -206,7 +232,7 @@ export class MailService {
         to: user.email,
         from: '"Dealer" <info@365dgrsol.in>',
         subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-        template: './',
+        template: './transactionDeclined',
         context: {
           email: user.email,
           products: productDetails,
@@ -218,20 +244,31 @@ export class MailService {
   }
 
   // Send Abandonment Cart Reminder Email
-  async sendAbandonmenCartReminder(email: string, products: any) {
+  async sendAbandonmenCartReminder(email: any, products: any) {
+    console.log("==================+++++++++++", products);
+
+    // Check if products is an array and has elements
+    if (!Array.isArray(products) || products.length === 0) {
+      console.error("Invalid or empty products array");
+      return; // Exit the function if products is not a valid array
+    }
 
     try {
-      const productDetails = products.map((items: any) => ({
-        name: items.Name,
-        price: items.netPrice,
-        imageUrl: items.image
+      // Correctly map product details, ensuring property names match
+      const productDetails = products.map(item => ({
+        name: item.name, // Assuming the correct property is 'name', not 'Name'
+        price: item.price, // Ensure 'netPrice' is the correct property name
+        imageUrl: item.image,// Check if 'image' is the correct property for the image URL
+        slug: item.slug
       }));
-      const CartUrl = `https://www.tilitso.in/shop-cart`
+
+      const CartUrl = "https://www.tilitso.in/shop-cart";
+      console.log("mapped data----------------------", email, productDetails);
 
       await this.mailerService.sendMail({
         to: email,
         from: '"Support Team" <info@365dgrsol.in>',
-        subject: 'Don\'t forget your items! ️ Your cart reminder from Tilitso',
+        subject: "Don't forget your items! ️ Your cart reminder from Tilitso",
         template: './abandonmentCartReminder',
         context: {
           email: email,
@@ -240,7 +277,7 @@ export class MailService {
         },
       });
     } catch (error) {
-      console.error("Email sending Failed", error)
+      console.error("Email sending Failed", error);
     }
   }
 }
