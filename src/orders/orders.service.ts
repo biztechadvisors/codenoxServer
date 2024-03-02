@@ -18,7 +18,7 @@ import {
   UpdateOrderStatusDto,
 } from './dto/create-order-status.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { GetOrderFilesDto } from './dto/get-downloads.dto';
+import { GetOrderFilesDto, OrderFilesPaginator } from './dto/get-downloads.dto';
 import {
   GetOrderStatusesDto,
   OrderStatusPaginator,
@@ -321,6 +321,7 @@ export class OrdersService {
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
     try {
+      console.log("customer_id*****324", customer_id)
       const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
 
       if (!usr) {
@@ -541,10 +542,12 @@ export class OrdersService {
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
-        .leftJoinAndSelect('products.taxes', 'taxes')
+        .leftJoinAndSelect('products.taxes', 'product_taxes') // Distinct alias for product taxes
+        .leftJoinAndSelect('products.shop', 'product_shop') // Distinct alias for product shop
+        .leftJoinAndSelect('product_shop.address', 'shop_address') // Distinct alias for product shop
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
         .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
-        .leftJoinAndSelect('order.shop', 'shop')
+        .leftJoinAndSelect('order.shop', 'order_shop')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
         .leftJoinAndSelect('order.shipping_address', 'shipping_address')
         .leftJoinAndSelect('order.parentOrder', 'parentOrder')
@@ -553,6 +556,7 @@ export class OrdersService {
         .where('order.id = :id', { id })
         .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
         .getOne();
+
 
       if (!order) {
         throw new NotFoundException('Order not found');
@@ -644,6 +648,7 @@ export class OrdersService {
             blocked_dates: [],
             translated_languages: product.translated_languages,
             taxes: product.taxes,
+            shop: product.shop,
             pivot: {
               order_id: pivot.Ord_Id,
               product_id: product.id,
@@ -885,15 +890,18 @@ export class OrdersService {
   }
 
 
-  async getOrderFileItems({ page, limit }: GetOrderFilesDto) {
+  async getOrderFileItems({ page, limit }: GetOrderFilesDto): Promise<OrderFilesPaginator> {
     if (!page) page = 1;
     if (!limit) limit = 30;
+
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
     const results = orderFiles.slice(startIndex, endIndex);
 
     const url = `/downloads?&limit=${limit}`;
+
+    // Assuming your paginate function is properly implemented
     return {
       data: results,
       ...paginate(orderFiles.length, page, limit, results.length, url),
@@ -918,45 +926,46 @@ export class OrdersService {
     let taxType
 
     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id))
-    console.log("Invoice****", Invoice)
-    // throw error
-    if (Invoice.shop.address.state === Invoice.shipping_address.state) {
-      const shippingState = Invoice.shipping_address.state;
-      if (stateCode.hasOwnProperty(shippingState)) {
-        const stateCodeValue = stateCode[shippingState];
+
+    for (let i of Invoice.products) {
+      console.log("Invoice****", i.shop.address)
+      if (i.shop.address.state === Invoice.shipping_address.state) {
+        const shippingState = Invoice.shipping_address.state;
+        if (stateCode.hasOwnProperty(shippingState)) {
+          const stateCodeValue = stateCode[shippingState];
+          taxType = {
+            CGST: Invoice.sales_tax / 2,
+            SGST: Invoice.sales_tax / 2,
+            state_code: stateCodeValue,
+            billing_address: Invoice.billing_address,
+            shipping_address: Invoice.shipping_address,
+            shop_address: i.shop.address,
+            product: i,
+            created_at: 'Order_date',
+            order_no: Invoice.id,
+            invoice_date: 'Order_date'
+
+          }
+          await this.MailService.sendInvoiceToCustomer(taxType)
+          return taxType
+        } else {
+          return 'Invalid state name in shipping address';
+        }
+      } else {
+        const stateCodeValue = stateCode[Invoice.shipping_address.state];
         taxType = {
-          CGST: Invoice.sales_tax / 2,
-          SGST: Invoice.sales_tax / 2,
+          IGST: Invoice.sales_tax,
           state_code: stateCodeValue,
           billing_address: Invoice.billing_address,
           shipping_address: Invoice.shipping_address,
-          shop_address: Invoice.shop.address,
-          product: Invoice.products,
+          shop_address: i.shop.address,
+          product: i,
           created_at: 'Order_date',
           order_no: Invoice.id,
           invoice_date: 'Order_date'
-
         }
-
-        await this.MailService.sendInvoiceToCustomer(taxType)
         return taxType
-      } else {
-        return 'Invalid state name in shipping address';
       }
-    } else {
-      const stateCodeValue = stateCode[Invoice.shipping_address.state];
-      taxType = {
-        IGST: Invoice.sales_tax,
-        state_code: stateCodeValue,
-        billing_address: Invoice.billing_address,
-        shipping_address: Invoice.shipping_address,
-        shop_address: Invoice.shop.address,
-        product: Invoice.products,
-        created_at: 'Order_date',
-        order_no: Invoice.id,
-        invoice_date: 'Order_date'
-      }
-      return taxType
     }
   }
 
