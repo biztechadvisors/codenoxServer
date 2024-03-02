@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+import { User } from "src/users/entities/user.entity";
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
@@ -14,8 +15,8 @@ export class Permission {
   @OneToMany(() => PermissionType, PermissionType => PermissionType.permissions)
   permissions: PermissionType[];
 
-  @ManyToOne(() => Permission, permission => permission.id)
-  user: Permission;
+  @Column()
+  user: number;
 }
 
 @Entity()

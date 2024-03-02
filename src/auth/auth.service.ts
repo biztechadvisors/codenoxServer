@@ -118,7 +118,7 @@ export class AuthService {
       const usr_type = existingUser.type;
 
       const otp = await this.generateOtp();
-      const token = Math.floor(100 + Math.random() * 900).toString();
+      const token = Math.floor(100 + Math.random() * 9999).toString();
 
       existingUser.otp = otp;
       existingUser.created_at = new Date();

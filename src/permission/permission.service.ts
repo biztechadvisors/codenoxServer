@@ -13,11 +13,13 @@ export class PermissionService {
   constructor(
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
     @InjectRepository(PermissionType) private readonly permissionTypeRepository: Repository<PermissionType>,
-    // @InjectRepository(User) private readonly userRepository: Repository<User>
+    @InjectRepository(User) private readonly userRepository: Repository<User>
 
   ) { }
 
   async create(createPermission: CreatePermissionDto) {
+
+    console.log("createPermission*******", createPermission.user)
     const existingPermission = await this.permissionRepository.findOne({ where: { permission_name: createPermission.permission_name } })
     if (existingPermission) {
       return 'Already exist'
@@ -27,7 +29,7 @@ export class PermissionService {
       const permissions = new Permission();
       permissions.type_name = createPermission.type_name;
       permissions.permission_name = createPermission.permission_name;
-      // permissions.user = createPermission.user;
+      permissions.user = createPermission.user;
 
       const savedPermission = await this.permissionRepository.save(permissions);
 
@@ -58,28 +60,25 @@ export class PermissionService {
   async getPermission(userId: any) {
     try {
       // console.log("userID***************56", userId)
-      // const user = await this.userRepository.findOne({ where: { id: userId } })
-
       const permissions = await this.permissionRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissionTypes') // Use a different alias to avoid confusion
-        // .leftJoinAndSelect('permission.user', 'user')
         .select(['permission.id', 'permission.type_name', 'permission.permission_name'])
         .addSelect(['permissionTypes.id', 'permissionTypes.type', 'permissionTypes.read', 'permissionTypes.write'])
-        // .where("permission.user = :user", { user: user })
+        .where("permission.user = :user", { user: Number(userId) })
         .getMany();
 
       const groupedPermissions = permissions.reduce((acc, permission) => {
         const typeName = permission.type_name;
         const permissionName = permission.permission_name;
-        // const user = permission.user;
+        const user = permission.user;
 
         if (!acc[permissionName]) {
           acc[permissionName] = {
             id: permission.id,
             type_name: typeName,
             permission_name: permissionName,
-            // user: user,
+            user: user,
             permissions: [],
           };
         }
@@ -109,7 +108,6 @@ export class PermissionService {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      // .leftJoinAndSelect('permission.user', 'user')
       .where('permission.id = :id', { id })
       .select([
         'permission.id',
@@ -126,7 +124,7 @@ export class PermissionService {
       id: permission.id,
       type_name: permission.type_name,
       permissionName: permission.permission_name,
-      // user: permission.user,
+      user: permission.user,
       permission: permission.permissions.map(p => ({
         id: p.id,
         type: p.type,
@@ -154,6 +152,8 @@ export class PermissionService {
 
       permissionToUpdate.type_name = updatePermissionDto.type_name;
       permissionToUpdate.permission_name = updatePermissionDto.permission_name;
+      permissionToUpdate.user = updatePermissionDto.user;
+
 
       const updatedPermissionIds = updatePermissionDto.permissions.map(p => p.id);
       const permissionsToRemove = permissionToUpdate.permissions.filter(pt => !updatedPermissionIds.includes(pt.id));
