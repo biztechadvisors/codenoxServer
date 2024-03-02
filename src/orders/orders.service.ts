@@ -50,6 +50,7 @@ import { Permission } from 'src/permission/entities/permission.entity';
 import { throwError } from 'rxjs';
 import { rejects, throws } from 'assert';
 import { error } from 'console';
+import { MailService } from 'src/mail/mail.service';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -57,6 +58,7 @@ const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 export class OrdersService {
   private orders: Order[]
   private orderFiles: OrderFiles[]
+  private MailService: MailService;
 
   constructor(
     private readonly authService: AuthService,
@@ -140,8 +142,9 @@ export class OrdersService {
         : PaymentGatewayType.CASH_ON_DELIVERY;
       order.payment_gateway = paymentGatewayType;
       order.payment_intent = null;
-      order.customerId = order.customerId;
-      order.customer_id = order.customerId;
+      order.customerId = order.customerId ? order.customerId : order.customer_id;
+      order.customer_id = order.customer_id;
+      order.dealer = order.dealer ? order.dealer : null;
       switch (paymentGatewayType) {
         case PaymentGatewayType.CASH_ON_DELIVERY:
           order.order_status = OrderStatusType.PROCESSING;
@@ -164,9 +167,9 @@ export class OrdersService {
           newOrderStatus.slug = OrderStatusType.PENDING;
           break;
       }
-      if (order.customerId && order.customer) {
+      if (order.customer_id && order.customer) {
         const customer = await this.userRepository.findOne({
-          where: { id: order.customerId, email: order.customer.email }, relations: ['type']
+          where: { id: order.customer_id, email: order.customer.email }, relations: ['type']
         });
         if (!customer) {
           throw new NotFoundException('Customer not found');
@@ -329,6 +332,7 @@ export class OrdersService {
 
       let query = this.orderRepository.createQueryBuilder('order');
       query = query.leftJoinAndSelect('order.status', 'status');
+      query = query.leftJoinAndSelect('order.dealer', 'dealer');
       query = query.leftJoinAndSelect('order.billing_address', 'billing_address');
       query = query.leftJoinAndSelect('order.shipping_address', 'shipping_address');
       query = query.leftJoinAndSelect('order.customer', 'customer');
@@ -474,6 +478,7 @@ export class OrdersService {
               is_active: order.customer.is_active,
               shop_id: null
             },
+            dealer: order.dealer ? order.dealer : null,
             products: products.filter(product => product !== null), // Exclude products for which pivot data could not be fetched
             children: order.children,
             wallet_point: order?.wallet_point
@@ -528,9 +533,11 @@ export class OrdersService {
   }
 
   async getOrderByIdOrTrackingNumber(id: number): Promise<any> {
+    console.log("getOrderByIdOrTrackingNumber****", id)
     try {
       const order = await this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
+        .leftJoinAndSelect('order.dealer', 'dealer')
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
@@ -586,6 +593,7 @@ export class OrdersService {
           is_active: order.customer.is_active,
           shop_id: null
         },
+        dealer: order.dealer ? order.dealer : null,
         products: await Promise.all(order.products.map(async (product) => {
           const pivot = product.pivot.find(p => p.Ord_Id === order.id);
 
@@ -906,10 +914,12 @@ export class OrdersService {
 
   async downloadInvoiceUrl(Order_id: string) {
 
+    console.log("downloadInvoiceUrl****", Order_id)
     let taxType
 
     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id))
-
+    console.log("Invoice****", Invoice)
+    // throw error
     if (Invoice.shop.address.state === Invoice.shipping_address.state) {
       const shippingState = Invoice.shipping_address.state;
       if (stateCode.hasOwnProperty(shippingState)) {
@@ -927,11 +937,12 @@ export class OrdersService {
           invoice_date: 'Order_date'
 
         }
+
+        await this.MailService.sendInvoiceToCustomer(taxType)
         return taxType
       } else {
         return 'Invalid state name in shipping address';
       }
-
     } else {
       const stateCodeValue = stateCode[Invoice.shipping_address.state];
       taxType = {
@@ -947,7 +958,6 @@ export class OrdersService {
       }
       return taxType
     }
-    // return orderInvoiceJson[0].url;
   }
 
   /**

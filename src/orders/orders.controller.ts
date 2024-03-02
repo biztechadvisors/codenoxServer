@@ -24,6 +24,7 @@ import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
 import { Order, PaymentGatewayType, PaymentStatusType } from './entities/order.entity';
 import { OrdersService } from './orders.service';
 import { ShiprocketService } from './shiprocket.service';
+import { error } from 'console';
 
 @Controller('orders')
 export class OrdersController {
@@ -33,12 +34,16 @@ export class OrdersController {
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
     const OrdSuccess = await this.ordersService.create(createOrderDto);
     // Call the service method
+    console.log("OrdSuccess********36", OrdSuccess.tracking_number)
+
     try {
       console.log("createOrderDto.products***********", createOrderDto.products)
       await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
-
+      if (OrdSuccess?.id) {
+        await this.ordersService.downloadInvoiceUrl((OrdSuccess.id).toString())
+      }
     } catch (error) {
-      console.error('Error updating product quantities:', error.message || error);
+      console.error(error.message || error);
       throw error
     }
 
