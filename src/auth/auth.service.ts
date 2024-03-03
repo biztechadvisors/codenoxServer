@@ -23,7 +23,7 @@ import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
-import { error } from 'console';
+
 
 @Injectable()
 export class AuthService {
