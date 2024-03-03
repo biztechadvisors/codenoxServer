@@ -5,6 +5,7 @@ export class GetShippingsDto {
   text?: string;
   orderBy?: QueryShippingClassesOrderByColumn;
   sortedBy?: SortOrder;
+  search?: string;
 }
 
 export enum QueryShippingClassesOrderByColumn {

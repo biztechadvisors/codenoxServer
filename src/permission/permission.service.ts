@@ -1,5 +1,4 @@
 /* eslint-disable prettier/prettier */
-
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { CreatePermissionDto, CreatePermissionTypeDto } from "./dto/create-permission.dto";
 import { Permission, PermissionType } from "./entities/permission.entity";
@@ -44,7 +43,8 @@ export class PermissionService {
           permissionType.type = permissionData.type;
           permissionType.permissions = savedPermission;
 
-          await this.permissionTypeRepository.save(permissionType);
+           await this.permissionTypeRepository.save(permissionType);
+          
 
         }
       } else {
@@ -138,6 +138,7 @@ export class PermissionService {
 
 
   async updatePermission(id: number, updatePermissionDto: UpdatePermissionDto) {
+    
     try {
       const permissionToUpdate = await this.permissionRepository
         .createQueryBuilder('permission')
@@ -196,7 +197,7 @@ export class PermissionService {
       .delete()
       .where('permissionsId = :id', { id })
       .execute();
-    const result = await this.permissionRepository
+      const result = await this.permissionRepository
       .createQueryBuilder()
       .delete()
       .where('id = :id', { id })
