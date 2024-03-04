@@ -9,7 +9,6 @@ import { User } from 'src/users/entities/user.entity';
 import { OrderStatus } from './order-status.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { join } from 'path';
-import { Dealer } from 'src/users/entities/dealer.entity';
 
 export enum PaymentGatewayType {
   STRIPE = 'STRIPE',
@@ -105,7 +104,7 @@ export class Order extends CoreEntity {
 
   @ManyToMany(() => Shop, { nullable: true })
   @JoinTable()
-  shop: Shop;
+  shop_id: Shop;
 
   @Column({ nullable: true })
   discount?: number;
@@ -145,8 +144,8 @@ export class Order extends CoreEntity {
   @Column('json', { nullable: true })
   logistics_provider: object;
 
-  @Column('int', { nullable: true })
-  shop_id: number;
+  @ManyToOne(() => UserAddress)
+  saleBy: UserAddress;
 
   @Column('decimal', { precision: 5, scale: 2, nullable: true })
   cancelled_amount: number;
@@ -154,8 +153,9 @@ export class Order extends CoreEntity {
   @Column()
   wallet_point: number;
 
-  @ManyToOne(() => Dealer)
-  dealer: Dealer;
+  @ManyToOne(() => User, { nullable: true, cascade: true })
+  @JoinColumn({ name: 'dealerId' })
+  dealer: User;
 }
 
 @Entity()

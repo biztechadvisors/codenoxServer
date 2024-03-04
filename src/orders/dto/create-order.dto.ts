@@ -1,10 +1,12 @@
 /* eslint-disable prettier/prettier */
 import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity'
 import { PaymentGatewayType } from '../entities/order.entity'
-import { Dealer } from 'src/users/entities/dealer.entity'
+import { User } from 'src/users/entities/user.entity'
+import { Shop } from 'src/shops/entities/shop.entity'
 
 export class CreateOrderDto {
-  shop_id?: number
+  saleBy?: UserAddressInput
+  shop_id?: Shop
   coupon_id?: number
   status: string
   customer_contact: string
@@ -23,7 +25,7 @@ export class CreateOrderDto {
   shipping_address?: UserAddressInput
   payment_intent: PaymentIntent
   language?: string
-  dealerId?: Dealer
+  dealerId?: User
 }
 
 export class UserAddressInput {
