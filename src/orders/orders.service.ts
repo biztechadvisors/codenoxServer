@@ -554,8 +554,7 @@ export class OrdersService {
       const order = await this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
         .leftJoinAndSelect('order.dealer', 'dealer')
-        .leftJoinAndSelect('dealer.address', 'dealer_address')
-        .leftJoinAndSelect('dealer_address.address', 'dealer_add')
+        .leftJoinAndSelect('dealer.saleBy', 'saleByAddress')
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
@@ -564,7 +563,7 @@ export class OrdersService {
         .leftJoinAndSelect('product_shop.address', 'shop_address') // Distinct alias for product shop
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
         .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
-        .leftJoinAndSelect('order.shop', 'order_shop')
+        .leftJoinAndSelect('order.shop_id', 'order_shop')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
         .leftJoinAndSelect('order.shipping_address', 'shipping_address')
         .leftJoinAndSelect('order.parentOrder', 'parentOrder')
@@ -592,6 +591,7 @@ export class OrdersService {
         coupon_id: order.coupon,
         parent_id: order.parentOrder,
         saleBy: order.saleBy,
+        shop: order.shop_id,
         discount: order.discount,
         payment_gateway: order.payment_gateway,
         shipping_address: order.shipping_address,
