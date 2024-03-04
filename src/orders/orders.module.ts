@@ -25,6 +25,7 @@ import { HttpModule } from '@nestjs/axios';
 import { MailService } from 'src/mail/mail.service';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
+import { Dealer } from 'src/users/entities/dealer.entity';
 
 @Module({
   imports: [
@@ -33,7 +34,7 @@ import { Permission } from 'src/permission/entities/permission.entity';
     TypeOrmExModule.forCustomRepository([
       OrderProductPivotRepository
     ]),
-    TypeOrmModule.forFeature([Order, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission]), // Include Order and OrderStatus here
+    TypeOrmModule.forFeature([Order, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission]), // Include Order and OrderStatus here
     HttpModule,
   ],
   controllers: [
