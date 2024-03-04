@@ -35,4 +35,4 @@ import { join } from 'path'
   providers: [MailService],
   exports: [MailService], // 👈 export for DI
 })
-export class MailModule {}
+export class MailModule { }
