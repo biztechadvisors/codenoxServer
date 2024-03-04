@@ -52,6 +52,7 @@ import { rejects, throws } from 'assert';
 import { error } from 'console';
 import { MailService } from 'src/mail/mail.service';
 import { Dealer } from 'src/users/entities/dealer.entity';
+import { UserAddress } from 'src/addresses/entities/address.entity';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -88,6 +89,8 @@ export class OrdersService {
     private readonly paymentIntentRepository: Repository<PaymentIntent>,
     @InjectRepository(OrderProductPivot)
     private readonly orderProductPivotRepository: Repository<OrderProductPivot>,
+    @InjectRepository(UserAddress)
+    private readonly userAddressRepository: Repository<UserAddress>,
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
     @InjectRepository(Permission)
@@ -134,9 +137,6 @@ export class OrdersService {
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
-      console.log("createOrderInput**********", createOrderInput)
-
-      throw error
       const order = plainToClass(Order, createOrderInput)
       const newOrderStatus = new OrderStatus();
       const newOrderFile = new OrderFiles();
@@ -296,12 +296,20 @@ export class OrdersService {
       }
 
       if (createOrderInput.shop_id) {
-        const getShop = await this.shopRepository.findOne({ where: { id: createOrderInput.shop_id } });
+        const getShop = await this.shopRepository.findOne({ where: { id: createOrderInput.shop_id.id } });
         if (getShop) {
-          order.shop_id = getShop.id;
-          order.shop = getShop;
+          order.shop_id = getShop;
         } else {
-          throw new NotFoundException('Coupon not found');
+          throw new NotFoundException('Shop not found');
+        }
+      }
+
+      if (createOrderInput.saleBy) {
+        const getSale = await this.userAddressRepository.findOne({ where: { id: createOrderInput.saleBy.id } });
+        if (getSale) {
+          order.saleBy = getSale;
+        } else {
+          throw new NotFoundException('Dealer shop not found');
         }
       }
 
@@ -309,15 +317,10 @@ export class OrdersService {
       newOrderFile.order_id = savedOrder.id;
       await this.orderFilesRepository.save(newOrderFile);
 
-
-
       if (savedOrder?.id) {
-        if (createOrderInput.dealerId) {
-          await this.downloadInvoiceUrl((savedOrder.id).toString())
-        }
+        await this.downloadInvoiceUrl((savedOrder.id).toString())
       }
 
-      throw error
       return savedOrder;
     } catch (error) {
       console.error('Error creating order:', error);
@@ -469,7 +472,7 @@ export class OrdersService {
             cancelled_amount: order?.cancelled_amount,
             language: order?.language,
             coupon_id: order.coupon,
-            shop_id: order?.shop_id,
+            saleBy: order?.saleBy,
             discount: order?.discount,
             payment_gateway: order.payment_gateway,
             shipping_address: order.shipping_address,
@@ -547,9 +550,12 @@ export class OrdersService {
 
   async getOrderByIdOrTrackingNumber(id: number): Promise<any> {
     try {
+
       const order = await this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
         .leftJoinAndSelect('order.dealer', 'dealer')
+        .leftJoinAndSelect('dealer.address', 'dealer_address')
+        .leftJoinAndSelect('dealer_address.address', 'dealer_add')
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
@@ -568,7 +574,6 @@ export class OrdersService {
         .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
         .getOne();
 
-
       if (!order) {
         throw new NotFoundException('Order not found');
       }
@@ -586,7 +591,7 @@ export class OrdersService {
         language: order.language,
         coupon_id: order.coupon,
         parent_id: order.parentOrder,
-        shop_id: order.shop_id,
+        saleBy: order.saleBy,
         discount: order.discount,
         payment_gateway: order.payment_gateway,
         shipping_address: order.shipping_address,
@@ -676,6 +681,7 @@ export class OrdersService {
         children: order.children,
         wallet_point: order.wallet_point
       };
+      console.log("transformedOrder****", transformedOrder)
       return transformedOrder;
     } catch (error) {
       console.error('Error in getOrderByIdOrTrackingNumber:', error);
@@ -785,7 +791,8 @@ export class OrdersService {
       orderToDelete.customer = null;
       orderToDelete.products = null;
       orderToDelete.payment_intent = null;
-      orderToDelete.shop = null;
+      orderToDelete.shop_id = null;
+      orderToDelete.saleBy = null;
       orderToDelete.billing_address = null;
       orderToDelete.shipping_address = null;
       orderToDelete.parentOrder = null;
