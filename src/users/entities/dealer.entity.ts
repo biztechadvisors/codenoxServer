@@ -55,6 +55,12 @@ export class Dealer {
 
     @OneToMany(() => DealerCategoryMargin, dealerCategoryMargin => dealerCategoryMargin.dealer)
     dealerCategoryMargins: DealerCategoryMargin[];
+
+    @Column()
+    gst: string;
+
+    @Column()
+    pan: string;
 }
 
 @Entity()
