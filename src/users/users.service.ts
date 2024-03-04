@@ -361,6 +361,8 @@ export class UsersService {
     dealer.discount = dealerData.discount;
     dealer.walletBalance = dealerData.walletBalance;
     dealer.isActive = dealerData.isActive;
+    dealer.gst = dealerData.gst;
+    dealer.pan = dealerData.pan;
 
     // Save the dealer first to generate an ID
     await this.dealerRepository.save(dealer);
@@ -415,6 +417,8 @@ export class UsersService {
     dealer.discount = dealerData.discount;
     dealer.walletBalance = dealerData.walletBalance;
     dealer.isActive = dealerData.isActive;
+    dealer.gst = dealerData.gst
+    dealer.pan = dealerData.pan
 
     // Update or create new DealerProductMargin
     for (const marginData of dealerData.dealerProductMargins) {

@@ -33,4 +33,6 @@ export class DealerDto {
     isActive: boolean;
     dealerProductMargins: DealerProductMarginDto[];
     dealerCategoryMargins: DealerCategoryMarginDto[];
+    gst: string;
+    pan: string;
 }
