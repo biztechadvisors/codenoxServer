@@ -23,7 +23,7 @@ export class CreateOrderDto {
   shipping_address?: UserAddressInput
   payment_intent: PaymentIntent
   language?: string
-  dealer?: Dealer
+  dealerId?: Dealer
 }
 
 export class UserAddressInput {
