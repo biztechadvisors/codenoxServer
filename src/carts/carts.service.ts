@@ -184,7 +184,8 @@ export class AbandonedCartService {
   }
   
 // ----------------------------ABANDONED CART REMINDER------------------------------------
-@Interval(6000000)
+
+// @Interval(60000)
 async sendAbandonedCartReminder() {
   // console.log("@working@")
   try {

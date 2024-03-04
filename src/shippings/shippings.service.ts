@@ -8,6 +8,7 @@ import { Shipping } from './entities/shipping.entity';
 import shippingsJson from '@db/shippings.json';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import Fuse from 'fuse.js';
 
 const shippings = plainToClass(Shipping, shippingsJson);
 
@@ -30,18 +31,36 @@ export class ShippingsService {
     return await this.shippingRepository.save(shipping)
   }
 
-  async getShippings() {
-    const shippingFind = await this.shippingRepository.find()
+  async getShippings({ search }: GetShippingsDto) {
+
+    const options = {
+      keys: ['name', 'slug'],
+      threshold: 0.3,
+    }
+
+    let shippingFind = await this.shippingRepository.find()
+    console.log("shipping", shippingFind)
+
+    const fuse = new Fuse(shippingFind, options)
+    if (search) {
+      const parseSearchParams = search.split(';')
+      for (const searchParam of parseSearchParams) {
+        const [key, value] = searchParam.split(':')
+        shippingFind = fuse.search(value)?.map(({ item }) => item)
+      }
+    }
+
     return shippingFind
-    // return this.shippings;
+
   }
 
-  findOne(id: number) {
-    return this.shippingRepository.find({ where: { id } });
+  async findOne(id: number) {
+    console.log("id", id)
+    return await this.shippingRepository.find({ where: { id:id } });
   }
 
   async update(id: number, updateShippingDto: UpdateShippingDto) {
-    const existingShipping = await this.shippingRepository.findOne({ where: { id } })
+    const existingShipping = await this.shippingRepository.findOne({ where: { id:id } })
 
     if (!existingShipping) {
       throw new NotFoundException('Address not found');
@@ -59,7 +78,7 @@ export class ShippingsService {
   }
 
   async remove(id: number) {
-    const existingShipping = await this.shippingRepository.findOne({ where: { id } });
+    const existingShipping = await this.shippingRepository.findOne({ where: { id:id } });
 
     if (!existingShipping) {
       throw new NotFoundException('Address not found');

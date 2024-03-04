@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Body,
   Controller,
@@ -36,6 +37,7 @@ export class AuthorsController {
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateAuthorDto: UpdateAuthorDto) {
+    console.log("idsssssssssss", id, updateAuthorDto)
     return this.authorsService.update(+id, updateAuthorDto)
   }
 

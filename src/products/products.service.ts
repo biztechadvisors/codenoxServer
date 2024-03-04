@@ -136,7 +136,7 @@ export class ProductsService {
     product.translated_languages = createProductDto.translated_languages || ["en"];
 
     if (createProductDto.taxes) {
-      let tax = this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } })
+      const tax = this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } })
       if (tax) {
         product.taxes = createProductDto.taxes
       }
@@ -291,11 +291,29 @@ export class ProductsService {
               relations: ['product']
             });
 
+            // console.log("product", marginFind)
+            const ProductCom = await productQueryBuilder.getMany()
             products = marginFind.map(margin => {
-              const product = margin.product;
-              product.margin = margin.margin;
-              return product;
-            });
+                const product = margin.product;
+                product.margin = margin.margin;
+                return product;
+              });
+
+              const allProducts = [...ProductCom, ...products];
+
+              // Efficiently remove duplicate products based on productId
+              products = allProducts.reduce((acc, product) => {
+                const existingIndex = acc.findIndex(p => p.id === product.id);
+                if (existingIndex === -1) {
+                  acc.push(product);
+                } else {
+                  // If a product with the same ID exists, merge margins if necessary
+                  acc[existingIndex].margin = product.margin || acc[existingIndex].margin;
+                }
+                return acc;
+              }, []);              
+
+
           } else if (dealer.dealerCategoryMargins) {
             const marginFind = await this.dealerCategoryMarginRepository.find({
               relations: ['category']
@@ -337,6 +355,7 @@ export class ProductsService {
 
       productQueryBuilder.skip(startIndex).take(limit);
       const products = await productQueryBuilder.getMany();
+      console.log("product", products)
       const url = `/products?search=${search}&limit=${limit}`;
       const paginator = paginate(products.length, page, limit, products.length, url);
 
@@ -669,7 +688,7 @@ export class ProductsService {
     product.sku = updateProductDto.sku;
 
     if (updateProductDto.taxes) {
-      let tax = this.taxRepository.findOne({ where: { id: updateProductDto.taxes.id } })
+      const tax = this.taxRepository.findOne({ where: { id: updateProductDto.taxes.id } })
       if (tax) {
         product.taxes = updateProductDto.taxes
       }

@@ -51,6 +51,7 @@ import { throwError } from 'rxjs';
 import { rejects, throws } from 'assert';
 import { error } from 'console';
 import { MailService } from 'src/mail/mail.service';
+import { Dealer } from 'src/users/entities/dealer.entity';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -58,7 +59,6 @@ const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 export class OrdersService {
   private orders: Order[]
   private orderFiles: OrderFiles[]
-  private MailService: MailService;
 
   constructor(
     private readonly authService: AuthService,
@@ -66,6 +66,7 @@ export class OrdersService {
     private readonly paypalService: PaypalPaymentService,
     private readonly razorpayService: RazorpayService,
     private readonly shiprocketService: ShiprocketService,
+    private readonly MailService: MailService,
 
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -73,6 +74,8 @@ export class OrdersService {
     private readonly orderStatusRepository: Repository<OrderStatus>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Dealer)
+    private readonly dealerRepository: Repository<Dealer>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     @InjectRepository(OrderFiles)
@@ -132,7 +135,9 @@ export class OrdersService {
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
       console.log("createOrderInput**********", createOrderInput)
-      const order = plainToClass(Order, createOrderInput);
+
+      throw error
+      const order = plainToClass(Order, createOrderInput)
       const newOrderStatus = new OrderStatus();
       const newOrderFile = new OrderFiles();
       newOrderStatus.name = 'Order Processing';
@@ -144,7 +149,7 @@ export class OrdersService {
       order.payment_intent = null;
       order.customerId = order.customerId ? order.customerId : order.customer_id;
       order.customer_id = order.customer_id;
-      order.dealer = order.dealer ? order.dealer : null;
+      order.dealer = createOrderInput.dealerId ? createOrderInput.dealerId : null;
       switch (paymentGatewayType) {
         case PaymentGatewayType.CASH_ON_DELIVERY:
           order.order_status = OrderStatusType.PROCESSING;
@@ -191,7 +196,6 @@ export class OrdersService {
           .map(product_id => this.productRepository.findOne({ where: { id: product_id } }))
       );
 
-      console.log("order*******", order)
       const orderData = {
         order_id: Invoice,
         order_date: new Date().toISOString(),
@@ -305,6 +309,15 @@ export class OrdersService {
       newOrderFile.order_id = savedOrder.id;
       await this.orderFilesRepository.save(newOrderFile);
 
+
+
+      if (savedOrder?.id) {
+        if (createOrderInput.dealerId) {
+          await this.downloadInvoiceUrl((savedOrder.id).toString())
+        }
+      }
+
+      throw error
       return savedOrder;
     } catch (error) {
       console.error('Error creating order:', error);
@@ -321,7 +334,6 @@ export class OrdersService {
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
     try {
-      console.log("customer_id*****324", customer_id)
       const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
 
       if (!usr) {
@@ -534,7 +546,6 @@ export class OrdersService {
   }
 
   async getOrderByIdOrTrackingNumber(id: number): Promise<any> {
-    console.log("getOrderByIdOrTrackingNumber****", id)
     try {
       const order = await this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
@@ -665,8 +676,6 @@ export class OrdersService {
         children: order.children,
         wallet_point: order.wallet_point
       };
-
-      console.log("transformedOrder************", transformedOrder)
       return transformedOrder;
     } catch (error) {
       console.error('Error in getOrderByIdOrTrackingNumber:', error);
@@ -821,9 +830,9 @@ export class OrdersService {
     let total_tax = 0;
     let shipping_charge = 0;
     let unavailable_products: number[] = [];
-
     // Verify each product in the order
     for (const product of input.products) {
+
       // Fetch the product from the database
       const productEntity = await this.productRepository.findOne({ where: { id: product.product_id }, relations: ['shop.address'] });
 
@@ -832,8 +841,7 @@ export class OrdersService {
         unavailable_products.push(product.product_id);
       } else {
         // Calculate the total tax and shipping charge
-        total_tax = product.subtotal * productEntity.taxes.rate / 100  //IGST
-
+        total_tax += product.subtotal * productEntity.taxes.rate / 100  //IGST
         shipping_charge += productEntity.shipping_fee;
       }
     }
@@ -922,52 +930,50 @@ export class OrdersService {
 
   async downloadInvoiceUrl(Order_id: string) {
 
-    console.log("downloadInvoiceUrl****", Order_id)
-    let taxType
+    const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
+    console.log("Invoice****", Invoice);
 
-    const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id))
+    const hashtabel: Record<string, any[]> = {};
 
-    for (let i of Invoice.products) {
-      console.log("Invoice****", i.shop.address)
-      if (i.shop.address.state === Invoice.shipping_address.state) {
-        const shippingState = Invoice.shipping_address.state;
-        if (stateCode.hasOwnProperty(shippingState)) {
-          const stateCodeValue = stateCode[shippingState];
-          taxType = {
-            CGST: Invoice.sales_tax / 2,
-            SGST: Invoice.sales_tax / 2,
-            state_code: stateCodeValue,
-            billing_address: Invoice.billing_address,
-            shipping_address: Invoice.shipping_address,
-            shop_address: i.shop.address,
-            product: i,
-            created_at: 'Order_date',
-            order_no: Invoice.id,
-            invoice_date: 'Order_date'
-
-          }
-          await this.MailService.sendInvoiceToCustomer(taxType)
-          return taxType
-        } else {
-          return 'Invalid state name in shipping address';
-        }
+    for (let product of Invoice.products) {
+      if (!hashtabel[product.shop_id]) {
+        hashtabel[product.shop_id] = [product];
       } else {
-        const stateCodeValue = stateCode[Invoice.shipping_address.state];
-        taxType = {
-          IGST: Invoice.sales_tax,
-          state_code: stateCodeValue,
+        hashtabel[product.shop_id].push(product);
+      }
+    }
+
+    for (const shopId in hashtabel) {
+      if (hashtabel.hasOwnProperty(shopId)) {
+        const shopProducts = hashtabel[shopId];
+
+        const taxType: any = {
           billing_address: Invoice.billing_address,
           shipping_address: Invoice.shipping_address,
-          shop_address: i.shop.address,
-          product: i,
-          created_at: 'Order_date',
+          created_at: Invoice.created_at,
           order_no: Invoice.id,
-          invoice_date: 'Order_date'
+          invoice_date: Invoice.created_at,
+          shop_address: shopProducts[0].shop,
+          products: shopProducts,
+        };
+
+        // Assuming all products in a shop have the same tax rates and state information
+        if (shopProducts[0].shop.address.state === Invoice.shipping_address.state) {
+          const stateCodeValue = stateCode[Invoice.shipping_address.state];
+          taxType.CGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+          taxType.SGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+          taxType.state_code = stateCodeValue;
+        } else {
+          const stateCodeValue = stateCode[Invoice.shipping_address.state];
+          taxType.IGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity;
+          taxType.state_code = stateCodeValue;
         }
-        return taxType
+
+        await this.MailService.sendInvoiceToCustomer(taxType);
       }
     }
   }
+
 
   /**
    * helper methods from here
