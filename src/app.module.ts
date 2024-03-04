@@ -46,6 +46,7 @@ import { MailModule } from './mail/mail.module';
 import { PermissionModule } from './permission/permission.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CartsModule } from './carts/carts.module';
+import { StocksModule } from './stocks/stocks.module';
 
 @Module({
   imports: [
@@ -62,7 +63,7 @@ import { CartsModule } from './carts/carts.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        synchronize: configService.get<boolean>('DB_SYNC'),
+        // synchronize: configService.get<boolean>('DB_SYNC'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: true,
         autoLoadEntities: true,
@@ -115,6 +116,7 @@ import { CartsModule } from './carts/carts.module';
     AiModule,
     PermissionModule,
     CartsModule,
+    StocksModule,
     MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],

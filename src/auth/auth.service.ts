@@ -185,16 +185,17 @@ export class AuthService {
       userData.contact = createUserInput.contact;
       userData.password = hashPass;
       userData.created_at = new Date();
-      userData.UsrBy = createUserInput.UsrBy;
+      userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
       userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
       const token = Math.floor(100 + Math.random() * 999).toString();
 
+      if (!createUserInput.UsrBy) {
+        userData.otp = Number(token)
+        // Send confirmation email for customers
+        await this.mailService.sendUserConfirmation(userData, token);
+      }
 
-      userData.otp = Number(token)
       await this.userRepository.save(userData);
-
-      // Send confirmation email for customers
-      await this.mailService.sendUserConfirmation(userData, token);
 
       const access_token = await this.signIn(userData.email, createUserInput.password);
 
