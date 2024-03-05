@@ -14,6 +14,7 @@ import {
   OtpResponse,
   VerifyOtpDto,
   OtpDto,
+  ResendOtpDto,
 } from './dto/create-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { User, UserType } from 'src/users/entities/user.entity';
@@ -50,6 +51,22 @@ export class AuthService {
     await this.userRepository.save(user);
   }
 
+  async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ message: string } | AuthResponse> {
+    const user = await this.userRepository.findOne({ where: { email: resendOtpDto.email } });
+    console.log("email reasend otp", user)
+    if (!user) {
+        throw new NotFoundException('User not found');
+    }
+    const otp = await this.generateOtp();
+    user.otp = otp;
+    user.created_at = new Date();
+   const repo = await this.userRepository.save(user);
+   console.log("first=========",repo)   
+    await this.mailService.sendUserConfirmation(user, otp.toString()); // Assuming you have a method to send OTP
+    return { message: 'OTP resent successfully.' };
+}
+
+
   async verifyOtp(otp: number): Promise<boolean> {
     const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
 
@@ -79,6 +96,8 @@ export class AuthService {
     }
 
     user.isVerified = true;
+    // const access_token = await this.signIn(userData.email, createUserInput.password);
+    
     await this.userRepository.save(user);
     return true;
   }
@@ -187,7 +206,7 @@ export class AuthService {
       userData.created_at = new Date();
       userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
       userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
-      const token = Math.floor(100 + Math.random() * 999).toString();
+      const token = Math.floor(100 + Math.random() * 9999).toString();
 
       if (!createUserInput.UsrBy) {
         userData.otp = Number(token)
@@ -197,13 +216,16 @@ export class AuthService {
 
       await this.userRepository.save(userData);
 
-      const access_token = await this.signIn(userData.email, createUserInput.password);
+      // const access_token = await this.verifyOtp(otp)
 
-      return {
-        token: access_token.access_token,
-        type_name: [UserType.Customer],
-        permissions: [],
-      };
+      // const access_token = await this.signIn(userData.email, createUserInput.password);
+
+      return 
+      // {
+      //   token: access_token.access_token,
+      //   type_name: [UserType.Customer],
+      //   permissions: [],
+      // };
     }
   }
 
@@ -236,8 +258,6 @@ export class AuthService {
       })),
     }));
   }
-
-
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
     const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
@@ -392,7 +412,6 @@ export class AuthService {
     }
   }
 
-
   async resetPassword(resetPasswordInput: ResetPasswordDto): Promise<CoreResponse> {
     console.log("resetPasswordInput****", resetPasswordInput)
 
@@ -513,8 +532,6 @@ export class AuthService {
       };
     }
   }
-
-
 
   async sendOtpCode(otpInput: OtpDto): Promise<OtpResponse> {
 
