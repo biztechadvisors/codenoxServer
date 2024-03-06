@@ -1,10 +1,11 @@
 import { Product } from 'src/products/entities/product.entity';
+import { User } from 'src/users/entities/user.entity';
 
 export class CreateStocksDto {
     product: Product;
     quantity: number;
     inStock: boolean;
-    margine: number;
+    user: User;
 }
 
 export class GetStocksDto {
@@ -12,5 +13,5 @@ export class GetStocksDto {
     product: Product;
     quantity: number;
     inStock: boolean;
-    margine: number;
+    user: User;
 }
