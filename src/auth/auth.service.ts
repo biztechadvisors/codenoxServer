@@ -220,7 +220,9 @@ export class AuthService {
 
       // const access_token = await this.signIn(userData.email, createUserInput.password);
 
-      return 
+      return {
+        message: 'Registered Successfully'
+      } 
       // {
       //   token: access_token.access_token,
       //   type_name: [UserType.Customer],
