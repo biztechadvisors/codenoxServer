@@ -17,28 +17,26 @@ import { CreateStocksDto, GetStocksDto } from './dto/create-stock.dto';
 export class StocksController {
     constructor(private readonly stocksService: StocksService) { }
 
-    @Post()
-    async create(@Body() createStocksDto: CreateStocksDto) {
-        return this.stocksService.create(createStocksDto);
-    }
-
-    @Put(':id')
-    async update(@Param('id', ParseIntPipe) id: number, @Body() createStocksDto: CreateStocksDto) {
-        return this.stocksService.update(id, createStocksDto);
-    }
-
-    @Get()
-    async getStocks() {
-        return this.stocksService.getAll();
+    @Post(':id')
+    async create(@Param('id', ParseIntPipe) id: number, @Body() createStocksDto: CreateStocksDto) {
+        return this.stocksService.create(id, createStocksDto);
     }
 
     @Get(':id')
-    async getStock(@Param('id', ParseIntPipe) id: number) {
-        return this.stocksService.getStocksById(id);
+    async getStocks(@Param('id', ParseIntPipe) id: number) {
+        return this.stocksService.getAll(id);
+    }
+
+    @Get(':id')
+    async getStock(
+        @Query('user_id', ParseIntPipe) user_id: number,
+        @Query('stock_id', ParseIntPipe) stock_id: number,
+    ) {
+        return this.stocksService.getOne(user_id, stock_id);
     }
 
     @Delete(':id')
-    async removeStock(@Param('id', ParseIntPipe) id: number): Promise<void> {
-        await this.stocksService.remove(id);
+    async removeStock(@Param('id', ParseIntPipe) id: number, quantity: number, product: number): Promise<void> {
+        await this.stocksService.afterORD(id, quantity, product);
     }
 }

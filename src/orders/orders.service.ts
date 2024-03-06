@@ -304,7 +304,7 @@ export class OrdersService {
         }
       }
 
-      if (createOrderInput.saleBy) {
+      if (createOrderInput.saleBy?.id) {
         const getSale = await this.userAddressRepository.findOne({ where: { id: createOrderInput.saleBy.id } });
         if (getSale) {
           order.saleBy = getSale;
@@ -554,9 +554,9 @@ export class OrdersService {
       const order = await this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
         .leftJoinAndSelect('order.dealer', 'dealer')
-        .leftJoinAndSelect('dealer.saleBy', 'saleByAddress')
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
+        .leftJoinAndSelect('order.saleBy', 'saleBy')
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('products.taxes', 'product_taxes')
         .leftJoinAndSelect('products.shop', 'product_shop')

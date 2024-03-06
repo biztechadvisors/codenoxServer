@@ -32,6 +32,7 @@ export class OrdersController {
 
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
+    console.log("createOrderDTO****35", createOrderDto)
     const OrdSuccess = await this.ordersService.create(createOrderDto);
     await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
     return OrdSuccess;
