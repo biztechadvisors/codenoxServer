@@ -358,7 +358,7 @@ export class OrdersService {
         .leftJoinAndSelect('products.variation_options', 'variation_options');
       query = query.leftJoinAndSelect('order.payment_intent', 'payment_intent')
         .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info');
-      query = query.leftJoinAndSelect('order.shop', 'shop');
+      query = query.leftJoinAndSelect('order.shop_id', 'shop');
       query = query.leftJoinAndSelect('order.coupon', 'coupon');
 
       if (!(permsn && (permsn.type_name === 'Admin' || permsn.type_name === 'super_admin'))) {
@@ -523,7 +523,7 @@ export class OrdersService {
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
         .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info') // Add this line
-        .leftJoinAndSelect('order.shop', 'shop')
+        .leftJoinAndSelect('order.shop_id', 'shop')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
         .leftJoinAndSelect('order.shipping_address', 'shipping_address')
         .leftJoinAndSelect('order.parentOrder', 'parentOrder')
@@ -558,9 +558,9 @@ export class OrdersService {
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
-        .leftJoinAndSelect('products.taxes', 'product_taxes') // Distinct alias for product taxes
-        .leftJoinAndSelect('products.shop', 'product_shop') // Distinct alias for product shop
-        .leftJoinAndSelect('product_shop.address', 'shop_address') // Distinct alias for product shop
+        .leftJoinAndSelect('products.taxes', 'product_taxes')
+        .leftJoinAndSelect('products.shop', 'product_shop')
+        .leftJoinAndSelect('product_shop.address', 'shop_address')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
         .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
         .leftJoinAndSelect('order.shop_id', 'order_shop')
@@ -772,7 +772,7 @@ export class OrdersService {
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
-        .leftJoinAndSelect('order.shop', 'shop')
+        .leftJoinAndSelect('order.shop_id', 'shop')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
         .leftJoinAndSelect('order.shipping_address', 'shipping_address')
         .leftJoinAndSelect('order.parentOrder', 'parentOrder')
@@ -817,7 +817,7 @@ export class OrdersService {
       .leftJoinAndSelect('order.products', 'products')
       .leftJoinAndSelect('products.pivot', 'pivot')
       .leftJoinAndSelect('order.payment_intent', 'payment_intent')
-      .leftJoinAndSelect('order.shop', 'shop')
+      .leftJoinAndSelect('order.shop_id', 'shop')
       .leftJoinAndSelect('order.billing_address', 'billing_address')
       .leftJoinAndSelect('order.shipping_address', 'shipping_address')
       .leftJoinAndSelect('order.parentOrder', 'parentOrder')
