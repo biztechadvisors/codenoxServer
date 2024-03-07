@@ -64,7 +64,6 @@ export class User extends CoreEntity {
   address?: Address[];
 
   @OneToMany(() => Order, (order) => order.customer)
-  @JoinColumn()
   orders: Order[];
 
   @ManyToOne(() => Permission)
