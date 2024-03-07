@@ -6,6 +6,7 @@ import { GetUsersDto, UserPaginator } from './dto/get-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import Fuse from 'fuse.js';
 import { User, UserType } from './entities/user.entity';
+import usersJson from '@db/users.json';
 import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, SocialRepository, UserRepository } from './users.repository';
@@ -34,13 +35,13 @@ import { Equal, FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
-// const users = plainToClass(User, usersJson);
+const users = plainToClass(User, usersJson);
 
 const options = {
   keys: ['name', 'type.slug', 'categories.slug', 'status'],
   threshold: 0.3,
 };
-// const fuse = new Fuse(users, options);
+const fuse = new Fuse(users, options);
 
 @Injectable()
 export class UsersService {
@@ -114,8 +115,8 @@ export class UsersService {
     profile.socials = social;
     profile.bio = createUserDto.profile.bio;
     profile.contact = createUserDto.profile.contact;
-    await this.profileRepository.save(profile);
-
+    const createPro = await this.profileRepository.save(profile);
+    console.log("first+++++++++++++", createPro)
     return usr;
   }
 
