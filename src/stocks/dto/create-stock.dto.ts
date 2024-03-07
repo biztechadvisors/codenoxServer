@@ -5,7 +5,7 @@ export class CreateStocksDto {
     product: Product;
     quantity: number;
     inStock: boolean;
-    user: User;
+    user_id: User;
 }
 
 export class GetStocksDto {
