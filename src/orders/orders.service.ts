@@ -137,6 +137,8 @@ export class OrdersService {
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
+      console.log("createOrderInput***", createOrderInput)
+      // throw error
       const order = plainToClass(Order, createOrderInput)
       const newOrderStatus = new OrderStatus();
       const newOrderFile = new OrderFiles();
@@ -940,6 +942,7 @@ export class OrdersService {
     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
     console.log("Invoice****", Invoice);
 
+    // throw error
     const hashtabel: Record<string, any[]> = {};
 
     for (let product of Invoice.products) {

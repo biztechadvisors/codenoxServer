@@ -47,19 +47,19 @@ export class StocksService {
         }
     }
 
-    async getOne(user_id: number, stock_id: number): Promise<Stocks | null> {
-        try {
-            return await this.stocksRepository.findOne({
-                where: {
-                    user: { id: user_id },
-                    id: stock_id
-                },
-                relations: ['product'],
-            });
-        } catch (error) {
-            throw new NotFoundException(`Error fetching stock by ID: ${error.message}`);
-        }
-    }
+    // async getOne(user_id: number, stock_id: number): Promise<Stocks | null> {
+    //     try {
+    //         return await this.stocksRepository.findOne({
+    //             where: {
+    //                 user: { id: user_id },
+    //                 id: stock_id
+    //             },
+    //             relations: ['product'],
+    //         });
+    //     } catch (error) {
+    //         throw new NotFoundException(`Error fetching stock by ID: ${error.message}`);
+    //     }
+    // }
 
 
 
