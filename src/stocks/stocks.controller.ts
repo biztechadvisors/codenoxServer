@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { StocksService } from './stocks.service';
 import { CreateStocksDto, GetStocksDto } from './dto/create-stock.dto';
+import { error } from 'console';
 
 @Controller('stocks')
 export class StocksController {
@@ -22,23 +23,23 @@ export class StocksController {
         return this.stocksService.create(createStocksDto);
     }
 
-    @Put(':id')
-    async update(@Param('id', ParseIntPipe) id: number, @Body() createStocksDto: CreateStocksDto) {
-        return this.stocksService.update(id, createStocksDto);
-    }
-
-    @Get()
-    async getStocks() {
-        return this.stocksService.getAll();
-    }
 
     @Get(':id')
-    async getStock(@Param('id', ParseIntPipe) id: number) {
-        return this.stocksService.getStocksById(id);
+    async getStocks(@Param('id') id: number) {
+        return this.stocksService.getAll(id);
     }
 
-    @Delete(':id')
-    async removeStock(@Param('id', ParseIntPipe) id: number): Promise<void> {
-        await this.stocksService.remove(id);
+    // @Get(':id')
+    // async getStock(
+    //     @Query('user_id', ParseIntPipe) user_id: number,
+    //     @Query('stock_id', ParseIntPipe) stock_id: number,
+    // ) {
+    //     return this.stocksService.getOne(user_id, stock_id);
+    // }
+
+
+    @Put()
+    async afterORD(@Body() GetStocksDto: GetStocksDto) {
+        return this.stocksService.afterORD(GetStocksDto);
     }
 }

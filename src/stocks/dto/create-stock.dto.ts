@@ -1,16 +1,16 @@
 import { Product } from 'src/products/entities/product.entity';
+import { User } from 'src/users/entities/user.entity';
 
 export class CreateStocksDto {
-    product: Product;
+    products: Product[];
     quantity: number;
     inStock: boolean;
-    margine: number;
+    user_id: number;
 }
 
 export class GetStocksDto {
-    id: number;
-    product: Product;
+    products: Product[];
     quantity: number;
     inStock: boolean;
-    margine: number;
+    user_id: number;
 }
