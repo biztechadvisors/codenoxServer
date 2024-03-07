@@ -25,6 +25,7 @@ import { MailService } from 'src/mail/mail.service';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { error } from 'console';
+import Twilio from 'twilio';
 
 @Injectable()
 export class AuthService {
@@ -69,7 +70,7 @@ export class AuthService {
 
   async verifyOtp(otp: number): Promise<boolean> {
     const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
-
+ 
     if (!user) {
       return false;
     }
@@ -99,6 +100,17 @@ export class AuthService {
     // const access_token = await this.signIn(userData.email, createUserInput.password);
     
     await this.userRepository.save(user);
+    const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+      try {
+        await twilioClient.messages.create({
+          body: 'You have successfully registered!',
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: user.contact
+        });
+      } catch (error) {
+        console.error("Failed to send SMS:", error.message);
+      }
+    await this.mailService.successfullyRegister(user);
     return true;
   }
 
@@ -175,7 +187,7 @@ export class AuthService {
       userData.type = permission;
 
       if (createUserInput.UsrBy) {
-        userData.isVerified = true;
+        userData.isVerified = true;     
       }
 
       await this.userRepository.save(userData);
@@ -217,9 +229,10 @@ export class AuthService {
       await this.userRepository.save(userData);
 
       // const access_token = await this.verifyOtp(otp)
-
+      
       // const access_token = await this.signIn(userData.email, createUserInput.password);
 
+      
       return {
         message: 'Registered Successfully'
       } 
@@ -356,7 +369,7 @@ export class AuthService {
 
   async forgetPassword(forgetPasswordInput: ForgetPasswordDto): Promise<CoreResponse> {
     const user = await this.userRepository.findOne({ where: { email: forgetPasswordInput.email }, relations: ['type'] });
-
+     console.log("DATA+++++++++",user);
     if (!user) {
       return {
         success: false,
@@ -371,6 +384,16 @@ export class AuthService {
     user.created_at = new Date();
 
     await this.userRepository.save(user);
+    const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    try {
+      await twilioClient.messages.create({
+        body: 'You Change password using this code:${otp}',
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: user.contact
+      });
+    } catch (error) {
+      console.error("Failed to send SMS:", error.message);
+    }
 
     try {
       await this.mailService.sendUserConfirmation(user, token);
