@@ -6,7 +6,6 @@ import { GetUsersDto, UserPaginator } from './dto/get-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import Fuse from 'fuse.js';
 import { User, UserType } from './entities/user.entity';
-import usersJson from '@db/users.json';
 import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, SocialRepository, UserRepository } from './users.repository';
@@ -33,14 +32,15 @@ import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
 import { Equal, FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
-const users = plainToClass(User, usersJson);
+// const users = plainToClass(User, usersJson);
 
 const options = {
   keys: ['name', 'type.slug', 'categories.slug', 'status'],
   threshold: 0.3,
 };
-const fuse = new Fuse(users, options);
+// const fuse = new Fuse(users, options);
 
 @Injectable()
 export class UsersService {
@@ -63,10 +63,10 @@ export class UsersService {
 
   ) { }
 
-  //-------------------------------------------------------- 
+  //------------------------------ User service -------------------------- 
 
   async create(createUserDto: CreateUserDto) {
-
+   console.log("creactUserDto", createUserDto)
     const user = await this.userRepository.findOne({ where: { email: createUserDto.email }, relations: ['type'] })
     if (user) {
       throw new NotFoundException(`User with email ${createUserDto.email} already exists`);
@@ -495,4 +495,17 @@ export class UsersService {
     await this.dealerRepository.delete(dealer.id);
   }
 
+
+  // ------------------------- Profile Service ----------------------------------------
+
+  async createProfile(createProfileDto: CreateProfileDto): Promise<Profile>{
+    
+    
+    return
+  }
+
+  async updateProfile(updateProfileDto: UpdateProfileDto): Promise<Profile>{
+   
+    return
+  }
 }

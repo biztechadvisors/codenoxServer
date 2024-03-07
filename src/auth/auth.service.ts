@@ -14,6 +14,7 @@ import {
   OtpResponse,
   VerifyOtpDto,
   OtpDto,
+  ResendOtpDto,
 } from './dto/create-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { User, UserType } from 'src/users/entities/user.entity';
@@ -23,7 +24,6 @@ import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
-import { error } from 'console';
 
 @Injectable()
 export class AuthService {
@@ -49,6 +49,27 @@ export class AuthService {
     // user.created_at = null;
     await this.userRepository.save(user);
   }
+
+  async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ message: string } | AuthResponse> {
+
+    const user = await this.userRepository.findOne({ where: { email: resendOtpDto.email } });
+    console.log("email reasend otp", user)
+
+    if (!user) {
+        throw new NotFoundException('User not found');
+    }
+
+    const otp = await this.generateOtp();
+    user.otp = otp;
+    user.created_at = new Date();
+    const repo = await this.userRepository.save(user);
+    console.log("first=========",repo)  
+
+    await this.mailService.sendUserConfirmation(user, otp.toString()); // Assuming you have a method to send OTP
+    return { message: 'OTP resent successfully.' };
+
+}
+
 
   async verifyOtp(otp: number): Promise<boolean> {
     const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
@@ -197,12 +218,13 @@ export class AuthService {
 
       await this.userRepository.save(userData);
 
-      const access_token = await this.signIn(userData.email, createUserInput.password);
+      // const access_token = await this.signIn(userData.email, createUserInput.password);
 
       return {
-        token: access_token.access_token,
-        type_name: [UserType.Customer],
-        permissions: [],
+        // token: access_token.access_token,
+        // type_name: [UserType.Customer],
+        // permissions: [],
+        message: 'Rgistered Successfully'
       };
     }
   }
