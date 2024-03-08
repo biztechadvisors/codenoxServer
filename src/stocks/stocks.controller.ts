@@ -26,8 +26,10 @@ export class StocksController {
 
     @Get(':id')
     async getStocks(@Param('id') id: number) {
+        console.log(id);
         return this.stocksService.getAll(id);
     }
+
 
     // @Get(':id')
     // async getStock(
@@ -43,3 +45,6 @@ export class StocksController {
         return this.stocksService.afterORD(GetStocksDto);
     }
 }
+
+
+
