@@ -782,7 +782,6 @@ export class OrdersService {
         .leftJoinAndSelect('order.coupon', 'coupon')
         .where('order.id = :id', { id })
         .getOne();
-
       // If the order is not found, you can throw a NotFoundException
       if (!orderToDelete) {
         throw new NotFoundException('Order not found');
@@ -806,6 +805,7 @@ export class OrdersService {
 
       // Remove the order from the database
       await this.orderRepository.remove(orderToDelete);
+      // await this.MailService.sendCancelOrder(orderToDelete)
     } catch (error) {
       console.error('Error removing order:', error);
       throw error; // Rethrow the error for further analysis or handling

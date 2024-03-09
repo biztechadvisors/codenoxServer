@@ -245,22 +245,22 @@ export class MailService {
   }
 
   // send Email cancel Order
-  async sendCancelOrder(user: User, products: any) {
+  async sendCancelOrder( orderToDelete) {
 
     try {
-      const productDetails = products.map((items: any) => ({
-        name: items.Name,
-        price: items.netPrice,
-        imageUrl: items.image
-      }));
+      // const productDetails = products.map((items: any) => ({
+      //   name: items.Name,
+      //   price: items.netPrice,
+      //   imageUrl: items.image
+      // }));
       await this.mailerService.sendMail({
-        to: user.email,
+        // to: user.email,
         from: '"Dealer" <info@365dgrsol.in>',
         subject: 'Your Tilitso Order Confirmation. Please share your feedback',
         template: './cancelOrder',
         context: {
-          email: user.email,
-          products: productDetails,
+          // email: user.email,
+          // products: productDetails,
         },
       });
     } catch (error) {
@@ -294,7 +294,7 @@ export class MailService {
 
   // Send Abandonment Cart Reminder Email
   async sendAbandonmenCartReminder(email: any, products: any) {
-    console.log("==================+++++++++++", products);
+    console.log("==================+++++++++++",email, products);
 
     // Check if products is an array and has elements
     if (!Array.isArray(products) || products.length === 0) {
@@ -315,12 +315,14 @@ export class MailService {
       console.log("mapped data----------------------", email, productDetails);
 
       await this.mailerService.sendMail({
-        to: email,
+        // to: "radhikaji.varfa@outlook.com",
+        to:email,
         from: '"Support Team" <info@365dgrsol.in>',
         subject: "Don't forget your items! ️ Your cart reminder from Tilitso",
         template: './abandonmentCartReminder',
         context: {
           email: email,
+          // email:"radhikaji.varfa@outlook.com",
           products: productDetails,
           cartUrl: CartUrl,
         },
@@ -329,29 +331,5 @@ export class MailService {
       console.error("Email sending Failed", error)
     }
   }
-  // async sendAbandonmenCartReminder(email: string, products: any) {
-
-  //     try{
-  //       const productDetails = products.map((items: any) => ({
-  //         name: items.Name,
-  //         price: items.netPrice,
-  //         imageUrl: items.image
-  //     }));
-  //       const CartUrl = `https://www.tilitso.in/shop-cart`
-
-  //       await this.mailerService.sendMail({
-  //         to: email,
-  //         from: '"Support Team" <info@365dgrsol.in>',
-  //         subject: 'Don\'t forget your items! ️ Your cart reminder from Tilitso',
-  //         template: './abandonmentCartReminder',
-  //         context: {
-  //           email: email,
-  //           products: productDetails,
-  //           cartUrl: CartUrl,
-  //         },
-  //       });
-  //     }catch(error){
-  //       console.error("Email sending Failed", error)
-  //     }
-  //   }
+  
 }
