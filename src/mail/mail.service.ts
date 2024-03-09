@@ -245,22 +245,22 @@ export class MailService {
   }
 
   // send Email cancel Order
-  async sendCancelOrder( orderToDelete) {
+  async sendCancelOrder(user: User, products: any,) {
 
     try {
-      // const productDetails = products.map((items: any) => ({
-      //   name: items.Name,
-      //   price: items.netPrice,
-      //   imageUrl: items.image
-      // }));
+      const productDetails = products.map((items: any) => ({
+        name: items.Name,
+        price: items.netPrice,
+        imageUrl: items.image
+      }));
       await this.mailerService.sendMail({
-        // to: user.email,
+        to: user.email,
         from: '"Dealer" <info@365dgrsol.in>',
         subject: 'Your Tilitso Order Confirmation. Please share your feedback',
         template: './cancelOrder',
         context: {
-          // email: user.email,
-          // products: productDetails,
+          email: user.email,
+          products: productDetails,
         },
       });
     } catch (error) {
