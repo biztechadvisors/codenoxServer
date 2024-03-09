@@ -387,7 +387,7 @@ export class AuthService {
     const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
     try {
       await twilioClient.messages.create({
-        body: 'You Change password using this code:${otp}',
+        body: `You Change password using this code:${otp}`,
         from: process.env.TWILIO_PHONE_NUMBER,
         to: user.contact
       });
