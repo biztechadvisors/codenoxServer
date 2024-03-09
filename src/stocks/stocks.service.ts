@@ -24,12 +24,14 @@ export class StocksService {
         try {
             const { user_id, products } = createStocksDto;
 
-            const dealer = await this.userRepository.findOne({ where: { id: user_id }, relations: ['dealer'] });
-
+            const dealer = await this.userRepository.findOne({ where: { id: user_id }, relations: ['dealer'] })
+            console.log('dealer****', dealer)
             if (!dealer?.dealer) {
-                throw new NotFoundException(`Dealer not found for ID ${user_id}`);
+                throw new NotFoundException(`Dealer not Found by ${user_id} ID`)
             }
 
+            console.log('dealer****33', dealer)
+            // Fetch existing stocks for the given user
             const existingStocks = await this.stocksRepository.find({
                 where: { user: { id: user_id } },
                 relations: ['product'],
@@ -42,20 +44,22 @@ export class StocksService {
                     (stock) => stock.product.id === product.product_id,
                 );
 
-                console.log("existingStock***", existingStock);
+                console.log("existingStock***", existingStock)
 
                 if (!existingStock) {
+                    // Create a new stock record for the product
                     const newStock = this.stocksRepository.create({
                         quantity: product.order_quantity,
-                        inStock: true,
-                        product: product.product_id,
-                        user: dealer.dealer,
+                        inStock: true, // You might need to set this based on your logic
+                        product: product.product_id, // Update this line
+                        user: dealer,
                     });
 
                     updatedStocks.push(await this.stocksRepository.save(newStock));
                 } else {
+                    // Update existing stock record for the product
                     existingStock.quantity += product.order_quantity;
-                    existingStock.inStock = true;
+                    existingStock.inStock = true; // You might need to set this based on your logic
 
                     updatedStocks.push(await this.stocksRepository.save(existingStock));
                 }
@@ -92,7 +96,7 @@ export class StocksService {
                 if (stock.quantity <= orderProduct.order_quantity) {
                     stock.quantity -= orderProduct.order_quantity;
                 }
-                stock.inStock = stock.quantity > 0;
+                stock.inStock = stock.quantity > 0 ? true : false;
 
                 await this.stocksRepository.save(stock);
             }
@@ -100,5 +104,4 @@ export class StocksService {
             throw new NotFoundException(`Error updating stock after order: ${error.message}`);
         }
     }
-
 }

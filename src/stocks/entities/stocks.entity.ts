@@ -14,12 +14,9 @@ export class Stocks {
     @Column()
     inStock: boolean
 
-    @Column()
-    margine: number
-
     @ManyToOne(() => Product, { cascade: true })
     product?: Product;
 
-    @ManyToOne(() => User, { eager: true })
+    @ManyToOne(() => User, { cascade: true, eager: true })
     user: User;
 }
