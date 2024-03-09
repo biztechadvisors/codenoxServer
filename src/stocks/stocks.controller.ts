@@ -5,11 +5,13 @@ import {
     Post,
     Body,
     Put,
-    Param
+    Param,
+    Query
 } from '@nestjs/common';
 import { StocksService } from './stocks.service';
 import { CreateStocksDto, GetStocksDto, UpdateStkQuantityDto } from './dto/create-stock.dto';
 import { CreateOrderDto } from 'src/orders/dto/create-order.dto';
+import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
 
 @Controller('stocks')
 export class StocksController {
@@ -45,10 +47,16 @@ export class StocksController {
         return this.stocksService.afterORD(createOrderDto);
     }
 
-    @Post('Ord')
+    @Post('ord')
     async OrdfromStocks(@Body() createOrderDto: CreateOrderDto) {
         await this.stocksService.OrdfromStocks(createOrderDto)
         return await this.stocksService.afterORD(createOrderDto);
+    }
+
+    @Get()
+    async getOrders(@Query() query: GetOrdersDto): Promise<OrderPaginator> {
+        console.log("query******************58", query)
+        return this.stocksService.getOrders(query);
     }
 }
 
