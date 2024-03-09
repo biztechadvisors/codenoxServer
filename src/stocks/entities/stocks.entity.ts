@@ -12,6 +12,12 @@ export class Stocks {
     quantity: number
 
     @Column()
+    ordPendQuant: number
+
+    @Column()
+    status: boolean
+
+    @Column()
     inStock: boolean
 
     @ManyToOne(() => Product, { cascade: true })

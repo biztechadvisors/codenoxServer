@@ -107,33 +107,6 @@ export class MailService {
 
   }
 
-  // send Invoice Email to Dealer
-  async sendInvoiceToDealer(user: User, products: any) {
-
-
-    try {
-      const productDetails = products.map((items: any) => ({
-        name: items.Name,
-        price: items.netPrice,
-        imageUrl: items.image
-      }));
-
-      await this.mailerService.sendMail({
-        to: user.email,
-        from: '"Tilitso Purchase" <info@365dgrsol.in>',
-        subject: 'You have order. please check your dashboard for more details',
-        template: './invoiceToDealer',
-        context: {
-          email: user.email,
-          products: productDetails,
-        },
-      });
-    } catch (error) {
-      console.error("Invoice sending failed to Dealer", error)
-    }
-
-  }
-
   // send Invoice Email to Customer
   async sendInvoiceToCustomer(taxType: any) {
     try {
@@ -197,26 +170,63 @@ export class MailService {
 
 
   // send Email invoice Dealer to Customer
-  async sendInvoiceDealerToCustomer(user: User, products: any) {
-
+  async sendInvoiceDealerToCustomer(taxType: any) {
     try {
-      const productDetails = products.map((items: any) => ({
-        name: items.Name,
-        price: items.netPrice,
-        imageUrl: items.image
-      }));
+      // Destructure taxType directly
+      const {
+        CGST,
+        IGST,
+        SGST,
+        net_amount,
+        total_amount,
+        dealer,
+        sales_tax_total,
+        total_amount_in_words,
+        payment_Mode,
+        paymentInfo,
+        billing_address,
+        shipping_address,
+        saleBy,
+        products,
+        created_at,
+        order_no,
+        invoice_date,
+      } = taxType;
+
+      const orderDetails = {
+        IGST,
+        CGST,
+        SGST,
+        net_amount,
+        total_amount,
+        dealer,
+        sales_tax_total,
+        total_amount_in_words,
+        payment_Mode,
+        paymentInfo,
+        billing_address,
+        shipping_address,
+        saleBy,
+        products,
+        created_at,
+        order_no,
+        invoice_date,
+      };
+
+      console.log("orderDetails***184", orderDetails)
+
       await this.mailerService.sendMail({
-        to: user.email,
-        from: '"Dealer" <info@365dgrsol.in>',
+        to: "ajay.codenox@gmail.com",
+        from: '"Tilitso Purchase" <info@365dgrsol.in>',
         subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-        template: './invoiceDealerToCustomer',
+        template: './invoiceToCustomer',
         context: {
-          email: user.email,
-          products: productDetails,
+          email: "ajay.codenox@gmail.com",
+          invoice: orderDetails,
         },
       });
     } catch (error) {
-      console.error("Invoice sending failed to Customer", error)
+      console.error("Invoice sending failed to Customer", error);
     }
   }
 

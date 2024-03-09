@@ -10,6 +10,7 @@ import { Type } from 'src/types/entities/type.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
+import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 
 enum ProductStatus {
   PUBLISH = 'publish',
@@ -128,6 +129,9 @@ export class OrderProductPivot extends CoreEntity {
   @ManyToOne(() => Order, order => order.products)
   @JoinColumn()
   order: Order;
+  @ManyToOne(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
+  @JoinColumn()
+  StocksSellOrd: StocksSellOrd;
   @Column()
   Ord_Id: number
 }
