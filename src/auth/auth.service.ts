@@ -166,16 +166,17 @@ export class AuthService {
 
       await this.mailService.sendUserConfirmation(userData, token);
 
-      const access_token = await this.signIn(userData.email, createUserInput.password);
+      // const access_token = await this.signIn(userData.email, createUserInput.password);
 
       // Fetch permissions based on user type
-      const result = await this.getPermissions(userData.type.type_name);
+      // const result = await this.getPermissions(userData.type.type_name);
 
-      return {
-        token: access_token.access_token,
-        type_name: [`${userData.type.type_name}`],
-        permissions: result,
-      };
+      // return {
+      //   token: access_token.access_token,
+      //   type_name: [`${userData.type.type_name}`],
+      //   permissions: result,
+      // };
+      return { message: `Registerd Successfull OTP send in your Email` }
     } else {
       // Customer registration
       const hashPass = await bcrypt.hash(createUserInput.password, 12);
@@ -197,13 +198,15 @@ export class AuthService {
 
       await this.userRepository.save(userData);
 
-      const access_token = await this.signIn(userData.email, createUserInput.password);
+      return { message: `Registerd Successfull OTP send in your Email` }
 
-      return {
-        token: access_token.access_token,
-        type_name: [UserType.Customer],
-        permissions: [],
-      };
+      // const access_token = await this.signIn(userData.email, createUserInput.password);
+
+      // return {
+      //   token: access_token.access_token,
+      //   type_name: [UserType.Customer],
+      //   permissions: [],
+      // };
     }
   }
 
@@ -236,7 +239,6 @@ export class AuthService {
       })),
     }));
   }
-
 
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
