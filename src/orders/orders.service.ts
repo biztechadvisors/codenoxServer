@@ -982,7 +982,7 @@ export class OrdersService {
           await this.MailService.sendInvoiceToCustomer(taxType);
           await this.MailService.sendInvoiceDealerToCustomer(taxType);
         } else {
-          await this.MailService.sendInvoiceToCustomer(taxType);
+          // await this.MailService.sendInvoiceToCustomer(taxType);
         }
       }
     }
