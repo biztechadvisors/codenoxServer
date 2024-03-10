@@ -47,6 +47,7 @@ import { PermissionModule } from './permission/permission.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CartsModule } from './carts/carts.module';
 import { StocksModule } from './stocks/stocks.module';
+import { SilentLogger } from './logger';
 
 @Module({
   imports: [
@@ -65,8 +66,9 @@ import { StocksModule } from './stocks/stocks.module';
         database: configService.get('DB_DATABASE'),
         // synchronize: configService.get<boolean>('DB_SYNC'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        logging: true,
+        logging: false,
         autoLoadEntities: true,
+        logger: new SilentLogger(),
       }),
       inject: [ConfigService],
     }),
