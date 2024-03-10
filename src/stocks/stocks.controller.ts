@@ -55,9 +55,9 @@ export class StocksController {
 
     @Get()
     async getOrders(@Query() query: GetOrdersDto): Promise<OrderPaginator> {
-        console.log("query******************58", query)
         return this.stocksService.getOrders(query);
     }
+
 }
 
 
