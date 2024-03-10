@@ -14,7 +14,7 @@ import { UUID } from 'typeorm/driver/mongodb/bson.typings'
 
 @Controller('attachments')
 export class UploadsController {
-  constructor(private readonly uploadsService: UploadsService) {}
+  constructor(private readonly uploadsService: UploadsService) { }
 
   @Post()
   @UseInterceptors(
@@ -31,7 +31,7 @@ export class UploadsController {
     } catch (err) {
       console.log(err)
     }
-return [    
+    return [
       {
         id: new UUID(),
         original: attachment[0].filename,

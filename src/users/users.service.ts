@@ -115,8 +115,11 @@ export class UsersService {
     profile.socials = social;
     profile.bio = createUserDto.profile.bio;
     profile.contact = createUserDto.profile.contact;
-    const createPro = await this.profileRepository.save(profile);
-    console.log("first+++++++++++++", createPro)
+
+    let profUsr = await this.profileRepository.save(profile);
+    usr.profile = profUsr
+
+    await this.userRepository.save(usr);
     return usr;
   }
 
