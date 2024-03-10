@@ -941,7 +941,7 @@ export class OrdersService {
 
     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
     console.log("Invoice****", Invoice);
-    
+
     const hashtabel: Record<string, any[]> = {};
 
     for (let product of Invoice.products) {
@@ -978,7 +978,7 @@ export class OrdersService {
           taxType.state_code = stateCodeValue;
         }
 
-        if (Invoice.saleBy && Invoice.dealerId) {
+        if (Invoice.saleBy && Invoice.dealer) {
           await this.MailService.sendInvoiceToCustomer(taxType);
           await this.MailService.sendInvoiceDealerToCustomer(taxType);
         } else {
