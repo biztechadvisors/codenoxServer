@@ -15,9 +15,10 @@ import { Coupon } from 'src/coupons/entities/coupon.entity'
 import { ShiprocketService } from 'src/orders/shiprocket.service'
 import { MailService } from 'src/mail/mail.service'
 import { StocksSellOrd } from './entities/stocksOrd.entity'
+import { Permission } from 'src/permission/entities/permission.entity'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Attachment, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAddress, Shop,])],
+    imports: [TypeOrmModule.forFeature([Attachment, Permission, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAddress, Shop,])],
     controllers: [
         StocksController,
     ],
