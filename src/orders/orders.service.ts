@@ -555,6 +555,7 @@ export class OrdersService {
       const order = await this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
         .leftJoinAndSelect('order.dealer', 'dealer')
+        .leftJoinAndSelect('dealer.dealer', 'dealerData')
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('order.saleBy', 'saleBy')
@@ -979,10 +980,11 @@ export class OrdersService {
         }
 
         if (Invoice.saleBy && Invoice.dealer) {
+          console.log("working properly")
           await this.MailService.sendInvoiceToCustomer(taxType);
           await this.MailService.sendInvoiceDealerToCustomer(taxType);
         } else {
-          // await this.MailService.sendInvoiceToCustomer(taxType);
+          await this.MailService.sendInvoiceToCustomer(taxType);
         }
       }
     }
