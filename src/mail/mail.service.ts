@@ -3,6 +3,7 @@ import { MailerService } from '@nestjs-modules/mailer'
 import { Injectable } from '@nestjs/common'
 import { User } from '../users/entities/user.entity'
 import { error } from 'console'
+import * as puppeteer from 'puppeteer';
 
 @Injectable()
 export class MailService {

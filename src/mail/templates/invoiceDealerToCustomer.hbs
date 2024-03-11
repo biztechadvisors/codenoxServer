@@ -15,7 +15,7 @@
                 Supply/Cash Memo
             </h3>
         </div>
-        <div class="invoice-body" style="display:flex;justify-content:space-between;width:100%;">
+        {{!-- <div class="invoice-body" style="display:flex;justify-content:space-between;width:100%;">
             <div style="flex: 0 0 47%;text-align:left;">
                 <h4 style="text-align:left;">Sold By:</h4>
                 <p style="text-align: left;">{{invoice.saleBy.name}}</p>
@@ -57,8 +57,8 @@
                 <p style="margin-top: 20px;text-align:right;"><b>Invoice Details:</b> MP-FIDA-1034-2324</p>
                 <p style="margin-top: 20px;text-align:right;"><b>Invoice Date:</b>{{invoice.invoice_date}}</p>
             </div>
-        </div>
-        <table
+        </div> --}}
+        {{!-- <table
             style="width: 100%; border-collapse: collapse;margin-bottom: 20px; margin-top: 20px; border: 2px solid black;">
             <thead style="border:2px solid black">
                 <tr style="border:2px solid black">
@@ -82,7 +82,6 @@
                     <td style="border: 2px solid black;">{{this.pivot.unit_price}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.order_quantity}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
-                    {{!-- {{/each}} --}}
                     <td style="border: 2px solid black;">{{this.taxes.rate}}%</td>
                     <td style="border: 2px solid black;">{{this.taxes.cgst}}%<br /> {{this.taxes.sgst}} %</td>
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
@@ -99,17 +98,15 @@
                         {{invoice.total_amount_in_words}}</td>
                 </tr>
                 <tr>
-                    {{!-- {{#each invoice.product}} --}}
                     <td colspan="9" style="text-align: right;"><b>{{invoice.shop_address.name}}</b><br></td>
-                    {{!-- {{/each}} --}}
                 </tr>
                 <tr>
                     <td colspan="9" style="text-align: right;"><b>Authorized Signatory</b></td>
                 </tr>
             </tbody>
-        </table>
+        </table> --}}
         <!-- Payment Details Table -->
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; border: 2px solid black;">
+        {{!-- <table style="width: 100%; border-collapse: collapse; margin-top: 20px; border: 2px solid black;">
             <tbody>
                 <tr style="border:2px solid black">
                     <td style="border:2px solid black">Payment Transaction ID: <br>
@@ -137,7 +134,7 @@
                     </td>
                 </tr>
             </tbody>
-        </table>
+        </table> --}}
 
     </div>
 </body>
