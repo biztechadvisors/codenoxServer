@@ -13,6 +13,7 @@ import {
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { CoreEntity } from 'src/common/entities/core.entity'
 import { Product } from 'src/products/entities/product.entity'
+import { Shop } from 'src/shops/entities/shop.entity'
 
 // TypeSettings entity
 @Entity()
@@ -62,6 +63,10 @@ export class Type extends CoreEntity {
 
   @OneToMany(() => Product, (product) => product.type)
   product?: Product[]
+
+  @ManyToOne(() => Shop)
+  @JoinColumn()
+  shop?: Shop;
 
   @Column()
   language: string
