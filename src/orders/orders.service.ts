@@ -574,7 +574,7 @@ export class OrdersService {
         .where('order.id = :id', { id })
         .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
         .getOne();
-
+        console.log("PRODUCTS============",order.products);
       if (!order) {
         throw new NotFoundException('Order not found');
       }
@@ -618,7 +618,7 @@ export class OrdersService {
         dealer: order.dealer ? order.dealer : null,
         products: await Promise.all(order.products.map(async (product) => {
           const pivot = product.pivot.find(p => p.Ord_Id === order.id);
-
+    console.log("PIvot()()()()()",pivot);
           if (!pivot || !product.id) {  // Ensure product.id is defined
             return null;
           }
@@ -683,7 +683,7 @@ export class OrdersService {
         children: order.children,
         wallet_point: order.wallet_point
       };
-      console.log("transformedOrder****", transformedOrder)
+      // console.log("transformedOrder****", transformedOrder)
       return transformedOrder;
     } catch (error) {
       console.error('Error in getOrderByIdOrTrackingNumber:', error);
@@ -942,10 +942,23 @@ export class OrdersService {
 
     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
     console.log("Invoice****", Invoice);
+    console.log("PIVOT_________", Invoice.products.pivot);
+    
+    const numberToWords = (num: number) => {
+      const a = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+      const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+
+      if (num < 20) return a[num];
+      const digit = num % 10;
+      if (num < 100) return b[Math.floor(num / 10)] + (digit ? '-' + a[digit] : '');
+      if (num < 1000) return a[Math.floor(num / 100)] + ' hundred' + (num % 100 === 0 ? '' : ' and ' + numberToWords(num % 100));
+      return numberToWords(Math.floor(num / 1000)) + ' thousand' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '');
+  };
 
     const hashtabel: Record<string, any[]> = {};
 
-    for (let product of Invoice.products) {
+    for (const product of Invoice.products) {
       if (!hashtabel[product.shop_id]) {
         hashtabel[product.shop_id] = [product];
       } else {
@@ -966,7 +979,7 @@ export class OrdersService {
           shop_address: shopProducts[0].shop,
           products: shopProducts,
         };
-
+        console.log("working properly++++++++",taxType);
         // Assuming all products in a shop have the same tax rates and state information
         if (shopProducts[0].shop.address.state === Invoice.shipping_address.state) {
           const stateCodeValue = stateCode[Invoice.shipping_address.state];
