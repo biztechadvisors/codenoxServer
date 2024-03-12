@@ -15,16 +15,16 @@
                 Supply/Cash Memo
             </h3>
         </div>
-        {{!-- <div class="invoice-body" style="display:flex;justify-content:space-between;width:100%;">
+        <div class="invoice-body" style="display:flex;justify-content:space-between;width:100%;">
             <div style="flex: 0 0 47%;text-align:left;">
                 <h4 style="text-align:left;">Sold By:</h4>
                 <p style="text-align: left;">{{invoice.shop_address.name}}</p>
                 <p style="text-align:left;">{{invoice.shop_address.address.street_address}}</p>
                 <p style="text-align:left;">
-                    {{invoice.shop_address.address.city}}{{invoice.shop_address.address.state}}{{invoice.shop_address.address.country}}
+                    {{invoice.shop_address.address.city}} {{invoice.shop_address.address.state}} {{invoice.shop_address.address.country}}
                 </p>
                 <br>
-                <p style="text-align:left;"><b>PAN No:</b>AC02BFRT56</p>
+                <p style="text-align:left;"><b>PAN No:</b>Hard_Code AC02BFRT56</p>
                 <p style="text-align:left;"><b>GST Registration No:</b>{{invoice.shop_address.gst_number}}</p>
                 <div class="order-details" style="margin-top: 20px;text-align:left;">
                     <p style="text-align:left;margin-top:20px"><b>Order Number:</b> {{invoice.order_no}}</p>
@@ -53,12 +53,12 @@
                         {{invoice.shipping_address.country}} {{invoice.shipping_address.zip}}</p>
 
                 </div>
-                <p style="margin-top: 20px;text-align:right;"><b>Invoice Number:</b>not</p>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Number:</b>{{invoice.created_at}}</p>
                 <p style="margin-top: 20px;text-align:right;"><b>Invoice Details:</b> MP-FIDA-1034-2324</p>
                 <p style="margin-top: 20px;text-align:right;"><b>Invoice Date:</b>{{invoice.invoice_date}}</p>
             </div>
-        </div> --}}
-        {{!-- <table
+        </div>
+        <table
             style="width: 100%; border-collapse: collapse;margin-bottom: 20px; margin-top: 20px; border: 2px solid black;">
             <thead style="border:2px solid black">
                 <tr style="border:2px solid black">
@@ -83,8 +83,8 @@
                     <td style="border: 2px solid black;">{{this.pivot.order_quantity}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
                     <td style="border: 2px solid black;">{{this.taxes.rate}}%</td>
-                    <td style="border: 2px solid black;">{{this.taxes.cgst}}%<br /> {{this.taxes.sgst}} %</td>
-                    <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
+                    <td style="border: 2px solid black;">CGST{{this.taxes.cgst}}%<br /> SGST{{this.taxes.sgst}} %</td>
+                    <td style="border: 2px solid black;">tax a{{this.pivot.subtotal}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
                 </tr>
                 {{/each}}
@@ -104,7 +104,7 @@
                     <td colspan="9" style="text-align: right;"><b>Authorized Signatory</b></td>
                 </tr>
             </tbody>
-        </table> --}}
+        </table>
         <!-- Payment Details Table -->
         {{!-- <table style="width: 100%; border-collapse: collapse; margin-top: 20px; border: 2px solid black;">
             <tbody>
