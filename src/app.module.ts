@@ -67,6 +67,7 @@ import { SilentLogger } from './logger';
         synchronize: configService.get<boolean>('DB_SYNC'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: false,
+        timeout: 30,
         autoLoadEntities: true,
         logger: new SilentLogger(),
       }),
