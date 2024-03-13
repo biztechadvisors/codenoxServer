@@ -22,6 +22,7 @@ export class ShippingsService {
   ) { }
 
   async create(createShippingDto: CreateShippingDto) {
+    console.log("create Shipping data", createShippingDto)
     const shipping = new Shipping()
     shipping.name = createShippingDto.name
     shipping.amount = createShippingDto.amount
@@ -56,7 +57,9 @@ export class ShippingsService {
 
   async findOne(id: number) {
     console.log("id", id)
-    return await this.shippingRepository.find({ where: { id:id } });
+    const finalValue = await this.shippingRepository.findOne({ where: { id:id } });
+    console.log("finalValue", finalValue)
+    return finalValue
   }
 
   async update(id: number, updateShippingDto: UpdateShippingDto) {
