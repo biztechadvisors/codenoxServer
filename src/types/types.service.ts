@@ -44,19 +44,14 @@ export class TypesService {
     return await convertToSlug(text);
   }
 
-  async findAll(query: any) {
-    return this.typeRepository.find({
-      where: query,
-      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image']
-    });
-  }
+  async findAll(query: GetTypesDto) {
+    console.log("query ", query);
+    let { text, search, shop } = query;
 
-  async getTypes({ text, search }: GetTypesDto) {
+    let data: Type[] = await this.typeRepository.find({ where: { shop: { id: shop } }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
 
-    console.log("text, search ", text, search)
-
-    let data: Type[] = await this.findAll({});
     const fuse = new Fuse(data, { keys: ['name', 'slug'] });
+
     if (text?.replace(/%/g, '')) {
       data = fuse.search(text)?.map(({ item }) => item);
     }
@@ -73,16 +68,13 @@ export class TypesService {
           });
         }
       }
-      data = fuse
-        .search({
-          $and: searchText,
-        })
-        ?.map(({ item }) => item);
+      data = fuse.search({
+        $and: searchText,
+      })?.map(({ item }) => item);
     }
-    // console.log("*All-Type*", data)
+
     return data;
   }
-
 
   async getTypeBySlug(slug: string): Promise<Type> {
     const type = await this.typeRepository.findOne({
