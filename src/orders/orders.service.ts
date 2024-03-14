@@ -338,6 +338,9 @@ export class OrdersService {
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
     try {
+
+      console.log("customer_id****", customer_id,
+        tracking_number, shop_id)
       const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
 
       if (!usr) {

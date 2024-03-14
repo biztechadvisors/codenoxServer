@@ -73,7 +73,7 @@ export class CategoriesService {
   }
 
   async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
-    let { limit = '10', page = '1', search, parent } = query;
+    let { limit = '10', page = '1', search, parent, shop } = query;
 
     // Convert to numbers
     const numericPage = Number(page);
@@ -94,10 +94,10 @@ export class CategoriesService {
       if (type) {
         where['type'] = ILike(`%${type.id}%`);
       }
-      const shop = await this.shopRepository.findOne({ where: { slug: search.split(':')[1] } });
-      if (shop) {
-        where['shop'] = ILike(`%${shop.id}%`);
-      }
+    }
+    const shopId = await this.shopRepository.findOne({ where: { id: shop } });
+    if (shopId) {
+      where['shop'] = ILike(`%${shopId.id}%`);
     }
 
     if (parent) {
