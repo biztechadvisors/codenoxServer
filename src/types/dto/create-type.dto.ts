@@ -20,6 +20,7 @@ export class TypeSettingsDto {
 export class CreateTypeDto {
   language: string;
   name: string;
+  shop_id: number;
   icon: string;
   slug: string;
   settings: TypeSettingsDto;

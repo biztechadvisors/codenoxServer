@@ -10,4 +10,4 @@ import { AttachmentRepository } from 'src/common/common.repository'
   controllers: [UploadsController],
   providers: [UploadsService],
 })
-export class UploadsModule {}
+export class UploadsModule { }

@@ -15,6 +15,8 @@ import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { UploadsService } from 'src/uploads/uploads.service';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
+import { Shop } from 'src/shops/entities/shop.entity';
+import { Repository } from 'typeorm';
 
 const types = plainToClass(Type, typesJson);
 const options = {
@@ -26,11 +28,14 @@ const fuse = new Fuse(types, options);
 @Injectable()
 export class TypesService {
   constructor(
+    private readonly uploadsService: UploadsService,
+
     @InjectRepository(Type) private readonly typeRepository: TypeRepository,
     @InjectRepository(TypeSettings) private readonly typeSettingsRepository: TypeSettingsRepository,
     @InjectRepository(Banner) private readonly bannerRepository: BannerRepository,
     @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
-    private readonly uploadsService: UploadsService,
+    @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>
+
   ) { }
 
   private types: Type[] = types;
@@ -47,6 +52,9 @@ export class TypesService {
   }
 
   async getTypes({ text, search }: GetTypesDto) {
+
+    console.log("text, search ", text, search)
+
     let data: Type[] = await this.findAll({});
     const fuse = new Fuse(data, { keys: ['name', 'slug'] });
     if (text?.replace(/%/g, '')) {
@@ -121,13 +129,13 @@ export class TypesService {
     if (data.name) {
       data.slug = await this.convertToSlug(data.name);
     }
+    const shop = await this.shopRepository.findOne({ where: { id: data.shop_id } });
 
     // Create and save Type entity
     const type = this.typeRepository.create({ ...data, settings: typeSettings, promotional_sliders: promotionalSliders, banners });
+    type.shop = shop; // Correcting the typo here
     return this.typeRepository.save(type);
   }
-
-
 
   async update(id: number, updateTypeDto: UpdateTypeDto): Promise<Type> {
     const type = await this.typeRepository.findOne({ where: { id }, relations: ['settings', 'promotional_sliders', 'banners'] });
