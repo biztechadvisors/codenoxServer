@@ -83,15 +83,16 @@
                     <td style="border: 2px solid black;">{{this.pivot.order_quantity}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
                     <td style="border: 2px solid black;">{{this.taxes.rate}}%</td>
-                    <td style="border: 2px solid black;">CGST{{this.taxes.cgst}}%<br /> SGST{{this.taxes.sgst}} %</td>
-                    <td style="border: 2px solid black;">tax a{{this.pivot.subtotal}}</td>
+                    <td style="border: 2px solid black;">CGST {{this.taxes.cgst}}%<br /> SGST {{this.taxes.sgst}} %</td>
+                    <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
+                    {{!-- <td style="border: 2px solid black;">{{this.pivot.subtotal}}*{{this.taxes.rate}}/100</td> --}}
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
                 </tr>
                 {{/each}}
                 <tr style="border:2px solid black">
                     <td colspan="7" style="border: 2px solid black; text-align: left;"><b>TOTAL:</b></td>
-                    <td style="border: 2px solid black;">{{invoice.sales_tax_total}}</td>
-                    <td style="border: 2px solid black;">{{invoice.net_amount}}</td>
+                    <td style="border: 2px solid black;">{{invoice.sales_tax}}</td>
+                    <td style="border: 2px solid black;">{{invoice.amount}}</td>
                 </tr>
                 <tr>
                     <td colspan="9" style="border: 2px solid black; text-align: left;"><b>Amount in Words:</b>
