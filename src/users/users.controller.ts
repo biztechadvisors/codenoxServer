@@ -25,6 +25,7 @@ export class UsersController {
 
   @Post()
   createUser(@Body() createUserDto: CreateUserDto) {
+    
     return this.usersService.create(createUserDto);
   }
 
@@ -42,6 +43,7 @@ export class UsersController {
 
   @Put(':id')
   updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
+    console.log("create user", updateUserDto)
     return this.usersService.update(+id, updateUserDto);
   }
 
@@ -72,10 +74,12 @@ export class ProfilesController {
 
   @Post()
   createProfile(@Body() createProfileDto: CreateProfileDto) {
+    return this.usersService.createProfile(createProfileDto)
   }
 
   @Put(':id')
   updateProfile(@Body() updateProfileDto: UpdateProfileDto) {
+    return this.usersService.updateProfile(updateProfileDto)
   }
 
   @Delete(':id')

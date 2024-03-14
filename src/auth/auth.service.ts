@@ -24,7 +24,6 @@ import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
-import { error } from 'console';
 import Twilio from 'twilio';
 import * as AWS from 'aws-sdk';
 
