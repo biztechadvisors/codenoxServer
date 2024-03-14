@@ -37,7 +37,8 @@
                     <h4 style="margin-top: 20px;text-align:right;">Billing Address:</h4>
                     <p style="margin-top: 20px;text-align:right;">{{invoice.billing_address.id}}</p>
                     <p style="margin-top: 20px;text-align:right;">
-                        {{invoice.billing_address.street_address}}{{invoice.billing_address.city}}</p>
+                        {{invoice.billing_address.street_address}} 
+                        {{invoice.billing_address.city}}</p>
                     <p style="margin-top: 20px;text-align:right;">
                         {{invoice.billing_address.state}} {{invoice.billing_address.country}}
                         {{invoice.billing_address.zip}}
@@ -54,7 +55,7 @@
 
                 </div>
                 <p style="margin-top: 20px;text-align:right;"><b>Invoice Number:</b>{{invoice.created_at}}</p>
-                <p style="margin-top: 20px;text-align:right;"><b>Invoice Details:</b> MP-FIDA-1034-2324</p>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Details:</b> (HARD CODE)MP-FIDA-1034-2324</p>
                 <p style="margin-top: 20px;text-align:right;"><b>Invoice Date:</b>{{invoice.invoice_date}}</p>
             </div>
         </div>
@@ -83,14 +84,14 @@
                     <td style="border: 2px solid black;">{{this.pivot.order_quantity}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
                     <td style="border: 2px solid black;">{{this.taxes.rate}}%</td>
-                    <td style="border: 2px solid black;">CGST{{this.taxes.cgst}}%<br /> SGST{{this.taxes.sgst}} %</td>
+                    <td style="border: 2px solid black;">CGST {{this.taxes.cgst}}%<br /> SGST {{this.taxes.sgst}} %</td>
                     <td style="border: 2px solid black;">{{this.taxAmount}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
                 </tr>
                 {{/each}}
                 <tr style="border:2px solid black">
                     <td colspan="7" style="border: 2px solid black; text-align: left;"><b>TOTAL:</b></td>
-                    <td style="border: 2px solid black;">{{invoice.sales_tax_total}}</td>
+                    <td style="border: 2px solid black;">{{invoice.total_tax_amount}}</td>
                     <td style="border: 2px solid black;">{{invoice.finalTotal}}</td>
                 </tr>
                 <tr>
@@ -118,8 +119,8 @@
                     <td rowSpan="2" style="border:2px solid black">Invoice Value:<p style="font-size: 12px;">
                             {{invoice.finalTotal}}</p>
                     </td>
-                    <td style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">Gift
-                            Card{{invoice.payment_Mode}}</p>
+                    <td style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">Gift_Card
+                            {{invoice.payment_Mode}}</p>
                     </td>
                 </tr>
                 <tr style="border:2px solid black">
@@ -129,8 +130,8 @@
                     <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">{{invoice.invoice_date}}
                         </p>
                     </td>
-                    <td colspan="2" style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">Credit
-                            {{!-- Card{{invoice.payment_status}}</p> --}}
+                    <td colspan="2" style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">
+                            {{invoice.payment_Mode}}</p>
                     </td>
                 </tr>
             </tbody>
