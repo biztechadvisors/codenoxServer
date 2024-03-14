@@ -24,8 +24,8 @@
                     {{invoice.saleBy.city}} {{invoice.saleBy.state}} {{invoice.saleBy.country}}
                 </p>
                 <br>
-                <p style="text-align:left;"><b>PAN No:</b>AC02BFRT56</p>
-                <p style="text-align:left;"><b>GST Registration No:</b>{{invoice.shop_address.gst_number}}</p>
+                <p style="text-align:left;"><b>PAN No:</b>{{invoice.dealer.pan}}</p>
+                <p style="text-align:left;"><b>GST Registration No:</b>{{invoice.dealer.gst}}</p>
                 <div class="order-details" style="margin-top: 20px;text-align:left;">
                     <p style="text-align:left;margin-top:20px"><b>Order Number:</b> {{invoice.order_no}}</p>
                     <p style="text-align:left;"><b>Order Date:</b>{{invoice.created_at}}</p>
