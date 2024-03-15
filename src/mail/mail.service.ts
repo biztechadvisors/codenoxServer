@@ -124,14 +124,17 @@ export class MailService {
         paymentInfo,
         billing_address,
         shipping_address,
+        total_tax_amount,
         shop_address,
+        customer,
+        dealer,
         products,
         created_at,
         order_no,
         invoice_date,
       } = taxType;
 
-      console.log('prodcuts-mail-135', products);
+      console.log('prodcuts-mail-135', total_tax_amount);
 
       const totalSubtotal = products.reduce((accumulator, currentValue) => {
         return accumulator + currentValue.pivot.subtotal;
@@ -139,10 +142,6 @@ export class MailService {
 // Convert subtotal to words
 const totalSubtotalInWords = toWords(totalSubtotal);
 
-console.log("totalSubtotal", totalSubtotal);
-console.log("totalSubtotalInWords", totalSubtotalInWords);
-
-      // Assuming each product has a 'tax_rate' property
       const updatedProducts = products.map(product => {
         const unit_price = Number(product.pivot?.unit_price || 0);
         const quantity = Number(product.pivot?.order_quantity || 0);
@@ -152,7 +151,97 @@ console.log("totalSubtotalInWords", totalSubtotalInWords);
         const total = subtotal + taxAmount;
         return { ...product, subtotal, taxAmount, total }; // Return the original product data with the new calculated values
       });
-      console.log("updatedProducts",updatedProducts);
+       const finalEmail = taxType.dealer.email ? taxType.dealer.email : taxType.customer.email;
+       console.log("finalMAILLLLLLLLLLLll",finalEmail);
+       
+      const orderDetails = {
+        IGST,
+        CGST,
+        SGST,
+        net_amount,
+        total_amount,
+        shop,
+        sales_tax_total,
+        total_amount_in_words,
+        payment_Mode,
+        paymentInfo,
+        billing_address,
+        shipping_address,
+        total_tax_amount,
+        shop_address,
+        finalEmail,
+        finalTotal:totalSubtotal,
+        amountinWord:totalSubtotalInWords,
+        products: updatedProducts, // Use the updated products
+        created_at,
+        order_no,
+        invoice_date,
+      };
+
+      // console.log("orderDetails***184", orderDetails);
+
+      await this.mailerService.sendMail({
+        to: orderDetails.finalEmail,
+        from: '"Tilitso Purchase" <info@365dgrsol.in>',
+        subject: 'Your Tilitso Order Confirmation. Please share your feedback',
+        template: './invoiceToCustomer',
+        context: {
+          email: orderDetails.finalEmail,
+          invoice: orderDetails,
+        },
+      });
+    } catch (error) {
+      console.error("Invoice sending failed to Customer", error);
+    }
+  }
+
+
+
+  // send Email invoice Dealer to Customer
+  async sendInvoiceDealerToCustomer( taxType: any) {
+    try {
+      // Destructure taxType directly
+      const {
+        CGST,
+        IGST,
+        SGST,
+        net_amount,
+        total_amount,
+        shop,
+        sales_tax_total,
+        total_amount_in_words,
+        payment_Mode,
+        paymentInfo,
+        billing_address,
+        shipping_address,
+        total_tax_amount,
+        shop_address,
+        customer,
+        dealer,
+        saleBy,
+        products,
+        created_at,
+        order_no,
+        invoice_date,
+      } = taxType;
+
+      console.log('prodcuts-mail-135', total_tax_amount);
+
+      const totalSubtotal = products.reduce((accumulator, currentValue) => {
+        return accumulator + currentValue.pivot.subtotal;
+      }, 0);
+// Convert subtotal to words
+const totalSubtotalInWords = toWords(totalSubtotal);
+
+      const updatedProducts = products.map(product => {
+        const unit_price = Number(product.pivot?.unit_price || 0);
+        const quantity = Number(product.pivot?.order_quantity || 0);
+        const tax_rate = Number(product.taxes?.rate || 0) / 100;
+        const subtotal = unit_price * quantity;
+        const taxAmount = Math.round(subtotal * tax_rate);
+        const total = subtotal + taxAmount;
+        return { ...product, subtotal, taxAmount, total }; 
+      });
 
       const orderDetails = {
         IGST,
@@ -167,7 +256,11 @@ console.log("totalSubtotalInWords", totalSubtotalInWords);
         paymentInfo,
         billing_address,
         shipping_address,
+        total_tax_amount,
         shop_address,
+        customer,
+        dealer,
+        saleBy,
         finalTotal:totalSubtotal,
         amountinWord:totalSubtotalInWords,
         products: updatedProducts, // Use the updated products
@@ -176,78 +269,15 @@ console.log("totalSubtotalInWords", totalSubtotalInWords);
         invoice_date,
       };
 
-      console.log("orderDetails***184", orderDetails);
-
-      await this.mailerService.sendMail({
-        to: "radhikaji.varfa@outlook.com",
-        from: '"Tilitso Purchase" <info@365dgrsol.in>',
-        subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-        template: './invoiceToCustomer',
-        context: {
-          email: "radhikaji.varfa@outlook.com",
-          invoice: orderDetails,
-        },
-      });
-    } catch (error) {
-      console.error("Invoice sending failed to Customer", error);
-    }
-  }
-
-
-
-  // send Email invoice Dealer to Customer
-  async sendInvoiceDealerToCustomer(taxType: any) {
-    try {
-      // Destructure taxType directly
-      const {
-        CGST,
-        IGST,
-        SGST,
-        net_amount,
-        total_amount,
-        dealer,
-        sales_tax_total,
-        total_amount_in_words,
-        payment_Mode,
-        paymentInfo,
-        billing_address,
-        shipping_address,
-        saleBy,
-        products,
-        created_at,
-        order_no,
-        invoice_date,
-      } = taxType;
-
-      const orderDetails = {
-        IGST,
-        CGST,
-        SGST,
-        net_amount,
-        total_amount,
-        dealer,
-        sales_tax_total,
-        total_amount_in_words,
-        payment_Mode,
-        paymentInfo,
-        billing_address,
-        shipping_address,
-        saleBy,
-        products,
-        created_at,
-        order_no,
-        invoice_date,
-      };
-
       console.log("orderDetails***184", orderDetails)
 
       await this.mailerService.sendMail({
-        to: "radhikaji.varfa@outlook.com",
+        to: customer.email,
         from: '"Tilitso Purchase" <info@365dgrsol.in>',
         subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-        template: './invoiceToCustomer',
+        template: './invoiceDealerToCustomer',
         context: {
-          email: "radhikaji.varfa@outlook.com",
+          email: customer.email,
           invoice: orderDetails,
         },
       });
