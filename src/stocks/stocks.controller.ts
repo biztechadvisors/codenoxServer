@@ -58,6 +58,12 @@ export class StocksController {
         return this.stocksService.getOrders(query);
     }
 
+    @Get('ord/:id')
+    getOrderById(@Param('id') id: number) {
+        return this.stocksService.getOrderById(Number(id));
+    }
+
+
 }
 
 
