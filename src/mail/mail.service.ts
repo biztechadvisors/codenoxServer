@@ -5,10 +5,20 @@ import { User } from '../users/entities/user.entity'
 import { error } from 'console'
 import * as puppeteer from 'puppeteer';
 const { toWords } = require('number-to-words');
+const fs = require('fs');
+const Handlebars = require('handlebars');
 
 @Injectable()
 export class MailService {
   constructor(private mailerService: MailerService) { }
+
+  async renderTemplate(data) {
+    const templatePath = '/invoiceToCustomer.hbs';
+    const templateSource = fs.readFileSync(templatePath, 'utf8');
+    const template = Handlebars.compile(templateSource);
+    return template(data);
+}  
+
 
   // OTP send for verify Registration Email
   async sendUserConfirmation(user: User, token: string) {
@@ -108,6 +118,15 @@ export class MailService {
     }
 
   }
+
+  async  generatePdfFromHtml(htmlString) {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.setContent(htmlString);
+    const pdfBuffer = await page.pdf({ format: 'A4' });
+    await browser.close();
+    return pdfBuffer;
+}
 
   async sendInvoiceToCustomer(taxType: any) {
     try {
