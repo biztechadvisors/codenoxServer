@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common'
 import { User } from '../users/entities/user.entity'
 import { error } from 'console'
 import * as puppeteer from 'puppeteer';
+const { toWords } = require('number-to-words');
 
 @Injectable()
 export class MailService {
@@ -108,10 +109,8 @@ export class MailService {
 
   }
 
-  // send Invoice Email to Customer
   async sendInvoiceToCustomer(taxType: any) {
     try {
-      // Destructure taxType directly
       const {
         CGST,
         IGST,
@@ -132,6 +131,29 @@ export class MailService {
         invoice_date,
       } = taxType;
 
+      console.log('prodcuts-mail-135', products);
+
+      const totalSubtotal = products.reduce((accumulator, currentValue) => {
+        return accumulator + currentValue.pivot.subtotal;
+      }, 0);
+// Convert subtotal to words
+const totalSubtotalInWords = toWords(totalSubtotal);
+
+console.log("totalSubtotal", totalSubtotal);
+console.log("totalSubtotalInWords", totalSubtotalInWords);
+
+      // Assuming each product has a 'tax_rate' property
+      const updatedProducts = products.map(product => {
+        const unit_price = Number(product.pivot?.unit_price || 0);
+        const quantity = Number(product.pivot?.order_quantity || 0);
+        const tax_rate = Number(product.taxes?.rate || 0) / 100;
+        const subtotal = unit_price * quantity;
+        const taxAmount = Math.round(subtotal * tax_rate);
+        const total = subtotal + taxAmount;
+        return { ...product, subtotal, taxAmount, total }; // Return the original product data with the new calculated values
+      });
+      console.log("updatedProducts",updatedProducts);
+
       const orderDetails = {
         IGST,
         CGST,
@@ -146,13 +168,15 @@ export class MailService {
         billing_address,
         shipping_address,
         shop_address,
-        products,
+        finalTotal:totalSubtotal,
+        amountinWord:totalSubtotalInWords,
+        products: updatedProducts, // Use the updated products
         created_at,
         order_no,
         invoice_date,
       };
 
-      console.log("orderDetails***184", orderDetails)
+      console.log("orderDetails***184", orderDetails);
 
       await this.mailerService.sendMail({
         to: "radhikaji.varfa@outlook.com",
@@ -168,6 +192,7 @@ export class MailService {
       console.error("Invoice sending failed to Customer", error);
     }
   }
+
 
 
   // send Email invoice Dealer to Customer
@@ -305,7 +330,7 @@ export class MailService {
 
   // Send Abandonment Cart Reminder Email
   async sendAbandonmenCartReminder(email: any, products: any) {
-    console.log("==================+++++++++++",email, products);
+    console.log("==================+++++++++++", email, products);
 
     // Check if products is an array and has elements
     if (!Array.isArray(products) || products.length === 0) {
@@ -327,7 +352,7 @@ export class MailService {
 
       await this.mailerService.sendMail({
         // to: "radhikaji.varfa@outlook.com",
-        to:email,
+        to: email,
         from: '"Support Team" <info@365dgrsol.in>',
         subject: "Don't forget your items! ️ Your cart reminder from Tilitso",
         template: './abandonmentCartReminder',
@@ -342,5 +367,5 @@ export class MailService {
       console.error("Email sending Failed", error)
     }
   }
-  
+
 }

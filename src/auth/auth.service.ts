@@ -26,19 +26,27 @@ import { FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { error } from 'console';
 import Twilio from 'twilio';
+import * as AWS from 'aws-sdk';
 
 @Injectable()
 export class AuthService {
   save(user: User) {
     throw new Error('Method not implemented.');
   }
+  private sns: AWS.SNS;
 
   constructor(
     @InjectRepository(UserRepository) private userRepository: UserRepository,
     @InjectRepository(Permission) private permissionRepository: Repository<Permission>,
     private jwtService: JwtService,
     private mailService: MailService
-  ) { }
+  ) {
+    this.sns = new AWS.SNS({
+    region: 'ap-south-1', // e.g., 'us-east-1'
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+}); 
+}
 
   async generateOtp(): Promise<number> {
     const otp = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
@@ -66,8 +74,6 @@ export class AuthService {
     await this.mailService.sendUserConfirmation(user, otp.toString()); // Assuming you have a method to send OTP
     return { message: 'OTP resent successfully.' };
 }
-
-
   async verifyOtp(otp: number): Promise<boolean> {
     const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
  
@@ -100,16 +106,36 @@ export class AuthService {
     // const access_token = await this.signIn(userData.email, createUserInput.password);
     
     await this.userRepository.save(user);
-    const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      try {
-        await twilioClient.messages.create({
-          body: 'You have successfully registered!',
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: user.contact
-        });
-      } catch (error) {
-        console.error("Failed to send SMS:", error.message);
+    // const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    //   try {
+    //     await twilioClient.messages.create({
+    //       body: 'You have successfully registered!',
+    //       from: process.env.TWILIO_PHONE_NUMBER,
+    //       to: user.contact
+    //     });
+    //   } catch (error) {
+    //     console.error("Failed to send SMS:", error.message);
+    //   }
+console.log("first000000000000000000",user.contact);
+     // Send SMS using AWS SNS
+     const params = {
+      Message: 'You have successfully registered!',
+      PhoneNumber: user.contact, // Ensure the phone number is in E.164 format
+      MessageAttributes: {
+        'AWS.SNS.SMS.SenderID': {
+          'DataType': 'String',
+          'StringValue': 'Codenox' // This is optional and used for Sender ID capabilities in supported countries
+        }
       }
+    };
+
+    try {
+      await this.sns.publish(params).promise();
+      console.log("Message sent successfully @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.");
+    } catch (error) {
+      console.error("Failed to send SMS:", error.message);
+    }
+
     await this.mailService.successfullyRegister(user);
     return true;
   }
