@@ -215,7 +215,7 @@ export class StocksService {
             }
             if (order.customer_id && order.customer) {
                 const customer = await this.userRepository.findOne({
-                    where: { id: order.customer_id }, relations: ['type']
+                    where: { id: order.customer_id, email: order.customer.email }, relations: ['type']
                 });
                 console.log("customer*****", customer)
                 if (!customer) {
