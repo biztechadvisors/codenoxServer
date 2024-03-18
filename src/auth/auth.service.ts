@@ -130,7 +130,7 @@ console.log("first000000000000000000",user.contact);
 
     try {
       await this.sns.publish(params).promise();
-      console.log("Message sent successfully @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.");
+      console.log("Message sent successfully @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.");
     } catch (error) {
       console.error("Failed to send SMS:", error.message);
     }

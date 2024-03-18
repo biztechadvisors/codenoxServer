@@ -17,8 +17,7 @@ export class MailService {
     const templateSource = fs.readFileSync(templatePath, 'utf8');
     const template = Handlebars.compile(templateSource);
     return template(data);
-}  
-
+}
 
   // OTP send for verify Registration Email
   async sendUserConfirmation(user: User, token: string) {

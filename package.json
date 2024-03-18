@@ -50,7 +50,7 @@
     "mysql2": "^3.6.1",
     "nestjs-stripe": "^1.0.0",
     "nestjs-typeorm-paginate": "^4.0.4",
-    "nodemailer": "^6.9.6",
+    "nodemailer": "^6.9.12",
     "number-to-words": "^1.2.4",
     "passport-jwt": "^4.0.1",
     "paypal-rest-sdk": "^1.8.1",
