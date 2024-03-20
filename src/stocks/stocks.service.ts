@@ -140,6 +140,50 @@ export class StocksService {
         }
     }
 
+    async getAllStocks(user_id) {
+        try {
+            const dealerList = await this.userRepository.find({
+                where: { UsrBy: { id: user_id } },
+                select: ['id']
+            });
+
+            const allStocks = [];
+
+            for (let el of dealerList) {
+                const dealer = await this.stocksRepository.find({
+                    where: { user: { id: el.id } },
+                    relations: ['product']
+                });
+
+                if (dealer.length > 0) {
+                    // Flatten the array of stocks objects into a single array
+                    const stocks = dealer.flatMap((v) => ({
+                        id: v.id,
+                        quantity: v.quantity,
+                        ordPendQuant: v.ordPendQuant,
+                        dispatchedQuantity: v.dispatchedQuantity,
+                        status: v.status,
+                        inStock: v.inStock,
+                        product: v.product
+                    }));
+
+                    // Create an object with user property and the flattened stocks array
+                    const obj = {
+                        user: dealer[0].user, // Assuming `dealer[0].user` represents the user
+                        stocks: stocks
+                    };
+
+                    allStocks.push(obj);
+                }
+            }
+
+            return allStocks;
+
+        } catch (error) {
+            throw new NotFoundException(`Error fetching stocks: ${error.message}`);
+        }
+    }
+
 
     async afterORD(createOrderDto: CreateOrderDto): Promise<any> {
         try {
