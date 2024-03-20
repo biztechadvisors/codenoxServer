@@ -15,6 +15,9 @@ export class Stocks {
     ordPendQuant: number
 
     @Column()
+    dispatchedQuantity: number
+
+    @Column()
     status: boolean
 
     @Column()

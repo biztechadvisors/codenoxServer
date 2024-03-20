@@ -24,6 +24,12 @@ export class StocksController {
     }
 
 
+    @Get('all/:id')
+    async getAllStocks(@Param('id') id: number) {
+        // console.log(id);
+        return this.stocksService.getAllStocks(id);
+    }
+
     @Get(':id')
     async getStocks(@Param('id') id: number) {
         console.log(id);
