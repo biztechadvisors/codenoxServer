@@ -217,6 +217,7 @@ export class StocksService {
                 const customer = await this.userRepository.findOne({
                     where: { id: order.customer_id, email: order.customer.email }, relations: ['type']
                 });
+                console.log("customer*****", customer)
                 if (!customer) {
                     throw new NotFoundException('Customer not found');
                 }
@@ -495,5 +496,145 @@ export class StocksService {
             throw error; // rethrow the error for further analysis
         }
     }
+
+    async getOrderById(id: number): Promise<any> {
+        try {
+
+            const order = await this.StocksSellOrdRepository.createQueryBuilder('order')
+                .leftJoinAndSelect('order.status', 'status')
+                .leftJoinAndSelect('order.dealer', 'dealer')
+                .leftJoinAndSelect('order.customer', 'customer')
+                .leftJoinAndSelect('order.products', 'products')
+                .leftJoinAndSelect('order.saleBy', 'saleBy')
+                .leftJoinAndSelect('products.pivot', 'pivot')
+                .leftJoinAndSelect('products.taxes', 'product_taxes')
+                .leftJoinAndSelect('products.shop', 'product_shop')
+                .leftJoinAndSelect('product_shop.address', 'shop_address')
+                .leftJoinAndSelect('order.shop_id', 'order_shop')
+                .leftJoinAndSelect('order.billing_address', 'billing_address')
+                .leftJoinAndSelect('order.shipping_address', 'shipping_address')
+                // .leftJoinAndSelect('order.parentOrder', 'parentOrder')
+                // .leftJoinAndSelect('order.children', 'children')
+                .leftJoinAndSelect('order.coupon', 'coupon')
+                .where('order.id = :id', { id })
+                .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
+                .getOne();
+
+            if (!order) {
+                throw new NotFoundException('Order not found');
+            }
+
+            const transformedOrder = {
+                id: order.id,
+                tracking_number: order.tracking_number,
+                customer_id: order.customer_id,
+                customer_contact: order.customer_contact,
+                amount: order.amount,
+                sales_tax: order.sales_tax,
+                paid_total: order.paid_total,
+                total: order.total,
+                cancelled_amount: order.cancelled_amount,
+                language: order.language,
+                coupon_id: order.coupon,
+                // parent_id: order.parentOrder,
+                saleBy: order.saleBy,
+                shop: order.shop_id,
+                discount: order.discount,
+                payment_gateway: order.payment_gateway,
+                shipping_address: order.shipping_address,
+                billing_address: order.billing_address,
+                logistics_provider: order.logistics_provider,
+                delivery_fee: order.delivery_fee,
+                delivery_time: order.delivery_time,
+                order_status: order.order_status,
+                payment_status: order.payment_status,
+                created_at: order.created_at,
+                payment_intent: order.payment_intent,
+                customer: {
+                    id: order.customer.id,
+                    name: order.customer.name,
+                    email: order.customer.email,
+                    email_verified_at: order.customer.email_verified_at,
+                    created_at: order.customer.created_at,
+                    updated_at: order.customer.updated_at,
+                    is_active: order.customer.is_active,
+                    shop_id: null
+                },
+                dealer: order.dealer ? order.dealer : null,
+                products: await Promise.all(order.products.map(async (product) => {
+                    const pivot = product.pivot.find(p => p.Ord_Id === order.id);
+
+                    if (!pivot || !product.id) {  // Ensure product.id is defined
+                        return null;
+                    }
+
+                    return {
+                        id: product.id,
+                        name: product.name,
+                        slug: product.slug,
+                        description: product.description,
+                        type_id: product.type_id,
+                        price: product.price,
+                        shop_id: product.shop_id,
+                        sale_price: product.sale_price,
+                        language: product.language,
+                        min_price: product.min_price,
+                        max_price: product.max_price,
+                        sku: product.sku,
+                        quantity: product.quantity,
+                        in_stock: product.in_stock,
+                        is_taxable: product.is_taxable,
+                        shipping_class_id: null,
+                        status: product.status,
+                        product_type: product.product_type,
+                        unit: product.unit,
+                        height: product.height ? product.height : null,
+                        width: product.width ? product.width : null,
+                        length: product.length ? product.length : null,
+                        image: product.image,
+                        video: null,
+                        gallery: product.gallery,
+                        deleted_at: null,
+                        created_at: product.created_at,
+                        updated_at: product.updated_at,
+                        author_id: null,
+                        manufacturer_id: null,
+                        is_digital: 0,
+                        is_external: 0,
+                        external_product_url: null,
+                        external_product_button_text: null,
+                        ratings: product.ratings,
+                        total_reviews: product.my_review,
+                        rating_count: product.ratings,
+                        my_review: product.my_review,
+                        in_wishlist: product.in_wishlist,
+                        blocked_dates: [],
+                        translated_languages: product.translated_languages,
+                        taxes: product.taxes,
+                        shop: product.shop,
+                        pivot: {
+                            order_id: pivot.Ord_Id,
+                            product_id: product.id,
+                            order_quantity: pivot.order_quantity,
+                            unit_price: pivot.unit_price,
+                            subtotal: pivot.subtotal,
+                            variation_option_id: pivot.variation_option_id,
+                            created_at: pivot.created_at,
+                            updated_at: pivot.updated_at,
+                        },
+                        variation_options: product.variation_options,
+                    };
+                })),
+                // children: order.children,
+                wallet_point: order.wallet_point
+            };
+            console.log("transformedOrder****", transformedOrder)
+            return transformedOrder;
+        } catch (error) {
+            console.error('Error in getOrderByIdOrTrackingNumber:', error);
+            throw error;
+        }
+    }
+
 
 }

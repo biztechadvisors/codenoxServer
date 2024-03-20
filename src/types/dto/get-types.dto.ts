@@ -5,6 +5,7 @@ export class GetTypesDto {
   orderBy?: QueryTypesOrderByOrderByClause[]
   text?: string
   language?: string
+  shop?: number
   search?: string
 }
 

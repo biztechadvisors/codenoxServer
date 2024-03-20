@@ -13,6 +13,7 @@ export class GetCategoriesDto extends PaginationArgs {
   orderBy?: QueryCategoriesOrderByColumn
   sortedBy?: SortOrder
   search?: string
+  shop?: number
   parent?: number | string = 'null'
   language?: string
 }
