@@ -41,11 +41,11 @@ export class AuthService {
     private mailService: MailService
   ) {
     this.sns = new AWS.SNS({
-    region: 'ap-south-1', // e.g., 'us-east-1'
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-}); 
-}
+      region: 'ap-south-1', // e.g., 'us-east-1'
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    });
+  }
 
   async generateOtp(): Promise<number> {
     const otp = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
@@ -63,19 +63,19 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { email: resendOtpDto.email } });
     console.log("email reasend otp", user)
     if (!user) {
-        throw new NotFoundException('User not found');
+      throw new NotFoundException('User not found');
     }
     const otp = await this.generateOtp();
     user.otp = otp;
     user.created_at = new Date();
-   const repo = await this.userRepository.save(user);
-   console.log("first=========",repo)   
+    const repo = await this.userRepository.save(user);
+    console.log("first=========", repo)
     await this.mailService.sendUserConfirmation(user, otp.toString()); // Assuming you have a method to send OTP
     return { message: 'OTP resent successfully.' };
-}
+  }
   async verifyOtp(otp: number): Promise<boolean> {
     const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
- 
+
     if (!user) {
       return false;
     }
@@ -103,7 +103,7 @@ export class AuthService {
 
     user.isVerified = true;
     // const access_token = await this.signIn(userData.email, createUserInput.password);
-    
+
     await this.userRepository.save(user);
     // const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
     //   try {
@@ -115,9 +115,9 @@ export class AuthService {
     //   } catch (error) {
     //     console.error("Failed to send SMS:", error.message);
     //   }
-console.log("first000000000000000000",user.contact);
-     // Send SMS using AWS SNS
-     const params = {
+    console.log("first000000000000000000", user.contact);
+    // Send SMS using AWS SNS
+    const params = {
       Message: 'You have successfully registered!',
       PhoneNumber: user.contact, // Ensure the phone number is in E.164 format
       MessageAttributes: {
@@ -129,11 +129,13 @@ console.log("first000000000000000000",user.contact);
     };
 
     try {
-      await this.sns.publish(params).promise();
-      console.log("Message sent successfully @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.");
+      const sms = await this.sns.publish(params).promise();
+      console.log('sms**', sms)
+      console.log("Message sent successfully 📩.");
     } catch (error) {
       console.error("Failed to send SMS:", error.message);
     }
+
 
     await this.mailService.successfullyRegister(user);
     return true;
@@ -212,7 +214,7 @@ console.log("first000000000000000000",user.contact);
       userData.type = permission;
 
       if (createUserInput.UsrBy) {
-        userData.isVerified = true;     
+        userData.isVerified = true;
       }
 
       await this.userRepository.save(userData);
@@ -391,7 +393,7 @@ console.log("first000000000000000000",user.contact);
 
   async forgetPassword(forgetPasswordInput: ForgetPasswordDto): Promise<CoreResponse> {
     const user = await this.userRepository.findOne({ where: { email: forgetPasswordInput.email }, relations: ['type'] });
-     console.log("DATA+++++++++",user);
+    console.log("DATA+++++++++", user);
     if (!user) {
       return {
         success: false,

@@ -68,7 +68,7 @@ export class OrdersService {
     private readonly razorpayService: RazorpayService,
     private readonly shiprocketService: ShiprocketService,
     private readonly MailService: MailService,
-    
+
 
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -97,14 +97,14 @@ export class OrdersService {
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>
   ) { }
- 
+
   private formatDate(dateInput: Date | string): string {
     const date = new Date(dateInput);
     const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: '2-digit', day: '2-digit', year: 'numeric' };
     return date.toLocaleDateString('en-US', options);
   }
-  
- async updateOrdQuantityProd(ordProducts: any[]): Promise<void> {
+
+  async updateOrdQuantityProd(ordProducts: any[]): Promise<void> {
     const entityManager = this.productRepository.manager;
     try {
       if (!ordProducts || ordProducts.length === 0) {
@@ -581,7 +581,7 @@ export class OrdersService {
         .where('order.id = :id', { id })
         .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
         .getOne();
-        // console.log("PRODUCTS============",order.products);
+      // console.log("PRODUCTS============",order.products);
       if (!order) {
         throw new NotFoundException('Order not found');
       }
@@ -627,7 +627,7 @@ export class OrdersService {
         dealer: order.dealer ? order.dealer : null,
         products: await Promise.all(order.products.map(async (product) => {
           const pivot = product.pivot.find(p => p.Ord_Id === order.id);
-    // console.log("PIvot()()()()()",pivot);
+          // console.log("PIvot()()()()()",pivot);
           if (!pivot || !product.id) {  // Ensure product.id is defined
             return null;
           }
@@ -814,7 +814,7 @@ export class OrdersService {
 
       // Remove the order from the database
       await this.orderRepository.remove(orderToDelete);
-      
+
       // await this.MailService.sendCancelOrder(orderToDelete)
     } catch (error) {
       console.error('Error removing order:', error);
@@ -952,18 +952,18 @@ export class OrdersService {
     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
     console.log("Invoice****", Invoice);
     // console.log("PIVOT_________", Invoice.products.pivot);
-    
-  //   const numberToWords = (num: number) => {
-  //     const a = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-  //     const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+    //   const numberToWords = (num: number) => {
+    //     const a = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    //     const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
 
 
-  //     if (num < 20) return a[num];
-  //     const digit = num % 10;
-  //     if (num < 100) return b[Math.floor(num / 10)] + (digit ? '-' + a[digit] : '');
-  //     if (num < 1000) return a[Math.floor(num / 100)] + ' hundred' + (num % 100 === 0 ? '' : ' and ' + numberToWords(num % 100));
-  //     return numberToWords(Math.floor(num / 1000)) + ' thousand' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '');
-  // };
+    //     if (num < 20) return a[num];
+    //     const digit = num % 10;
+    //     if (num < 100) return b[Math.floor(num / 10)] + (digit ? '-' + a[digit] : '');
+    //     if (num < 1000) return a[Math.floor(num / 100)] + ' hundred' + (num % 100 === 0 ? '' : ' and ' + numberToWords(num % 100));
+    //     return numberToWords(Math.floor(num / 1000)) + ' thousand' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '');
+    // };
 
     const hashtabel: Record<string, any[]> = {};
 
@@ -982,18 +982,18 @@ export class OrdersService {
         const taxType: any = {
           billing_address: Invoice.billing_address,
           shipping_address: Invoice.shipping_address,
-          total_tax_amount:Invoice.sales_tax,
-          customer:Invoice.customer,
-          dealer:Invoice.dealer,
-          saleBy:Invoice.saleBy,
-          payment_Mode:Invoice.payment_gateway,
+          total_tax_amount: Invoice.sales_tax,
+          customer: Invoice.customer,
+          dealer: Invoice.dealer,
+          saleBy: Invoice.saleBy,
+          payment_Mode: Invoice.payment_gateway,
           created_at: Invoice.created_at,
           order_no: Invoice.id,
           invoice_date: Invoice.created_at,
           shop_address: shopProducts[0].shop,
           products: shopProducts,
         };
-        console.log("working properly++++++++",taxType);
+        console.log("working properly++++++++", taxType);
         // Assuming all products in a shop have the same tax rates and state information
         if (shopProducts[0].shop.address.state === Invoice.shipping_address.state) {
           const stateCodeValue = stateCode[Invoice.shipping_address.state];
@@ -1006,14 +1006,13 @@ export class OrdersService {
           taxType.state_code = stateCodeValue;
         }
 
-        if (Invoice.saleBy && Invoice.dealer) {
-          console.log("working properly")
-          await this.MailService.sendInvoiceToCustomer(taxType);
-          await this.MailService.sendInvoiceDealerToCustomer(taxType);
-        } else {
-          await this.MailService.sendInvoiceToCustomer(taxType);
-        }
+        console.log("working properly")
+        await this.MailService.sendInvoiceToCustomerORDealer(taxType);
+
       }
+    }
+    if (Invoice.customer_id !== Invoice.dealer.id && Invoice.saleBy && Invoice.dealer) {
+      await this.MailService.sendInvoiceDealerToCustomer(Invoice);
     }
   }
 
