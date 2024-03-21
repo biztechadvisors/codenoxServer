@@ -20,8 +20,8 @@ import {
   OtpDto,
   OtpLoginDto,
   RegisterDto,
-  ResendOtpDto,
   ResetPasswordDto,
+  ResendOtpDto,
   SocialLoginDto,
   UpdateOtpDto,
   VerifyForgetPasswordDto,
@@ -52,6 +52,7 @@ export class AuthController {
   @Post('token')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+
   }
 
   @Post('social-login-token')
@@ -78,13 +79,14 @@ export class AuthController {
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
   }
+  @Post('resend-otp')
+  resendOtp(@Body() resendOtpDto: ResendOtpDto) {
+    console.log("RESENDOTPPPPPPPPP*******", resendOtpDto);
+    return this.authService.resendOtp(resendOtpDto);
+  }
   @Post('change-password')
   changePassword(@Body() changePasswordDto: ChangePasswordDto) {
     return this.authService.changePassword(changePasswordDto);
-  }
-  @Post('resend-otp')
-  resendOtp(@Body() resendOtpDto: ResendOtpDto) {
-    return this.authService.resendOtp(resendOtpDto);
   }
 
   @Post('logout')
@@ -101,6 +103,8 @@ export class AuthController {
 
   @Get('me')
   async me(@Query('username') username: string, @Query('sub') sub: number) {
+    console.log("Me-Error-controller***************************")
+
     return await this.authService.me(username, sub);
   }
 

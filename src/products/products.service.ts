@@ -355,7 +355,7 @@ export class ProductsService {
 
       productQueryBuilder.skip(startIndex).take(limit);
       const products = await productQueryBuilder.getMany();
-      console.log("product", products)
+      // console.log("product", products)
       const url = `/products?search=${search}&limit=${limit}`;
       const paginator = paginate(products.length, page, limit, products.length, url);
 

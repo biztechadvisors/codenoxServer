@@ -185,7 +185,7 @@ export class AbandonedCartService {
   
 // ----------------------------ABANDONED CART REMINDER------------------------------------
 
-// @Interval(60000)
+// @Interval(600000)
 async sendAbandonedCartReminder() {
   // console.log("@working@")
   try {
@@ -209,7 +209,7 @@ async sendAbandonedCartReminder() {
         const email = cart.email;  
   // console.log("r#tr============", pro, products)
 
-        const res = await this.mailService.sendAbandonmenCartReminder(email, products);
+        await this.mailService.sendAbandonmenCartReminder(email, products);
    
       } catch (error) {
         console.log("erroor___________", error)

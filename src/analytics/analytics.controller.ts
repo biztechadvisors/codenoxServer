@@ -1,12 +1,14 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { AnalyticsService } from './analytics.service'
 import { Order } from 'src/orders/entities/order.entity';
+import { AuthGuard } from 'src/auth/auth.guards';
 
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) { }
 
   @Post()
+  @UseGuards(AuthGuard)
   async getAnalytics(@Body() query: { customerId: number; state: string }) {
     try {
       const result = await this.analyticsService.findAll(query.customerId, query.state);

@@ -14,7 +14,8 @@ import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { convertToSlug } from 'src/helpers';
 import { TypeRepository } from 'src/types/types.repository';
-import { ILike, IsNull } from 'typeorm';
+import { ILike, IsNull, Repository } from 'typeorm';
+import { Shop } from 'src/shops/entities/shop.entity';
 
 const categories = plainToClass(Category, categoriesJson)
 const options = {
@@ -31,7 +32,8 @@ export class CategoriesService {
     @InjectRepository(AttachmentRepository)
     private attachmentRepository: AttachmentRepository,
     @InjectRepository(TypeRepository) private typeRepository: TypeRepository,
-  ) {}
+    @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>
+  ) { }
 
   async convertToSlug(text) {
     return await convertToSlug(text)
@@ -40,7 +42,7 @@ export class CategoriesService {
   private categories: Category[] = categories
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-  
+
     // Check if the image exists
     const imageAttachment = await this.attachmentRepository.findOne({ where: { id: createCategoryDto.image.id } });
     if (!imageAttachment) {
@@ -63,13 +65,15 @@ export class CategoriesService {
     category.image = imageAttachment;
     category.icon = createCategoryDto.icon;
     category.language = createCategoryDto.language;
+    const shop = await this.shopRepository.findOne({ where: { id: createCategoryDto.shop_id } });
+    category.shop = shop;
 
     // Save the Category instance to the database
     return await this.categoryRepository.save(category);
   }
 
   async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
-    let { limit = '10', page = '1', search, parent } = query;
+    let { limit = '10', page = '1', search, parent, shop } = query;
 
     // Convert to numbers
     const numericPage = Number(page);
@@ -90,6 +94,10 @@ export class CategoriesService {
       if (type) {
         where['type'] = ILike(`%${type.id}%`);
       }
+    }
+    const shopId = await this.shopRepository.findOne({ where: { id: shop } });
+    if (shopId) {
+      where['shop'] = ILike(`%${shopId.id}%`);
     }
 
     if (parent) {
@@ -149,7 +157,7 @@ export class CategoriesService {
       relations: ['type', 'image'],
     });
 
-  
+
     if (!category) {
       throw new NotFoundException('Category not found');
     }

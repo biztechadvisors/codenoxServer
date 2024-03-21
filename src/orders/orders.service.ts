@@ -69,6 +69,7 @@ export class OrdersService {
     private readonly shiprocketService: ShiprocketService,
     private readonly MailService: MailService,
 
+
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderStatus)
@@ -96,6 +97,12 @@ export class OrdersService {
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>
   ) { }
+
+  private formatDate(dateInput: Date | string): string {
+    const date = new Date(dateInput);
+    const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: '2-digit', day: '2-digit', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  }
 
   async updateOrdQuantityProd(ordProducts: any[]): Promise<void> {
     const entityManager = this.productRepository.manager;
@@ -338,6 +345,9 @@ export class OrdersService {
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
     try {
+
+      console.log("customer_id****", customer_id,
+        tracking_number, shop_id)
       const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
 
       if (!usr) {
@@ -365,11 +375,14 @@ export class OrdersService {
       if (!(permsn && (permsn.type_name === 'Admin' || permsn.type_name === 'super_admin'))) {
         // If the user has other permissions, filter orders by customer_id
         const usrByIdUsers = await this.userRepository.find({
-          where: { UsrBy: { id: usr.id } }, relations: ['type']
+          where: { UsrBy: { id: usr.id } },
+          relations: ['type']
         });
 
-        const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
-        query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
+        const userIds = usrByIdUsers.map(user => user.id); // Remove usr.id from userIds
+        query = query.andWhere('order.customer.id NOT IN (:...userIds)', { userIds });
+        // const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
+        // query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
       }
 
       // Handle additional filtering conditions
@@ -555,6 +568,7 @@ export class OrdersService {
       const order = await this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
         .leftJoinAndSelect('order.dealer', 'dealer')
+        .leftJoinAndSelect('dealer.dealer', 'dealerData')
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('order.saleBy', 'saleBy')
@@ -573,7 +587,7 @@ export class OrdersService {
         .where('order.id = :id', { id })
         .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
         .getOne();
-
+      // console.log("PRODUCTS============",order.products);
       if (!order) {
         throw new NotFoundException('Order not found');
       }
@@ -602,14 +616,16 @@ export class OrdersService {
         delivery_time: order.delivery_time,
         order_status: order.order_status,
         payment_status: order.payment_status,
-        created_at: order.created_at,
+        created_at: this.formatDate(order.created_at),
+        // created_at: this.formatDate(order.created_at),
         payment_intent: order.payment_intent,
         customer: {
           id: order.customer.id,
           name: order.customer.name,
           email: order.customer.email,
           email_verified_at: order.customer.email_verified_at,
-          created_at: order.customer.created_at,
+          // created_at: order.customer.created_at,
+          created_at: this.formatDate(order.customer.created_at),
           updated_at: order.customer.updated_at,
           is_active: order.customer.is_active,
           shop_id: null
@@ -617,7 +633,7 @@ export class OrdersService {
         dealer: order.dealer ? order.dealer : null,
         products: await Promise.all(order.products.map(async (product) => {
           const pivot = product.pivot.find(p => p.Ord_Id === order.id);
-
+          // console.log("PIvot()()()()()",pivot);
           if (!pivot || !product.id) {  // Ensure product.id is defined
             return null;
           }
@@ -682,7 +698,7 @@ export class OrdersService {
         children: order.children,
         wallet_point: order.wallet_point
       };
-      console.log("transformedOrder****", transformedOrder)
+      // console.log("transformedOrder****", transformedOrder)
       return transformedOrder;
     } catch (error) {
       console.error('Error in getOrderByIdOrTrackingNumber:', error);
@@ -781,7 +797,6 @@ export class OrdersService {
         .leftJoinAndSelect('order.coupon', 'coupon')
         .where('order.id = :id', { id })
         .getOne();
-
       // If the order is not found, you can throw a NotFoundException
       if (!orderToDelete) {
         throw new NotFoundException('Order not found');
@@ -805,6 +820,8 @@ export class OrdersService {
 
       // Remove the order from the database
       await this.orderRepository.remove(orderToDelete);
+
+      // await this.MailService.sendCancelOrder(orderToDelete)
     } catch (error) {
       console.error('Error removing order:', error);
       throw error; // Rethrow the error for further analysis or handling
@@ -940,10 +957,23 @@ export class OrdersService {
 
     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
     console.log("Invoice****", Invoice);
+    // console.log("PIVOT_________", Invoice.products.pivot);
+
+    //   const numberToWords = (num: number) => {
+    //     const a = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    //     const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+
+    //     if (num < 20) return a[num];
+    //     const digit = num % 10;
+    //     if (num < 100) return b[Math.floor(num / 10)] + (digit ? '-' + a[digit] : '');
+    //     if (num < 1000) return a[Math.floor(num / 100)] + ' hundred' + (num % 100 === 0 ? '' : ' and ' + numberToWords(num % 100));
+    //     return numberToWords(Math.floor(num / 1000)) + ' thousand' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '');
+    // };
 
     const hashtabel: Record<string, any[]> = {};
 
-    for (let product of Invoice.products) {
+    for (const product of Invoice.products) {
       if (!hashtabel[product.shop_id]) {
         hashtabel[product.shop_id] = [product];
       } else {
@@ -958,13 +988,18 @@ export class OrdersService {
         const taxType: any = {
           billing_address: Invoice.billing_address,
           shipping_address: Invoice.shipping_address,
+          total_tax_amount: Invoice.sales_tax,
+          customer: Invoice.customer,
+          dealer: Invoice.dealer,
+          saleBy: Invoice.saleBy,
+          payment_Mode: Invoice.payment_gateway,
           created_at: Invoice.created_at,
           order_no: Invoice.id,
           invoice_date: Invoice.created_at,
           shop_address: shopProducts[0].shop,
           products: shopProducts,
         };
-
+        console.log("working properly++++++++", taxType);
         // Assuming all products in a shop have the same tax rates and state information
         if (shopProducts[0].shop.address.state === Invoice.shipping_address.state) {
           const stateCodeValue = stateCode[Invoice.shipping_address.state];
@@ -977,13 +1012,13 @@ export class OrdersService {
           taxType.state_code = stateCodeValue;
         }
 
-        if (Invoice.saleBy && Invoice.dealer) {
-          await this.MailService.sendInvoiceToCustomer(taxType);
-          await this.MailService.sendInvoiceDealerToCustomer(taxType);
-        } else {
-          await this.MailService.sendInvoiceToCustomer(taxType);
-        }
+        console.log("working properly")
+        await this.MailService.sendInvoiceToCustomerORDealer(taxType);
+
       }
+    }
+    if (Invoice.customer_id !== Invoice.dealer.id && Invoice.saleBy && Invoice.dealer) {
+      await this.MailService.sendInvoiceDealerToCustomer(Invoice);
     }
   }
 

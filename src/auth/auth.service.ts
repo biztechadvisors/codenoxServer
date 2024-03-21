@@ -22,21 +22,30 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/users/users.repository';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
+import Twilio from 'twilio';
+import * as AWS from 'aws-sdk';
 
 @Injectable()
 export class AuthService {
   save(user: User) {
     throw new Error('Method not implemented.');
   }
+  private sns: AWS.SNS;
 
   constructor(
     @InjectRepository(UserRepository) private userRepository: UserRepository,
     @InjectRepository(Permission) private permissionRepository: Repository<Permission>,
     private jwtService: JwtService,
     private mailService: MailService
-  ) { }
+  ) {
+    this.sns = new AWS.SNS({
+      region: 'ap-south-1', // e.g., 'us-east-1'
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    });
+  }
 
   async generateOtp(): Promise<number> {
     const otp = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
@@ -51,26 +60,19 @@ export class AuthService {
   }
 
   async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ message: string } | AuthResponse> {
-
     const user = await this.userRepository.findOne({ where: { email: resendOtpDto.email } });
     console.log("email reasend otp", user)
-
     if (!user) {
-        throw new NotFoundException('User not found');
+      throw new NotFoundException('User not found');
     }
-
     const otp = await this.generateOtp();
     user.otp = otp;
     user.created_at = new Date();
     const repo = await this.userRepository.save(user);
-    console.log("first=========",repo)  
-
+    console.log("first=========", repo)
     await this.mailService.sendUserConfirmation(user, otp.toString()); // Assuming you have a method to send OTP
     return { message: 'OTP resent successfully.' };
-
-}
-
-
+  }
   async verifyOtp(otp: number): Promise<boolean> {
     const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
 
@@ -100,7 +102,42 @@ export class AuthService {
     }
 
     user.isVerified = true;
+    // const access_token = await this.signIn(userData.email, createUserInput.password);
+
     await this.userRepository.save(user);
+    // const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    //   try {
+    //     await twilioClient.messages.create({
+    //       body: 'You have successfully registered!',
+    //       from: process.env.TWILIO_PHONE_NUMBER,
+    //       to: user.contact
+    //     });
+    //   } catch (error) {
+    //     console.error("Failed to send SMS:", error.message);
+    //   }
+    console.log("first000000000000000000", user.contact);
+    // Send SMS using AWS SNS
+    const params = {
+      Message: 'You have successfully registered!',
+      PhoneNumber: user.contact, // Ensure the phone number is in E.164 format
+      MessageAttributes: {
+        'AWS.SNS.SMS.SenderID': {
+          'DataType': 'String',
+          'StringValue': 'Codenox' // This is optional and used for Sender ID capabilities in supported countries
+        }
+      }
+    };
+
+    try {
+      const sms = await this.sns.publish(params).promise();
+      console.log('sms**', sms)
+      console.log("Message sent successfully 📩.");
+    } catch (error) {
+      console.error("Failed to send SMS:", error.message);
+    }
+
+
+    await this.mailService.successfullyRegister(user);
     return true;
   }
 
@@ -209,7 +246,7 @@ export class AuthService {
       userData.created_at = new Date();
       userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
       userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
-      const token = Math.floor(100 + Math.random() * 999).toString();
+      const token = Math.floor(100 + Math.random() * 9999).toString();
 
       if (!createUserInput.UsrBy) {
         userData.otp = Number(token)
@@ -260,7 +297,6 @@ export class AuthService {
       })),
     }));
   }
-
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
     const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
@@ -357,7 +393,7 @@ export class AuthService {
 
   async forgetPassword(forgetPasswordInput: ForgetPasswordDto): Promise<CoreResponse> {
     const user = await this.userRepository.findOne({ where: { email: forgetPasswordInput.email }, relations: ['type'] });
-
+    console.log("DATA+++++++++", user);
     if (!user) {
       return {
         success: false,
@@ -372,6 +408,16 @@ export class AuthService {
     user.created_at = new Date();
 
     await this.userRepository.save(user);
+    const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    try {
+      await twilioClient.messages.create({
+        body: `You Change password using this code:${otp}`,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: user.contact
+      });
+    } catch (error) {
+      console.error("Failed to send SMS:", error.message);
+    }
 
     try {
       await this.mailService.sendUserConfirmation(user, token);
@@ -414,7 +460,6 @@ export class AuthService {
       };
     }
   }
-
 
   async resetPassword(resetPasswordInput: ResetPasswordDto): Promise<CoreResponse> {
     console.log("resetPasswordInput****", resetPasswordInput)
@@ -537,8 +582,6 @@ export class AuthService {
     }
   }
 
-
-
   async sendOtpCode(otpInput: OtpDto): Promise<OtpResponse> {
 
     return {
@@ -568,11 +611,27 @@ export class AuthService {
   //   return this.users.find((user) => user.id === getUserArgs.id);
   // }
 
+  async getRelations(email) {
+    const userWithDealer = await this.userRepository.findOne({
+      where: { email: email, dealer: Not(IsNull()) }
+    });
+
+    if (userWithDealer) {
+      return ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "dealer"];
+    } else {
+      return ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type"];
+    }
+  }
+
   async me(email: string, id: number): Promise<User> {
+
+    console.log("Me-Error-service***************************")
+
     const user = await this.userRepository.findOne({
       where: email ? { email: email } : { id: id },
-      relations: ["profile", "address", "shops", "orders", "profile.socials", "address.address", "dealer", "type"]
+      relations: await this.getRelations(email)
     });
+
     if (!user) {
       throw new NotFoundException(`User with email ${email} and id ${id} not found`);
     }
