@@ -20,6 +20,7 @@ import {
   OtpDto,
   OtpLoginDto,
   RegisterDto,
+  ResendOtpDto,
   ResetPasswordDto,
   SocialLoginDto,
   UpdateOtpDto,
@@ -80,6 +81,10 @@ export class AuthController {
   @Post('change-password')
   changePassword(@Body() changePasswordDto: ChangePasswordDto) {
     return this.authService.changePassword(changePasswordDto);
+  }
+  @Post('resend-otp')
+  resendOtp(@Body() resendOtpDto: ResendOtpDto) {
+    return this.authService.resendOtp(resendOtpDto);
   }
 
   @Post('logout')

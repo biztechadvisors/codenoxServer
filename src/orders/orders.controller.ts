@@ -32,17 +32,9 @@ export class OrdersController {
 
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
+    console.log("createOrderDTO****35", createOrderDto)
     const OrdSuccess = await this.ordersService.create(createOrderDto);
-
-    try {
-      await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
-      if (OrdSuccess?.id) {
-        await this.ordersService.downloadInvoiceUrl((OrdSuccess.id).toString())
-      }
-    } catch (error) {
-      console.error(error.message || error);
-      throw error
-    }
+    await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
     return OrdSuccess;
   }
 
@@ -171,7 +163,8 @@ export class DownloadInvoiceController {
 
   @Post()
   async downloadInvoiceUrl(@Body() input: { order_id: string }) {
-    return this.ordersService.downloadInvoiceUrl(input.order_id);
+    const Invoice = this.ordersService.downloadInvoiceUrl(input.order_id);
+    return Invoice
   }
 }
 

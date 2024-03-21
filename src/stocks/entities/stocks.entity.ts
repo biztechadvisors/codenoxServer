@@ -1,5 +1,6 @@
 import { Product } from "src/products/entities/product.entity";
 import { Dealer } from "src/users/entities/dealer.entity";
+import { User } from "src/users/entities/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
@@ -11,16 +12,17 @@ export class Stocks {
     quantity: number
 
     @Column()
-    inStock: boolean
+    ordPendQuant: number
 
     @Column()
-    margine: number
+    status: boolean
+
+    @Column()
+    inStock: boolean
 
     @ManyToOne(() => Product, { cascade: true })
-    @JoinColumn()
     product?: Product;
 
-    @ManyToOne(() => Dealer, { eager: true })
-    @JoinColumn()
-    dealer: Dealer;
+    @ManyToOne(() => User, { cascade: true, eager: true })
+    user: User;
 }

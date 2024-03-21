@@ -14,6 +14,7 @@ import {
   OtpResponse,
   VerifyOtpDto,
   OtpDto,
+  ResendOtpDto,
 } from './dto/create-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { User, UserType } from 'src/users/entities/user.entity';
@@ -23,7 +24,6 @@ import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
-
 
 @Injectable()
 export class AuthService {
@@ -49,6 +49,27 @@ export class AuthService {
     // user.created_at = null;
     await this.userRepository.save(user);
   }
+
+  async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ message: string } | AuthResponse> {
+
+    const user = await this.userRepository.findOne({ where: { email: resendOtpDto.email } });
+    console.log("email reasend otp", user)
+
+    if (!user) {
+        throw new NotFoundException('User not found');
+    }
+
+    const otp = await this.generateOtp();
+    user.otp = otp;
+    user.created_at = new Date();
+    const repo = await this.userRepository.save(user);
+    console.log("first=========",repo)  
+
+    await this.mailService.sendUserConfirmation(user, otp.toString()); // Assuming you have a method to send OTP
+    return { message: 'OTP resent successfully.' };
+
+}
+
 
   async verifyOtp(otp: number): Promise<boolean> {
     const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
@@ -166,16 +187,17 @@ export class AuthService {
 
       await this.mailService.sendUserConfirmation(userData, token);
 
-      const access_token = await this.signIn(userData.email, createUserInput.password);
+      // const access_token = await this.signIn(userData.email, createUserInput.password);
 
       // Fetch permissions based on user type
-      const result = await this.getPermissions(userData.type.type_name);
+      // const result = await this.getPermissions(userData.type.type_name);
 
-      return {
-        token: access_token.access_token,
-        type_name: [`${userData.type.type_name}`],
-        permissions: result,
-      };
+      // return {
+      //   token: access_token.access_token,
+      //   type_name: [`${userData.type.type_name}`],
+      //   permissions: result,
+      // };
+      return { message: `Registerd Successfull OTP send in your Email` }
     } else {
       // Customer registration
       const hashPass = await bcrypt.hash(createUserInput.password, 12);
@@ -185,24 +207,27 @@ export class AuthService {
       userData.contact = createUserInput.contact;
       userData.password = hashPass;
       userData.created_at = new Date();
-      userData.UsrBy = createUserInput.UsrBy;
+      userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
       userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
       const token = Math.floor(100 + Math.random() * 999).toString();
 
+      if (!createUserInput.UsrBy) {
+        userData.otp = Number(token)
+        // Send confirmation email for customers
+        await this.mailService.sendUserConfirmation(userData, token);
+      }
 
-      userData.otp = Number(token)
       await this.userRepository.save(userData);
 
-      // Send confirmation email for customers
-      await this.mailService.sendUserConfirmation(userData, token);
+      return { message: `Registerd Successfull OTP send in your Email` }
 
-      const access_token = await this.signIn(userData.email, createUserInput.password);
+      // const access_token = await this.signIn(userData.email, createUserInput.password);
 
-      return {
-        token: access_token.access_token,
-        type_name: [UserType.Customer],
-        permissions: [],
-      };
+      // return {
+      //   token: access_token.access_token,
+      //   type_name: [UserType.Customer],
+      //   permissions: [],
+      // };
     }
   }
 
@@ -235,7 +260,6 @@ export class AuthService {
       })),
     }));
   }
-
 
 
   async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {

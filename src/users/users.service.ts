@@ -33,6 +33,7 @@ import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
 import { Equal, FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 const users = plainToClass(User, usersJson);
 
@@ -63,10 +64,10 @@ export class UsersService {
 
   ) { }
 
-  //-------------------------------------------------------- 
+  //------------------------------ User service -------------------------- 
 
   async create(createUserDto: CreateUserDto) {
-
+   console.log("creactUserDto", createUserDto)
     const user = await this.userRepository.findOne({ where: { email: createUserDto.email }, relations: ['type'] })
     if (user) {
       throw new NotFoundException(`User with email ${createUserDto.email} already exists`);
@@ -114,8 +115,11 @@ export class UsersService {
     profile.socials = social;
     profile.bio = createUserDto.profile.bio;
     profile.contact = createUserDto.profile.contact;
-    await this.profileRepository.save(profile);
 
+    let profUsr = await this.profileRepository.save(profile);
+    usr.profile = profUsr
+
+    await this.userRepository.save(usr);
     return usr;
   }
 
@@ -361,9 +365,8 @@ export class UsersService {
     dealer.discount = dealerData.discount;
     dealer.walletBalance = dealerData.walletBalance;
     dealer.isActive = dealerData.isActive;
-    dealer.gst = dealerData.gst
-    dealer.pan = dealerData.pan
-
+    dealer.gst = dealerData.gst;
+    dealer.pan = dealerData.pan;
 
     // Save the dealer first to generate an ID
     await this.dealerRepository.save(dealer);
@@ -418,8 +421,8 @@ export class UsersService {
     dealer.discount = dealerData.discount;
     dealer.walletBalance = dealerData.walletBalance;
     dealer.isActive = dealerData.isActive;
-    dealer.gst = dealerData.gst;
-    dealer.pan = dealerData.pan;
+    dealer.gst = dealerData.gst
+    dealer.pan = dealerData.pan
 
     // Update or create new DealerProductMargin
     for (const marginData of dealerData.dealerProductMargins) {
@@ -496,4 +499,17 @@ export class UsersService {
     await this.dealerRepository.delete(dealer.id);
   }
 
+
+  // ------------------------- Profile Service ----------------------------------------
+
+  async createProfile(createProfileDto: CreateProfileDto): Promise<Profile>{
+    
+    
+    return
+  }
+
+  async updateProfile(updateProfileDto: UpdateProfileDto): Promise<Profile>{
+   
+    return
+  }
 }

@@ -14,5 +14,6 @@ export class GetOrdersDto extends PaginationArgs {
   sortedBy?: string
   customer_id?: number
   shop_id?: string
+  saleBy?: string
   search?: string
 }

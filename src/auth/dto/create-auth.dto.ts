@@ -41,6 +41,10 @@ export class ResetPasswordDto {
   password: string;
 }
 
+export class ResendOtpDto {
+  email: string;
+}
+
 export interface PermissionItem {
   type: string;
   read: boolean;

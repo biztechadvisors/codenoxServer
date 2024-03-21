@@ -14,7 +14,7 @@ const messages = plainToClass(Message, MessagesJson);
 
 @Injectable()
 export class MessagesService {
-  private messages: Message[] = messages;
+  private message: Message[] = messages;
   constructor(
     @InjectRepository(Message)
     private readonly messageRepository: Repository<Message>,
@@ -28,17 +28,18 @@ export class MessagesService {
 
   async createMessage(createMessageDto: CreateMessageDto) {
     const message = new Message();
-
+console.log("create Message", createMessageDto);
     const conversationCheck = await this.conversationRepository.findOne({
       where: { shop_id: createMessageDto.conversation.shop_id, user_id: createMessageDto.conversation.user_id },
-      relations: ['latest_message']
+      relations: ['latest_message', 'shop_id']
     });
-
+console.log("conversation", conversationCheck)
     if (conversationCheck) {
       const latestMessage = await this.latestMessageRepository.findOne({
         where: { conversation_id: conversationCheck.id, user_id: createMessageDto.conversation.latest_message.user_id }
       });
 
+      console.log("latest Messages", latestMessage)
       if (latestMessage) {
         latestMessage.body = createMessageDto.conversation.latest_message.body;
         await this.latestMessageRepository.save(latestMessage);
@@ -78,13 +79,33 @@ export class MessagesService {
     }
   }
 
-  async getMessages({ search, limit, page }: GetConversationsDto) {
-    let message = await this.messageRepository.find({ relations: ['conversation', 'conversation.latest_message', 'conversation.user', 'conversation.shop', 'conversation.shop.balance', 'conversation.shop.cover_image', 'conversation.shop.logo', 'conversation.shop.address'] });
+  async getMessages({ search, limit, page, shop }: GetConversationsDto) {
+    let shopSearch
+    let message = await this.messageRepository.find({ 
+      relations: [
+        'conversation',
+        'conversation.latest_message',
+        'conversation.user',
+        'conversation.shop',
+        'conversation.shop.balance',
+        'conversation.shop.cover_image',
+        'conversation.shop.logo',
+        'conversation.shop.address'
+              ] });
+              console.log("message", message)
     if (search) {
       message = message.filter((msg) => msg.conversation);
     }
+    if(shop){
+     shopSearch = await this.conversationRepository.findOne({
+      where: {
+       shop_id: shop.id
+      }
+     })
+     return shopSearch
+    }
     const url = `/message?limit=${limit}`;
-    const paginatedData = paginate(messages.length, page, limit, messages.length, url);
+    const paginatedData = paginate(message.length, page, limit, message.length, url);
     return {
       data: message.slice(paginatedData.firstItem, paginatedData.lastItem + 1),
       ...paginatedData,
