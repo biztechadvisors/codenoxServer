@@ -375,11 +375,14 @@ export class OrdersService {
       if (!(permsn && (permsn.type_name === 'Admin' || permsn.type_name === 'super_admin'))) {
         // If the user has other permissions, filter orders by customer_id
         const usrByIdUsers = await this.userRepository.find({
-          where: { UsrBy: { id: usr.id } }, relations: ['type']
+          where: { UsrBy: { id: usr.id } },
+          relations: ['type']
         });
 
-        const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
-        query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
+        const userIds = usrByIdUsers.map(user => user.id); // Remove usr.id from userIds
+        query = query.andWhere('order.customer.id NOT IN (:...userIds)', { userIds });
+        // const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
+        // query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
       }
 
       // Handle additional filtering conditions

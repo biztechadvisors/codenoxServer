@@ -52,6 +52,7 @@ export class AuthController {
   @Post('token')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+
   }
 
   @Post('social-login-token')
