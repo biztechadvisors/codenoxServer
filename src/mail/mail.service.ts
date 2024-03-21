@@ -48,7 +48,7 @@ export class MailService {
     }
 }
 
-async dealer_renderTemplate(data) {
+ async dealer_renderTemplate(data) {
   console.log('DataCOMEORNOT  = ', data);
   const templatePath = path.join(__dirname, 'templates', 'invoiceDealerToCustomer.hbs'); // Construct absolute path
   // console.log('Template path:', templatePath); // Log absolute path
