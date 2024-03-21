@@ -18,44 +18,44 @@
         <div class="invoice-body" style="display:flex;justify-content:space-between;width:100%;">
             <div style="flex: 0 0 47%;text-align:left;">
                 <h4 style="text-align:left;">Sold By:</h4>
-                <p style="text-align: left;">{{invoice.saleBy.name}}</p>
-                <p style="text-align:left;">{{invoice.saleBy.street_address}}</p>
+                <p style="text-align: left;">{{dealer.name}}</p>
+                <p style="text-align:left;">{{saleBy.street_address}}</p>
                 <p style="text-align:left;">
-                    {{invoice.saleBy.city}}{{invoice.saleBy.state}}{{invoice.saleBy.country}}
+                    {{saleBy.city}} {{saleBy.state}} {{saleBy.country}}
                 </p>
                 <br>
-                <p style="text-align:left;"><b>PAN No:</b>AC02BFRT56</p>
-                <p style="text-align:left;"><b>GST Registration No:</b>{{invoice.shop_address.gst_number}}</p>
+                <p style="text-align:left;"><b>PAN No:</b>{{dealer.dealer.pan}}</p>
+                <p style="text-align:left;"><b>GST Registration No:</b>{{dealer.dealer.gst}}</p>
                 <div class="order-details" style="margin-top: 20px;text-align:left;">
-                    <p style="text-align:left;margin-top:20px"><b>Order Number:</b> {{invoice.order_no}}</p>
-                    <p style="text-align:left;"><b>Order Date:</b>{{invoice.created_at}}</p>
+                    <p style="text-align:left;margin-top:20px"><b>Order Number:</b> {{order_no}}</p>
+                    <p style="text-align:left;"><b>Order Date:</b>{{created_at}}</p>
 
                 </div>
             </div>
             <div style="flex: 0 0 50%;text-align:right;text-align:right;">
                 <div class="buyer" style="margin-top: 20px;text-align:right;">
                     <h4 style="margin-top: 20px;text-align:right;">Billing Address:</h4>
-                    <p style="margin-top: 20px;text-align:right;">{{invoice.billing_address.id}}</p>
+                    <p style="margin-top: 20px;text-align:right;">{{billing_address.id}}</p>
                     <p style="margin-top: 20px;text-align:right;">
-                        {{invoice.billing_address.street_address}}{{invoice.billing_address.city}}</p>
+                        {{billing_address.street_address}} {{billing_address.city}}</p>
                     <p style="margin-top: 20px;text-align:right;">
-                        {{invoice.billing_address.state}} {{invoice.billing_address.country}}
-                        {{invoice.billing_address.zip}}
+                        {{billing_address.state}} {{billing_address.country}}
+                        {{billing_address.zip}}
                     </p>
 
                 </div>
                 <div class="buyer" style="margin-top: 20px;text-align:right;">
                     <h4 style="margin-top: 20px;text-align:right;">Shipping Address:</h4>
-                    <p style="margin-top: 20px;text-align:right;">{{invoice.shipping_address.id}}</p>
-                    <p style="margin-top: 20px;text-align:right;">{{invoice.shipping_address.street_address}}
-                        {{invoice.shipping_address.city}}</p>
-                    <p style="margin-top: 20px;text-align:right;">{{invoice.shipping_address.state}}
-                        {{invoice.shipping_address.country}} {{invoice.shipping_address.zip}}</p>
+                    <p style="margin-top: 20px;text-align:right;">{{shipping_address.id}}</p>
+                    <p style="margin-top: 20px;text-align:right;">{{shipping_address.street_address}}
+                        {{shipping_address.city}}</p>
+                    <p style="margin-top: 20px;text-align:right;">{{shipping_address.state}}
+                        {{shipping_address.country}} {{shipping_address.zip}}</p>
 
                 </div>
                 <p style="margin-top: 20px;text-align:right;"><b>Invoice Number:</b>not</p>
                 <p style="margin-top: 20px;text-align:right;"><b>Invoice Details:</b> MP-FIDA-1034-2324</p>
-                <p style="margin-top: 20px;text-align:right;"><b>Invoice Date:</b>{{invoice.invoice_date}}</p>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Date:</b>{{invoice_date}}</p>
             </div>
         </div>
         <table
@@ -74,7 +74,7 @@
                 </tr>
             </thead>
             <tbody>
-                {{#each invoice.products}}
+                {{#each products}}
                 <!-- Insert dynamic item rows here -->
                 <tr style="border: 2px solid black">
                     <td style="border: 2px solid black;">{{this.id}}</td>
@@ -82,26 +82,23 @@
                     <td style="border: 2px solid black;">{{this.pivot.unit_price}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.order_quantity}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
-                    {{!-- {{/each}} --}}
                     <td style="border: 2px solid black;">{{this.taxes.rate}}%</td>
-                    <td style="border: 2px solid black;">{{this.taxes.cgst}}%<br /> {{this.taxes.sgst}} %</td>
-                    <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
+                    <td style="border: 2px solid black;">CGST {{this.taxes.cgst}}%<br /> SGST {{this.taxes.sgst}} %</td>
+                    <td style="border: 2px solid black;">{{this.taxAmount}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
                 </tr>
                 {{/each}}
                 <tr style="border:2px solid black">
                     <td colspan="7" style="border: 2px solid black; text-align: left;"><b>TOTAL:</b></td>
-                    <td style="border: 2px solid black;">{{invoice.sales_tax_total}}</td>
-                    <td style="border: 2px solid black;">{{invoice.net_amount}}</td>
+                    <td style="border: 2px solid black;">{{sales_tax}}</td>
+                    <td style="border: 2px solid black;">{{finalTotal}}</td>
                 </tr>
                 <tr>
                     <td colspan="9" style="border: 2px solid black; text-align: left;"><b>Amount in Words:</b>
-                        {{invoice.total_amount_in_words}}</td>
+                        <span>{{amountinWord}}</span></td>
                 </tr>
                 <tr>
-                    {{!-- {{#each invoice.product}} --}}
-                    <td colspan="9" style="text-align: right;"><b>{{invoice.shop_address.name}}</b><br></td>
-                    {{!-- {{/each}} --}}
+                    {{!-- <td colspan="9" style="text-align: right;"><b>{{invoice.dealer.name}}</b><br></td> --}}
                 </tr>
                 <tr>
                     <td colspan="9" style="text-align: right;"><b>Authorized Signatory</b></td>
@@ -115,25 +112,25 @@
                     <td style="border:2px solid black">Payment Transaction ID: <br>
                         <p style="font-size: 12px;">invoice.paymentInfo.payment_id</p>
                     </td>
-                    <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">{{invoice.invoice_date}}
+                    <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">{{invoice_date}}
                         </p>
                     </td>
                     <td rowSpan="2" style="border:2px solid black">Invoice Value:<p style="font-size: 12px;">
-                            {{invoice.total_amount}}</p>
+                            {{finalTotal}}</p>
                     </td>
                     <td style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">Gift
-                            Card{{invoice.payment_Mode}}</p>
+                            {{payment_Mode}}</p>
                     </td>
                 </tr>
                 <tr style="border:2px solid black">
                     <td style="border:2px solid black">Payment Transaction ID: <br>
-                        <p style="font-size: 12px;">invoice.paymentInfo.payment_id</p>
+                        <p style="font-size: 12px;">paymentInfo.payment_id</p>
                     </td>
-                    <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">{{invoice.invoice_date}}
+                    <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">{{invoice_date}}
                         </p>
                     </td>
                     <td colspan="2" style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">Credit
-                            Card{{invoice.payment_Mode}}</p>
+                            {{payment_Mode}}</p>
                     </td>
                 </tr>
             </tbody>

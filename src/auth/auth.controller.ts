@@ -21,6 +21,7 @@ import {
   OtpLoginDto,
   RegisterDto,
   ResetPasswordDto,
+  ResendOtpDto,
   SocialLoginDto,
   UpdateOtpDto,
   VerifyForgetPasswordDto,
@@ -77,6 +78,11 @@ export class AuthController {
   @Post('reset-password')
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
+  }
+  @Post('resend-otp')
+  resendOtp(@Body() resendOtpDto: ResendOtpDto) {
+    console.log("RESENDOTPPPPPPPPP*******",resendOtpDto);
+    return this.authService.resendOtp(resendOtpDto);
   }
   @Post('change-password')
   changePassword(@Body() changePasswordDto: ChangePasswordDto) {

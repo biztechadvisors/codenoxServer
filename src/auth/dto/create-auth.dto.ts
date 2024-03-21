@@ -40,6 +40,9 @@ export class ResetPasswordDto {
   token: number;
   password: string;
 }
+export class ResendOtpDto {
+  email: string;
+}
 
 export interface PermissionItem {
   type: string;
