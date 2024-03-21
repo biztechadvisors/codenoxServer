@@ -81,7 +81,7 @@ export class AuthController {
   }
   @Post('resend-otp')
   resendOtp(@Body() resendOtpDto: ResendOtpDto) {
-    console.log("RESENDOTPPPPPPPPP*******",resendOtpDto);
+    console.log("RESENDOTPPPPPPPPP*******", resendOtpDto);
     return this.authService.resendOtp(resendOtpDto);
   }
   @Post('change-password')
@@ -103,6 +103,8 @@ export class AuthController {
 
   @Get('me')
   async me(@Query('username') username: string, @Query('sub') sub: number) {
+    console.log("Me-Error-controller***************************")
+
     return await this.authService.me(username, sub);
   }
 
