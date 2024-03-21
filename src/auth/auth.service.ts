@@ -22,7 +22,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/users/users.repository';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import Twilio from 'twilio';
 import * as AWS from 'aws-sdk';
@@ -611,11 +611,27 @@ export class AuthService {
   //   return this.users.find((user) => user.id === getUserArgs.id);
   // }
 
+  async getRelations(email) {
+    const userWithDealer = await this.userRepository.findOne({
+      where: { email: email, dealer: Not(IsNull()) }
+    });
+
+    if (userWithDealer) {
+      return ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "dealer"];
+    } else {
+      return ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type"];
+    }
+  }
+
   async me(email: string, id: number): Promise<User> {
+
+    console.log("Me-Error-service***************************")
+
     const user = await this.userRepository.findOne({
       where: email ? { email: email } : { id: id },
-      relations: ["profile", "address", "shops", "orders", "profile.socials", "address.address", "dealer", "type"]
+      relations: await this.getRelations(email)
     });
+
     if (!user) {
       throw new NotFoundException(`User with email ${email} and id ${id} not found`);
     }
