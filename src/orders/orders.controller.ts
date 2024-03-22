@@ -167,6 +167,16 @@ export class DownloadInvoiceController {
     return Invoice
   }
 }
+@Controller('download-invoice')
+export class DownloadInvoiceeController {
+  constructor(private ordersService: OrdersService) { }
+
+  @Post()
+  async downloadInvoice(@Body() input: { order_id: string }) {
+    const Invoice = this.ordersService.downloadInvoice(input.order_id);
+    return Invoice
+  }
+}
 
 @Controller('Shiprocket_Service')
 export class ShiprocketController {

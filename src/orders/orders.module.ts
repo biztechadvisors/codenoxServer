@@ -4,6 +4,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { PaymentModule } from 'src/payment/payment.module';
 import {
   DownloadInvoiceController,
+  DownloadInvoiceeController,
   OrderExportController,
   OrderFilesController,
   OrdersController,
@@ -44,6 +45,7 @@ import { UserAddress } from 'src/addresses/entities/address.entity';
     OrderFilesController,
     OrderExportController,
     DownloadInvoiceController,
+    DownloadInvoiceeController,
     ShiprocketController,
   ],
   providers: [OrdersService, ShiprocketService, MailService],

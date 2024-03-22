@@ -54,6 +54,7 @@ import { MailService } from 'src/mail/mail.service';
 import { Dealer } from 'src/users/entities/dealer.entity';
 import { UserAddress } from 'src/addresses/entities/address.entity';
 
+
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
 @Injectable()
@@ -957,20 +958,7 @@ export class OrdersService {
 
     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
     console.log("Invoice****", Invoice);
-    // console.log("PIVOT_________", Invoice.products.pivot);
-
-    //   const numberToWords = (num: number) => {
-    //     const a = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-    //     const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-
-
-    //     if (num < 20) return a[num];
-    //     const digit = num % 10;
-    //     if (num < 100) return b[Math.floor(num / 10)] + (digit ? '-' + a[digit] : '');
-    //     if (num < 1000) return a[Math.floor(num / 100)] + ' hundred' + (num % 100 === 0 ? '' : ' and ' + numberToWords(num % 100));
-    //     return numberToWords(Math.floor(num / 1000)) + ' thousand' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '');
-    // };
-
+   
     const hashtabel: Record<string, any[]> = {};
 
     for (const product of Invoice.products) {
@@ -1021,6 +1009,119 @@ export class OrdersService {
       await this.MailService.sendInvoiceDealerToCustomer(Invoice);
     }
   }
+  
+  async downloadInvoice(Order_id: string) {
+    try {
+      const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
+      const invoiceData = await this.generateInvoiceData(Invoice); 
+      console.log("INVOICE $$$$$$$$", invoiceData);
+      
+    } catch (error) {
+      console.error('Error generating invoice:', error);
+      return null;
+    }
+}
+
+async generateInvoiceData(Invoice: any) {
+  const hashtabel: Record<string, any[]> = {};
+
+  for (const product of Invoice.products) {
+      if (!hashtabel[product.shop_id]) {
+          hashtabel[product.shop_id] = [product];
+      } else {
+          hashtabel[product.shop_id].push(product);
+      }
+  }
+
+  for (const shopId in hashtabel) {
+      if (hashtabel.hasOwnProperty(shopId)) {
+          const shopProducts = hashtabel[shopId];
+
+          const taxType: any = {
+              billing_address: Invoice.billing_address,
+              shipping_address: Invoice.shipping_address,
+              total_tax_amount: Invoice.sales_tax,
+              customer: Invoice.customer,
+              dealer: Invoice.dealer,
+              saleBy: Invoice.saleBy,
+              payment_Mode: Invoice.payment_gateway,
+              created_at: Invoice.created_at,
+              order_no: Invoice.id,
+              invoice_date: Invoice.created_at,
+              shop_address: shopProducts[0].shop,
+              products: shopProducts,
+          };
+          console.log("working properly++++++++", taxType);
+          // Assuming all products in a shop have the same tax rates and state information
+          if (shopProducts[0].shop.address.state === Invoice.shipping_address.state) {
+              const stateCodeValue = stateCode[Invoice.shipping_address.state];
+              taxType.CGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+              taxType.SGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+              taxType.state_code = stateCodeValue;
+          } else {
+              const stateCodeValue = stateCode[Invoice.shipping_address.state];
+              taxType.IGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity;
+              taxType.state_code = stateCodeValue;
+          }
+
+          const pdfBuffer = await this.MailService.template(taxType);
+          const pdf = await this.MailService.generatePdfFromHtml(pdfBuffer);
+          console.log("pdf+++++++++++++", pdf);
+          return pdf; // Return the PDF buffer
+      }
+  }
+}
+
+
+// async downloadInvoice(orderId) {
+//   const invoice = await this.getOrderByIdOrTrackingNumber(parseInt(orderId));
+//   const invoiceData = this.generateInvoiceData(invoice);
+//   const pdfBuffer = await this.MailService.template(invoiceData);
+//   return pdfBuffer;
+// }
+
+// generateInvoiceData(invoice) {
+//   const hashTable = {};
+//   for (const product of invoice.products) {
+//     if (!hashTable[product.shop_id]) {
+//       hashTable[product.shop_id] = [product];
+//     } else {
+//       hashTable[product.shop_id].push(product);
+//     }
+//   }
+
+//   const invoiceList = [];
+//   for (const shopId in hashTable) {
+//     if (hashTable.hasOwnProperty(shopId)) {
+//       const shopProducts = hashTable[shopId];
+//       const taxType = {
+//         billing_address: invoice.billing_address,
+//         shipping_address: invoice.shipping_address,
+//         total_tax_amount: invoice.sales_tax,
+//         customer: invoice.customer,
+//         dealer: invoice.dealer,
+//         saleBy: invoice.saleBy,
+//         payment_Mode: invoice.payment_gateway,
+//         created_at: invoice.created_at,
+//         order_no: invoice.id,
+//         invoice_date: invoice.created_at,
+//         shop_address: shopProducts[0].shop,
+//         products: shopProducts,
+//       };
+
+//       // if (shopProducts[0].shop.address.state === invoice.shipping_address.state) {
+//       //   taxType.CGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+//       //   taxType.SGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+//       // } else {
+//       //   taxType.IGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity;
+//       // }
+
+//       invoiceList.push(taxType);
+//     }
+//   }
+
+//   return invoiceList;
+// }
 
 
   /**

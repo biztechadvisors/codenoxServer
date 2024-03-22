@@ -5,9 +5,11 @@ import { User } from '../users/entities/user.entity'
 import { error } from 'console'
 import * as puppeteer from 'puppeteer';
 import path from 'path';
-const { toWords } = require('number-to-words');
-const fs = require('fs');
-const Handlebars = require('handlebars');
+import { toWords } from 'number-to-words';
+import fs from 'fs';
+import Handlebars from 'handlebars';
+
+
 
 
 @Injectable()
@@ -56,7 +58,7 @@ export class MailService {
       const templateContent = fs.readFileSync(templatePath, 'utf8');
       const compiledTemplate = Handlebars.compile(templateContent);
       const renderedTemplate = compiledTemplate(data);
-      console.log('Rendered template:', compiledTemplate);
+      // console.log('Rendered template:', compiledTemplate);
 
       const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
 
@@ -82,6 +84,102 @@ export class MailService {
   }
 }
 
+async template(data:any) {
+  console.log('Data received:', data);
+  try {
+    const {
+      CGST,
+      IGST,
+      SGST,
+      net_amount,
+      total_amount,
+      shop,
+      saleBy,
+      sales_tax_total,
+      total_amount_in_words,
+      payment_Mode,
+      paymentInfo,
+      billing_address,
+      shipping_address,
+      total_tax_amount,
+      shop_address,
+      customer,
+      dealer,
+      products,
+      created_at,
+      order_no,
+      invoice_date,
+    } = data;
+
+    console.log('prodcut+++++++++', data.products);
+
+    const totalSubtotal = products.reduce((accumulator, currentValue) => {
+      return accumulator + currentValue.pivot.subtotal;
+    }, 0);
+    
+    // Convert subtotal to words
+     const totalSubtotalInWords = toWords(totalSubtotal);
+
+      const updatedProducts = products.map(product => {
+      const unit_price = Number(product.pivot?.unit_price || 0);
+      const quantity = Number(product.pivot?.order_quantity || 0);
+      const tax_rate = Number(product.taxes?.rate || 0) / 100;
+      const subtotal = unit_price * quantity;
+      const taxAmount = Math.round(subtotal * tax_rate);
+      const total = subtotal + taxAmount;
+      return { ...product, subtotal, taxAmount, total }; // Return the original product data with the new calculated values
+    });
+    //  const finalEmail = data.dealer.email ? data.dealer.email : data.customer.email;
+    //  console.log("finalMAILLLLLLLLLLLll",finalEmail);
+     
+    const orderDetails = {
+      IGST,
+      CGST,
+      SGST,
+      net_amount,
+      total_amount,
+      shop,
+      saleBy,
+      sales_tax_total,
+      total_amount_in_words,
+      payment_Mode,
+      paymentInfo,
+      billing_address,
+      shipping_address,
+      total_tax_amount,
+      shop_address,
+      // finalEmail,
+      finalTotal:totalSubtotal,
+      amountinWord:totalSubtotalInWords,
+      products:updatedProducts, // Use the updated products
+      created_at,
+      order_no,
+      invoice_date,
+    };  
+    const templatePath = path.join(__dirname, 'templates', 'invoiceToCustomer.hbs');
+    const templateContent = fs.readFileSync(templatePath, 'utf8');
+    const compiledTemplate = Handlebars.compile(templateContent);  
+    const renderedTemplate = compiledTemplate(data);
+    console.log('TEMPLATE()()()()()()()()()()(()(()======)):', renderedTemplate);
+    // const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
+
+    return renderedTemplate;
+  } catch (error) {
+    console.error("Invoice sending failed to Customer", error);
+  }
+  // try {
+  //   const templateContent = fs.readFileSync(templatePath, 'utf8');
+  //   const compiledTemplate = Handlebars.compile(templateContent);
+  //   const renderedTemplate = compiledTemplate(data);
+  //   console.log('TEMPLATE()()()()()()()()()()(()(()======)):', renderedTemplate);
+
+
+  //   return pdfBuffer;
+  // } catch (err) {
+  //   console.error('Error reading file:', err);
+  //   return null;
+  // }
+}
   // OTP send for verify Registration Email
   async sendUserConfirmation(user: User, token: string) {
     const url = `example.com/auth/confirm?token=${token}`
@@ -284,93 +382,7 @@ export class MailService {
   }
 
   // send Email invoice Dealer to Customer
-  // async sendInvoiceDealerToCustomer( taxType: any) {
-  //   try {
-  //     // Destructure taxType directly
-  //     const {
-  //       CGST,
-  //       IGST,
-  //       SGST,
-  //       net_amount,
-  //       total_amount,
-  //       shop,
-  //       sales_tax_total,
-  //       total_amount_in_words,
-  //       payment_Mode,
-  //       paymentInfo,
-  //       billing_address,
-  //       shipping_address,
-  //       total_tax_amount,
-  //       shop_address,
-  //       customer,
-  //       dealer,
-  //       saleBy,
-  //       products,
-  //       created_at,
-  //       order_no,
-  //       invoice_date,
-  //     } = taxType;
 
-  //     console.log('prodcuts-mail-135', total_tax_amount);
-
-  //     const totalSubtotal = products.reduce((accumulator, currentValue) => {
-  //       return accumulator + currentValue.pivot.subtotal;
-  //     }, 0);
-  //     // Convert subtotal to words
-  //     const totalSubtotalInWords = toWords(totalSubtotal);
-
-  //     const updatedProducts = products.map(product => {
-  //       const unit_price = Number(product.pivot?.unit_price || 0);
-  //       const quantity = Number(product.pivot?.order_quantity || 0);
-  //       const tax_rate = Number(product.taxes?.rate || 0) / 100;
-  //       const subtotal = unit_price * quantity;
-  //       const taxAmount = Math.round(subtotal * tax_rate);
-  //       const total = subtotal + taxAmount;
-  //       return { ...product, subtotal, taxAmount, total }; 
-  //     });
-
-  //     const orderDetails = {
-  //       IGST,
-  //       CGST,
-  //       SGST,
-  //       net_amount,
-  //       total_amount,
-  //       shop,
-  //       sales_tax_total,
-  //       total_amount_in_words,
-  //       payment_Mode,
-  //       paymentInfo,
-  //       billing_address,
-  //       shipping_address,
-  //       total_tax_amount,
-  //       shop_address,
-  //       customer,
-  //       dealer,
-  //       saleBy,
-  //       finalTotal:totalSubtotal,
-  //       amountinWord:totalSubtotalInWords,
-  //       products: updatedProducts, // Use the updated products
-  //       created_at,
-  //       order_no,
-  //       invoice_date,
-  //     };
-
-  //     console.log("orderDetails***184", orderDetails)
-
-  //     await this.mailerService.sendMail({
-  //       to: customer.email,
-  //       from: '"Tilitso Purchase" <info@365dgrsol.in>',
-  //       subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-  //       template: './invoiceDealerToCustomer',
-  //       context: {
-  //         email: customer.email,
-  //         invoice: orderDetails,
-  //       },
-  //     });
-  //   } catch (error) {
-  //     console.error("Invoice sending failed to Customer", error);
-  //   }
-  // }
 
   async sendInvoiceDealerToCustomer(Invoice: any) {
     console.log('prodcuts-mail-135########', Invoice);
