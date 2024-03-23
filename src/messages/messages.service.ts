@@ -28,7 +28,7 @@ export class MessagesService {
 
   async createMessage(createMessageDto: CreateMessageDto) {
     const message = new Message();
-
+console.log("create Message", createMessageDto);
     const conversationCheck = await this.conversationRepository.findOne({
       where: { shop_id: createMessageDto.conversation.shop_id, user_id: createMessageDto.conversation.user_id },
       relations: ['latest_message', 'shop_id']

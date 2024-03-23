@@ -35,9 +35,13 @@ export class ConversationsService {
   async create(createConversationDto: CreateConversationDto) {
     const message = new Message()
     const conversationCheck = await this.conversationRepository.findOne({
-      where: { shop_id: createConversationDto.shop_id, user_id: createConversationDto.user_id }
+      where: { 
+        shop_id: createConversationDto.shop_id, 
+        user_id: createConversationDto.user_id,
+        dealer_id: createConversationDto.dealer_id
+      }
     });
-
+    console.log("user id", conversationCheck);
     if (conversationCheck) {
       const latestMessage = await this.latestMessageRepository.findOne({
         where: {
@@ -80,6 +84,8 @@ export class ConversationsService {
       conversation.shop = createConversationDto.shop
       conversation.user = createConversationDto.user
       conversation.user_id = createConversationDto.user_id
+      conversation.dealer_id = createConversationDto.dealer_id
+      conversation.dealer = createConversationDto.dealer
 
       await this.conversationRepository.save(savedConversation);
 
@@ -97,7 +103,16 @@ export class ConversationsService {
     if (!page) page = 1;
 
 
-    let conversations = await this.conversationRepository.find({ relations: ['latest_message', 'user', 'shop', 'shop.balance', 'shop.cover_image', 'shop.logo', 'shop.address'] });
+    let conversations = await this.conversationRepository.find({ relations: 
+      ['latest_message', 
+      'user', 
+      'shop', 
+      'shop.balance', 
+      'shop.cover_image', 
+      'shop.logo', 
+      'shop.address',
+      'dealer'
+    ] });
 
 
     if (search) {
@@ -135,6 +150,18 @@ export class ConversationsService {
   }
 
   getConversation(param: number) {
-    return this.conversationRepository.find({ where: { shop_id: param }, relations: ['latest_message', 'user', 'shop', 'shop.balance', 'shop.cover_image', 'shop.logo', 'shop.address'] });
+    return this.conversationRepository.findOne({ 
+      where: { id: param }, 
+      relations: [
+        'latest_message', 
+        'user', 
+        'shop', 
+        'shop.balance', 
+        'shop.cover_image', 
+        'shop.logo', 
+        'shop.address',
+        'dealer'
+      ] 
+      });
   }
 }
