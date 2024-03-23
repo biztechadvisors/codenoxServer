@@ -8,7 +8,8 @@ import {
   Param,
   Post,
   Query,
-  Request,
+  Req,
+  Res,
   UseGuards
 } from '@nestjs/common';
 import { AuthGuard } from './auth.guards';
@@ -29,6 +30,9 @@ import {
 } from './dto/create-auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { UpdateUserDto } from 'src/users/dto/update-user.dto';
+import { Request, Response } from 'express';
+import { IncomingMessage } from 'http';
+
 
 @Controller()
 export class AuthController {
@@ -50,9 +54,32 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('token')
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Res() res: Response) {
+    try {
+      const result = await this.authService.login(loginDto, res);
+      return res.json(result);
+    } catch (error) {
+      console.error(error);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'An error occurred' });
+    }
+  }
 
+  @Post('refreshToken')
+  async refreshToken(@Req() req: Request, @Res() res: Response) {
+    try {
+      const cookies = req.headers.cookie.split(';').reduce((cookies: any, cookie: string) => {
+        const [name, value] = cookie.trim().split('=');
+        cookies[name] = value;
+        return cookies;
+      }, {});
+
+      const refreshToken = cookies.refresh_token;
+      const result = await this.authService.refreshToken(refreshToken, res);
+      return res.json(result);
+    } catch (error) {
+      console.error(error);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'An error occurred' });
+    }
   }
 
   @Post('social-login-token')
@@ -89,9 +116,11 @@ export class AuthController {
     return this.authService.changePassword(changePasswordDto);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('logout')
-  async logout(): Promise<boolean> {
-    return true;
+  async logout(@Body() logoutDto: LoginDto): Promise<{ message: string }> {
+    const result = await this.authService.logout(logoutDto);
+    return { message: result };
   }
 
   @Post('verify-forget-password-token')

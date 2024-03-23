@@ -20,7 +20,7 @@ import { User } from 'src/users/entities/user.entity';
     MailModule,
     JwtModule.register({
       global: true,
-      secret: jwtConstants.secret,
+      secret: jwtConstants.access_secret, // Use the appropriate secret here
       signOptions: { expiresIn: '60s' },
     }),
   ],

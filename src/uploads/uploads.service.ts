@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AttachmentRepository } from 'src/common/common.repository';
@@ -12,12 +11,12 @@ export class UploadsService {
     @InjectRepository(AttachmentRepository) private attachmentRepository: AttachmentRepository,
   ) { }
 
-  async uploadFile(attachment: Array<Express.Multer.File>): Promise<AttachmentDTO[]> {
+  async uploadFile(attachments: Array<Express.Multer.File>): Promise<AttachmentDTO[]> {
     const attachmentData = [];
-    for (const file of attachment) {
+    for (const attachment of attachments) {
       const attachmentDTO = new AttachmentDTO();
-      attachmentDTO.original = file.filename;
-      attachmentDTO.thumbnail = file.path;
+      attachmentDTO.original = attachment.filename;
+      attachmentDTO.thumbnail = attachment.path;
       attachmentData.push(attachmentDTO);
     }
     await this.attachmentRepository.save(attachmentData);
@@ -25,15 +24,15 @@ export class UploadsService {
     return attachmentData;
   }
 
-  findAll() {
-    return `This action returns all uploads`;
+  async findAll(): Promise<Attachment[]> {
+    return this.attachmentRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} upload`;
+  async findOne(id: number): Promise<Attachment> {
+    return this.attachmentRepository.findOne({ where: { id } });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} upload`;
+  async remove(id: number): Promise<void> {
+    await this.attachmentRepository.delete(id);
   }
 }
