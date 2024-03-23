@@ -1,16 +1,11 @@
 /* eslint-disable prettier/prettier */
-import {
-  Controller,
-  Post,
-  UseInterceptors,
-  UploadedFiles,
-} from '@nestjs/common'
-import { FilesInterceptor } from '@nestjs/platform-express'
-import { UploadsService } from './uploads.service'
-import { AttachmentDTO } from 'src/common/dto/attachment.dto'
-import { diskStorage } from 'multer'
-import { editFileName } from './edit-file-name.util'
-import { UUID } from 'typeorm/driver/mongodb/bson.typings'
+import { Controller, Post, UseInterceptors, UploadedFiles, Get, Param, Delete } from '@nestjs/common';
+import { AmazonS3FileInterceptor } from 'nestjs-multer-extended';
+import { UploadsService } from './uploads.service';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { editFileName } from './edit-file-name.util';
+import { Attachment } from 'src/common/entities/attachment.entity';
 
 @Controller('attachments')
 export class UploadsController {
@@ -18,6 +13,7 @@ export class UploadsController {
 
   @Post()
   @UseInterceptors(
+    AmazonS3FileInterceptor('attachment[]'),
     FilesInterceptor('attachment[]', 20, {
       storage: diskStorage({
         destination: './uploads',
@@ -27,16 +23,26 @@ export class UploadsController {
   )
   async uploadFile(@UploadedFiles() attachment: Array<Express.Multer.File>) {
     try {
-      return await this.uploadsService.uploadFile(attachment)
+      console.log('attachemetn', attachment)
+      return await this.uploadsService.uploadFile(attachment);
     } catch (err) {
-      console.log(err)
+      console.log(err);
+      throw new Error('Failed to upload file');
     }
-    return [
-      {
-        id: new UUID(),
-        original: attachment[0].filename,
-        thumbnail: attachment[0].path,
-      },
-    ]
+  }
+
+  @Get()
+  async findAll(): Promise<Attachment[]> {
+    return this.uploadsService.findAll();
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<Attachment> {
+    return this.uploadsService.findOne(Number(id));
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<void> {
+    await this.uploadsService.remove(Number(id));
   }
 }

@@ -3,7 +3,7 @@ import { MailerService } from '@nestjs-modules/mailer'
 import { Injectable } from '@nestjs/common'
 import { User } from '../users/entities/user.entity'
 import { error } from 'console'
-import * as puppeteer from 'puppeteer';
+// import * as puppeteer from 'puppeteer';
 import path from 'path';
 const { toWords } = require('number-to-words');
 const fs = require('fs');
@@ -19,68 +19,68 @@ export class MailService {
     const templatePath = path.join(__dirname, 'templates', 'invoiceToCustomer.hbs'); // Construct absolute path
     // console.log('Template path:', templatePath); // Log absolute path
     try {
-        const templateContent = fs.readFileSync(templatePath, 'utf8');
-        const compiledTemplate = Handlebars.compile(templateContent);
-        const renderedTemplate = compiledTemplate(data);
-        console.log('Rendered template:', compiledTemplate);
-
-        const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
-
-        await this.mailerService.sendMail({
-            to: data.finalEmail,
-            from: '"Tilitso Purchase" <info@365dgrsol.in>',
-            subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-            html: 'Please see the attached PDF for your order confirmation.',
-            template:'/invoiceToCustomer',
-            attachments: [
-                {
-                    filename: 'invoice.pdf',
-                    content: pdfBuffer,
-                    encoding: 'base64',
-                    contentType: 'application/pdf', // Set the content type of the attachment
-                },
-            ],
-        });
-        return templateContent;
-    } catch (err) {
-        console.error('Error reading file:', err);
-        return null;
-    }
-}
-
-async dealer_renderTemplate(data) {
-  console.log('DataCOMEORNOT  = ', data);
-  const templatePath = path.join(__dirname, 'templates', 'invoiceDealerToCustomer.hbs'); // Construct absolute path
-  // console.log('Template path:', templatePath); // Log absolute path
-  try {
       const templateContent = fs.readFileSync(templatePath, 'utf8');
       const compiledTemplate = Handlebars.compile(templateContent);
       const renderedTemplate = compiledTemplate(data);
       console.log('Rendered template:', compiledTemplate);
 
-      const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
+      // const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
 
       await this.mailerService.sendMail({
-          to: data.customer.email,
-          from: '"Tilitso Purchase" <info@365dgrsol.in>',
-          subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-          html: 'Please see the attached PDF for your order confirmation.',
-          template:'/invoiceDealerToCustomer',
-          attachments: [
-              {
-                  filename: 'invoice.pdf',
-                  content: pdfBuffer,
-                  encoding: 'base64',
-                  contentType: 'application/pdf', // Set the content type of the attachment
-              },
-          ],
+        to: data.finalEmail,
+        from: '"Tilitso Purchase" <info@365dgrsol.in>',
+        subject: 'Your Tilitso Order Confirmation. Please share your feedback',
+        html: 'Please see the attached PDF for your order confirmation.',
+        template: '/invoiceToCustomer',
+        attachments: [
+          {
+            filename: 'invoice.pdf',
+            // content: pdfBuffer,
+            encoding: 'base64',
+            contentType: 'application/pdf', // Set the content type of the attachment
+          },
+        ],
       });
       return templateContent;
-  } catch (err) {
+    } catch (err) {
       console.error('Error reading file:', err);
       return null;
+    }
   }
-}
+
+  async dealer_renderTemplate(data) {
+    console.log('DataCOMEORNOT  = ', data);
+    const templatePath = path.join(__dirname, 'templates', 'invoiceDealerToCustomer.hbs'); // Construct absolute path
+    // console.log('Template path:', templatePath); // Log absolute path
+    try {
+      const templateContent = fs.readFileSync(templatePath, 'utf8');
+      const compiledTemplate = Handlebars.compile(templateContent);
+      const renderedTemplate = compiledTemplate(data);
+      console.log('Rendered template:', compiledTemplate);
+
+      // const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
+
+      await this.mailerService.sendMail({
+        to: data.customer.email,
+        from: '"Tilitso Purchase" <info@365dgrsol.in>',
+        subject: 'Your Tilitso Order Confirmation. Please share your feedback',
+        html: 'Please see the attached PDF for your order confirmation.',
+        template: '/invoiceDealerToCustomer',
+        attachments: [
+          {
+            filename: 'invoice.pdf',
+            // content: pdfBuffer,
+            encoding: 'base64',
+            contentType: 'application/pdf', // Set the content type of the attachment
+          },
+        ],
+      });
+      return templateContent;
+    } catch (err) {
+      console.error('Error reading file:', err);
+      return null;
+    }
+  }
 
   // OTP send for verify Registration Email
   async sendUserConfirmation(user: User, token: string) {
@@ -181,20 +181,20 @@ async dealer_renderTemplate(data) {
 
   }
 
-  async generatePdfFromHtml(htmlString) {
-    try {
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
-        await page.setContent(htmlString);
-        const pdfBuffer = await page.pdf({ format: 'A4' });
-        await browser.close();
+  //   async generatePdfFromHtml(htmlString) {
+  //     try {
+  //         const browser = await puppeteer.launch();
+  //         const page = await browser.newPage();
+  //         await page.setContent(htmlString);
+  //         const pdfBuffer = await page.pdf({ format: 'A4' });
+  //         await browser.close();
 
-        return pdfBuffer;
-    } catch (err) {
-        console.error('Error generating PDF:', err);
-        return null;
-    }
-}
+  //         return pdfBuffer;
+  //     } catch (err) {
+  //         console.error('Error generating PDF:', err);
+  //         return null;
+  //     }
+  // }
 
   async sendInvoiceToCustomerORDealer(taxType: any) {
     try {
@@ -227,11 +227,11 @@ async dealer_renderTemplate(data) {
       const totalSubtotal = products.reduce((accumulator, currentValue) => {
         return accumulator + currentValue.pivot.subtotal;
       }, 0);
-      
-      // Convert subtotal to words
-       const totalSubtotalInWords = toWords(totalSubtotal);
 
-        const updatedProducts = products.map(product => {
+      // Convert subtotal to words
+      const totalSubtotalInWords = toWords(totalSubtotal);
+
+      const updatedProducts = products.map(product => {
         const unit_price = Number(product.pivot?.unit_price || 0);
         const quantity = Number(product.pivot?.order_quantity || 0);
         const tax_rate = Number(product.taxes?.rate || 0) / 100;
@@ -240,9 +240,9 @@ async dealer_renderTemplate(data) {
         const total = subtotal + taxAmount;
         return { ...product, subtotal, taxAmount, total }; // Return the original product data with the new calculated values
       });
-       const finalEmail = taxType.dealer.email ? taxType.dealer.email : taxType.customer.email;
-       console.log("finalMAILLLLLLLLLLLll",finalEmail);
-       
+      const finalEmail = taxType.dealer.email ? taxType.dealer.email : taxType.customer.email;
+      console.log("finalMAILLLLLLLLLLLll", finalEmail);
+
       const orderDetails = {
         IGST,
         CGST,
@@ -260,15 +260,15 @@ async dealer_renderTemplate(data) {
         total_tax_amount,
         shop_address,
         finalEmail,
-        finalTotal:totalSubtotal,
-        amountinWord:totalSubtotalInWords,
+        finalTotal: totalSubtotal,
+        amountinWord: totalSubtotalInWords,
         products: updatedProducts, // Use the updated products
         created_at,
         order_no,
         invoice_date,
       };
-      
-      
+
+
       const htmlContent = await this.renderTemplate(orderDetails);
       // console.log("RADHIKA+++++++++++++++++++",htmlContent);
 
@@ -277,7 +277,7 @@ async dealer_renderTemplate(data) {
 
       // console.log("orderDetails***184", orderDetails);
 
-      
+
     } catch (error) {
       console.error("Invoice sending failed to Customer", error);
     }
@@ -406,11 +406,11 @@ async dealer_renderTemplate(data) {
       const totalSubtotal = products.reduce((accumulator, currentValue) => {
         return accumulator + currentValue.pivot.subtotal;
       }, 0);
-      
-      // Convert subtotal to words
-       const totalSubtotalInWords = toWords(totalSubtotal);
 
-        const updatedProducts = products.map(product => {
+      // Convert subtotal to words
+      const totalSubtotalInWords = toWords(totalSubtotal);
+
+      const updatedProducts = products.map(product => {
         const unit_price = Number(product.pivot?.unit_price || 0);
         const quantity = Number(product.pivot?.order_quantity || 0);
         const tax_rate = Number(product.taxes?.rate || 0) / 100;
@@ -419,9 +419,9 @@ async dealer_renderTemplate(data) {
         const total = subtotal + taxAmount;
         return { ...product, subtotal, taxAmount, total }; // Return the original product data with the new calculated values
       });
-       const finalEmail = Invoice.dealer.email ? Invoice.dealer.email : Invoice.customer.email;
-       console.log("finalMAILLLLLLLLLLLll",finalEmail);
-       
+      const finalEmail = Invoice.dealer.email ? Invoice.dealer.email : Invoice.customer.email;
+      console.log("finalMAILLLLLLLLLLLll", finalEmail);
+
       const orderDetails = {
         IGST,
         CGST,
@@ -441,16 +441,16 @@ async dealer_renderTemplate(data) {
         shop_address,
         customer,
         dealer,
-        finalTotal:totalSubtotal,
-        amountinWord:totalSubtotalInWords,
+        finalTotal: totalSubtotal,
+        amountinWord: totalSubtotalInWords,
         products: updatedProducts, // Use the updated products
         created_at,
         order_no,
         invoice_date,
       };
-      
+
       const htmlContented = await this.dealer_renderTemplate(orderDetails);
-      
+
     } catch (error) {
       console.error("Invoice sending failed to Customer", error);
     }

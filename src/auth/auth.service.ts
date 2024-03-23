@@ -26,6 +26,8 @@ import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import Twilio from 'twilio';
 import * as AWS from 'aws-sdk';
+import { Response } from 'express';
+import { jwtConstants } from './constants';
 
 @Injectable()
 export class AuthService {
@@ -141,31 +143,33 @@ export class AuthService {
     return true;
   }
 
-  async signIn(email, pass) {
-
-    console.log("email, pass*************", email, pass)
+  async signIn(email: string) {
     const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-    const isMatch = await bcrypt.compare(pass, user.password);
-    console.log("isMatch*********signIn", isMatch)
-    if (!isMatch) {
-      throw new UnauthorizedException('Invalid password');
-    }
-
-    // The password is correct.
     const payload = { sub: user.id, username: user.email };
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
+
+    const access_token = await this.jwtService.signAsync(payload, {
+      secret: jwtConstants.access_secret,
+      expiresIn: '60m'
+    });
+
+    const refresh_token = await this.jwtService.signAsync(payload, {
+      secret: jwtConstants.refresh_secret,
+      expiresIn: '1d'
+    });
+
+    user.refresh_token = refresh_token
+
+    this.userRepository.save(user)
+
+    return { access_token, refresh_token };
   }
 
-
   async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
-    console.log("createUserInput###*******", createUserInput);
 
     const existingUser = await this.userRepository.findOne({
       where: { email: createUserInput.email },
@@ -298,66 +302,133 @@ export class AuthService {
     }));
   }
 
-  async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
-    const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
+  async refreshToken(incomingRefreshToken: string, res: Response) {
+    try {
+      const decodedToken = this.jwtService.verify(incomingRefreshToken, { secret: jwtConstants.refresh_secret });
+      const userId = decodedToken.sub;
+      const user = await this.userRepository.findOne({ where: { id: userId } });
 
-    if (!user || !user.isVerified) {
-      return {
-        message: 'User Is Not Registered!',
+      if (!user || user.refresh_token !== incomingRefreshToken) {
+        throw new UnauthorizedException('Invalid Refresh Token');
+      }
+
+      const { access_token, refresh_token } = await this.signIn(user.email);
+
+      user.refresh_token = refresh_token;
+      await this.userRepository.save(user);
+
+      const options = {
+        httpOnly: true,
+        secure: true,
       };
-    }
 
-    var permission;
-    if (user.type) {
-      permission = await this.permissionRepository.findOneBy(user.type);
-    }
+      res.cookie('access_token', access_token, options);
+      res.cookie('refresh_token', refresh_token, options);
 
-    let access_token: { access_token: string };
-    console.log("permission****253", permission)
-    if (!permission || permission.id === null) {
-      access_token = await this.signIn(loginInput.email, loginInput.password);
       return {
-        token: access_token.access_token,
-        permissions: ['customer', 'admin', 'super_admin'],
+        refresh_token: refresh_token,
       };
+    } catch (error) {
+      console.error(error);
+      throw new UnauthorizedException('An error occurred during token refresh');
+    }
+  }
+
+  async login(loginInput: LoginDto, res: Response) {
+    try {
+
+      console.log('loginInput', loginInput)
+      const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
+
+      console.log("login-user", user)
+
+      if (!user || !user.isVerified) {
+        throw new UnauthorizedException('User Is Not Registered!');
+      }
+
+      const isMatch = await bcrypt.compare(loginInput.password, user.password);
+      if (!isMatch) {
+        throw new UnauthorizedException('Invalid password');
+      }
+
+      console.log("isMatch***", isMatch)
+      const { access_token, refresh_token } = await this.signIn(loginInput.email);
+
+      console.log('tokens***', access_token)
+
+      const permission = user.type ? await this.permissionRepository.findOneBy(user.type) : null;
+
+      const options = {
+        httpOnly: true,
+        secure: true,
+      };
+
+      res.cookie('access_token', access_token, options);
+      res.cookie('refresh_token', refresh_token, options);
+
+      console.log("third")
+
+      if (!permission || permission.id === null) {
+        return {
+          token: access_token,
+          permissions: ['customer', 'admin', 'super_admin'],
+        };
+      }
+
+      console.log("fourth")
+
+      const result = await this.permissionRepository
+        .createQueryBuilder('permission')
+        .leftJoinAndSelect('permission.permissions', 'permissions')
+        .where(`permission.id = ${permission.id}`)
+        .select([
+          'permission.id',
+          'permission.type_name',
+          'permissions.id',
+          'permissions.type',
+          'permissions.read',
+          'permissions.write',
+        ])
+        .getMany();
+
+      console.log("five")
+
+      const formattedResult = result.map((permission) => ({
+        id: permission.id,
+        type_name: permission.type_name,
+        permission: permission.permissions.map((p) => ({
+          id: p.id,
+          type: p.type,
+          read: p.read,
+          write: p.write,
+        })),
+      }));
+
+      console.log("six")
+
+      return {
+        token: access_token,
+        type_name: [`${formattedResult[0].type_name}`],
+        permissions: formattedResult[0].permission,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new UnauthorizedException('An error occurred during login');
+    }
+  }
+
+  async logout(logoutDto: LoginDto): Promise<string> {
+    const user = await this.userRepository.findOne({ where: { email: logoutDto.email } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
 
-    access_token = await this.signIn(loginInput.email, loginInput.password);
-    console.log("access_token*************", access_token)
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${permission.id}`)
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
+    // Invalidate the user's refresh token
+    user.refresh_token = null;
+    await this.userRepository.save(user);
 
-    console.log("result---236**************", result)
-
-    const formattedResult = result.map((permission) => ({
-      id: permission.id,
-      type_name: permission.type_name,
-      permission: permission.permissions.map((p) => ({
-        id: p.id,
-        type: p.type,
-        read: p.read,
-        write: p.write,
-      })),
-    }));
-
-    console.log("formattedResult---249**************", formattedResult)
-
-    return {
-      token: access_token.access_token,
-      type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission,
-    };
+    return 'User logged out successfully';
   }
 
   async changePassword(
