@@ -53,6 +53,7 @@ import { error } from 'console';
 import { MailService } from 'src/mail/mail.service';
 import { Dealer } from 'src/users/entities/dealer.entity';
 import { UserAddress } from 'src/addresses/entities/address.entity';
+import * as fs from 'fs';
 
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
@@ -1014,8 +1015,8 @@ export class OrdersService {
     try {
       const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
       const invoiceData = await this.generateInvoiceData(Invoice); 
-      console.log("INVOICE $$$$$$$$", invoiceData);
-      
+      console.log("INVOICE $$$$$$$$", invoiceData); 
+      fs.writeFileSync('invoice.pdf', invoiceData);
     } catch (error) {
       console.error('Error generating invoice:', error);
       return null;
@@ -1066,9 +1067,10 @@ async generateInvoiceData(Invoice: any) {
 
           const pdfBuffer = await this.MailService.template(taxType);
           const pdf = await this.MailService.generatePdfFromHtml(pdfBuffer);
-          console.log("pdf+++++++++++++", pdf);
+          console.log("pdf+++++++++++++", pdfBuffer);
           return pdf; // Return the PDF buffer
       }
+      
   }
 }
 
