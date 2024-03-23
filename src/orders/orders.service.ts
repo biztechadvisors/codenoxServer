@@ -351,6 +351,7 @@ export class OrdersService {
         tracking_number, shop_id)
       const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
 
+      console.log('usr', usr)
       if (!usr) {
         throw new Error('User not found');
       }
@@ -360,7 +361,11 @@ export class OrdersService {
 
       let query = this.orderRepository.createQueryBuilder('order');
       query = query.leftJoinAndSelect('order.status', 'status');
-      query = query.leftJoinAndSelect('order.dealer', 'dealer');
+
+      if (usr.dealer) {
+        query = query.leftJoinAndSelect('order.dealer', 'dealer');
+        query = query.leftJoinAndSelect('dealer.dealer', 'dealer');
+      }
       query = query.leftJoinAndSelect('order.billing_address', 'billing_address');
       query = query.leftJoinAndSelect('order.shipping_address', 'shipping_address');
       query = query.leftJoinAndSelect('order.customer', 'customer');
@@ -565,14 +570,25 @@ export class OrdersService {
 
   async getOrderByIdOrTrackingNumber(id: number): Promise<any> {
     try {
+      console.log('id********', id)
+      const orderRes = await this.orderRepository.findOne({ where: { id: id } })
 
-      const order = await this.orderRepository.createQueryBuilder('order')
+      const query = this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
         .leftJoinAndSelect('order.dealer', 'dealer')
-        .leftJoinAndSelect('dealer.dealer', 'dealerData')
+
+      // Conditional left join for dealer.dealer
+      if (orderRes?.dealer) {
+        query.leftJoinAndSelect('dealer.dealer', 'dealer');
+      }
+
+      if (orderRes?.saleBy) {
+        query.leftJoinAndSelect('order.saleBy', 'saleBy')
+      }
+
+      const order = await query
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
-        .leftJoinAndSelect('order.saleBy', 'saleBy')
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('products.taxes', 'product_taxes')
         .leftJoinAndSelect('products.shop', 'product_shop')
@@ -588,7 +604,7 @@ export class OrdersService {
         .where('order.id = :id', { id })
         .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
         .getOne();
-      // console.log("PRODUCTS============",order.products);
+
       if (!order) {
         throw new NotFoundException('Order not found');
       }
@@ -606,7 +622,7 @@ export class OrdersService {
         language: order.language,
         coupon_id: order.coupon,
         parent_id: order.parentOrder,
-        saleBy: order.saleBy,
+        saleBy: order.saleBy ? order.saleBy : '',
         shop: order.shop_id,
         discount: order.discount,
         payment_gateway: order.payment_gateway,
@@ -631,7 +647,7 @@ export class OrdersService {
           is_active: order.customer.is_active,
           shop_id: null
         },
-        dealer: order.dealer ? order.dealer : null,
+        dealer: order.dealer?.dealer ? order.dealer?.dealer : '',
         products: await Promise.all(order.products.map(async (product) => {
           const pivot = product.pivot.find(p => p.Ord_Id === order.id);
           // console.log("PIvot()()()()()",pivot);
@@ -958,7 +974,7 @@ export class OrdersService {
 
     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
     console.log("Invoice****", Invoice);
-   
+
     const hashtabel: Record<string, any[]> = {};
 
     for (const product of Invoice.products) {
@@ -1009,119 +1025,119 @@ export class OrdersService {
       await this.MailService.sendInvoiceDealerToCustomer(Invoice);
     }
   }
-  
+
   async downloadInvoice(Order_id: string) {
     try {
       const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
-      const invoiceData = await this.generateInvoiceData(Invoice); 
+      const invoiceData = await this.generateInvoiceData(Invoice);
       console.log("INVOICE $$$$$$$$", invoiceData);
-      
+
     } catch (error) {
       console.error('Error generating invoice:', error);
       return null;
     }
-}
+  }
 
-async generateInvoiceData(Invoice: any) {
-  const hashtabel: Record<string, any[]> = {};
+  async generateInvoiceData(Invoice: any) {
+    const hashtabel: Record<string, any[]> = {};
 
-  for (const product of Invoice.products) {
+    for (const product of Invoice.products) {
       if (!hashtabel[product.shop_id]) {
-          hashtabel[product.shop_id] = [product];
+        hashtabel[product.shop_id] = [product];
       } else {
-          hashtabel[product.shop_id].push(product);
+        hashtabel[product.shop_id].push(product);
       }
-  }
+    }
 
-  for (const shopId in hashtabel) {
+    for (const shopId in hashtabel) {
       if (hashtabel.hasOwnProperty(shopId)) {
-          const shopProducts = hashtabel[shopId];
+        const shopProducts = hashtabel[shopId];
 
-          const taxType: any = {
-              billing_address: Invoice.billing_address,
-              shipping_address: Invoice.shipping_address,
-              total_tax_amount: Invoice.sales_tax,
-              customer: Invoice.customer,
-              dealer: Invoice.dealer,
-              saleBy: Invoice.saleBy,
-              payment_Mode: Invoice.payment_gateway,
-              created_at: Invoice.created_at,
-              order_no: Invoice.id,
-              invoice_date: Invoice.created_at,
-              shop_address: shopProducts[0].shop,
-              products: shopProducts,
-          };
-          console.log("working properly++++++++", taxType);
-          // Assuming all products in a shop have the same tax rates and state information
-          if (shopProducts[0].shop.address.state === Invoice.shipping_address.state) {
-              const stateCodeValue = stateCode[Invoice.shipping_address.state];
-              taxType.CGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
-              taxType.SGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
-              taxType.state_code = stateCodeValue;
-          } else {
-              const stateCodeValue = stateCode[Invoice.shipping_address.state];
-              taxType.IGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity;
-              taxType.state_code = stateCodeValue;
-          }
+        const taxType: any = {
+          billing_address: Invoice.billing_address,
+          shipping_address: Invoice.shipping_address,
+          total_tax_amount: Invoice.sales_tax,
+          customer: Invoice.customer,
+          dealer: Invoice.dealer,
+          saleBy: Invoice.saleBy,
+          payment_Mode: Invoice.payment_gateway,
+          created_at: Invoice.created_at,
+          order_no: Invoice.id,
+          invoice_date: Invoice.created_at,
+          shop_address: shopProducts[0].shop,
+          products: shopProducts,
+        };
+        console.log("working properly++++++++", taxType);
+        // Assuming all products in a shop have the same tax rates and state information
+        if (shopProducts[0].shop.address.state === Invoice.shipping_address.state) {
+          const stateCodeValue = stateCode[Invoice.shipping_address.state];
+          taxType.CGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+          taxType.SGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+          taxType.state_code = stateCodeValue;
+        } else {
+          const stateCodeValue = stateCode[Invoice.shipping_address.state];
+          taxType.IGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity;
+          taxType.state_code = stateCodeValue;
+        }
 
-          const pdfBuffer = await this.MailService.template(taxType);
-          // const pdf = await this.MailService.generatePdfFromHtml(pdfBuffer);
-          // console.log("pdf+++++++++++++", pdf);
-          return pdfBuffer; // Return the PDF buffer
+        const pdfBuffer = await this.MailService.template(taxType);
+        // const pdf = await this.MailService.generatePdfFromHtml(pdfBuffer);
+        // console.log("pdf+++++++++++++", pdf);
+        return pdfBuffer; // Return the PDF buffer
       }
+    }
   }
-}
 
 
-// async downloadInvoice(orderId) {
-//   const invoice = await this.getOrderByIdOrTrackingNumber(parseInt(orderId));
-//   const invoiceData = this.generateInvoiceData(invoice);
-//   const pdfBuffer = await this.MailService.template(invoiceData);
-//   return pdfBuffer;
-// }
+  // async downloadInvoice(orderId) {
+  //   const invoice = await this.getOrderByIdOrTrackingNumber(parseInt(orderId));
+  //   const invoiceData = this.generateInvoiceData(invoice);
+  //   const pdfBuffer = await this.MailService.template(invoiceData);
+  //   return pdfBuffer;
+  // }
 
-// generateInvoiceData(invoice) {
-//   const hashTable = {};
-//   for (const product of invoice.products) {
-//     if (!hashTable[product.shop_id]) {
-//       hashTable[product.shop_id] = [product];
-//     } else {
-//       hashTable[product.shop_id].push(product);
-//     }
-//   }
+  // generateInvoiceData(invoice) {
+  //   const hashTable = {};
+  //   for (const product of invoice.products) {
+  //     if (!hashTable[product.shop_id]) {
+  //       hashTable[product.shop_id] = [product];
+  //     } else {
+  //       hashTable[product.shop_id].push(product);
+  //     }
+  //   }
 
-//   const invoiceList = [];
-//   for (const shopId in hashTable) {
-//     if (hashTable.hasOwnProperty(shopId)) {
-//       const shopProducts = hashTable[shopId];
-//       const taxType = {
-//         billing_address: invoice.billing_address,
-//         shipping_address: invoice.shipping_address,
-//         total_tax_amount: invoice.sales_tax,
-//         customer: invoice.customer,
-//         dealer: invoice.dealer,
-//         saleBy: invoice.saleBy,
-//         payment_Mode: invoice.payment_gateway,
-//         created_at: invoice.created_at,
-//         order_no: invoice.id,
-//         invoice_date: invoice.created_at,
-//         shop_address: shopProducts[0].shop,
-//         products: shopProducts,
-//       };
+  //   const invoiceList = [];
+  //   for (const shopId in hashTable) {
+  //     if (hashTable.hasOwnProperty(shopId)) {
+  //       const shopProducts = hashTable[shopId];
+  //       const taxType = {
+  //         billing_address: invoice.billing_address,
+  //         shipping_address: invoice.shipping_address,
+  //         total_tax_amount: invoice.sales_tax,
+  //         customer: invoice.customer,
+  //         dealer: invoice.dealer,
+  //         saleBy: invoice.saleBy,
+  //         payment_Mode: invoice.payment_gateway,
+  //         created_at: invoice.created_at,
+  //         order_no: invoice.id,
+  //         invoice_date: invoice.created_at,
+  //         shop_address: shopProducts[0].shop,
+  //         products: shopProducts,
+  //       };
 
-//       // if (shopProducts[0].shop.address.state === invoice.shipping_address.state) {
-//       //   taxType.CGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
-//       //   taxType.SGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
-//       // } else {
-//       //   taxType.IGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity;
-//       // }
+  //       // if (shopProducts[0].shop.address.state === invoice.shipping_address.state) {
+  //       //   taxType.CGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+  //       //   taxType.SGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+  //       // } else {
+  //       //   taxType.IGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity;
+  //       // }
 
-//       invoiceList.push(taxType);
-//     }
-//   }
+  //       invoiceList.push(taxType);
+  //     }
+  //   }
 
-//   return invoiceList;
-// }
+  //   return invoiceList;
+  // }
 
 
   /**
