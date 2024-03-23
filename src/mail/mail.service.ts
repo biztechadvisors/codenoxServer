@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common'
 import { User } from '../users/entities/user.entity'
 import { error } from 'console'
 import * as puppeteer from 'puppeteer';
+import path from 'path';
 const { toWords } = require('number-to-words');
 const fs = require('fs');
 const Handlebars = require('handlebars');
@@ -13,10 +14,71 @@ export class MailService {
   constructor(private mailerService: MailerService) { }
 
   async renderTemplate(data) {
-    const templatePath = '/invoiceToCustomer.hbs';
-    const templateSource = fs.readFileSync(templatePath, 'utf8');
-    const template = Handlebars.compile(templateSource);
-    return template(data);
+    console.log('Data come or not  = ', data);
+    const templatePath = path.join(__dirname, 'templates', 'invoiceToCustomer.hbs'); // Construct absolute path
+    // console.log('Template path:', templatePath); // Log absolute path
+    try {
+        const templateContent = fs.readFileSync(templatePath, 'utf8');
+        const compiledTemplate = Handlebars.compile(templateContent);
+        const renderedTemplate = compiledTemplate(data);
+        console.log('Rendered template:', compiledTemplate);
+
+        const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
+
+        await this.mailerService.sendMail({
+            to: data.finalEmail,
+            from: '"Tilitso Purchase" <info@365dgrsol.in>',
+            subject: 'Your Tilitso Order Confirmation. Please share your feedback',
+            html: 'Please see the attached PDF for your order confirmation.',
+            template:'/invoiceToCustomer',
+            attachments: [
+                {
+                    filename: 'invoice.pdf',
+                    content: pdfBuffer,
+                    encoding: 'base64',
+                    contentType: 'application/pdf', // Set the content type of the attachment
+                },
+            ],
+        });
+        return templateContent;
+    } catch (err) {
+        console.error('Error reading file:', err);
+        return null;
+    }
+}
+
+async dealer_renderTemplate(data) {
+  console.log('DataCOMEORNOT  = ', data);
+  const templatePath = path.join(__dirname, 'templates', 'invoiceDealerToCustomer.hbs'); // Construct absolute path
+  // console.log('Template path:', templatePath); // Log absolute path
+  try {
+      const templateContent = fs.readFileSync(templatePath, 'utf8');
+      const compiledTemplate = Handlebars.compile(templateContent);
+      const renderedTemplate = compiledTemplate(data);
+      console.log('Rendered template:', compiledTemplate);
+
+      const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
+
+      await this.mailerService.sendMail({
+          to: data.customer.email,
+          from: '"Tilitso Purchase" <info@365dgrsol.in>',
+          subject: 'Your Tilitso Order Confirmation. Please share your feedback',
+          html: 'Please see the attached PDF for your order confirmation.',
+          template:'/invoiceDealerToCustomer',
+          attachments: [
+              {
+                  filename: 'invoice.pdf',
+                  content: pdfBuffer,
+                  encoding: 'base64',
+                  contentType: 'application/pdf', // Set the content type of the attachment
+              },
+          ],
+      });
+      return templateContent;
+  } catch (err) {
+      console.error('Error reading file:', err);
+      return null;
+  }
 }
 
   // OTP send for verify Registration Email
@@ -118,13 +180,19 @@ export class MailService {
 
   }
 
-  async  generatePdfFromHtml(htmlString) {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.setContent(htmlString);
-    const pdfBuffer = await page.pdf({ format: 'A4' });
-    await browser.close();
-    return pdfBuffer;
+  async generatePdfFromHtml(htmlString) {
+    try {
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        await page.setContent(htmlString);
+        const pdfBuffer = await page.pdf({ format: 'A4' });
+        await browser.close();
+
+        return pdfBuffer;
+    } catch (err) {
+        console.error('Error generating PDF:', err);
+        return null;
+    }
 }
 
   async sendInvoiceToCustomer(taxType: any) {
@@ -157,10 +225,11 @@ export class MailService {
       const totalSubtotal = products.reduce((accumulator, currentValue) => {
         return accumulator + currentValue.pivot.subtotal;
       }, 0);
-// Convert subtotal to words
-const totalSubtotalInWords = toWords(totalSubtotal);
+      
+      // Convert subtotal to words
+       const totalSubtotalInWords = toWords(totalSubtotal);
 
-      const updatedProducts = products.map(product => {
+        const updatedProducts = products.map(product => {
         const unit_price = Number(product.pivot?.unit_price || 0);
         const quantity = Number(product.pivot?.order_quantity || 0);
         const tax_rate = Number(product.taxes?.rate || 0) / 100;
@@ -195,30 +264,113 @@ const totalSubtotalInWords = toWords(totalSubtotal);
         order_no,
         invoice_date,
       };
+      
+      
+      const htmlContent = await this.renderTemplate(orderDetails);
+      // console.log("RADHIKA+++++++++++++++++++",htmlContent);
+
+      // Generate PDF from HTML content
+      // const pdfBuffer = await this.generatePdfFromHtml(htmlContent);
 
       // console.log("orderDetails***184", orderDetails);
 
-      await this.mailerService.sendMail({
-        to: orderDetails.finalEmail,
-        from: '"Tilitso Purchase" <info@365dgrsol.in>',
-        subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-        template: './invoiceToCustomer',
-        context: {
-          email: orderDetails.finalEmail,
-          invoice: orderDetails,
-        },
-      });
+      
     } catch (error) {
       console.error("Invoice sending failed to Customer", error);
     }
   }
 
-
-
   // send Email invoice Dealer to Customer
-  async sendInvoiceDealerToCustomer( taxType: any) {
+  // async sendInvoiceDealerToCustomer( taxType: any) {
+  //   try {
+  //     // Destructure taxType directly
+  //     const {
+  //       CGST,
+  //       IGST,
+  //       SGST,
+  //       net_amount,
+  //       total_amount,
+  //       shop,
+  //       sales_tax_total,
+  //       total_amount_in_words,
+  //       payment_Mode,
+  //       paymentInfo,
+  //       billing_address,
+  //       shipping_address,
+  //       total_tax_amount,
+  //       shop_address,
+  //       customer,
+  //       dealer,
+  //       saleBy,
+  //       products,
+  //       created_at,
+  //       order_no,
+  //       invoice_date,
+  //     } = taxType;
+
+  //     console.log('prodcuts-mail-135', total_tax_amount);
+
+  //     const totalSubtotal = products.reduce((accumulator, currentValue) => {
+  //       return accumulator + currentValue.pivot.subtotal;
+  //     }, 0);
+  //     // Convert subtotal to words
+  //     const totalSubtotalInWords = toWords(totalSubtotal);
+
+  //     const updatedProducts = products.map(product => {
+  //       const unit_price = Number(product.pivot?.unit_price || 0);
+  //       const quantity = Number(product.pivot?.order_quantity || 0);
+  //       const tax_rate = Number(product.taxes?.rate || 0) / 100;
+  //       const subtotal = unit_price * quantity;
+  //       const taxAmount = Math.round(subtotal * tax_rate);
+  //       const total = subtotal + taxAmount;
+  //       return { ...product, subtotal, taxAmount, total }; 
+  //     });
+
+  //     const orderDetails = {
+  //       IGST,
+  //       CGST,
+  //       SGST,
+  //       net_amount,
+  //       total_amount,
+  //       shop,
+  //       sales_tax_total,
+  //       total_amount_in_words,
+  //       payment_Mode,
+  //       paymentInfo,
+  //       billing_address,
+  //       shipping_address,
+  //       total_tax_amount,
+  //       shop_address,
+  //       customer,
+  //       dealer,
+  //       saleBy,
+  //       finalTotal:totalSubtotal,
+  //       amountinWord:totalSubtotalInWords,
+  //       products: updatedProducts, // Use the updated products
+  //       created_at,
+  //       order_no,
+  //       invoice_date,
+  //     };
+
+  //     console.log("orderDetails***184", orderDetails)
+
+  //     await this.mailerService.sendMail({
+  //       to: customer.email,
+  //       from: '"Tilitso Purchase" <info@365dgrsol.in>',
+  //       subject: 'Your Tilitso Order Confirmation. Please share your feedback',
+  //       template: './invoiceDealerToCustomer',
+  //       context: {
+  //         email: customer.email,
+  //         invoice: orderDetails,
+  //       },
+  //     });
+  //   } catch (error) {
+  //     console.error("Invoice sending failed to Customer", error);
+  //   }
+  // }
+
+  async sendInvoiceDealerToCustomer(taxType: any) {
     try {
-      // Destructure taxType directly
       const {
         CGST,
         IGST,
@@ -236,7 +388,6 @@ const totalSubtotalInWords = toWords(totalSubtotal);
         shop_address,
         customer,
         dealer,
-        saleBy,
         products,
         created_at,
         order_no,
@@ -248,19 +399,22 @@ const totalSubtotalInWords = toWords(totalSubtotal);
       const totalSubtotal = products.reduce((accumulator, currentValue) => {
         return accumulator + currentValue.pivot.subtotal;
       }, 0);
-// Convert subtotal to words
-const totalSubtotalInWords = toWords(totalSubtotal);
+      
+      // Convert subtotal to words
+       const totalSubtotalInWords = toWords(totalSubtotal);
 
-      const updatedProducts = products.map(product => {
+        const updatedProducts = products.map(product => {
         const unit_price = Number(product.pivot?.unit_price || 0);
         const quantity = Number(product.pivot?.order_quantity || 0);
         const tax_rate = Number(product.taxes?.rate || 0) / 100;
         const subtotal = unit_price * quantity;
         const taxAmount = Math.round(subtotal * tax_rate);
         const total = subtotal + taxAmount;
-        return { ...product, subtotal, taxAmount, total }; 
+        return { ...product, subtotal, taxAmount, total }; // Return the original product data with the new calculated values
       });
-
+       const finalEmail = taxType.dealer.email ? taxType.dealer.email : taxType.customer.email;
+       console.log("finalMAILLLLLLLLLLLll",finalEmail);
+       
       const orderDetails = {
         IGST,
         CGST,
@@ -278,7 +432,6 @@ const totalSubtotalInWords = toWords(totalSubtotal);
         shop_address,
         customer,
         dealer,
-        saleBy,
         finalTotal:totalSubtotal,
         amountinWord:totalSubtotalInWords,
         products: updatedProducts, // Use the updated products
@@ -286,19 +439,9 @@ const totalSubtotalInWords = toWords(totalSubtotal);
         order_no,
         invoice_date,
       };
-
-      console.log("orderDetails***184", orderDetails)
-
-      await this.mailerService.sendMail({
-        to: customer.email,
-        from: '"Tilitso Purchase" <info@365dgrsol.in>',
-        subject: 'Your Tilitso Order Confirmation. Please share your feedback',
-        template: './invoiceDealerToCustomer',
-        context: {
-          email: customer.email,
-          invoice: orderDetails,
-        },
-      });
+      
+      const htmlContented = await this.dealer_renderTemplate(orderDetails);
+      
     } catch (error) {
       console.error("Invoice sending failed to Customer", error);
     }
