@@ -1110,27 +1110,31 @@ export class OrdersService {
   //   for (const shopId in hashTable) {
   //     if (hashTable.hasOwnProperty(shopId)) {
   //       const shopProducts = hashTable[shopId];
-  //       const taxType = {
-  //         billing_address: invoice.billing_address,
-  //         shipping_address: invoice.shipping_address,
-  //         total_tax_amount: invoice.sales_tax,
-  //         customer: invoice.customer,
-  //         dealer: invoice.dealer,
-  //         saleBy: invoice.saleBy,
-  //         payment_Mode: invoice.payment_gateway,
-  //         created_at: invoice.created_at,
-  //         order_no: invoice.id,
-  //         invoice_date: invoice.created_at,
-  //         shop_address: shopProducts[0].shop,
-  //         products: shopProducts,
-  //       };
+  //       const taxType: any = {
+  //                 billing_address: invoice.billing_address,
+  //                 shipping_address: invoice.shipping_address,
+  //                 total_tax_amount: invoice.sales_tax,
+  //                 customer: invoice.customer,
+  //                 dealer: invoice.dealer,
+  //                 saleBy: invoice.saleBy,
+  //                 payment_Mode: invoice.payment_gateway,
+  //                 created_at: invoice.created_at,
+  //                 order_no: invoice.id,
+  //                 invoice_date: invoice.created_at,
+  //                 shop_address: shopProducts[0].shop,
+  //                 products: shopProducts,
+  //               };
 
-  //       // if (shopProducts[0].shop.address.state === invoice.shipping_address.state) {
-  //       //   taxType.CGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
-  //       //   taxType.SGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
-  //       // } else {
-  //       //   taxType.IGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity;
-  //       // }
+  //       if (shopProducts[0].shop.address.state === invoice.shipping_address.state) {
+  //                 const stateCodeValue = stateCode[invoice.shipping_address.state];
+  //                 taxType.CGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+  //                 taxType.SGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
+  //                 taxType.state_code = stateCodeValue;
+  //               } else {
+  //                 const stateCodeValue = stateCode[invoice.shipping_address.state];
+  //                 taxType.IGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity;
+  //                 taxType.state_code = stateCodeValue;
+  //               }
 
   //       invoiceList.push(taxType);
   //     }
