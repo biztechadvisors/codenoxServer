@@ -78,7 +78,7 @@
                 <!-- Insert dynamic item rows here -->
                 <tr style="border: 2px solid black">
                     <td style="border: 2px solid black;">{{this.id}}</td>
-                    {{!-- <td style="border: 2px solid black;">{{this.name}} </td> --}}
+                    <td style="border: 2px solid black;">{{this.name}} </td>
                     <td style="border: 2px solid black;">{{this.pivot.unit_price}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.order_quantity}}</td>
                     <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
@@ -90,12 +90,12 @@
                 {{/each}}
                 <tr style="border:2px solid black">
                     <td colspan="7" style="border: 2px solid black; text-align: left;"><b>TOTAL:</b></td>
-                    <td style="border: 2px solid black;">{{total_tax_amount}}</td>
+                    <td style="border: 2px solid black;">{{sales_tax}}</td>
                     <td style="border: 2px solid black;">{{finalTotal}}</td>
                 </tr>
                 <tr>
                     <td colspan="9" style="border: 2px solid black; text-align: left;"><b>Amount in Words:</b>
-                        {{amountinWord}}</td>
+                        <span>{{amountinWord}}</span></td>
                 </tr>
                 <tr>
                     {{!-- <td colspan="9" style="text-align: right;"><b>{{invoice.dealer.name}}</b><br></td> --}}

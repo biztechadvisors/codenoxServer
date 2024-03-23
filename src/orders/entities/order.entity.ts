@@ -61,6 +61,7 @@ export class Order extends CoreEntity {
 
   @ManyToOne(() => User, user => user.orders, {
     eager: true,
+    cascade: true,
   })
   customer: User;
 
