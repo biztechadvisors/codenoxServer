@@ -28,3 +28,4 @@ export class SilentLogger extends Logger {
         // Suppress general logs
     }
 }
+

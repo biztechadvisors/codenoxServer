@@ -1,8 +1,9 @@
 /* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { Dealer } from 'src/users/entities/dealer.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, JoinTable, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class LatestMessage extends CoreEntity {
@@ -23,13 +24,17 @@ export class Conversation extends CoreEntity {
   @Column()
   shop_id: number;
   @Column()
+  dealer_id: number;
+  @Column()
   unseen: boolean;
   @Column()
-  user_id: string;
+  user_id: number;
   @ManyToOne(() => User)
   user: User;
   @ManyToOne(() => Shop)
   shop: Shop;
+  @ManyToOne(() => Dealer)
+  dealer: Dealer;
   @ManyToOne(() => LatestMessage)
   latest_message: LatestMessage;
 }

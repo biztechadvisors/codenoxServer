@@ -1,7 +1,5 @@
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
-import MessagesJson from '@db/messages.json';
 import { Message } from './entities/message.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { GetConversationsDto } from 'src/conversations/dto/get-conversations.dto';
@@ -10,11 +8,11 @@ import { Repository } from 'typeorm';
 import { Conversation, LatestMessage } from 'src/conversations/entities/conversation.entity';
 import { paginate } from 'src/common/pagination/paginate';
 
-const messages = plainToClass(Message, MessagesJson);
+// const messages = plainToClass(Message, MessagesJson);
 
 @Injectable()
 export class MessagesService {
-  private message: Message[] = messages;
+  // private message: Message[] = messages;
   constructor(
     @InjectRepository(Message)
     private readonly messageRepository: Repository<Message>,
@@ -27,13 +25,22 @@ export class MessagesService {
 
 
   async createMessage(createMessageDto: CreateMessageDto) {
+    console.log("createMessage", createMessageDto)
     const message = new Message();
 
     const conversationCheck = await this.conversationRepository.findOne({
-      where: { shop_id: createMessageDto.conversation.shop_id, user_id: createMessageDto.conversation.user_id },
-      relations: ['latest_message', 'shop_id']
+      where: { 
+        shop_id: createMessageDto.conversation.shop_id, 
+        user_id: createMessageDto.conversation.user_id,
+        dealer_id: createMessageDto.conversation.dealer_id 
+      },
+      relations: [
+        'latest_message', 
+        'shop_id', 
+        'dealer_id'
+      ]
     });
-console.log("conversation", conversationCheck)
+     console.log("conversation", conversationCheck)
     if (conversationCheck) {
       const latestMessage = await this.latestMessageRepository.findOne({
         where: { conversation_id: conversationCheck.id, user_id: createMessageDto.conversation.latest_message.user_id }
@@ -58,6 +65,8 @@ console.log("conversation", conversationCheck)
       conversation.shop = createMessageDto.conversation.shop;
       conversation.user = createMessageDto.conversation.user;
       conversation.user_id = createMessageDto.conversation.user_id;
+      conversation.dealer_id = createMessageDto.conversation.dealer_id;
+      conversation.dealer = createMessageDto.conversation.dealer;
 
       const savedConversation = await this.conversationRepository.save(conversation);
 
@@ -79,12 +88,17 @@ console.log("conversation", conversationCheck)
     }
   }
 
-  async getMessages({ search, limit, page, shop }: GetConversationsDto) {
-    let shopSearch
+  async getMessages({ search, limit, page, conversation }: GetConversationsDto) {
+    // let shopSearch
+    // conversation = 25
     let message = await this.messageRepository.find({ 
+      where: {
+        conversation_id: conversation
+      },
       relations: [
         'conversation',
         'conversation.latest_message',
+        'conversation.dealer',
         'conversation.user',
         'conversation.shop',
         'conversation.shop.balance',
@@ -92,18 +106,21 @@ console.log("conversation", conversationCheck)
         'conversation.shop.logo',
         'conversation.shop.address'
               ] });
-              console.log("message", message)
+              console.log("message_________", message)
+
     if (search) {
       message = message.filter((msg) => msg.conversation);
     }
-    if(shop){
-     shopSearch = await this.conversationRepository.findOne({
-      where: {
-       shop_id: shop.id
-      }
-     })
-     return shopSearch
-    }
+
+    // if(shop){
+    //  shopSearch = await this.conversationRepository.findOne({
+    //   where: {
+    //    shop_id: shop.id
+    //   }
+    //  })
+    //  return shopSearch
+    // }
+    
     const url = `/message?limit=${limit}`;
     const paginatedData = paginate(message.length, page, limit, message.length, url);
     return {

@@ -4,6 +4,7 @@ import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
 import { Paginator } from 'src/common/dto/paginator.dto';
 import { Conversation } from '../entities/conversation.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { Dealer } from 'src/users/entities/dealer.entity';
 
 export class ConversationPaginator extends Paginator<Conversation> {
   data: Conversation[];
@@ -15,4 +16,6 @@ export class GetConversationsDto extends PaginationArgs {
   search?: string;
   language?: string;
   shop?: Shop;
+  dealer?: Dealer;
+  conversation?: number;
 }

@@ -21,7 +21,7 @@ const fuse = new Fuse(conversations, options);
 
 @Injectable()
 export class ConversationsService {
-  private conversations: Conversation[] = conversations;
+  // private conversations: Conversation[] = conversations;
   constructor(
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
@@ -33,10 +33,17 @@ export class ConversationsService {
   ) { }
 
   async create(createConversationDto: CreateConversationDto) {
+    console.log("createdtr+++++++++++", createConversationDto)
     const message = new Message()
     const conversationCheck = await this.conversationRepository.findOne({
-      where: { shop_id: createConversationDto.shop_id, user_id: createConversationDto.user_id }
+      where: { 
+        shop_id: createConversationDto.shop_id, 
+        user_id: createConversationDto.user_id,
+        dealer_id: createConversationDto.dealer_id
+      }
     });
+
+      console.log("conversation check", conversationCheck)
 
     if (conversationCheck) {
       const latestMessage = await this.latestMessageRepository.findOne({
@@ -80,6 +87,8 @@ export class ConversationsService {
       conversation.shop = createConversationDto.shop
       conversation.user = createConversationDto.user
       conversation.user_id = createConversationDto.user_id
+      conversation.dealer = createConversationDto.dealer
+      conversation.dealer_id = createConversationDto.dealer_id
 
       await this.conversationRepository.save(savedConversation);
 
@@ -97,8 +106,21 @@ export class ConversationsService {
     if (!page) page = 1;
 
 
-    let conversations = await this.conversationRepository.find({ relations: ['latest_message', 'user', 'shop', 'shop.balance', 'shop.cover_image', 'shop.logo', 'shop.address'] });
-
+    let conversations = await this.conversationRepository.find({ 
+      relations: 
+      [
+        'latest_message', 
+        'user', 
+        'dealer', 
+        'shop', 
+        'shop.balance', 
+        'shop.cover_image', 
+        'shop.logo', 
+        'shop.address'
+      ] 
+    });
+    
+    console.log("conversations", conversations)
 
     if (search) {
       const parseSearchParams = search.split(';');
@@ -117,12 +139,12 @@ export class ConversationsService {
 
 
       conversations = conversations.filter((con) =>
-        searchText.every((searchItem) =>
+        searchText.every((searchItem:any) =>
           Object.entries(searchItem).every(([key, value]) => con[key] === value)
         )
       );
     }
-
+   console.log("final", conversations)
 
     const url = `/conversations?limit=${limit}`;
     const paginatedData = paginate(conversations.length, page, limit, conversations.length, url);
@@ -134,7 +156,23 @@ export class ConversationsService {
     };
   }
 
-  getConversation(param: number) {
-    return this.conversationRepository.find({ where: { shop_id: param }, relations: ['latest_message', 'user', 'shop', 'shop.balance', 'shop.cover_image', 'shop.logo', 'shop.address'] });
+ async getConversation(param: number) {
+    const findUser = await this.conversationRepository.findOne(
+      {
+         where: { id: param }, 
+         relations: 
+         [
+           'latest_message',
+           'user',
+           'shop',
+           'dealer',  
+          //  'shop.balance',
+          //  'shop.cover_image',
+           'shop.logo',
+          //  'shop.address'
+              ] 
+            });
+            console.log("user++++++++++++", findUser)
+          return findUser
   }
 }
