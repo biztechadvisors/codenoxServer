@@ -1081,9 +1081,9 @@ export class OrdersService {
         }
 
         const pdfBuffer = await this.MailService.template(taxType);
-        // const pdf = await this.MailService.generatePdfFromHtml(pdfBuffer);
-        // console.log("pdf+++++++++++++", pdf);
-        return pdfBuffer; // Return the PDF buffer
+        const pdf = await this.MailService.generatePdfFromHtml(pdfBuffer);
+        console.log("pdf+++++++++++++", pdf);
+        return pdf; // Return the PDF buffer
       }
     }
   }
