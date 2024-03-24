@@ -12,6 +12,8 @@ export class UploadsService {
   ) { }
 
   async uploadFile(attachments: Array<Express.Multer.File>): Promise<AttachmentDTO[]> {
+
+    console.log('attachments****upload', attachments)
     const attachmentData = [];
     for (const attachment of attachments) {
       const attachmentDTO = new AttachmentDTO();

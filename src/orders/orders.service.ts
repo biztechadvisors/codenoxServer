@@ -336,6 +336,22 @@ export class OrdersService {
     }
   }
 
+  async getUserWithRetry(customer_id: number, maxRetries: number = 3): Promise<User> {
+    let retries = 0;
+    while (retries < maxRetries) {
+      try {
+        const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
+        if (usr) {
+          return usr;
+        }
+      } catch (error) {
+        console.error(`Error fetching user (retry ${retries + 1}):`, error);
+      }
+      retries++;
+    }
+    throw new Error('User not found after multiple retries');
+  }
+
   async getOrders({
     limit,
     page,
@@ -348,7 +364,8 @@ export class OrdersService {
 
       console.log("customer_id****", customer_id,
         tracking_number, shop_id)
-      const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
+
+      const usr = await this.getUserWithRetry(customer_id);
 
       if (!usr) {
         throw new Error('User not found');

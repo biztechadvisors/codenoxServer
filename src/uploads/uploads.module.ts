@@ -14,13 +14,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     MulterExtendedModule.registerAsync({
       useFactory: async (configService: ConfigService) => ({
         awsConfig: {
-          accessKeyId: configService.get('AWS_ACCESS_KEY'),
-          secretAccessKey: configService.get('AWS_SECRET_KEY'),
-          region: configService.get('AWS_REGION'),
+          // accessKeyId: configService.get('AWS_ACCESS_KEY'),
+          // secretAccessKey: configService.get('AWS_SECRET_KEY'),
+          // region: configService.get('AWS_REGION'),
+          accessKeyId: process.env.AWS_ACCESS_KEY,
+          secretAccessKey: process.env.AWS_SECRET_KEY,
+          region: process.env.AWS_REGION,
         },
-        bucket: configService.get('AWS_BUCKET'), // Ensure this is correctly specified
+        bucket: process.env.AWS_BUCKET, // Ensure this is correctly specified
         basePath: 'uploads',
-        fileSize: 1 * 1024 * 1024, // Maximum file size (1 MB in this example)
+        fileSize: 2 * 1024 * 1024, // Maximum file size (1 MB in this example)
       }),
       inject: [ConfigService],
     }),
