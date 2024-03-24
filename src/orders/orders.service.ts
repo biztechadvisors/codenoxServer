@@ -1016,7 +1016,12 @@ export class OrdersService {
       const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
       const invoiceData = await this.generateInvoiceData(Invoice); 
       console.log("INVOICE $$$$$$$$", invoiceData); 
-      fs.writeFileSync('invoice.pdf', invoiceData);
+      if (invoiceData) {
+        fs.writeFileSync('invoice.pdf', invoiceData);
+        console.log("Invoice downloaded successfully!");
+    } else {
+        console.error("Failed to generate invoice data.");
+    }
     } catch (error) {
       console.error('Error generating invoice:', error);
       return null;
@@ -1025,7 +1030,8 @@ export class OrdersService {
 
 async generateInvoiceData(Invoice: any) {
   const hashtabel: Record<string, any[]> = {};
-
+  const pdfBuffers: Buffer[] = [];
+  
   for (const product of Invoice.products) {
       if (!hashtabel[product.shop_id]) {
           hashtabel[product.shop_id] = [product];
@@ -1067,7 +1073,7 @@ async generateInvoiceData(Invoice: any) {
 
           const pdfBuffer = await this.MailService.template(taxType);
           const pdf = await this.MailService.generatePdfFromHtml(pdfBuffer);
-          console.log("pdf+++++++++++++", pdfBuffer);
+          console.log("pdf+++++++++++++", pdf);
           return pdf; // Return the PDF buffer
       }
       
@@ -1075,14 +1081,13 @@ async generateInvoiceData(Invoice: any) {
 }
 
 
-// async downloadInvoice(orderId) {
+// async downloadInvoice(orderId: string) {
 //   const invoice = await this.getOrderByIdOrTrackingNumber(parseInt(orderId));
 //   const invoiceData = this.generateInvoiceData(invoice);
-//   const pdfBuffer = await this.MailService.template(invoiceData);
-//   return pdfBuffer;
+ 
 // }
 
-// generateInvoiceData(invoice) {
+//   async generateInvoiceData(invoice:any) {
 //   const hashTable = {};
 //   for (const product of invoice.products) {
 //     if (!hashTable[product.shop_id]) {
@@ -1119,6 +1124,8 @@ async generateInvoiceData(Invoice: any) {
 //       // }
 
 //       invoiceList.push(taxType);
+//       const pdfBuffer = await this.MailService.template(invoiceList);
+//       return pdfBuffer;
 //     }
 //   }
 
