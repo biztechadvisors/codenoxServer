@@ -79,6 +79,6 @@ export class User extends CoreEntity {
   @Column('datetime', { nullable: true })
   email_verified_at: Date;
 
-  @Column()
+  @Column({ nullable: true })
   refresh_token: string;
 }

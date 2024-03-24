@@ -144,29 +144,38 @@ export class AuthService {
   }
 
   async signIn(email: string) {
-    const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
+    try {
+      console.log('email---signIn******', email)
+      const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+      console.log('user*****', user)
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const payload = { sub: user.id, username: user.email };
+
+      const access_token = await this.jwtService.signAsync(payload, {
+        secret: jwtConstants.access_secret,
+        expiresIn: '60m'
+      });
+
+      const refresh_token = await this.jwtService.signAsync(payload, {
+        secret: jwtConstants.refresh_secret,
+        expiresIn: '1d'
+      });
+
+      if (user?.refresh_token) {
+        user.refresh_token = refresh_token
+        this.userRepository.save(user)
+      }
+
+
+      return { access_token, refresh_token };
+    } catch (error) {
+      throw error(`signIn error ${error}`)
     }
-
-    const payload = { sub: user.id, username: user.email };
-
-    const access_token = await this.jwtService.signAsync(payload, {
-      secret: jwtConstants.access_secret,
-      expiresIn: '60m'
-    });
-
-    const refresh_token = await this.jwtService.signAsync(payload, {
-      secret: jwtConstants.refresh_secret,
-      expiresIn: '1d'
-    });
-
-    user.refresh_token = refresh_token
-
-    this.userRepository.save(user)
-
-    return { access_token, refresh_token };
   }
 
   async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
