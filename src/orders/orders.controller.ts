@@ -12,6 +12,7 @@ import {
   Post,
   Put,
   Query,
+  Res,
 } from '@nestjs/common';
 import { CreateOrderStatusDto } from './dto/create-order-status.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -172,9 +173,9 @@ export class DownloadInvoiceeController {
   constructor(private ordersService: OrdersService) { }
 
   @Post()
-  async downloadInvoice(@Body() input: { order_id: string }) {
-    const Invoice = this.ordersService.downloadInvoice(input.order_id);
-    return Invoice
+  async downloadInvoice(@Body() input: { order_id: string }, @Res() res) {
+    const downloadLink = await this.ordersService.downloadInvoice(input.order_id, res);
+    return { downloadLink };
   }
 }
 

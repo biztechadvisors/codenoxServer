@@ -11,7 +11,6 @@ import Handlebars from 'handlebars';
 
 
 
-
 @Injectable()
 export class MailService {
   constructor(private mailerService: MailerService) { }
@@ -279,7 +278,7 @@ async template(data:any) {
 
   }
 
-  async generatePdfFromHtml(htmlString) {
+  async generatePdfFromHtml(htmlString:any) {
     try {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();

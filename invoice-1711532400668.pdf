@@ -1,0 +1,141 @@
+<html lang="en">
+
+<head>
+    <title>Invoice</title>
+</head>
+
+<body style="background:rgb(254, 252, 252);">
+    <div class="invoice"
+        style=" font-family: Arial, sans-serif; max-width: full ;margin: 20px auto;padding: 20px;border: 1px solid #ddd;box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);display: flex;flex-direction: column;align-items: center;  ">
+        <div class="invoice-header"
+            style="  display:flex; justify-content: space-between;align-items: center;width: 100%;;">
+            <img src='https://th.bing.com/th?id=OIP.ta3k2VChGjj3vVIMNYeV0wHaEK&w=333&h=187&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2'
+                alt='Amazon Logo' style="height: 90px; width: 100px;text-aling:left;">
+            <h3 style="margin-top:20px;color:rgb(0, 0, 0);display:block;text-aling:right;">Tax Invoice/Bill of
+                Supply/Cash Memo
+            </h3>
+        </div>
+        <div class="invoice-body" style="display:flex;justify-content:space-between;width:100%;">
+            <div style="flex: 0 0 47%;text-align:left;">
+                <h4 style="text-align:left;">Sold By:</h4>
+                <p style="text-align: left;">Tilitso</p>
+                <p style="text-align:left;">Pink city</p>
+                <p style="text-align:left;">
+                    Indore MADHYA PRADESH IN
+                </p>
+                <br>
+                <p style="text-align:left;"><b>PAN No:</b>Hard_Code AC02BFRT56</p>
+                <p style="text-align:left;"><b>GST Registration No:</b></p>
+                <div class="order-details" style="margin-top: 20px;text-align:left;">
+                    <p style="text-align:left;margin-top:20px"><b>Order Number:</b> 1</p>
+                    <p style="text-align:left;"><b>Order Date:</b>Thu, 03/21/2024</p>
+
+                </div>
+            </div>
+            <div style="flex: 0 0 50%;text-align:right;text-align:right;">
+                <div class="buyer" style="margin-top: 20px;text-align:right;">
+                    <h4 style="margin-top: 20px;text-align:right;">Billing Address:</h4>
+                    <p style="margin-top: 20px;text-align:right;">291</p>
+                    <p style="margin-top: 20px;text-align:right;">
+                        yummy sandwitch 
+                        Indore</p>
+                    <p style="margin-top: 20px;text-align:right;">
+                        Madhya Pradesh India
+                        452010
+                    </p>
+
+                </div>
+                <div class="buyer" style="margin-top: 20px;text-align:right;">
+                    <h4 style="margin-top: 20px;text-align:right;">Shipping Address:</h4>
+                    <p style="margin-top: 20px;text-align:right;">292</p>
+                    <p style="margin-top: 20px;text-align:right;">yummy sandwitch
+                        Indore</p>
+                    <p style="margin-top: 20px;text-align:right;">Madhya Pradesh
+                        India 452010</p>
+
+                </div>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Number:</b>Thu, 03/21/2024</p>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Details:</b> (HARD CODE)MP-FIDA-1034-2324</p>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Date:</b>Thu, 03/21/2024</p>
+            </div>
+        </div>
+        <table
+            style="width: 100%; border-collapse: collapse;margin-bottom: 20px; margin-top: 20px; border: 2px solid black;">
+            <thead style="border:2px solid black">
+                <tr style="border:2px solid black">
+                    <th style="border: 2px solid black;">SL No.</th>
+                    <th style="border: 2px solid black;">Description</th>
+                    <th style="border: 2px solid black;">Unit Price</th>
+                    <th style="border: 2px solid black;">Quantity</th>
+                    <th style="border: 2px solid black;">Net Amount</th>
+                    <th style="border: 2px solid black;">Tax Rate</th>
+                    <th style="border: 2px solid black;">Tax Type</th>
+                    <th style="border: 2px solid black;">Tax Amount</th>
+                    <th style="border: 2px solid black;">Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Insert dynamic item rows here -->
+                <tr style="border: 2px solid black">
+                    <td style="border: 2px solid black;">113</td>
+                    <td style="border: 2px solid black;">Cloud Pillow (Gel Memory) </td>
+                    <td style="border: 2px solid black;">99</td>
+                    <td style="border: 2px solid black;">1</td>
+                    <td style="border: 2px solid black;">99</td>
+                    <td style="border: 2px solid black;">5.00%</td>
+                    <td style="border: 2px solid black;">CGST 2.50%<br /> SGST 2.50 %</td>
+                    <td style="border: 2px solid black;"></td>
+                    <td style="border: 2px solid black;">99</td>
+                </tr>
+                <tr style="border:2px solid black">
+                    <td colspan="7" style="border: 2px solid black; text-align: left;"><b>TOTAL:</b></td>
+                    <td style="border: 2px solid black;">4</td>
+                    <td style="border: 2px solid black;"></td>
+                </tr>
+                <tr>
+                    <td colspan="9" style="border: 2px solid black; text-align: left;"><b>Amount in Words:</b>
+                        </td>
+                </tr>
+                <tr>
+                    <td colspan="9" style="text-align: right;"><b>Tilitso</b><br></td>
+                </tr>
+                <tr>
+                    <td colspan="9" style="text-align: right;"><b>Authorized Signatory</b></td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- Payment Details Table -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; border: 2px solid black;">
+            <tbody>
+                <tr style="border:2px solid black">
+                    <td style="border:2px solid black">Payment Transaction ID: <br>
+                        <p style="font-size: 12px;">paymentInfo.payment_id</p>
+                    </td>
+                    <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">Thu, 03/21/2024
+                        </p>
+                    </td>
+                    <td rowSpan="2" style="border:2px solid black">Invoice Value:<p style="font-size: 12px;">
+                            </p>
+                    </td>
+                    <td style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">Gift_Card
+                            RAZORPAY</p>
+                    </td>
+                </tr>
+                <tr style="border:2px solid black">
+                    <td style="border:2px solid black">Payment Transaction ID: <br>
+                        <p style="font-size: 12px;">paymentInfo.payment_id</p>
+                    </td>
+                    <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">Thu, 03/21/2024
+                        </p>
+                    </td>
+                    <td colspan="2" style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">
+                            RAZORPAY</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</body>
+
+</html>

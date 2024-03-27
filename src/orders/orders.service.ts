@@ -53,6 +53,12 @@ import { error } from 'console';
 import { MailService } from 'src/mail/mail.service';
 import { Dealer } from 'src/users/entities/dealer.entity';
 import { UserAddress } from 'src/addresses/entities/address.entity';
+import * as fs from 'fs';
+import express from 'express';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import path from 'path';
+import puppeteer from 'puppeteer';
 
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
@@ -1026,17 +1032,71 @@ export class OrdersService {
     }
   }
 
-  async downloadInvoice(Order_id: string) {
+  async downloadInvoice(order_id: string, res) {
     try {
-      const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
-      const invoiceData = await this.generateInvoiceData(Invoice);
-      console.log("INVOICE $$$$$$$$", invoiceData);
+      const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(order_id));
 
+      if (Invoice) {
+        const invoiceData = await this.generateInvoiceData(Invoice);
+
+        if (invoiceData) {
+          // Launch Puppeteer
+          const browser = await puppeteer.launch();
+          const page = await browser.newPage();
+
+          // Set content to render
+          await page.setContent(invoiceData);
+
+          // Generate PDF
+          const pdfBuffer = await page.pdf({ format: 'A4' });
+
+          // Close Puppeteer browser
+          await browser.close();
+
+          // Set response headers
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Disposition', 'attachment; filename="invoice.pdf"');
+
+          // Send the PDF buffer as response
+          res.status(200).send(pdfBuffer);
+        } else {
+          console.error("Failed to generate invoice data.");
+          res.status(500).send('Error generating invoice data');
+        }
+      } else {
+        console.error("Failed to retrieve invoice.");
+        res.status(500).send('Error retrieving invoice');
+      }
     } catch (error) {
-      console.error('Error generating invoice:', error);
-      return null;
+      console.error('Error downloading invoice:', error);
+      res.status(500).send('Error downloading invoice');
     }
   }
+
+  // async downloadInvoice(Order_id: string) {
+  //   try {
+  //     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
+  //     const invoiceData:any = await this.generateInvoiceData(Invoice); 
+
+  //     const options:any= {
+  //       orientation: 'portrait',
+  //       unit: 'mm', 
+  //       format: 'a4'
+  //     };
+  //     const pdfDoc = new jsPDF(options);
+  //     const canvas = await html2canvas(invoiceData, { scale: 2 });
+  //     const imgData = canvas.toDataURL('image/png');
+  //     pdfDoc.addImage(imgData, 'PNG', 10, 10, 190, 0);
+
+  //     // Send PDF as response
+  //     // res.setHeader('Content-Type', 'application/pdf');
+  //     // res.setHeader('Content-Disposition', 'attachment; filename=invoice.pdf');
+  //     pdfDoc.save();
+  //   } catch (error) {
+  //     console.error('Error generating invoice:', error);
+  //     // res.status(500).send('Error generating invoice');
+  //   }
+  // }
 
   async generateInvoiceData(Invoice: any) {
     const hashtabel: Record<string, any[]> = {};
@@ -1081,67 +1141,12 @@ export class OrdersService {
         }
 
         const pdfBuffer = await this.MailService.template(taxType);
-        const pdf = await this.MailService.generatePdfFromHtml(pdfBuffer);
-        console.log("pdf+++++++++++++", pdf);
-        return pdf; // Return the PDF buffer
+        // const pdf = await this.MailService.generatePdfFromHtml(pdfBuffer);
+        console.log("pdf+++++++++++++", pdfBuffer);
+        return pdfBuffer; // Return the PDF buffer
       }
     }
   }
-
-
-  // async downloadInvoice(orderId) {
-  //   const invoice = await this.getOrderByIdOrTrackingNumber(parseInt(orderId));
-  //   const invoiceData = this.generateInvoiceData(invoice);
-  //   const pdfBuffer = await this.MailService.template(invoiceData);
-  //   return pdfBuffer;
-  // }
-
-  // generateInvoiceData(invoice) {
-  //   const hashTable = {};
-  //   for (const product of invoice.products) {
-  //     if (!hashTable[product.shop_id]) {
-  //       hashTable[product.shop_id] = [product];
-  //     } else {
-  //       hashTable[product.shop_id].push(product);
-  //     }
-  //   }
-
-  //   const invoiceList = [];
-  //   for (const shopId in hashTable) {
-  //     if (hashTable.hasOwnProperty(shopId)) {
-  //       const shopProducts = hashTable[shopId];
-  //       const taxType: any = {
-  //                 billing_address: invoice.billing_address,
-  //                 shipping_address: invoice.shipping_address,
-  //                 total_tax_amount: invoice.sales_tax,
-  //                 customer: invoice.customer,
-  //                 dealer: invoice.dealer,
-  //                 saleBy: invoice.saleBy,
-  //                 payment_Mode: invoice.payment_gateway,
-  //                 created_at: invoice.created_at,
-  //                 order_no: invoice.id,
-  //                 invoice_date: invoice.created_at,
-  //                 shop_address: shopProducts[0].shop,
-  //                 products: shopProducts,
-  //               };
-
-  //       if (shopProducts[0].shop.address.state === invoice.shipping_address.state) {
-  //                 const stateCodeValue = stateCode[invoice.shipping_address.state];
-  //                 taxType.CGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
-  //                 taxType.SGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity / 2;
-  //                 taxType.state_code = stateCodeValue;
-  //               } else {
-  //                 const stateCodeValue = stateCode[invoice.shipping_address.state];
-  //                 taxType.IGST = shopProducts[0].taxes.rate * shopProducts[0].pivot.order_quantity;
-  //                 taxType.state_code = stateCodeValue;
-  //               }
-
-  //       invoiceList.push(taxType);
-  //     }
-  //   }
-
-  //   return invoiceList;
-  // }
 
 
   /**
@@ -1267,7 +1272,4 @@ export class OrdersService {
     order.payment_status = paymentStatus;
     await this.orderRepository.save(order);
   }
-
-
 }
-
