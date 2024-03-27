@@ -27,7 +27,7 @@ export class MessagesService {
   async createMessage(createMessageDto: CreateMessageDto) {
     console.log("createMessage", createMessageDto)
     const message = new Message();
-console.log("create Message", createMessageDto);
+
     const conversationCheck = await this.conversationRepository.findOne({
       where: { 
         shop_id: createMessageDto.conversation.shop_id, 
@@ -70,15 +70,15 @@ console.log("create Message", createMessageDto);
 
       const savedConversation = await this.conversationRepository.save(conversation);
 
-      const latestMessage = new LatestMessage();
-      latestMessage.body = createMessageDto.conversation.latest_message.body;
-      latestMessage.conversation_id = savedConversation.id;
-      latestMessage.user_id = createMessageDto.conversation.latest_message.user_id;
+      // const latestMessage = new LatestMessage();
+      // latestMessage.body = createMessageDto.conversation.latest_message.body;
+      // latestMessage.conversation_id = savedConversation.id;
+      // latestMessage.user_id = createMessageDto.conversation.latest_message.user_id;
 
-      const savedLatestMessage = await this.latestMessageRepository.save(latestMessage);
+      // const savedLatestMessage = await this.latestMessageRepository.save(latestMessage);
 
-      savedConversation.latest_message = savedLatestMessage;
-      await this.conversationRepository.save(savedConversation);
+      // savedConversation.latest_message = savedLatestMessage;
+      // await this.conversationRepository.save(savedConversation);
 
       message.conversation = savedConversation;
       message.conversation_id = conversationCheck.id;
