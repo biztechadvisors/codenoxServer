@@ -71,7 +71,6 @@ export class AnalyticsService {
       });
 
       const userIds = [userId, ...usrByIdUsers.map(u => u.id)];
-      console.log("userIds******", userIds);
 
       let queryBuilder = this.orderRepository.createQueryBuilder('order');
 
@@ -93,8 +92,6 @@ export class AnalyticsService {
       return 0;
     }
   }
-
-
 
   private async calculateTotalRefunds(permissionName: string, state: string): Promise<number> {
     try {
@@ -325,8 +322,6 @@ export class AnalyticsService {
             .andWhere('customer.UsrBy.id IN (:...userIds)', { userIds })
             .getRawMany();
 
-          console.log("result*************", result)
-
           return result.flatMap((m) => ({ userId: m.customer_id, UsrBy: m.customer_usrById, name: m.customer_name, email: m.customer_email, phone: m.customer_contact }));
         }
       }
@@ -375,7 +370,6 @@ export class AnalyticsService {
         .limit(5)
         .getRawMany();
 
-      console.log("topDealers***********", topDealers)
       return topDealers.map((m) => ({ userId: m.users_id, UsrBy: m.users_usrById, name: m.users_name, email: m.users_email, phone: m.users_contact, dealerId: m.users_dealerId }));
     } catch (error) {
       console.error('Error getting top dealers with max orders:', error.message);

@@ -8,6 +8,7 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,7 +18,6 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
 import { DealerDto } from './dto/add-dealer.dto';
 import { Dealer } from './entities/dealer.entity';
-import { throwError } from 'rxjs';
 
 @Controller('users')
 export class UsersController {
@@ -25,13 +25,11 @@ export class UsersController {
 
   @Post()
   createUser(@Body() createUserDto: CreateUserDto) {
-    
     return this.usersService.create(createUserDto);
   }
 
   @Get()
   getAllUsers(@Query() query: GetUsersDto) {
-    console.log("query***********", query)
     return this.usersService.getUsers(query);
   }
 
