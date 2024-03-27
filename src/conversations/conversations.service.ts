@@ -102,58 +102,103 @@ export class ConversationsService {
     }
   }
 
-  async getAllConversations({ page, limit, search }: GetConversationsDto) {
+  async getAllConversations({ page, limit, search, dealer_id }: GetConversationsDto) {
     if (!page) page = 1;
 
+    if(dealer_id){
 
-    let conversations = await this.conversationRepository.find({ 
-      relations: 
-      [
-        'latest_message', 
-        'user', 
-        'dealer', 
-        'shop', 
-        'shop.balance', 
-        'shop.cover_image', 
-        'shop.logo', 
-        'shop.address'
-      ] 
-    });
-    
-    console.log("conversations", conversations)
-
-    if (search) {
-      const parseSearchParams = search.split(';');
-      const searchText: any = [];
-
-
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        // TODO: Temp Solution
-        if (key !== 'slug') {
-          searchText.push({
-            [key]: value,
-          });
+      let conversations = await this.conversationRepository.find({
+        where: {
+          dealer_id: dealer_id
+        },
+        relations:[
+          'latest_message', 
+          'user', 
+          'dealer',
+        ]
+      })
+      if (search) {
+        const parseSearchParams = search.split(';');
+        const searchText: any = [];
+  
+  
+        for (const searchParam of parseSearchParams) {
+          const [key, value] = searchParam.split(':');
+          // TODO: Temp Solution
+          if (key !== 'slug') {
+            searchText.push({
+              [key]: value,
+            });
+          }
         }
+  
+  
+        conversations = conversations.filter((con) =>
+          searchText.every((searchItem:any) =>
+            Object.entries(searchItem).every(([key, value]) => con[key] === value)
+          )
+        );
       }
-
-
-      conversations = conversations.filter((con) =>
-        searchText.every((searchItem:any) =>
-          Object.entries(searchItem).every(([key, value]) => con[key] === value)
-        )
-      );
+     console.log("final", conversations)
+  
+      const url = `/conversations?limit=${limit}`;
+      const paginatedData = paginate(conversations.length, page, limit, conversations.length, url);
+  
+  
+      return {
+        data: conversations.slice(paginatedData.firstItem, paginatedData.lastItem + 1),
+        ...paginatedData,
+      };
+    } else {
+      let conversations = await this.conversationRepository.find({ 
+        relations: 
+        [
+          'latest_message', 
+          'user', 
+          'dealer', 
+          'shop', 
+          'shop.balance', 
+          'shop.cover_image', 
+          'shop.logo', 
+          'shop.address'
+        ] 
+      });
+      
+      console.log("conversations", conversations)
+  
+      if (search) {
+        const parseSearchParams = search.split(';');
+        const searchText: any = [];
+  
+  
+        for (const searchParam of parseSearchParams) {
+          const [key, value] = searchParam.split(':');
+          // TODO: Temp Solution
+          if (key !== 'slug') {
+            searchText.push({
+              [key]: value,
+            });
+          }
+        }
+  
+  
+        conversations = conversations.filter((con) =>
+          searchText.every((searchItem:any) =>
+            Object.entries(searchItem).every(([key, value]) => con[key] === value)
+          )
+        );
+      }
+     console.log("final", conversations)
+  
+      const url = `/conversations?limit=${limit}`;
+      const paginatedData = paginate(conversations.length, page, limit, conversations.length, url);
+  
+  
+      return {
+        data: conversations.slice(paginatedData.firstItem, paginatedData.lastItem + 1),
+        ...paginatedData,
+      };
     }
-   console.log("final", conversations)
-
-    const url = `/conversations?limit=${limit}`;
-    const paginatedData = paginate(conversations.length, page, limit, conversations.length, url);
-
-
-    return {
-      data: conversations.slice(paginatedData.firstItem, paginatedData.lastItem + 1),
-      ...paginatedData,
-    };
   }
 
  async getConversation(param: number) {
