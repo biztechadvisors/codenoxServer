@@ -55,7 +55,6 @@ export class AuthService {
   }
 
   async destroyOtp(user: User): Promise<void> {
-    console.log("user-destroy*************", user)
     user.otp = null;
     // user.created_at = null;
     await this.userRepository.save(user);
@@ -63,7 +62,6 @@ export class AuthService {
 
   async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ message: string } | AuthResponse> {
     const user = await this.userRepository.findOne({ where: { email: resendOtpDto.email } });
-    console.log("email reasend otp", user)
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -71,7 +69,6 @@ export class AuthService {
     user.otp = otp;
     user.created_at = new Date();
     const repo = await this.userRepository.save(user);
-    console.log("first=========", repo)
     await this.mailService.sendUserConfirmation(user, otp.toString()); // Assuming you have a method to send OTP
     return { message: 'OTP resent successfully.' };
   }
@@ -99,7 +96,6 @@ export class AuthService {
     }
 
     if (user.otp !== Number(otp)) {
-      console.log("return false", false)
       return false;
     }
 
@@ -117,7 +113,6 @@ export class AuthService {
     //   } catch (error) {
     //     console.error("Failed to send SMS:", error.message);
     //   }
-    console.log("first000000000000000000", user.contact);
     // Send SMS using AWS SNS
     const params = {
       Message: 'You have successfully registered!',
@@ -132,7 +127,6 @@ export class AuthService {
 
     try {
       const sms = await this.sns.publish(params).promise();
-      console.log('sms**', sms)
       console.log("Message sent successfully 📩.");
     } catch (error) {
       console.error("Failed to send SMS:", error.message);
@@ -145,10 +139,7 @@ export class AuthService {
 
   async signIn(email: string) {
     try {
-      console.log('email---signIn******', email)
       const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
-
-      console.log('user*****', user)
 
       if (!user) {
         throw new UnauthorizedException('User not found');
@@ -158,23 +149,22 @@ export class AuthService {
 
       const access_token = await this.jwtService.signAsync(payload, {
         secret: jwtConstants.access_secret,
-        expiresIn: '60m'
+        expiresIn: '1m',
       });
 
       const refresh_token = await this.jwtService.signAsync(payload, {
         secret: jwtConstants.refresh_secret,
-        expiresIn: '1d'
+        expiresIn: '5m',
       });
 
       if (user?.refresh_token) {
-        user.refresh_token = refresh_token
-        this.userRepository.save(user)
+        user.refresh_token = refresh_token;
+        await this.userRepository.save(user);
       }
-
 
       return { access_token, refresh_token };
     } catch (error) {
-      throw error(`signIn error ${error}`)
+      throw new UnauthorizedException(`signIn error ${error}`);
     }
   }
 
@@ -282,7 +272,7 @@ export class AuthService {
   }
 
   async getPermissions(typeName: string): Promise<any[]> {
-    console.log("permission.type_name****169", typeName);
+
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
@@ -297,8 +287,6 @@ export class AuthService {
       ])
       .getMany();
 
-    console.log("result******", result);
-
     return result.map((permission) => ({
       id: permission.id,
       type_name: permission.type_name,
@@ -311,45 +299,9 @@ export class AuthService {
     }));
   }
 
-  async refreshToken(incomingRefreshToken: string, res: Response) {
+  async login(loginInput: LoginDto) {
     try {
-      const decodedToken = this.jwtService.verify(incomingRefreshToken, { secret: jwtConstants.refresh_secret });
-      const userId = decodedToken.sub;
-      const user = await this.userRepository.findOne({ where: { id: userId } });
-
-      if (!user || user.refresh_token !== incomingRefreshToken) {
-        throw new UnauthorizedException('Invalid Refresh Token');
-      }
-
-      const { access_token, refresh_token } = await this.signIn(user.email);
-
-      user.refresh_token = refresh_token;
-      await this.userRepository.save(user);
-
-      const options = {
-        httpOnly: true,
-        secure: true,
-      };
-
-      res.cookie('access_token', access_token, options);
-      res.cookie('refresh_token', refresh_token, options);
-
-      return {
-        refresh_token: refresh_token,
-      };
-    } catch (error) {
-      console.error(error);
-      throw new UnauthorizedException('An error occurred during token refresh');
-    }
-  }
-
-  async login(loginInput: LoginDto, res: Response) {
-    try {
-
-      console.log('loginInput', loginInput)
       const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
-
-      console.log("login-user", user)
 
       if (!user || !user.isVerified) {
         throw new UnauthorizedException('User Is Not Registered!');
@@ -360,22 +312,9 @@ export class AuthService {
         throw new UnauthorizedException('Invalid password');
       }
 
-      console.log("isMatch***", isMatch)
-      const { access_token, refresh_token } = await this.signIn(loginInput.email);
-
-      console.log('tokens***', access_token)
+      const { access_token } = await this.signIn(loginInput.email);
 
       const permission = user.type ? await this.permissionRepository.findOneBy(user.type) : null;
-
-      const options = {
-        httpOnly: true,
-        secure: true,
-      };
-
-      res.cookie('access_token', access_token, options);
-      res.cookie('refresh_token', refresh_token, options);
-
-      console.log("third")
 
       if (!permission || permission.id === null) {
         return {
@@ -383,8 +322,6 @@ export class AuthService {
           permissions: ['customer', 'admin', 'super_admin'],
         };
       }
-
-      console.log("fourth")
 
       const result = await this.permissionRepository
         .createQueryBuilder('permission')
@@ -400,8 +337,6 @@ export class AuthService {
         ])
         .getMany();
 
-      console.log("five")
-
       const formattedResult = result.map((permission) => ({
         id: permission.id,
         type_name: permission.type_name,
@@ -412,8 +347,6 @@ export class AuthService {
           write: p.write,
         })),
       }));
-
-      console.log("six")
 
       return {
         token: access_token,
@@ -473,7 +406,7 @@ export class AuthService {
 
   async forgetPassword(forgetPasswordInput: ForgetPasswordDto): Promise<CoreResponse> {
     const user = await this.userRepository.findOne({ where: { email: forgetPasswordInput.email }, relations: ['type'] });
-    console.log("DATA+++++++++", user);
+
     if (!user) {
       return {
         success: false,
@@ -516,7 +449,6 @@ export class AuthService {
 
   async verifyForgetPasswordToken(verifyForgetPasswordTokenInput: VerifyForgetPasswordDto): Promise<CoreResponse> {
 
-    console.log("verifyForgetPasswordTokenInput***", verifyForgetPasswordTokenInput)
     const existEmail = await this.userRepository.findOne({ where: { email: verifyForgetPasswordTokenInput.email }, relations: ['type'] });
 
     if (!existEmail) {
@@ -542,11 +474,9 @@ export class AuthService {
   }
 
   async resetPassword(resetPasswordInput: ResetPasswordDto): Promise<CoreResponse> {
-    console.log("resetPasswordInput****", resetPasswordInput)
 
     const user = await this.userRepository.findOne({ where: { email: resetPasswordInput.email }, relations: ['type'] });
 
-    console.log("user****reset", user)
     if (!user) {
       return {
         success: false,
@@ -647,8 +577,6 @@ export class AuthService {
     try {
       const result = await this.verifyOtp(verifyOtpInput.code);
 
-      console.log("result***************", result);
-
       return {
         success: result,
         message: result ? 'OTP verification successful' : 'OTP verification failed',
@@ -704,8 +632,6 @@ export class AuthService {
   }
 
   async me(email: string, id: number): Promise<User> {
-
-    console.log("Me-Error-service***************************")
 
     const user = await this.userRepository.findOne({
       where: email ? { email: email } : { id: id },

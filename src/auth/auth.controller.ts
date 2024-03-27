@@ -31,7 +31,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 import { Request, Response } from 'express';
-import { IncomingMessage } from 'http';
+import { IncomingMessage, request } from 'http';
 
 
 @Controller()
@@ -54,31 +54,12 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('token')
-  async login(@Body() loginDto: LoginDto, @Res() res: Response) {
+  async login(@Body() loginDto: LoginDto) {
     try {
-      const result = await this.authService.login(loginDto, res);
-      return res.json(result);
+      return await this.authService.login(loginDto);
     } catch (error) {
       console.error(error);
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'An error occurred' });
-    }
-  }
-
-  @Post('refreshToken')
-  async refreshToken(@Req() req: Request, @Res() res: Response) {
-    try {
-      const cookies = req.headers.cookie.split(';').reduce((cookies: any, cookie: string) => {
-        const [name, value] = cookie.trim().split('=');
-        cookies[name] = value;
-        return cookies;
-      }, {});
-
-      const refreshToken = cookies.refresh_token;
-      const result = await this.authService.refreshToken(refreshToken, res);
-      return res.json(result);
-    } catch (error) {
-      console.error(error);
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'An error occurred' });
+      throw error`Login Failed Error: ${error}`
     }
   }
 
@@ -108,7 +89,7 @@ export class AuthController {
   }
   @Post('resend-otp')
   resendOtp(@Body() resendOtpDto: ResendOtpDto) {
-    console.log("RESENDOTPPPPPPPPP*******", resendOtpDto);
+
     return this.authService.resendOtp(resendOtpDto);
   }
   @Post('change-password')
@@ -120,6 +101,7 @@ export class AuthController {
   @Post('logout')
   async logout(@Body() logoutDto: LoginDto): Promise<{ message: string }> {
     const result = await this.authService.logout(logoutDto);
+    console.log(result)
     return { message: result };
   }
 
@@ -132,8 +114,6 @@ export class AuthController {
 
   @Get('me')
   async me(@Query('username') username: string, @Query('sub') sub: number) {
-    console.log("Me-Error-controller***************************")
-
     return await this.authService.me(username, sub);
   }
 

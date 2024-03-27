@@ -8,6 +8,9 @@ import {
   Delete,
   Query,
   Put,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -15,6 +18,8 @@ import { UpdateProductDto, UpdateQuantityDto } from './dto/update-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { Product } from './entities/product.entity';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadXlService } from './uploadProductsXl';
 
 @Controller('products')
 export class ProductsController {
@@ -68,5 +73,21 @@ export class PopularProductsController {
   @Get()
   async getProducts(@Query() query: GetPopularProductsDto): Promise<Product[]> {
     return this.productsService.getPopularProducts(query);
+  }
+}
+
+@Controller('uploadxl-products')
+export class UploadProductsXl {
+  constructor(private readonly uploadXlService: UploadXlService) { }
+
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadProducts(@UploadedFile() file) {
+    if (!file) {
+      throw new BadRequestException('File not uploaded');
+    }
+    const buffer = file.buffer; // Accessing the file buffer directly
+    await this.uploadXlService.uploadProductsFromExcel(buffer);
+    return { message: 'Products uploaded successfully' };
   }
 }

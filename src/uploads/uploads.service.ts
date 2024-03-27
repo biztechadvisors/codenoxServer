@@ -1,29 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { AttachmentRepository } from 'src/common/common.repository';
+import { S3 } from 'aws-sdk';
+import { ConfigService } from '@nestjs/config';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 import { Attachment } from 'src/common/entities/attachment.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AttachmentRepository } from 'src/common/common.repository';
 
 @Injectable()
 export class UploadsService {
-
   constructor(
-    @InjectRepository(AttachmentRepository) private attachmentRepository: AttachmentRepository,
+    @InjectRepository(AttachmentRepository)
+    private attachmentRepository: AttachmentRepository,
+    private readonly configService: ConfigService,
   ) { }
 
-  async uploadFile(attachments: Array<Express.Multer.File>): Promise<AttachmentDTO[]> {
+  s3 = new S3({
+    accessKeyId: this.configService.get('AWS_ACCESS_KEY'),
+    secretAccessKey: this.configService.get('AWS_SECRET_KEY'),
+  });
 
-    console.log('attachments****upload', attachments)
-    const attachmentData = [];
-    for (const attachment of attachments) {
+  async uploadFiles(files: Express.Multer.File | Express.Multer.File[]): Promise<AttachmentDTO[]> {
+    const filesArray = Array.isArray(files) ? files : [files];
+    const uploadPromises = filesArray.map(file => this.uploadToS3(file.buffer, file.originalname, file.mimetype));
+    const results = await Promise.all(uploadPromises);
+    return Array.isArray(results) ? results : [results];
+  }
+
+
+  private async uploadToS3(buffer: Buffer, originalname: string, mimetype: string): Promise<AttachmentDTO> {
+    const params = {
+      Bucket: this.configService.get('AWS_BUCKET'),
+      Key: originalname,
+      Body: buffer,
+      ContentType: mimetype,
+    };
+
+    try {
+      const uploadResult = await this.s3.upload(params).promise();
       const attachmentDTO = new AttachmentDTO();
-      attachmentDTO.original = attachment.filename;
-      attachmentDTO.thumbnail = attachment.path;
-      attachmentData.push(attachmentDTO);
-    }
-    await this.attachmentRepository.save(attachmentData);
+      attachmentDTO.original = originalname;
+      attachmentDTO.thumbnail = uploadResult.Location;
 
-    return attachmentData;
+      return await this.attachmentRepository.save(attachmentDTO);
+    } catch (error) {
+      console.error('Error uploading file to S3:', error);
+      throw new Error('Failed to upload file to S3: ' + error.message);
+    }
   }
 
   async findAll(): Promise<Attachment[]> {
