@@ -105,36 +105,36 @@ export class AuthService {
     // const access_token = await this.signIn(userData.email, createUserInput.password);
 
     await this.userRepository.save(user);
-    // const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    //   try {
-    //     await twilioClient.messages.create({
-    //       body: 'You have successfully registered!',
-    //       from: process.env.TWILIO_PHONE_NUMBER,
-    //       to: user.contact
-    //     });
-    //   } catch (error) {
-    //     console.error("Failed to send SMS:", error.message);
-    //   }
+    const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+      try {
+        await twilioClient.messages.create({
+          body: 'You have successfully registered!',
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: user.contact
+        });
+      } catch (error) {
+        console.error("Failed to send SMS:", error.message);
+      }
     console.log("first000000000000000000", user.contact);
     // Send SMS using AWS SNS
-    const params = {
-      Message: 'You have successfully registered!',
-      PhoneNumber: user.contact, // Ensure the phone number is in E.164 format
-      MessageAttributes: {
-        'AWS.SNS.SMS.SenderID': {
-          'DataType': 'String',
-          'StringValue': 'Codenox' // This is optional and used for Sender ID capabilities in supported countries
-        }
-      }
-    };
+    // const params = {
+    //   Message: 'You have successfully registered!',
+    //   PhoneNumber: user.contact, // Ensure the phone number is in E.164 format
+    //   MessageAttributes: {
+    //     'AWS.SNS.SMS.SenderID': {
+    //       'DataType': 'String',
+    //       'StringValue': 'Codenox' // This is optional and used for Sender ID capabilities in supported countries
+    //     }
+    //   }
+    // };
 
-    try {
-      const sms = await this.sns.publish(params).promise();
-      console.log('sms**', sms)
-      console.log("Message sent successfully 📩.");
-    } catch (error) {
-      console.error("Failed to send SMS:", error.message);
-    }
+    // try {
+    //   const sms = await this.sns.publish(params).promise();
+    //   console.log('sms**', sms)
+    //   console.log("Message sent successfully 📩.");
+    // } catch (error) {
+    //   console.error("Failed to send SMS:", error.message);
+    // }
 
 
     await this.mailService.successfullyRegister(user);

@@ -1038,65 +1038,83 @@ export class OrdersService {
 
       if (Invoice) {
         const invoiceData = await this.generateInvoiceData(Invoice);
+        console.log("INvoiceDATA&&&&7777777777",invoiceData);
+        // const pdf = await this.MailService.generatePdfFromHtml(invoiceData);
+        // console.log("Pdf convert or not",pdf);
 
         if (invoiceData) {
-          // Launch Puppeteer
-          const browser = await puppeteer.launch();
-          const page = await browser.newPage();
+          // Generate unique filename
+          const timestamp = Date.now();
+          const filename = `invoice-${timestamp}.pdf`;
+          const filePath = path.resolve(__dirname, '..', 'invoices', filename);
 
-          // Set content to render
-          await page.setContent(invoiceData);
+          // Create the invoices directory if it doesn't exist
+          const directory = path.dirname(filePath);
+          if (!fs.existsSync(directory)) {
+            fs.mkdirSync(directory, { recursive: true });
+          }
 
-          // Generate PDF
-          const pdfBuffer = await page.pdf({ format: 'A4' });
-
-          // Close Puppeteer browser
-          await browser.close();
+          // Write PDF data to a file
+          fs.writeFileSync(filePath, invoiceData);
+          console.log(`Invoice downloaded successfully: ${filename}`);
 
           // Set response headers
           res.setHeader('Content-Type', 'application/pdf');
-          res.setHeader('Content-Disposition', 'attachment; filename="invoice.pdf"');
+          res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
 
-          // Send the PDF buffer as response
-          res.status(200).send(pdfBuffer);
+          // Send the PDF file
+          const fileStream = fs.createReadStream(filePath);
+          fileStream.pipe(res);
+
+          // Provide the download link with the unique filename
+          const downloadLink = `http://localhost:${process.env.PORT}/download-invoice/${filename}`;
+          console.log(`Download your invoice: ${downloadLink}`);
+          
+        //  const pdf = await this.MailService.generatePdfFromHtml(downloadLink);
+        //  console.log("PDF  OR NOT",downloadLink);
+          return downloadLink;
+
+          
         } else {
           console.error("Failed to generate invoice data.");
-          res.status(500).send('Error generating invoice data');
         }
       } else {
         console.error("Failed to retrieve invoice.");
-        res.status(500).send('Error retrieving invoice');
       }
     } catch (error) {
       console.error('Error downloading invoice:', error);
       res.status(500).send('Error downloading invoice');
     }
   }
-
-  // async downloadInvoice(Order_id: string) {
+  // async downloadInvoice(order_id: string, res) {
   //   try {
-  //     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
-  //     const invoiceData:any = await this.generateInvoiceData(Invoice); 
-
-  //     const options:any= {
-  //       orientation: 'portrait',
-  //       unit: 'mm', 
-  //       format: 'a4'
-  //     };
-  //     const pdfDoc = new jsPDF(options);
-  //     const canvas = await html2canvas(invoiceData, { scale: 2 });
-  //     const imgData = canvas.toDataURL('image/png');
-  //     pdfDoc.addImage(imgData, 'PNG', 10, 10, 190, 0);
-
-  //     // Send PDF as response
-  //     // res.setHeader('Content-Type', 'application/pdf');
-  //     // res.setHeader('Content-Disposition', 'attachment; filename=invoice.pdf');
-  //     pdfDoc.save();
+  //    const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(order_id));
+   
+  //    if (Invoice) {
+  //      const invoiceData = await this.generateInvoiceData(Invoice);
+  //      const pdf = await this.MailService.generatePdfFromHtml(invoiceData);
+   
+  //      if (pdf) {
+  //        // Set response headers to indicate a PDF download
+  //        res.setHeader('Content-Type', 'application/pdf');
+  //        res.setHeader('Content-Disposition', `attachment; filename=invoice.pdf`);
+   
+  //        // Send the PDF data directly to the response
+  //        res.send(pdf);
+  //      } else {
+  //        console.error("Failed to generate invoice data.");
+  //        res.status(400).send("Failed to generate invoice");
+  //      }
+  //    } else {
+  //      console.error("Failed to retrieve invoice.");
+  //      res.status(404).send("Invoice not found");
+  //    }
   //   } catch (error) {
-  //     console.error('Error generating invoice:', error);
-  //     // res.status(500).send('Error generating invoice');
+  //    console.error('Error downloading invoice:', error);
+  //    res.status(500).send('Error downloading invoice');
   //   }
-  // }
+  //  }
+   
 
   async generateInvoiceData(Invoice: any) {
     const hashtabel: Record<string, any[]> = {};

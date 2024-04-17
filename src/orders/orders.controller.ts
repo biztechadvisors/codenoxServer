@@ -175,6 +175,7 @@ export class DownloadInvoiceeController {
   @Post()
   async downloadInvoice(@Body() input: { order_id: string }, @Res() res) {
     const downloadLink = await this.ordersService.downloadInvoice(input.order_id, res);
+    console.log("PDF DATA ++++++",downloadLink);
     return { downloadLink };
   }
 }

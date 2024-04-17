@@ -166,18 +166,6 @@ async template(data:any) {
   } catch (error) {
     console.error("Invoice sending failed to Customer", error);
   }
-  // try {
-  //   const templateContent = fs.readFileSync(templatePath, 'utf8');
-  //   const compiledTemplate = Handlebars.compile(templateContent);
-  //   const renderedTemplate = compiledTemplate(data);
-  //   console.log('TEMPLATE()()()()()()()()()()(()(()======)):', renderedTemplate);
-
-
-  //   return pdfBuffer;
-  // } catch (err) {
-  //   console.error('Error reading file:', err);
-  //   return null;
-  // }
 }
   // OTP send for verify Registration Email
   async sendUserConfirmation(user: User, token: string) {
