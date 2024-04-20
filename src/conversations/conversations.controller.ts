@@ -25,6 +25,7 @@ export class ConversationsController {
 
   @Get(':param')
   getStoreNotice(@Param('param') param: number) {
+    console.log("first", param)
     return this.conversationsService.getConversation(param);
   }
 }

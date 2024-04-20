@@ -21,7 +21,7 @@ const fuse = new Fuse(conversations, options);
 
 @Injectable()
 export class ConversationsService {
-  private conversations: Conversation[] = conversations;
+  // private conversations: Conversation[] = conversations;
   constructor(
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
@@ -33,6 +33,7 @@ export class ConversationsService {
   ) { }
 
   async create(createConversationDto: CreateConversationDto) {
+    console.log("createdtr+++++++++++", createConversationDto)
     const message = new Message()
     const conversationCheck = await this.conversationRepository.findOne({
       where: { 
@@ -41,7 +42,9 @@ export class ConversationsService {
         dealer_id: createConversationDto.dealer_id
       }
     });
-    console.log("user id", conversationCheck);
+
+      console.log("conversation check", conversationCheck)
+
     if (conversationCheck) {
       const latestMessage = await this.latestMessageRepository.findOne({
         where: {
@@ -84,8 +87,8 @@ export class ConversationsService {
       conversation.shop = createConversationDto.shop
       conversation.user = createConversationDto.user
       conversation.user_id = createConversationDto.user_id
-      conversation.dealer_id = createConversationDto.dealer_id
       conversation.dealer = createConversationDto.dealer
+      conversation.dealer_id = createConversationDto.dealer_id
 
       await this.conversationRepository.save(savedConversation);
 
@@ -99,69 +102,122 @@ export class ConversationsService {
     }
   }
 
-  async getAllConversations({ page, limit, search }: GetConversationsDto) {
+  async getAllConversations({ page, limit, search, dealer_id }: GetConversationsDto) {
     if (!page) page = 1;
 
+    if(dealer_id){
 
-    let conversations = await this.conversationRepository.find({ relations: 
-      ['latest_message', 
-      'user', 
-      'shop', 
-      'shop.balance', 
-      'shop.cover_image', 
-      'shop.logo', 
-      'shop.address',
-      'dealer'
-    ] });
-
-
-    if (search) {
-      const parseSearchParams = search.split(';');
-      const searchText: any = [];
-
-
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        // TODO: Temp Solution
-        if (key !== 'slug') {
-          searchText.push({
-            [key]: value,
-          });
+      let conversations = await this.conversationRepository.find({
+        where: {
+          dealer_id: dealer_id
+        },
+        relations:[
+          'latest_message', 
+          'user', 
+          'dealer',
+        ]
+      })
+      if (search) {
+        const parseSearchParams = search.split(';');
+        const searchText: any = [];
+  
+  
+        for (const searchParam of parseSearchParams) {
+          const [key, value] = searchParam.split(':');
+          // TODO: Temp Solution
+          if (key !== 'slug') {
+            searchText.push({
+              [key]: value,
+            });
+          }
         }
+  
+  
+        conversations = conversations.filter((con) =>
+          searchText.every((searchItem:any) =>
+            Object.entries(searchItem).every(([key, value]) => con[key] === value)
+          )
+        );
       }
-
-
-      conversations = conversations.filter((con) =>
-        searchText.every((searchItem) =>
-          Object.entries(searchItem).every(([key, value]) => con[key] === value)
-        )
-      );
+     console.log("final", conversations)
+  
+      const url = `/conversations?limit=${limit}`;
+      const paginatedData = paginate(conversations.length, page, limit, conversations.length, url);
+  
+  
+      return {
+        data: conversations.slice(paginatedData.firstItem, paginatedData.lastItem + 1),
+        ...paginatedData,
+      };
+    } else {
+      let conversations = await this.conversationRepository.find({ 
+        relations: 
+        [
+          'latest_message', 
+          'user', 
+          'dealer', 
+          'shop', 
+          'shop.balance', 
+          'shop.cover_image', 
+          'shop.logo', 
+          'shop.address'
+        ] 
+      });
+      
+      console.log("conversations", conversations)
+  
+      if (search) {
+        const parseSearchParams = search.split(';');
+        const searchText: any = [];
+  
+  
+        for (const searchParam of parseSearchParams) {
+          const [key, value] = searchParam.split(':');
+          // TODO: Temp Solution
+          if (key !== 'slug') {
+            searchText.push({
+              [key]: value,
+            });
+          }
+        }
+  
+  
+        conversations = conversations.filter((con) =>
+          searchText.every((searchItem:any) =>
+            Object.entries(searchItem).every(([key, value]) => con[key] === value)
+          )
+        );
+      }
+     console.log("final", conversations)
+  
+      const url = `/conversations?limit=${limit}`;
+      const paginatedData = paginate(conversations.length, page, limit, conversations.length, url);
+  
+  
+      return {
+        data: conversations.slice(paginatedData.firstItem, paginatedData.lastItem + 1),
+        ...paginatedData,
+      };
     }
-
-
-    const url = `/conversations?limit=${limit}`;
-    const paginatedData = paginate(conversations.length, page, limit, conversations.length, url);
-
-
-    return {
-      data: conversations.slice(paginatedData.firstItem, paginatedData.lastItem + 1),
-      ...paginatedData,
-    };
   }
 
-  getConversation(param: number) {
-    return this.conversationRepository.findOne({ 
-      where: { id: param }, 
-      relations: [
-        'latest_message', 
-        'user', 
-        'shop', 
-        'shop.balance', 
-        'shop.cover_image', 
-        'shop.logo', 
-        'shop.address',
-        'dealer'
-      ] 
-      });
+ async getConversation(param: number) {
+    const findUser = await this.conversationRepository.findOne(
+      {
+         where: { id: param }, 
+         relations: 
+         [
+           'latest_message',
+           'user',
+           'shop',
+           'dealer',  
+          //  'shop.balance',
+          //  'shop.cover_image',
+           'shop.logo',
+          //  'shop.address'
+              ] 
+            });
+            console.log("user++++++++++++", findUser)
+          return findUser
   }
 }

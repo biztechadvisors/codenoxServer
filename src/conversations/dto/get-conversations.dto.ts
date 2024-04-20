@@ -16,5 +16,6 @@ export class GetConversationsDto extends PaginationArgs {
   search?: string;
   language?: string;
   shop?: Shop;
-  dealer?: Dealer;
+  dealer_id?: number;
+  conversation?: number;
 }
