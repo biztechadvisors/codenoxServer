@@ -169,8 +169,7 @@ export class ShopsService {
   }
 
   async getShops({ search, limit, page }: GetShopsDto): Promise<ShopPaginator> {
-    console.log(`${"search*****" + search + "page********" + page + "limit***********" + limit}`)
-
+   
     page = page ? page : 1;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
@@ -303,8 +302,6 @@ export class ShopsService {
   async getShop(slug: string): Promise<Shop | null> {
     try {
 
-      console.log("slug-getShop*******************************", slug)
-
       const existShop = await this.shopRepository.findOne({
         where: { slug: slug },
         relations: [
@@ -328,7 +325,6 @@ export class ShopsService {
         return null;
       }
 
-      console.log("existShop**********", existShop)
       // Map the retrieved shop data to the desired structure
       const mappedShop = {
         id: existShop.id,
@@ -383,7 +379,7 @@ export class ShopsService {
         },
         gst_number: existShop.gst_number, // Include the missing property
       };
-      console.log("mappedShop*******", mappedShop)
+
       return mappedShop;
     } catch (error) {
       console.error("Error fetching shop:", error.message);

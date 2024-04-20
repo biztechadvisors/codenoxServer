@@ -17,7 +17,6 @@ export class PermissionController {
 
   @Get()
   getPermission(@Query('UsrBy') userId: string) {
-    console.log("userId-20***************", userId)
     return this.permissionService.getPermission(userId);
   }
 

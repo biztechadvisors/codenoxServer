@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserRepository } from 'src/users/users.repository';
@@ -11,16 +11,17 @@ import { MailModule } from 'src/mail/mail.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { User } from 'src/users/entities/user.entity';
+import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
     TypeOrmExModule.forCustomRepository([UserRepository]),
-    TypeOrmModule.forFeature([Permission, User]),
+    TypeOrmModule.forFeature([Permission, User, JwtStrategy]),
     UsersModule,
     MailModule,
     JwtModule.register({
       global: true,
-      secret: jwtConstants.secret,
+      secret: jwtConstants.access_secret,
       signOptions: { expiresIn: '60s' },
     }),
   ],
