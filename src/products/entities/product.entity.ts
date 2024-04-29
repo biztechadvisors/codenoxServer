@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
-import { Category } from 'src/categories/entities/category.entity';
+import { Category, SubCategory } from 'src/categories/entities/category.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Order } from 'src/orders/entities/order.entity';
@@ -36,9 +36,15 @@ export class Product extends CoreEntity {
   type_id: number;
   @Column()
   product_type: ProductType;
-  @ManyToMany(() => Category, category => category.products)
+
+  @ManyToOne(() => Category, category => category.products)
   @JoinTable()
   categories: Category[];
+
+  @ManyToOne(() => SubCategory, subCategory => subCategory.products)
+  @JoinTable()
+  subCategories: SubCategory[];
+
   @ManyToMany(() => Tag, tag => tag.products, { cascade: true })
   @JoinTable()
   tags: Tag[];

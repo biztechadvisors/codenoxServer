@@ -23,3 +23,9 @@ export enum QueryCategoriesOrderByColumn {
   NAME = 'NAME',
   UPDATED_AT = 'UPDATED_AT',
 }
+
+export class GetSubCategoriesDto {
+  search?: string
+  categoryId: number;
+  shopId: number;
+}

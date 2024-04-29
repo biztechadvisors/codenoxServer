@@ -47,6 +47,7 @@ import { PermissionModule } from './permission/permission.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CartsModule } from './carts/carts.module';
 import { StocksModule } from './stocks/stocks.module';
+import { ShiprocketServiceEnv } from './updateEnv';
 
 @Module({
   imports: [
@@ -121,6 +122,6 @@ import { StocksModule } from './stocks/stocks.module';
     MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],
-  providers: [],
+  providers: [ShiprocketServiceEnv],
 })
 export class AppModule { }
