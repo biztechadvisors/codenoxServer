@@ -49,10 +49,6 @@ export class ShiprocketService {
         }
     }
 
-    async generateToken(email: string, password: string) {
-        return this.makeShiprocketRequest(this.apiUrl + 'auth/login', 'post', { email, password });
-    }
-
     async createOrder(order: any) {
         return this.makeShiprocketRequest(this.apiUrl + 'orders/create/adhoc', 'post', order);
     }
@@ -229,4 +225,8 @@ export class ShiprocketService {
     async returnAllShiprocketOrder() {
         return this.makeShiprocketRequest(`${this.apiUrl}orders/processing/return`, 'post', {});
     }
+
+    // async generateToken(email: string, password: string) {
+    //     return this.makeShiprocketRequest(this.apiUrl + 'auth/login', 'post', { email, password });
+    // }
 }

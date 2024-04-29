@@ -148,21 +148,10 @@ export class AuthService {
       const payload = { sub: user.id, username: user.email };
 
       const access_token = await this.jwtService.signAsync(payload, {
-        secret: jwtConstants.access_secret,
-        expiresIn: '1m',
+        secret: jwtConstants.access_secret
       });
 
-      const refresh_token = await this.jwtService.signAsync(payload, {
-        secret: jwtConstants.refresh_secret,
-        expiresIn: '5m',
-      });
-
-      if (user?.refresh_token) {
-        user.refresh_token = refresh_token;
-        await this.userRepository.save(user);
-      }
-
-      return { access_token, refresh_token };
+      return { access_token };
     } catch (error) {
       throw new UnauthorizedException(`signIn error ${error}`);
     }
@@ -365,9 +354,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-
-    // Invalidate the user's refresh token
-    user.refresh_token = null;
+    user.is_active = false
     await this.userRepository.save(user);
 
     return 'User logged out successfully';

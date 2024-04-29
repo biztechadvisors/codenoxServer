@@ -13,8 +13,10 @@ export class CreateTagDto extends PickType(Tag, [
   'type',
   'language',
   'translatedLanguages',
+  // 'shop',
 ]) {
   [x: string]: any;
   type: Type;
+  // shop_id: number;
   image: Attachment;
 }
