@@ -11,6 +11,7 @@ import { Review } from '../../reviews/entities/review.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
+import { Attribute } from 'src/attributes/entities/attribute.entity';
 
 enum ProductStatus {
   PUBLISH = 'publish',
@@ -37,11 +38,11 @@ export class Product extends CoreEntity {
   @Column()
   product_type: ProductType;
 
-  @ManyToOne(() => Category, category => category.products)
+  @ManyToMany(() => Category, category => category.products)
   @JoinTable()
   categories: Category[];
 
-  @ManyToOne(() => SubCategory, subCategory => subCategory.products)
+  @ManyToMany(() => SubCategory, subCategory => subCategory.products)
   @JoinTable()
   subCategories: SubCategory[];
 
@@ -180,10 +181,12 @@ export class Variation {
   @JoinColumn({ name: 'image_id' })
   image: File;
 
-  @Column()
+  @ManyToMany(() => AttributeValue, { cascade: true, eager: true })
+  @JoinTable()
   attribute_value_id: number;
 
-  @Column()
+  @ManyToMany(() => Attribute, { cascade: true, eager: true })
+  @JoinTable()
   attribute_id: number;
   @Column()
   value: string;

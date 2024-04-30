@@ -32,7 +32,6 @@ export class ProductsController {
 
   @Get()
   async getProducts(@Query() query: GetProductsDto): Promise<ProductPaginator> {
-    console.log('Get-Products****Query', query)
     return this.productsService.getProducts(query);
   }
 
