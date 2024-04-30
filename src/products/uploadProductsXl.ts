@@ -148,6 +148,7 @@ export class UploadXlService {
             price: row[headerRow.indexOf('Price')],
             sale_price: row[headerRow.indexOf('Sale Price')],
             unit: row[headerRow.indexOf('Unit')],
+            sku: row[headerRow.indexOf('SKU')],
             category: category,
             subCategories: subCategories,
             type_id: type.id,
@@ -239,7 +240,6 @@ export class UploadXlService {
     async uploadProductsFromExcel(fileBuffer: Buffer): Promise<void> {
         try {
             const products = await this.parseExcelToDto(fileBuffer);
-            // console.log('products', products.map(product => product.variation_options.upsert));
 
             if (products && products.length > 0) {
                 for (const product of products) {
@@ -256,59 +256,137 @@ export class UploadXlService {
 
     async saveProducts(createProductDto: CreateProductDto): Promise<Product> {
         try {
-            console.log('createProductDto***', createProductDto)
+            const existingProduct = await this.productRepository.findOne({
+                where: [{ name: createProductDto.name }, { slug: createProductDto.slug }]
+            });
 
-            const product = new Product();
-            product.name = createProductDto.name;
-            product.slug = createProductDto.name
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '');
-            product.description = createProductDto.description;
-            product.product_type = createProductDto.product_type;
-            product.status = createProductDto.status;
-            product.quantity = createProductDto.quantity;
-            product.max_price = createProductDto.max_price || createProductDto.price;
-            product.min_price = createProductDto.min_price || createProductDto.sale_price;
-            product.price = createProductDto.max_price || createProductDto.price;
-            product.sale_price = createProductDto.min_price || createProductDto.sale_price;
-            product.unit = createProductDto.unit;
-            product.height = createProductDto.height;
-            product.length = createProductDto.length;
-            product.width = createProductDto.width;
-            product.sku = createProductDto.sku;
-            product.language = createProductDto.language || 'en';
-            product.translated_languages = createProductDto.translated_languages || ['en'];
+            let product: Product;
+            if (existingProduct) {
+                console.log('existingProduct')
+                // Update existing product
+                product = existingProduct;
+                // Update product details
+                product.name = createProductDto.name;
+                product.slug = createProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                product.description = createProductDto.description;
+                product.product_type = createProductDto.product_type;
+                product.status = createProductDto.status;
+                product.quantity = createProductDto.quantity;
+                product.max_price = createProductDto.max_price || createProductDto.price;
+                product.min_price = createProductDto.min_price || createProductDto.sale_price;
+                product.price = createProductDto.max_price || createProductDto.price;
+                product.sale_price = createProductDto.min_price || createProductDto.sale_price;
+                product.unit = createProductDto.unit;
+                product.height = createProductDto.height;
+                product.length = createProductDto.length;
+                product.width = createProductDto.width;
+                product.sku = createProductDto.sku;
+                product.language = createProductDto.language || 'en';
+                product.translated_languages = createProductDto.translated_languages || ['en'];
 
-            if (createProductDto.taxes) {
-                const tax = await this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } });
-                if (tax) {
-                    product.taxes = tax;
+                // Update tax
+                if (createProductDto.taxes) {
+                    const tax = await this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } });
+                    if (tax) {
+                        product.taxes = tax;
+                    }
                 }
+
+                // Update type
+                const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
+                if (!type) {
+                    throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
+                }
+                product.type = type;
+
+                // Update shop
+                const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
+                if (!shop) {
+                    throw new NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
+                }
+                product.shop = shop;
+
+                // Update categories
+                if (createProductDto.category) {
+                    const categories = await this.categoryRepository.findByIds(createProductDto.category);
+                    product.categories = categories;
+                }
+
+                // Update subcategories
+                if (createProductDto.subCategories) {
+                    const subCategories = await this.subCategoryRepository.findByIds(createProductDto.subCategories);
+                    product.subCategories = subCategories;
+                }
+
+                // Update tags
+                const tags = await this.tagRepository.findByIds(createProductDto.tags);
+                product.tags = tags;
+
+                // Delete existing variation options and variations
+                await this.remove(product.name);
+
+            } else {
+                // Create new product
+                product = new Product();
+                // Set product details
+                product.name = createProductDto.name;
+                product.slug = createProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                product.description = createProductDto.description;
+                product.product_type = createProductDto.product_type;
+                product.status = createProductDto.status;
+                product.quantity = createProductDto.quantity;
+                product.max_price = createProductDto.max_price || createProductDto.price;
+                product.min_price = createProductDto.min_price || createProductDto.sale_price;
+                product.price = createProductDto.max_price || createProductDto.price;
+                product.sale_price = createProductDto.min_price || createProductDto.sale_price;
+                product.unit = createProductDto.unit;
+                product.height = createProductDto.height;
+                product.length = createProductDto.length;
+                product.width = createProductDto.width;
+                product.sku = createProductDto.sku;
+                product.language = createProductDto.language || 'en';
+                product.translated_languages = createProductDto.translated_languages || ['en'];
+
+                // Set tax
+                if (createProductDto.taxes) {
+                    const tax = await this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } });
+                    if (tax) {
+                        product.taxes = tax;
+                    }
+                }
+
+                // Set type
+                const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
+                if (!type) {
+                    throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
+                }
+                product.type = type;
+
+                // Set categories
+                if (createProductDto.category) {
+                    const categories = await this.categoryRepository.findByIds(createProductDto.category);
+                    product.categories = categories;
+                }
+
+                // Set subcategories
+                if (createProductDto.subCategories) {
+                    const subCategories = await this.subCategoryRepository.findByIds(createProductDto.subCategories);
+                    product.subCategories = subCategories;
+                }
+
+                // Set tags
+                const tags = await this.tagRepository.findByIds(createProductDto.tags);
+                product.tags = tags;
             }
 
-            const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
-            if (!type) {
-                throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
-            }
-            product.type = type;
-
+            // Set shop
             const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
             if (!shop) {
                 throw new NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
             }
             product.shop = shop;
 
-            const categories = await this.categoryRepository.findByIds(createProductDto.categories);
-            product.categories = categories;
-
-            const subCategories = await this.subCategoryRepository.findByIds(createProductDto.subCategories);
-            product.subCategories = subCategories;
-
-            const tags = await this.tagRepository.findByIds(createProductDto.tags);
-            product.tags = tags;
-
-            if (createProductDto.image) {
+            if (createProductDto.image?.length > 0 || undefined) {
                 const image = await this.attachmentRepository.findOne(createProductDto.image.id);
                 if (!image) {
                     throw new NotFoundException(`Image with ID ${createProductDto.image.id} not found`);
@@ -316,7 +394,7 @@ export class UploadXlService {
                 product.image = image;
             }
 
-            if (createProductDto.gallery) {
+            if (createProductDto.gallery?.length > 0 || undefined) {
                 const galleryAttachments = [];
                 for (const galleryImage of createProductDto.gallery) {
                     const image = await this.attachmentRepository.findOne(galleryImage.id);
@@ -329,18 +407,34 @@ export class UploadXlService {
             }
 
             if (createProductDto.variations) {
-                const attributeValues: AttributeValue[] = [];
-                for (const variation of createProductDto.variations) {
-                    const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
-                    if (!attributeValue) {
-                        throw new NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
+                const attributeValues = [];
+
+                // Iterate over each set of variations
+                for (const variationSet of createProductDto.variations) {
+                    const variationAttributeValues = [];
+
+                    // Ensure that variationSet is an array
+                    if (!Array.isArray(variationSet)) {
+                        throw new Error(`Expected an array for variationSet, got ${typeof variationSet}`);
                     }
-                    attributeValues.push(attributeValue);
+
+                    // Iterate over each variation in the set
+                    for (const variation of variationSet) {
+
+                        const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
+                        if (!attributeValue) {
+                            throw new NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
+                        }
+                        variationAttributeValues.push(attributeValue);
+                    }
+
+                    // Push the attribute values for this variation set
+                    attributeValues.push(variationAttributeValues);
                 }
+
                 product.variations = attributeValues;
             }
 
-            console.log('product--344', product)
             await this.productRepository.save(product);
 
             if (
@@ -350,6 +444,7 @@ export class UploadXlService {
             ) {
                 const variationOPt = [];
                 for (const variationDto of createProductDto.variation_options.upsert) {
+
                     const newVariation = new Variation();
                     newVariation.title = variationDto.title;
                     newVariation.price = variationDto.price;
@@ -357,7 +452,7 @@ export class UploadXlService {
                     newVariation.is_disable = variationDto.is_disable;
                     newVariation.sale_price = variationDto.sale_price;
                     newVariation.quantity = variationDto.quantity;
-                    if (variationDto.image) {
+                    if (variationDto?.image) {
                         let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
                         if (!image) {
                             image = new File();
@@ -370,6 +465,7 @@ export class UploadXlService {
                     }
                     const variationOptions = [];
                     for (const option of variationDto.options) {
+
                         const newVariationOption = new VariationOption();
                         newVariationOption.id = option.id;
                         newVariationOption.name = option.name;
@@ -378,10 +474,13 @@ export class UploadXlService {
                         variationOptions.push(newVariationOption);
                     }
                     newVariation.options = variationOptions;
+
                     await this.variationRepository.save(newVariation);
+
                     variationOPt.push(newVariation);
                 }
                 product.variation_options = variationOPt;
+
                 await this.productRepository.save(product);
             }
 
@@ -389,11 +488,68 @@ export class UploadXlService {
                 await this.productsService.updateShopProductsCount(shop.id, product.id);
             }
             return product;
+
+
         }
         catch (error) {
             throw new Error('Error saving products: ' + error.message);
         }
     }
 
-}
+    async remove(name: string): Promise<void> {
+        console.log('name***remove',)
+        const products = await this.productRepository.find({ where: { name: name }, relations: ['type', 'shop', 'image', 'categories', 'tags', 'gallery', 'related_products', 'variations', 'variation_options'] });
+        for (const product of products) {
+            if (!product) {
+                throw new NotFoundException(`Product with Name ${name} not found`);
+            }
+            if (product.image) {
+                const image = product.image;
+                product.image = null;
+                await this.productRepository.save(product);
+                const file = await this.fileRepository.findOne({ where: { attachment_id: image.id } });
+                if (file) {
+                    await this.fileRepository.remove(file);
+                }
+                await this.attachmentRepository.remove(image);
+            }
 
+            // Remove gallery attachments
+            const gallery = await this.attachmentRepository.findByIds(product.gallery.map(g => g.id));
+            await this.attachmentRepository.remove(gallery);
+
+            // Fetch related entities
+            const variations = await Promise.all(product.variation_options.map(async v => {
+                const variation = await this.variationRepository.findOne({ where: { id: v.id }, relations: ['options', 'image'] });
+                if (!variation) {
+                    throw new NotFoundException(`Variation with ID ${v.id} not found`);
+                }
+                return variation;
+            }));
+
+            await Promise.all([
+                ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+                ...variations.map(async v => {
+                    if (v.image) {
+                        const image = v.image;
+                        v.image = null;
+                        await this.variationRepository.save(v);
+                        const file = await this.fileRepository.findOne({ where: { id: image.id } });
+                        if (file) {
+                            file.attachment_id = null;
+                            await this.fileRepository.save(file).then(async () => {
+                                await this.fileRepository.remove(file);
+                            });
+                        }
+                        const attachment = await this.attachmentRepository.findOne({ where: { id: image.attachment_id } });
+                        if (attachment) {
+                            await this.attachmentRepository.remove(attachment);
+                        }
+                    }
+                }),
+                this.variationRepository.remove(variations),
+                this.productRepository.remove(product),
+            ]);
+        }
+    }
+}
