@@ -12,9 +12,14 @@ import {
   ManyToOne,
   OneToOne,
   JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm'
 import { Balance } from './balance.entity'
 import { ShopSettings } from './shopSettings.entity'
+import { Category } from 'src/categories/entities/category.entity'
+import { Product } from 'src/products/entities/product.entity'
+import { Order } from 'src/orders/entities/order.entity'
 
 @Entity()
 export class Shop extends CoreEntity {
@@ -39,8 +44,11 @@ export class Shop extends CoreEntity {
   @Column()
   products_count: number;
 
-  @ManyToOne(() => Balance)
+  @ManyToOne(() => Balance, (balance) => balance.shop)
   balance?: Balance;
+
+  @OneToMany(() => Product, (product) => product.shop)
+  product?: Product[];
 
   @Column()
   name: string;
@@ -69,6 +77,13 @@ export class Shop extends CoreEntity {
 
   @Column()
   gst_number: string;
+
+  @OneToMany(() => Category, (category) => category.shop)
+  category: Category[]
+
+  @ManyToMany(() => Order, (order) => order.shop_id, { cascade: true, nullable: true })
+  @JoinTable({ name: "shop_order" })
+  order: Order[];
 }
 
 @Entity()

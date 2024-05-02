@@ -234,7 +234,7 @@ export class StocksService {
             order.payment_intent = null;
             order.customerId = order.customerId ? order.customerId : order.customer_id;
             order.customer_id = order.customer_id;
-            order.dealer = createOrderInput.dealerId ? createOrderInput.dealerId : null;
+            order.customer = createOrderInput.dealerId ? createOrderInput.dealerId : null;
             switch (paymentGatewayType) {
                 case PaymentGatewayType.CASH_ON_DELIVERY:
                     order.order_status = OrderStatusType.PROCESSING;
@@ -521,7 +521,7 @@ export class StocksService {
                             is_active: order.customer.is_active,
                             shop_id: null
                         },
-                        dealer: order.dealer ? order.dealer : null,
+                        dealer: order.customer ? order.customer : null,
                         products: products.filter(product => product !== null), // Exclude products for which pivot data could not be fetched
                         // children: order.children,
                         wallet_point: order?.wallet_point
@@ -602,9 +602,9 @@ export class StocksService {
                     created_at: order.customer.created_at,
                     updated_at: order.customer.updated_at,
                     is_active: order.customer.is_active,
-                    shop_id: null
+                    shop_id: order.customer.shop_id
                 },
-                dealer: order.dealer ? order.dealer : null,
+                dealer: order.customer ? order.customer : null,
                 products: await Promise.all(order.products.map(async (product) => {
                     const pivot = product.pivot.find(p => p.Ord_Id === order.id);
 

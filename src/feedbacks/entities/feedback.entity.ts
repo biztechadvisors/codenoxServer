@@ -1,13 +1,13 @@
 /* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Feedback extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(()=> User)
+  @OneToOne(() => User)
   @JoinColumn()
   user: User;
   @Column()

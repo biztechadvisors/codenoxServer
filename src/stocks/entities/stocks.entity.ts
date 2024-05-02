@@ -1,3 +1,4 @@
+import { Order } from "src/orders/entities/order.entity";
 import { Product } from "src/products/entities/product.entity";
 import { Dealer } from "src/users/entities/dealer.entity";
 import { User } from "src/users/entities/user.entity";
@@ -26,9 +27,12 @@ export class Stocks {
     @Column()
     inStock: boolean
 
-    @ManyToOne(() => Product, { cascade: true })
+    @ManyToOne(() => Product, (product) => product.stocks)
     product?: Product;
 
-    @ManyToOne(() => User, { cascade: true, eager: true })
+    @ManyToOne(() => User, (user) => user.stocks)
     user: User;
+
+    @ManyToOne(() => Order, (order) => order.stocks)
+    order: Order;
 }

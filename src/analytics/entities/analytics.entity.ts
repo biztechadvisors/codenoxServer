@@ -51,7 +51,7 @@ export class Analytics extends CoreEntity {
   @ManyToMany(
     type => TotalYearSaleByMonth,
     totalYearSaleByMonth => totalYearSaleByMonth.analytics,
-    { eager: true },
+    { eager: true, cascade: true },
   )
   @JoinTable()
   totalYearSaleByMonth?: Promise<TotalYearSaleByMonth[]>;

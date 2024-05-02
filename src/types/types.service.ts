@@ -99,8 +99,10 @@ export class TypesService {
     // Create and save banners with associated images
     let banners = [];
     if (data.banners && Array.isArray(data.banners)) {
+
+      console.log('data.banners', data.banners)
       banners = await Promise.all(data.banners.map(async (bannerData) => {
-        if (bannerData.image && bannerData.image.id) {
+        if (bannerData.image || bannerData.image.id || bannerData.title) {
           const image = await this.attachmentRepository.findOne({
             where: { id: bannerData.image.id, thumbnail: bannerData.image.thumbnail, original: bannerData.image.original }
           });
@@ -112,6 +114,7 @@ export class TypesService {
             image: image,
           });
 
+          console.log('banner', banner)
           return this.bannerRepository.save(banner);
         }
       }));
