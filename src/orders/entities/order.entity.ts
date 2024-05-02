@@ -9,6 +9,7 @@ import { User } from 'src/users/entities/user.entity';
 import { OrderStatus } from './order-status.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { join } from 'path';
+import { Stocks } from 'src/stocks/entities/stocks.entity';
 
 export enum PaymentGatewayType {
   STRIPE = 'STRIPE',
@@ -59,10 +60,7 @@ export class Order extends CoreEntity {
   @Column()
   customer_contact: string;
 
-  @ManyToOne(() => User, user => user.orders, {
-    eager: true,
-    cascade: true,
-  })
+  @ManyToOne(() => User, user => user.orders, { eager: true, cascade: true, })
   customer: User;
 
   @ManyToOne(() => Order, order => order.children, { nullable: true })
@@ -72,7 +70,7 @@ export class Order extends CoreEntity {
   @OneToMany(() => Order, order => order.parentOrder)
   children?: Order[];
 
-  @OneToOne(() => OrderStatus)
+  @OneToOne(() => OrderStatus, { cascade: true })
   @JoinColumn()
   status: OrderStatus;
 
@@ -100,11 +98,11 @@ export class Order extends CoreEntity {
   @Column()
   payment_gateway: PaymentGatewayType;
 
-  @ManyToOne(() => Coupon, coupon => coupon.orders, { nullable: true })
+  @ManyToOne(() => Coupon, coupon => coupon.orders, { cascade: true, nullable: true })
   coupon?: Coupon;
 
-  @ManyToMany(() => Shop, { nullable: true })
-  @JoinTable()
+  @ManyToMany(() => Shop, (shop) => shop.order)
+  @JoinTable({ name: "shop_order" })
   shop_id: Shop;
 
   @Column({ nullable: true })
@@ -116,14 +114,14 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   delivery_time: string;
 
-  @ManyToMany(() => Product, product => product.orders)
-  @JoinTable()
+  @ManyToMany(() => Product, product => product.orders, { cascade: true })
+  @JoinTable({ name: "product_order" })
   products: Product[];
 
-  @ManyToOne(() => UserAddress)
+  @ManyToOne(() => UserAddress, { cascade: true })
   billing_address: UserAddress;
 
-  @ManyToOne(() => UserAddress)
+  @ManyToOne(() => UserAddress, { cascade: true })
   shipping_address: UserAddress;
 
   @Column()
@@ -132,7 +130,7 @@ export class Order extends CoreEntity {
   @Column({ type: "json" })
   translated_languages: string[];
 
-  @OneToOne(() => PaymentIntent)
+  @OneToOne(() => PaymentIntent, { cascade: true })
   @JoinColumn()
   payment_intent: PaymentIntent;
 
@@ -145,7 +143,7 @@ export class Order extends CoreEntity {
   @Column('json', { nullable: true })
   logistics_provider: object;
 
-  @ManyToOne(() => UserAddress)
+  @ManyToOne(() => UserAddress, { cascade: true })
   saleBy: UserAddress;
 
   @Column('decimal', { precision: 5, scale: 2, nullable: true })
@@ -157,6 +155,9 @@ export class Order extends CoreEntity {
   @ManyToOne(() => User, { nullable: true, cascade: true })
   @JoinColumn({ name: 'dealerId' })
   dealer: User;
+
+  @OneToMany(() => Stocks, stocks => stocks.order, { cascade: true })
+  stocks: Stocks[];
 }
 
 @Entity()
@@ -173,6 +174,6 @@ export class OrderFiles extends CoreEntity {
   customer_id: number;
   @ManyToOne(() => File, { cascade: true })
   file: File;
-  @ManyToOne(() => Product)
+  @ManyToOne(() => Product, { cascade: true })
   fileable: Product;
 }

@@ -60,7 +60,6 @@ export class VariationOptionDto {
   value: string;
 }
 
-
 export class FileDto {
   thumbnail: string;
   original: string;

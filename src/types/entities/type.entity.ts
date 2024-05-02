@@ -14,6 +14,7 @@ import { Attachment } from 'src/common/entities/attachment.entity'
 import { CoreEntity } from 'src/common/entities/core.entity'
 import { Product } from 'src/products/entities/product.entity'
 import { Shop } from 'src/shops/entities/shop.entity'
+import { Tag } from 'src/tags/entities/tag.entity'
 
 // TypeSettings entity
 @Entity()
@@ -63,6 +64,9 @@ export class Type extends CoreEntity {
 
   @OneToMany(() => Product, (product) => product.type)
   product?: Product[]
+
+  @OneToMany(() => Tag, (tag) => tag.type)
+  tags?: Tag[]
 
   @ManyToOne(() => Shop)
   @JoinColumn()

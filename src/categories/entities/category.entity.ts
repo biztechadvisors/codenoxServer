@@ -41,12 +41,11 @@ export class Category extends CoreEntity {
   @JoinColumn()
   type?: Type;
 
-  @ManyToMany(() => Product, (product) => product.categories)
-  @JoinTable()
+  @ManyToMany(() => Product, product => product.categories)
+  @JoinTable({ name: "product_category" })
   products: Product[];
 
-  @ManyToOne(() => Shop)
-  @JoinColumn()
+  @ManyToOne(() => Shop, shop => shop.category)
   shop?: Shop;
 
   @Column()
@@ -71,15 +70,13 @@ export class SubCategory extends CoreEntity {
   slug: string
 
   @ManyToOne(() => Category, category => category.subCategories)
-  @JoinColumn()
   category?: Category;
 
-  @ManyToMany(() => Product, (product) => product.subCategories)
-  @JoinTable()
+  @ManyToMany(() => Product, product => product.subCategories, { cascade: true })
+  @JoinTable({ name: "product_subcategory" })
   products: Product[];
 
-  @ManyToOne(() => Shop)
-  @JoinColumn()
+  @ManyToOne(() => Shop, (shop) => shop.category)
   shop?: Shop;
 
   @Column()

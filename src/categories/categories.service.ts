@@ -46,9 +46,12 @@ export class CategoriesService {
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
 
     // Check if the image exists
-    const imageAttachment = await this.attachmentRepository.findOne({ where: { id: createCategoryDto.image.id } });
-    if (!imageAttachment) {
-      throw new Error(`Attachment with id '${createCategoryDto.image_id}' not found`);
+    let imageAttachment;
+    if (createCategoryDto.image.id) {
+      imageAttachment = await this.attachmentRepository.findOne({ where: { id: createCategoryDto.image.id } });
+      if (!imageAttachment) {
+        throw new Error(`Attachment with id '${createCategoryDto.image_id}' not found`);
+      }
     }
 
     // Check if the type exists

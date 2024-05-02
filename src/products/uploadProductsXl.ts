@@ -5,7 +5,7 @@ import { ProductsService } from './products.service';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { File, OrderProductPivot, Product, Variation, VariationOption } from './entities/product.entity';
+import { File, OrderProductPivot, Product, ProductType, Variation, VariationOption } from './entities/product.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
@@ -22,6 +22,7 @@ import { ShopRepository } from 'src/shops/shops.repository';
 import { AttributeValueRepository } from 'src/attributes/attribute.repository';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, UserRepository } from 'src/users/users.repository';
 import { DeepPartial, Repository } from 'typeorm';
+import { error } from 'console';
 
 @Injectable()
 export class UploadXlService {
@@ -91,16 +92,22 @@ export class UploadXlService {
                     }
 
                     const variationOptions = await this.createVariation(row, headerRow);
+
                     const variations = await this.getVariations(row, headerRow);
+
                     const attributes = this.parseAttributes(row, headerRow)
 
                     products[parentId].attributes.push(attributes);
                     products[parentId].variations.push(variations);
 
                     products[parentId].variation_options.upsert.push(variationOptions);
+
                 } else if (productType === 'main' || productType === 'Main') {
+
                     const productIdIndex = headerRow.indexOf('Id');
+
                     const productId = row[productIdIndex];
+
                     const mainProduct = await this.createMainProduct(row, headerRow);
                     // Initialize variations array
                     mainProduct.variations = [];
@@ -108,7 +115,6 @@ export class UploadXlService {
 
                     // Initialize variation options
                     mainProduct.variation_options = { delete: [], upsert: [] };
-
                     products[productId] = mainProduct;
                 }
             }
@@ -120,6 +126,23 @@ export class UploadXlService {
             console.error(`Error parsing Excel file: ${error.message}`);
             throw new Error('Error parsing Excel file.');
         }
+    }
+
+    async findAttributeValue(attributeValue: string): Promise<AttributeValue | undefined> {
+        return this.attributeValueRepository.findOne({ where: { value: attributeValue } });
+    }
+
+    async getOrCreateAttributeValue(attributeValue: string): Promise<AttributeValue> {
+        let attrValue = await this.findAttributeValue(attributeValue);
+        if (!attrValue) {
+            throw new NotFoundException(`Attribute value '${attributeValue}' not found.`);
+        }
+        return attrValue;
+    }
+
+    async getOrCreateAttributeValues(attributeValues: string[]): Promise<AttributeValue[]> {
+        const promises = attributeValues.map(attrValue => this.getOrCreateAttributeValue(attrValue));
+        return Promise.all(promises);
     }
 
     async createMainProduct(row: any, headerRow: any): Promise<any> {
@@ -134,8 +157,12 @@ export class UploadXlService {
         const tagsId = await this.tagRepository.findOne({ where: { name: row[headerRow.indexOf('Tags')] } });
 
         category.push(categoryId.id)
-        tags.push(tagsId.id)
-        subCategories.push(subCategoryId.id)
+        if (tagsId) {
+            tags.push(tagsId.id)
+        }
+        if (subCategoryId) {
+            subCategories.push(subCategoryId.id)
+        }
 
         return {
             name: row[headerRow.indexOf('Name')],
@@ -169,6 +196,7 @@ export class UploadXlService {
     }
 
     async createVariation(row: any, headerRow: any): Promise<any> {
+        const options: VariationOptionDto[] = await this.createVariationOptions(row, headerRow);
         return {
             is_digital: row[headerRow.indexOf('Is Digital')] === 'true',
             sku: row[headerRow.indexOf('SKU')],
@@ -177,7 +205,7 @@ export class UploadXlService {
             price: parseFloat(row[headerRow.indexOf('Price')]),
             is_disable: row[headerRow.indexOf('Is Disable')] === 'true',
             title: row[headerRow.indexOf('Title')],
-            options: await this.createVariationOptions(row, headerRow),
+            options,
             id: null
         };
     }
@@ -189,12 +217,11 @@ export class UploadXlService {
             const attributeName = row[headerRow.indexOf(`Attribute ${i}`)];
             const attributeValue = row[headerRow.indexOf(`Value ${i}`)];
             if (attributeName && attributeValue) {
-                const fetchedAttributeValue = await this.attributeValueRepository.findOne({ where: { value: attributeValue } });
-                if (fetchedAttributeValue) {
-                    variations.push({ attribute_value_id: fetchedAttributeValue.id });
-                } else {
-                    throw new Error(`Attribute value with name ${attributeName} and value ${attributeValue} not found.`);
+                const fetchedAttributeValue = await this.findAttributeValue(attributeValue);
+                if (!fetchedAttributeValue) {
+                    throw new NotFoundException(`Attribute value '${attributeValue}' not found.`);
                 }
+                variations.push({ attribute_value_id: fetchedAttributeValue.id });
             }
             i++;
         }
@@ -213,8 +240,8 @@ export class UploadXlService {
         return attributes;
     }
 
-    private async createVariationOptions(row: any, headerRow: any): Promise<VariationOptionDto[]> {
-        const variationOptions: VariationOptionDto[] = [];
+    async createVariationOptions(row: any, headerRow: any): Promise<VariationOptionDto[]> {
+        const variationOptions = [];
         let i = 1;
         while (row[headerRow.indexOf(`Attribute ${i}`)] !== undefined && row[headerRow.indexOf(`Value ${i}`)] !== undefined) {
             const attributeName = row[headerRow.indexOf(`Attribute ${i}`)];
@@ -222,14 +249,13 @@ export class UploadXlService {
             if (attributeName && attributeValue) {
                 const attribute = await this.attributeValueRepository.findOne({ where: { value: attributeValue } });
                 if (attribute) {
-                    const option: VariationOptionDto = {
-                        id: null,
+                    variationOptions.push({
                         name: attributeName,
                         value: attributeValue,
-                    };
-                    variationOptions.push(option);
+                    });
                 } else {
-                    this.logger.warn(`Attribute ${attributeName} with value ${attributeValue} not found.`);
+                    // Log a warning or handle the case where the attribute value is not found
+                    console.warn(`Attribute value '${attributeValue}' not found.`);
                 }
             }
             i++;
@@ -262,7 +288,6 @@ export class UploadXlService {
 
             let product: Product;
             if (existingProduct) {
-                console.log('existingProduct')
                 // Update existing product
                 product = existingProduct;
                 // Update product details
@@ -293,18 +318,24 @@ export class UploadXlService {
                 }
 
                 // Update type
-                const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
-                if (!type) {
-                    throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
+                if (createProductDto.type_id) {
+                    const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
+                    if (!type) {
+                        throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
+                    }
+                    product.type = type;
+                    product.type_id = type.id;
                 }
-                product.type = type;
 
                 // Update shop
-                const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
-                if (!shop) {
-                    throw new NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
+                if (createProductDto.shop_id) {
+                    const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
+                    if (!shop) {
+                        throw new NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
+                    }
+                    product.shop = shop;
+                    product.shop_id = shop.id;
                 }
-                product.shop = shop;
 
                 // Update categories
                 if (createProductDto.category) {
@@ -319,12 +350,13 @@ export class UploadXlService {
                 }
 
                 // Update tags
-                const tags = await this.tagRepository.findByIds(createProductDto.tags);
-                product.tags = tags;
+                if (createProductDto.tags) {
+                    const tags = await this.tagRepository.findByIds(createProductDto.tags);
+                    product.tags = tags;
+                }
 
                 // Delete existing variation options and variations
                 await this.remove(product.name);
-
             } else {
                 // Create new product
                 product = new Product();
@@ -356,11 +388,14 @@ export class UploadXlService {
                 }
 
                 // Set type
-                const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
-                if (!type) {
-                    throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
+                if (createProductDto.type_id) {
+                    const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
+                    if (!type) {
+                        throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
+                    }
+                    product.type = type;
+                    product.type_id = type.id;
                 }
-                product.type = type;
 
                 // Set categories
                 if (createProductDto.category) {
@@ -375,18 +410,24 @@ export class UploadXlService {
                 }
 
                 // Set tags
-                const tags = await this.tagRepository.findByIds(createProductDto.tags);
-                product.tags = tags;
+                if (createProductDto.tags) {
+                    const tags = await this.tagRepository.findByIds(createProductDto.tags);
+                    product.tags = tags;
+                }
             }
 
             // Set shop
-            const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
-            if (!shop) {
-                throw new NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
+            if (createProductDto.shop_id) {
+                const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
+                if (!shop) {
+                    throw new NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
+                }
+                product.shop = shop;
+                product.shop_id = shop.id;
             }
-            product.shop = shop;
 
-            if (createProductDto.image?.length > 0 || undefined) {
+            // Set image
+            if (createProductDto.image?.id) {
                 const image = await this.attachmentRepository.findOne(createProductDto.image.id);
                 if (!image) {
                     throw new NotFoundException(`Image with ID ${createProductDto.image.id} not found`);
@@ -394,7 +435,8 @@ export class UploadXlService {
                 product.image = image;
             }
 
-            if (createProductDto.gallery?.length > 0 || undefined) {
+            // Set gallery
+            if (createProductDto.gallery?.length > 0) {
                 const galleryAttachments = [];
                 for (const galleryImage of createProductDto.gallery) {
                     const image = await this.attachmentRepository.findOne(galleryImage.id);
@@ -407,51 +449,35 @@ export class UploadXlService {
             }
 
             if (createProductDto.variations) {
-                const attributeValues = [];
-
-                // Iterate over each set of variations
-                for (const variationSet of createProductDto.variations) {
-                    const variationAttributeValues = [];
-
-                    // Ensure that variationSet is an array
-                    if (!Array.isArray(variationSet)) {
-                        throw new Error(`Expected an array for variationSet, got ${typeof variationSet}`);
+                const attributeValues: AttributeValue[] = [];
+                for (const variation of createProductDto.variations) {
+                    const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
+                    if (!attributeValue) {
+                        throw new NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
                     }
-
-                    // Iterate over each variation in the set
-                    for (const variation of variationSet) {
-
-                        const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
-                        if (!attributeValue) {
-                            throw new NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
-                        }
-                        variationAttributeValues.push(attributeValue);
-                    }
-
-                    // Push the attribute values for this variation set
-                    attributeValues.push(variationAttributeValues);
+                    attributeValues.push(attributeValue);
                 }
-
                 product.variations = attributeValues;
             }
 
             await this.productRepository.save(product);
 
+            // Handle variation options
             if (
-                product.product_type === 'variable' &&
+                product.product_type === ProductType.VARIABLE &&
                 createProductDto.variation_options &&
                 createProductDto.variation_options.upsert
             ) {
-                const variationOPt = [];
+                const variationOptions = [];
                 for (const variationDto of createProductDto.variation_options.upsert) {
-
                     const newVariation = new Variation();
-                    newVariation.title = variationDto.title;
-                    newVariation.price = variationDto.price;
-                    newVariation.sku = variationDto.sku;
-                    newVariation.is_disable = variationDto.is_disable;
-                    newVariation.sale_price = variationDto.sale_price;
-                    newVariation.quantity = variationDto.quantity;
+                    newVariation.title = variationDto?.title;
+                    newVariation.price = variationDto?.price;
+                    newVariation.sku = variationDto?.sku;
+                    newVariation.is_disable = variationDto?.is_disable;
+                    newVariation.sale_price = variationDto?.sale_price;
+                    newVariation.quantity = variationDto?.quantity;
+
                     if (variationDto?.image) {
                         let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
                         if (!image) {
@@ -463,38 +489,43 @@ export class UploadXlService {
                         }
                         newVariation.image = image;
                     }
-                    const variationOptions = [];
-                    for (const option of variationDto.options) {
 
-                        const newVariationOption = new VariationOption();
-                        newVariationOption.id = option.id;
-                        newVariationOption.name = option.name;
-                        newVariationOption.value = option.value;
-                        await this.variationOptionRepository.save(newVariationOption);
-                        variationOptions.push(newVariationOption);
+                    const savedVariation = await this.variationRepository.save(newVariation);
+
+                    const variationOptionEntities = [];
+                    if (variationDto && variationDto.options) {
+                        for (const option of variationDto.options) {
+                            const newVariationOption = new VariationOption();
+                            newVariationOption.name = option.name;
+                            newVariationOption.value = option.value;
+                            const savedVariationOption = await this.variationOptionRepository.save(newVariationOption);
+                            variationOptionEntities.push(savedVariationOption);
+                        }
                     }
-                    newVariation.options = variationOptions;
 
-                    await this.variationRepository.save(newVariation);
+                    savedVariation.options = variationOptionEntities;
 
-                    variationOPt.push(newVariation);
+                    await this.variationRepository.save(savedVariation);
+
+                    variationOptions.push(savedVariation);
                 }
-                product.variation_options = variationOPt;
+
+                product.variation_options = variationOptions;
 
                 await this.productRepository.save(product);
             }
 
             if (product) {
-                await this.productsService.updateShopProductsCount(shop.id, product.id);
+                await this.productsService.updateShopProductsCount(product.shop_id, product.id);
             }
+
             return product;
 
-
-        }
-        catch (error) {
+        } catch (error) {
             throw new Error('Error saving products: ' + error.message);
         }
     }
+
 
     async remove(name: string): Promise<void> {
         console.log('name***remove',)

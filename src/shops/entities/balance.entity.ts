@@ -7,6 +7,7 @@ import {
   OneToOne,
   JoinColumn,
   ManyToOne,
+  OneToMany,
 } from 'typeorm'
 import { PaymentInfo, Shop } from './shop.entity'
 
@@ -16,10 +17,9 @@ export class Balance {
   id: number
   @Column()
   admin_commission_rate: number
-  @OneToOne(() => Shop, shop => shop.balance, { cascade: true })
-  @JoinColumn()
+  @OneToMany(() => Shop, shop => shop.balance, { cascade: true })
   shop: Shop
-  @ManyToOne(() => Dealer)
+  @ManyToOne(() => Dealer, (dealer) => dealer.balance)
   dealer: Dealer;
   @Column()
   total_earnings: number
