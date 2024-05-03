@@ -68,7 +68,7 @@ export class StocksSellOrd extends CoreEntity {
     @Column({ nullable: true })
     delivery_time: string;
 
-    @ManyToMany(() => Product, product => product.StocksSellOrd)
+    @ManyToMany(() => Product, product => product.StocksSellOrd, { cascade: true })
     @JoinTable({ name: "product_StocksSellOrd" })
     products: Product[];
 

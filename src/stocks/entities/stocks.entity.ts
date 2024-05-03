@@ -30,7 +30,7 @@ export class Stocks {
     @ManyToOne(() => Product, (product) => product.stocks)
     product?: Product;
 
-    @ManyToOne(() => User, (user) => user.stocks)
+    @ManyToOne(() => User, (user) => user.stocks, { cascade: true, eager: true })
     user: User;
 
     @ManyToOne(() => Order, (order) => order.stocks)
