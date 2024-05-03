@@ -26,8 +26,7 @@ export class Dealer {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @OneToOne(() => User, { cascade: true })
-    @JoinColumn()
+    @OneToOne(() => User, (user) => user.dealer)
     user: User;
 
     @Column()
@@ -35,6 +34,7 @@ export class Dealer {
 
     @Column()
     name: string;
+
     @Column({ type: 'enum', enum: SubscriptionType })
     subscriptionType: SubscriptionType;
 
@@ -46,8 +46,10 @@ export class Dealer {
 
     @Column({ type: 'decimal', precision: 5, scale: 2 })
     discount: number;
+
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     walletBalance: number;
+
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
 

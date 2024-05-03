@@ -67,7 +67,7 @@ export class UsersService {
   //------------------------------ User service -------------------------- 
 
   async create(createUserDto: CreateUserDto) {
-   console.log("creactUserDto", createUserDto)
+    console.log("creactUserDto", createUserDto)
     const user = await this.userRepository.findOne({ where: { email: createUserDto.email }, relations: ['type'] })
     if (user) {
       throw new NotFoundException(`User with email ${createUserDto.email} already exists`);
@@ -347,18 +347,16 @@ export class UsersService {
   // -------------------------------Dealer Services----------------------
 
   async createDealer(dealerData: DealerDto) {
-    const user = await this.userRepository.findOne({ where: { id: dealerData.user.id }, relations: ['type'] });
-
-    const usr_type = await this.permissionRepository.findOneBy(user)
-
-    if (!user && usr_type.type_name !== UserType.Dealer) {
-      throw new NotFoundException(`User with ID ${dealerData.user} not found`);
+    // Check if the user exists and is of type 'Dealer'
+    const user = await this.userRepository.findOne({ where: { id: dealerData.user.id }, relations: ['type', 'dealer'] });
+    if (!user || user.type.type_name !== UserType.Dealer) {
+      throw new NotFoundException(`User with ID ${dealerData.user.id} not found or is not a Dealer`);
     }
 
+    // Create a new dealer instance and assign values from the DTO
     const dealer = new Dealer();
     dealer.name = dealerData.name;
     dealer.phone = dealerData.phone;
-    dealer.user = user;
     dealer.subscriptionType = dealerData.subscriptionType;
     dealer.subscriptionStart = dealerData.subscriptionStart;
     dealer.subscriptionEnd = dealerData.subscriptionEnd;
@@ -368,33 +366,49 @@ export class UsersService {
     dealer.gst = dealerData.gst;
     dealer.pan = dealerData.pan;
 
-    // Save the dealer first to generate an ID
-    await this.dealerRepository.save(dealer);
+    // Set the user relation in the dealer
+    dealer.user = user;
 
-    // Then save the dealer product margins
+    // Save the dealer entity to generate an ID
+    const savedDealer = await this.dealerRepository.save(dealer);
+
+    // Update the user's dealer relation
+    user.dealer = savedDealer;
+    await this.userRepository.save(user);
+
+    // Iterate over dealerProductMargins and save each
     for (const marginData of dealerData.dealerProductMargins) {
+      // Assuming marginData.product is properly defined elsewhere
       const product = await this.productRepository.findOne({ where: { id: marginData.product.id } });
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${marginData.product.id} not found`);
+      }
       const margin = new DealerProductMargin();
       margin.product = product;
       margin.margin = marginData.margin;
       margin.isActive = marginData.isActive;
-      margin.dealer = dealer;  // Associate the margin with the dealer
-      await this.dealerProductMarginRepository.save(margin);  // Save the margin
+      margin.dealer = savedDealer;
+      await this.dealerProductMarginRepository.save(margin);
     }
 
-    // And the dealer category margins
+    // Iterate over dealerCategoryMargins and save each
     for (const marginData of dealerData.dealerCategoryMargins) {
+      // Assuming marginData.category is properly defined elsewhere
       const category = await this.categoryRepository.findOne({ where: { id: marginData.category.id } });
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${marginData.category.id} not found`);
+      }
       const margin = new DealerCategoryMargin();
       margin.category = category;
       margin.margin = marginData.margin;
       margin.isActive = marginData.isActive;
-      margin.dealer = dealer;  // Associate the margin with the dealer
-      await this.dealerCategoryMarginRepository.save(margin);  // Save the margin
+      margin.dealer = savedDealer;
+      await this.dealerCategoryMarginRepository.save(margin);
     }
 
-    return dealer;
+    return savedDealer;
   }
+
 
   async getAllDealers(): Promise<Dealer[]> {
     return this.dealerRepository.find({ relations: ['user', 'dealerProductMargins', 'dealerProductMargins.product', 'dealerCategoryMargins', 'dealerCategoryMargins.category'] });
@@ -502,14 +516,14 @@ export class UsersService {
 
   // ------------------------- Profile Service ----------------------------------------
 
-  async createProfile(createProfileDto: CreateProfileDto): Promise<Profile>{
-    
-    
+  async createProfile(createProfileDto: CreateProfileDto): Promise<Profile> {
+
+
     return
   }
 
-  async updateProfile(updateProfileDto: UpdateProfileDto): Promise<Profile>{
-   
+  async updateProfile(updateProfileDto: UpdateProfileDto): Promise<Profile> {
+
     return
   }
 }

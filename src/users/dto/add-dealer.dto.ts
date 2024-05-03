@@ -22,10 +22,10 @@ export class DealerCategoryMarginDto {
 
 export class DealerDto {
     id: number;
-    user: User;
+    user: User; // Assuming this is properly defined elsewhere
     phone: number;
     name: string;
-    subscriptionType: SubscriptionType.SILVER;
+    subscriptionType: SubscriptionType;
     subscriptionStart: Date;
     subscriptionEnd: Date;
     discount: number;

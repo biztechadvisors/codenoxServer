@@ -54,15 +54,16 @@ export class StocksService {
 
     async create(createStocksDto: CreateStocksDto): Promise<Stocks[]> {
         try {
+            console.log('createStocksDto***', createStocksDto)
             const { user_id, products } = createStocksDto;
 
             const dealer = await this.userRepository.findOne({ where: { id: user_id }, relations: ['dealer'] })
-            console.log('dealer****', dealer)
+
+            console.log('dealer***', dealer)
             if (!dealer?.dealer) {
                 throw new NotFoundException(`Dealer not Found by ${user_id} ID`)
             }
 
-            console.log('dealer****33', dealer)
             // Fetch existing stocks for the given user
             const existingStocks = await this.stocksRepository.find({
                 where: { user: { id: user_id } },
@@ -76,12 +77,10 @@ export class StocksService {
                     (stock) => stock.product.id === product.product_id,
                 );
 
-                console.log("existingStock***", existingStock)
-
                 if (!existingStock) {
                     // Create a new stock record for the product
                     const newStock = this.stocksRepository.create({
-                        ordPendQuant: product.order_quantity,
+                        ordPendQuant: createStocksDto.ordPendQuant,
                         status: false,
                         quantity: 0,
                         inStock: false,
@@ -107,12 +106,11 @@ export class StocksService {
             const { inStock, ordPendQuant, quantity, status, product } = updateStkQuantityDto;
 
             const dealer = await this.userRepository.findOne({ where: { id: user_id }, relations: ['dealer'] })
-            console.log('dealer****', dealer)
+
             if (!dealer?.dealer) {
                 throw new NotFoundException(`Dealer not Found by ${user_id} ID`)
             }
 
-            console.log('dealer****33', dealer)
             // Fetch existing stocks for the given user
             const existingStocks = await this.stocksRepository.findOne({
                 where: { user: { id: user_id }, product: { id: product } },
@@ -187,7 +185,6 @@ export class StocksService {
 
     async afterORD(createOrderDto: CreateOrderDto): Promise<any> {
         try {
-            console.log(Number(createOrderDto.dealerId), " ****** ", createOrderDto.products)
 
             const existingStocks = await this.stocksRepository.find({
                 where: { user: { id: Number(createOrderDto.dealerId) }, product: { id: In(createOrderDto.products.map(product => product.product_id)) } },
@@ -196,10 +193,6 @@ export class StocksService {
 
             for (const orderProduct of createOrderDto.products) {
                 const stock = existingStocks.find(s => s.product.id === orderProduct.product_id);
-
-                console.log(orderProduct.order_quantity, " ****** order_quantity")
-
-                console.log(stock.quantity, " ****** quantity")
 
                 if (!stock) {
                     throw new NotFoundException(`Stock with product ID ${orderProduct.product_id} not found for user ${createOrderDto.dealerId}`);
@@ -221,7 +214,7 @@ export class StocksService {
 
     async OrdfromStocks(createOrderInput: CreateOrderDto): Promise<StocksSellOrd> {
         try {
-            console.log("createOrderInput***", createOrderInput)
+
             // throw error
             const order = plainToClass(StocksSellOrd, createOrderInput)
             const newOrderStatus = new OrderStatus();
@@ -261,7 +254,7 @@ export class StocksService {
                 const customer = await this.userRepository.findOne({
                     where: { id: order.customer_id, email: order.customer.email }, relations: ['type']
                 });
-                console.log("customer*****", customer)
+
                 if (!customer) {
                     throw new NotFoundException('Customer not found');
                 }
@@ -355,16 +348,8 @@ export class StocksService {
     }: GetOrdersDto): Promise<OrderPaginator> {
         try {
 
-            console.log("Query********", limit,
-                page,
-                customer_id,
-                tracking_number,
-                search,
-                shop_id,)
-
             const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
 
-            console.log("user*****", usr)
             if (!usr) {
                 throw new Error('User not found');
             }
@@ -422,7 +407,6 @@ export class StocksService {
                 .take(limit)
                 .getManyAndCount();
 
-            console.log("data*****", data)
             const results = await Promise.all(
                 data.map(async (order) => {
                     const products = await Promise.all(order.products.map(async (product) => {
@@ -529,7 +513,6 @@ export class StocksService {
                 })
             );
 
-            console.log("Orders******", results)
             const url = `/orders?search=${search}&limit=${limit}`;
             return {
                 data: results,
@@ -608,7 +591,7 @@ export class StocksService {
                 products: await Promise.all(order.products.map(async (product) => {
                     const pivot = product.pivot.find(p => p.Ord_Id === order.id);
 
-                    if (!pivot || !product.id) {  // Ensure product.id is defined
+                    if (!pivot || !product.id) {
                         return null;
                     }
 
@@ -672,13 +655,12 @@ export class StocksService {
                 // children: order.children,
                 wallet_point: order.wallet_point
             };
-            console.log("transformedOrder****", transformedOrder)
+
             return transformedOrder;
         } catch (error) {
             console.error('Error in getOrderByIdOrTrackingNumber:', error);
             throw error;
         }
     }
-
 
 }

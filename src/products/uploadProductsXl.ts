@@ -98,7 +98,7 @@ export class UploadXlService {
                     const attributes = this.parseAttributes(row, headerRow)
 
                     products[parentId].attributes.push(attributes);
-                    products[parentId].variations.push(variations);
+                    products[parentId].variations.push(...variations);
 
                     products[parentId].variation_options.upsert.push(variationOptions);
 
