@@ -332,19 +332,19 @@ export class OrdersService {
         await this.downloadInvoiceUrl((savedOrder.id).toString())
       }
 
-      // if (savedOrder.customerId == savedOrder.dealer.id) {
-      //   const CreateStocksDto = {
-      //     user_id: savedOrder.customerId,
-      //     products: savedOrder.products.map((k) => k.pivot.map((v) => { v.order_quantity, v.Ord_Id, v.product, v.subtotal, v.unit_price, v.variation_option_id })),
-      //     ordPendQuant: 0,
-      //     dispatchedQuantity: 0,
-      //     status: 0,
-      //     quantity: 0,
-      //     inStock: 0,
-      //   }
+      if (savedOrder.customerId == savedOrder.dealer.id) {
+        const CreateStocksDto = {
+          user_id: savedOrder.customerId,
+          products: savedOrder.products.map((k) => k.pivot.map((v) => v)),
+          ordPendQuant: 0,
+          dispatchedQuantity: 0,
+          status: true,
+          quantity: 0,
+          inStock: true,
+        }
 
-      //   this.StocksService.create(CreateStocksDto)
-      // }
+        this.StocksService.create(CreateStocksDto)
+      }
 
       return savedOrder;
     } catch (error) {

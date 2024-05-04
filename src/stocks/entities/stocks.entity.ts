@@ -13,9 +13,6 @@ export class Stocks {
     quantity: number
 
     @Column()
-    currentOrdQuant: number
-
-    @Column()
     ordPendQuant: number
 
     @Column()
