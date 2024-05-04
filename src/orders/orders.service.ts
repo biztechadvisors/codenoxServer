@@ -53,6 +53,8 @@ import { error } from 'console';
 import { MailService } from 'src/mail/mail.service';
 import { Dealer } from 'src/users/entities/dealer.entity';
 import { UserAddress } from 'src/addresses/entities/address.entity';
+import { StocksService } from 'src/stocks/stocks.service';
+import { CreateStocksDto } from 'src/stocks/dto/create-stock.dto';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -68,6 +70,7 @@ export class OrdersService {
     private readonly razorpayService: RazorpayService,
     private readonly shiprocketService: ShiprocketService,
     private readonly MailService: MailService,
+    private readonly StocksService: StocksService,
 
 
     @InjectRepository(Order)
@@ -329,6 +332,20 @@ export class OrdersService {
         await this.downloadInvoiceUrl((savedOrder.id).toString())
       }
 
+      // if (savedOrder.customerId == savedOrder.dealer.id) {
+      //   const CreateStocksDto = {
+      //     user_id: savedOrder.customerId,
+      //     products: savedOrder.products.map((k) => k.pivot.map((v) => { v.order_quantity, v.Ord_Id, v.product, v.subtotal, v.unit_price, v.variation_option_id })),
+      //     ordPendQuant: 0,
+      //     dispatchedQuantity: 0,
+      //     status: 0,
+      //     quantity: 0,
+      //     inStock: 0,
+      //   }
+
+      //   this.StocksService.create(CreateStocksDto)
+      // }
+
       return savedOrder;
     } catch (error) {
       console.error('Error creating order:', error);
@@ -345,7 +362,7 @@ export class OrdersService {
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
     try {
-      console.log("customer_id****", customer_id, tracking_number, shop_id)
+      console.log("getOrders****", customer_id, shop_id)
 
       let usr;
       if (customer_id) {
@@ -589,7 +606,7 @@ export class OrdersService {
         .where('order.id = :id', { id })
         .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
         .getOne();
-      // console.log("PRODUCTS============",order.products);
+
       if (!order) {
         throw new NotFoundException('Order not found');
       }
@@ -635,7 +652,7 @@ export class OrdersService {
         dealer: order.dealer ? order.dealer : null,
         products: await Promise.all(order.products.map(async (product) => {
           const pivot = product.pivot.find(p => p.Ord_Id === order.id);
-          // console.log("PIvot()()()()()",pivot);
+
           if (!pivot || !product.id) {  // Ensure product.id is defined
             return null;
           }
@@ -958,8 +975,6 @@ export class OrdersService {
   async downloadInvoiceUrl(Order_id: string) {
 
     const Invoice = await this.getOrderByIdOrTrackingNumber(parseInt(Order_id));
-    console.log("Invoice****", Invoice);
-    // console.log("PIVOT_________", Invoice.products.pivot);
 
     //   const numberToWords = (num: number) => {
     //     const a = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
@@ -1001,7 +1016,7 @@ export class OrdersService {
           shop_address: shopProducts[0].shop,
           products: shopProducts,
         };
-        console.log("working properly++++++++", taxType);
+
         // Assuming all products in a shop have the same tax rates and state information
         if (shopProducts[0].shop.address.state === Invoice.shipping_address.state) {
           const stateCodeValue = stateCode[Invoice.shipping_address.state];
@@ -1014,7 +1029,6 @@ export class OrdersService {
           taxType.state_code = stateCodeValue;
         }
 
-        console.log("working properly")
         await this.MailService.sendInvoiceToCustomerORDealer(taxType);
 
       }

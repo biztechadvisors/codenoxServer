@@ -15,14 +15,13 @@ export class MailService {
   constructor(private mailerService: MailerService) { }
 
   async renderTemplate(data) {
-    console.log('Data come or not  = ', data);
+
     const templatePath = path.join(__dirname, 'templates', 'invoiceToCustomer.hbs'); // Construct absolute path
     // console.log('Template path:', templatePath); // Log absolute path
     try {
       const templateContent = fs.readFileSync(templatePath, 'utf8');
       const compiledTemplate = Handlebars.compile(templateContent);
       const renderedTemplate = compiledTemplate(data);
-      console.log('Rendered template:', compiledTemplate);
 
       // const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
 
@@ -49,14 +48,13 @@ export class MailService {
   }
 
   async dealer_renderTemplate(data) {
-    console.log('DataCOMEORNOT  = ', data);
+
     const templatePath = path.join(__dirname, 'templates', 'invoiceDealerToCustomer.hbs'); // Construct absolute path
     // console.log('Template path:', templatePath); // Log absolute path
     try {
       const templateContent = fs.readFileSync(templatePath, 'utf8');
       const compiledTemplate = Handlebars.compile(templateContent);
       const renderedTemplate = compiledTemplate(data);
-      console.log('Rendered template:', compiledTemplate);
 
       // const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
 
@@ -86,7 +84,6 @@ export class MailService {
   async sendUserConfirmation(user: User, token: string) {
     const url = `example.com/auth/confirm?token=${token}`
 
-    console.log('OTP"""""""""""""""":', user.otp)
     await this.mailerService.sendMail({
       to: user.email,
       from: '"Support Team" <info@365dgrsol.in>', // override default from
@@ -122,8 +119,6 @@ export class MailService {
   // OTP for forgetPassword
   async forgetPasswordUserConfirmation(user: User, token: string) {
     const url = `example.com/auth/confirm?token=${token}`
-
-    console.log('OTP:', user.otp)
 
     await this.mailerService.sendMail({
       to: user.email,
@@ -222,8 +217,6 @@ export class MailService {
         invoice_date,
       } = taxType;
 
-      console.log('prodcuts-mail-135', total_tax_amount);
-
       const totalSubtotal = products.reduce((accumulator, currentValue) => {
         return accumulator + currentValue.pivot.subtotal;
       }, 0);
@@ -241,7 +234,6 @@ export class MailService {
         return { ...product, subtotal, taxAmount, total }; // Return the original product data with the new calculated values
       });
       const finalEmail = taxType.dealer.email ? taxType.dealer.email : taxType.customer.email;
-      console.log("finalMAILLLLLLLLLLLll", finalEmail);
 
       const orderDetails = {
         IGST,
@@ -270,13 +262,11 @@ export class MailService {
 
 
       const htmlContent = await this.renderTemplate(orderDetails);
-      // console.log("RADHIKA+++++++++++++++++++",htmlContent);
 
       // Generate PDF from HTML content
       // const pdfBuffer = await this.generatePdfFromHtml(htmlContent);
 
       // console.log("orderDetails***184", orderDetails);
-
 
     } catch (error) {
       console.error("Invoice sending failed to Customer", error);
@@ -373,7 +363,6 @@ export class MailService {
   // }
 
   async sendInvoiceDealerToCustomer(Invoice: any) {
-    console.log('prodcuts-mail-135########', Invoice);
 
     try {
       const {
@@ -401,8 +390,6 @@ export class MailService {
         invoice_date,
       } = Invoice;
 
-      // console.log('prodcuts-mail-135########', Invoice);
-
       const totalSubtotal = products.reduce((accumulator, currentValue) => {
         return accumulator + currentValue.pivot.subtotal;
       }, 0);
@@ -420,7 +407,6 @@ export class MailService {
         return { ...product, subtotal, taxAmount, total }; // Return the original product data with the new calculated values
       });
       const finalEmail = Invoice.dealer.email ? Invoice.dealer.email : Invoice.customer.email;
-      console.log("finalMAILLLLLLLLLLLll", finalEmail);
 
       const orderDetails = {
         IGST,
@@ -530,7 +516,6 @@ export class MailService {
 
   // Send Abandonment Cart Reminder Email
   async sendAbandonmenCartReminder(email: any, products: any) {
-    console.log("==================+++++++++++", email, products);
 
     // Check if products is an array and has elements
     if (!Array.isArray(products) || products.length === 0) {
@@ -548,7 +533,6 @@ export class MailService {
       }));
 
       const CartUrl = "https://www.tilitso.in/shop-cart";
-      console.log("mapped data----------------------", email, productDetails);
 
       await this.mailerService.sendMail({
         // to: "radhikaji.varfa@outlook.com",
