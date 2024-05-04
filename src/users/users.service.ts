@@ -345,10 +345,9 @@ export class UsersService {
   }
 
   // -------------------------------Dealer Services----------------------
-
   async createDealer(dealerData: DealerDto) {
     // Check if the user exists and is of type 'Dealer'
-    const user = await this.userRepository.findOne({ where: { id: dealerData.user.id }, relations: ['type', 'dealer'] });
+    const user = await this.userRepository.findOne({ where: { id: dealerData.user.id }, relations: ['type'] });
     if (!user || user.type.type_name !== UserType.Dealer) {
       throw new NotFoundException(`User with ID ${dealerData.user.id} not found or is not a Dealer`);
     }
@@ -374,6 +373,12 @@ export class UsersService {
 
     // Update the user's dealer relation
     user.dealer = savedDealer;
+    await this.userRepository.save(user);
+
+    // Save the userId to the Dealer table and the dealerId to the User table
+    savedDealer.user = user;
+    user.dealer = savedDealer;
+    await this.dealerRepository.save(savedDealer);
     await this.userRepository.save(user);
 
     // Iterate over dealerProductMargins and save each
@@ -408,6 +413,7 @@ export class UsersService {
 
     return savedDealer;
   }
+
 
 
   async getAllDealers(): Promise<Dealer[]> {

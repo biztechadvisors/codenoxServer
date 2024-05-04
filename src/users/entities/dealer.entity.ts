@@ -26,7 +26,8 @@ export class Dealer {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @OneToOne(() => User, (user) => user.dealer)
+    @OneToOne(() => User)
+    @JoinColumn()
     user: User;
 
     @Column()
