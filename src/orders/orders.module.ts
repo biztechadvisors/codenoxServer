@@ -27,6 +27,9 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { Dealer } from 'src/users/entities/dealer.entity';
 import { UserAddress } from 'src/addresses/entities/address.entity';
+import { StocksService } from 'src/stocks/stocks.service';
+import { Stocks } from 'src/stocks/entities/stocks.entity';
+import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 
 @Module({
   imports: [
@@ -35,7 +38,7 @@ import { UserAddress } from 'src/addresses/entities/address.entity';
     TypeOrmExModule.forCustomRepository([
       OrderProductPivotRepository
     ]),
-    TypeOrmModule.forFeature([Order, UserAddress, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission]), // Include Order and OrderStatus here
+    TypeOrmModule.forFeature([Order, UserAddress, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd]), // Include Order and OrderStatus here
     HttpModule,
   ],
   controllers: [
@@ -46,7 +49,7 @@ import { UserAddress } from 'src/addresses/entities/address.entity';
     DownloadInvoiceController,
     ShiprocketController,
   ],
-  providers: [OrdersService, ShiprocketService, MailService],
+  providers: [OrdersService, ShiprocketService, MailService, StocksService],
   exports: [OrdersService],
 })
 export class OrdersModule { }
