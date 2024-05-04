@@ -46,7 +46,7 @@ export class User extends CoreEntity {
   @JoinColumn()
   profile?: Profile;
 
-  @OneToOne(() => Dealer, (dealer) => dealer.user, { eager: true, cascade: true })
+  @OneToOne(() => Dealer, { eager: true, cascade: true })
   @JoinColumn()
   dealer?: Dealer;
 
