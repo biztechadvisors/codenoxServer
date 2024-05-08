@@ -17,22 +17,19 @@ import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
 export class StocksController {
     constructor(private readonly stocksService: StocksService) { }
 
-    @Post()
-    async create(@Body() createStocksDto: CreateStocksDto) {
-        console.log("create-stock")
-        return this.stocksService.create(createStocksDto);
-    }
+    // @Post()
+    // async create(@Body() createStocksDto: CreateStocksDto) {
+    //     return this.stocksService.create(createStocksDto);
+    // }
 
 
     @Get('all/:id')
     async getAllStocks(@Param('id') id: number) {
-        // console.log(id);
         return this.stocksService.getAllStocks(id);
     }
 
     @Get(':id')
     async getStocks(@Param('id') id: number) {
-        console.log(id);
         return this.stocksService.getAll(id);
     }
 
@@ -49,7 +46,6 @@ export class StocksController {
 
     @Put()
     async afterORD(@Body() createOrderDto: CreateOrderDto) {
-        console.log("create-afterORD")
         return this.stocksService.afterORD(createOrderDto);
     }
 

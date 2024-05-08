@@ -101,7 +101,6 @@ export class AuthController {
   @Post('logout')
   async logout(@Body() logoutDto: LoginDto): Promise<{ message: string }> {
     const result = await this.authService.logout(logoutDto);
-    console.log(result)
     return { message: result };
   }
 

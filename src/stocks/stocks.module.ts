@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { User } from 'src/users/entities/user.entity'
 import { OrderProductPivot, Product } from 'src/products/entities/product.entity'
-import { Stocks } from './entities/stocks.entity'
+import { InventoryStocks, Stocks } from './entities/stocks.entity'
 import { StocksService } from './stocks.service'
 import { Dealer } from 'src/users/entities/dealer.entity'
 import { UserAddress } from 'src/addresses/entities/address.entity'
@@ -18,7 +18,7 @@ import { StocksSellOrd } from './entities/stocksOrd.entity'
 import { Permission } from 'src/permission/entities/permission.entity'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Attachment, Permission, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAddress, Shop,])],
+    imports: [TypeOrmModule.forFeature([Attachment, Permission, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAddress, Shop, InventoryStocks])],
     controllers: [
         StocksController,
     ],

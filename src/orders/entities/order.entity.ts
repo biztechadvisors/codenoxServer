@@ -156,8 +156,6 @@ export class Order extends CoreEntity {
   @JoinColumn({ name: 'dealerId' })
   dealer: User;
 
-  @OneToMany(() => Stocks, stocks => stocks.order, { cascade: true })
-  stocks: Stocks[];
 }
 
 @Entity()

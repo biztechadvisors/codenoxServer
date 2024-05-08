@@ -205,12 +205,9 @@ export class ProductsService {
         product.gallery = galleryAttachments;
       }
 
-      console.log('createProductDto.variations---206', createProductDto.variations)
-
       if (createProductDto.variations) {
         const attributeValues: AttributeValue[] = [];
         for (const variation of createProductDto.variations) {
-          console.log('variation---209', variation)
           const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
           if (!attributeValue) {
             throw new NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
@@ -272,7 +269,7 @@ export class ProductsService {
         }
 
         product.variation_options = variationOptions;
-        // console.log('product', product);
+
         await this.productRepository.save(product);
       }
 
@@ -284,7 +281,6 @@ export class ProductsService {
   }
 
   async getProducts({ limit = 20, page = 1, search, userId }: GetProductsDto): Promise<ProductPaginator> {
-    console.log('getProducts***', search, " ", userId);
     const startIndex = (page - 1) * limit;
     const productQueryBuilder = this.productRepository.createQueryBuilder('product');
 
@@ -589,7 +585,7 @@ export class ProductsService {
             } else {
               // Destructuring variations and variation_options  
               if (product) {
-                // console.log("product", product)
+  
                 // Destructuring variations
                 product.variations = product.variations.map((variation) => ({
                   ...variation,
@@ -622,7 +618,7 @@ export class ProductsService {
 
           // Destructuring variations and variation_options  
           if (product) {
-            // console.log("product", product)
+
             // Destructuring variations
             product.variations = product.variations.map((variation) => ({
               ...variation,

@@ -19,7 +19,6 @@ export class PermissionService {
 
   async create(createPermission: CreatePermissionDto) {
 
-    console.log("createPermission*******", createPermission.user)
     const existingPermission = await this.permissionRepository.findOne({ where: { permission_name: createPermission.permission_name } })
     if (existingPermission) {
       return 'Already exist'
@@ -43,8 +42,8 @@ export class PermissionService {
           permissionType.type = permissionData.type;
           permissionType.permissions = savedPermission;
 
-           await this.permissionTypeRepository.save(permissionType);
-          
+          await this.permissionTypeRepository.save(permissionType);
+
 
         }
       } else {
@@ -59,7 +58,7 @@ export class PermissionService {
 
   async getPermission(userId: any) {
     try {
-      console.log("userID***************56", userId)
+    
       const permissions = await this.permissionRepository
         .createQueryBuilder('permission')
         .leftJoinAndSelect('permission.permissions', 'permissionTypes') // Use a different alias to avoid confusion
@@ -105,6 +104,7 @@ export class PermissionService {
 
 
   async getPermissionID(id: number) {
+  
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
@@ -138,7 +138,7 @@ export class PermissionService {
 
 
   async updatePermission(id: number, updatePermissionDto: UpdatePermissionDto) {
-    
+
     try {
       const permissionToUpdate = await this.permissionRepository
         .createQueryBuilder('permission')
@@ -179,7 +179,6 @@ export class PermissionService {
         }
       }
 
-      console.log("permissionsToRemove*********168", permissionsToRemove)
       if (permissionsToRemove.length > 0) {
         await this.permissionTypeRepository.remove(permissionsToRemove);
       }
@@ -197,7 +196,7 @@ export class PermissionService {
       .delete()
       .where('permissionsId = :id', { id })
       .execute();
-      const result = await this.permissionRepository
+    const result = await this.permissionRepository
       .createQueryBuilder()
       .delete()
       .where('id = :id', { id })
