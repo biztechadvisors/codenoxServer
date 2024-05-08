@@ -147,7 +147,7 @@ export class OrdersService {
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
-      console.log("createOrderInput***", createOrderInput)
+
       const order = plainToClass(Order, createOrderInput)
       const newOrderStatus = new OrderStatus();
       const newOrderFile = new OrderFiles();
@@ -257,9 +257,10 @@ export class OrdersService {
         weight: 1
       };
 
-      const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
+      // const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
 
-      order.tracking_number = shiprocketResponse.shipment_id || shiprocketResponse.order_id;
+      order.tracking_number = "438234234";
+      // shiprocketResponse.shipment_id || shiprocketResponse.order_id;
 
       await this.orderRepository.save(order);
 
@@ -332,20 +333,20 @@ export class OrdersService {
         await this.downloadInvoiceUrl((savedOrder.id).toString())
       }
 
-      if (savedOrder.customerId == savedOrder.dealer.id) {
-        const CreateStocksDto = {
+      if (savedOrder && savedOrder.customerId == savedOrder.dealer) {
+
+        const createStocksDto = {
           user_id: savedOrder.customerId,
-          products: savedOrder.products.map((k) => k.pivot.map((v) => v)),
-          ordPendQuant: 0,
-          dispatchedQuantity: 0,
-          status: true,
-          quantity: 0,
-          inStock: true,
+          order_id: savedOrder.id,
+          products: createOrderInput.products,
+        };
+
+        if (!createStocksDto.order_id) {
+          throw new Error('Order ID is required');
         }
 
-        this.StocksService.create(CreateStocksDto)
+        await this.StocksService.create(createStocksDto);
       }
-
       return savedOrder;
     } catch (error) {
       console.error('Error creating order:', error);

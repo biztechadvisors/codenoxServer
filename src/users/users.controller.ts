@@ -30,18 +30,19 @@ export class UsersController {
 
   @Get()
   getAllUsers(@Query() query: GetUsersDto) {
+
     return this.usersService.getUsers(query);
   }
 
   @Get(':id')
   getUser(@Param('id') id: string) {
-    console.log("id*************", id)
+
     return this.usersService.findOne(+id);
   }
 
   @Put(':id')
   updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-    console.log("create user", updateUserDto)
+
     return this.usersService.update(+id, updateUserDto);
   }
 

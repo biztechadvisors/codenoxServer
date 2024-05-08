@@ -8,13 +8,13 @@ import { Profile } from './profile.entity';
 import { Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
 import { Dealer } from './dealer.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
-import { Stocks } from 'src/stocks/entities/stocks.entity';
+import { InventoryStocks, Stocks } from 'src/stocks/entities/stocks.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 
 export enum UserType {
   Super_Admin = 'Super_Admin',
   Admin = 'Admin',
-  Dealer = 'Dealer',
+  Dealer = 'dealer',
   Vendor = 'Vendor',
   Customer = 'Customer',
 }
@@ -56,6 +56,9 @@ export class User extends CoreEntity {
   @OneToMany(() => Shop, (shop) => shop.owner)
   shops?: Shop[];
 
+  @OneToMany(() => InventoryStocks, (inventoryStocks) => inventoryStocks.user)
+  inventoryStocks?: InventoryStocks[];
+
   @OneToMany(() => Stocks, (stocks) => stocks.user)
   stocks?: Stocks[];
 
@@ -74,10 +77,9 @@ export class User extends CoreEntity {
   @OneToMany(() => StocksSellOrd, (stocksSellOrd) => stocksSellOrd.customer)
   stocksSellOrd: StocksSellOrd[];
 
-  @ManyToOne(() => Permission)
-  @JoinColumn({ name: "permission_id" })
-  type?: Permission;
-
+  @ManyToOne(() => Permission, permission => permission.user)
+  @JoinColumn({ name: 'permission_id' })
+  type: Permission;
 
   @Column()
   walletPoints: number;

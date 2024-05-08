@@ -63,9 +63,6 @@ export class Product extends CoreEntity {
   @OneToMany(() => OrderProductPivot, orderProductPivot => orderProductPivot.product)
   pivot?: OrderProductPivot[];
 
-  @OneToMany(() => Stocks, (stocks) => stocks.product, { cascade: true })
-  stocks?: Stocks[];
-
   @ManyToMany(() => Order, order => order.products)
   @JoinTable({ name: "product_order" })
   orders: Order[];

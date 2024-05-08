@@ -290,7 +290,8 @@ export class AuthService {
 
   async login(loginInput: LoginDto) {
     try {
-      const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
+
+      const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type', 'dealer'] });
 
       if (!user || !user.isVerified) {
         throw new UnauthorizedException('User Is Not Registered!');
@@ -303,7 +304,7 @@ export class AuthService {
 
       const { access_token } = await this.signIn(loginInput.email);
 
-      const permission = user.type ? await this.permissionRepository.findOneBy(user.type) : null;
+      const permission = user.type ? await this.permissionRepository.findOne({ where: { id: user.type.id } }) : null;
 
       if (!permission || permission.id === null) {
         return {

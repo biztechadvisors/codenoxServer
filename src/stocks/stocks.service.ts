@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { In, Repository } from 'typeorm';
-import { Stocks } from './entities/stocks.entity';
+import { InventoryStocks, Stocks } from './entities/stocks.entity';
 import { CreateStocksDto, GetStocksDto, UpdateStkQuantityDto } from './dto/create-stock.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
@@ -12,7 +12,7 @@ import { Order, OrderStatusType, PaymentGatewayType, PaymentStatusType } from 's
 import { StocksSellOrd } from './entities/stocksOrd.entity';
 import { plainToClass } from 'class-transformer';
 import { OrderStatus } from 'src/orders/entities/order-status.entity';
-import { OrderProductPivot, Product } from 'src/products/entities/product.entity';
+import { OrderProductPivot, Product, Variation } from 'src/products/entities/product.entity';
 import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { MailService } from 'src/mail/mail.service';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
@@ -30,6 +30,8 @@ export class StocksService {
 
         @InjectRepository(Stocks)
         private readonly stocksRepository: Repository<Stocks>,
+        @InjectRepository(InventoryStocks)
+        private readonly inventoryStocksRepository: Repository<InventoryStocks>,
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
         @InjectRepository(Dealer)
@@ -50,80 +52,121 @@ export class StocksService {
         private readonly shopRepository: Repository<Shop>,
         @InjectRepository(Permission)
         private readonly permissionRepository: Repository<Permission>,
+        @InjectRepository(Product)
+        private readonly variationRepository: Repository<Variation>,
+        @InjectRepository(Product)
+        private readonly orderRepository: Repository<Order>,
     ) { }
 
-    async create(createStocksDto: CreateStocksDto): Promise<Stocks[]> {
+    async create(createStocksDto: any): Promise<Stocks[]> {
         try {
-            console.log('createStocksDto***', createStocksDto)
-            const { user_id, products } = createStocksDto;
+            const { user_id, order_id, products } = createStocksDto;
 
-            const dealer = await this.userRepository.findOne({ where: { id: user_id }, relations: ['dealer'] })
-
-            console.log('dealer***', dealer)
-            if (!dealer?.dealer) {
-                throw new NotFoundException(`Dealer not Found by ${user_id} ID`)
-            }
-
-            // Fetch existing stocks for the given user
-            const existingStocks = await this.stocksRepository.find({
-                where: { user: { id: user_id } },
-                relations: ['product'],
-            });
+            const dealer = await this.userRepository.findOneOrFail({ where: user_id, relations: ['dealer'] });
 
             const updatedStocks: Stocks[] = [];
 
             for (const product of products) {
-                const existingStock = existingStocks.find(
-                    (stock) => stock.product.id === product.product_id,
-                );
-
-                if (!existingStock) {
-                    // Create a new stock record for the product
-                    const newStock = this.stocksRepository.create({
-                        ordPendQuant: createStocksDto.ordPendQuant,
-                        status: false,
-                        quantity: 0,
-                        inStock: false,
-                        product: product.product_id,
-                        user: dealer,
-                    });
-
-                    updatedStocks.push(await this.stocksRepository.save(newStock));
-                } else {
-                    // Update existing stock record for the product
-                    existingStock.ordPendQuant += product.order_quantity;
-                    updatedStocks.push(await this.stocksRepository.save(existingStock));
+                if (!product.product_id || !order_id) {
+                    throw new BadRequestException(`Product id or Order id is not defined`);
                 }
+
+                const productEntity = await this.productRepository.findOneOrFail(product.product_id);
+
+                const variationOptions = product.variation_option_id ? await this.variationRepository.findByIds([product.variation_option_id]) : [];
+
+                const orderEntity = await this.orderRepository.findOneOrFail(order_id);
+
+                const stock = this.stocksRepository.create({
+                    orderedQuantity: product.order_quantity,
+                    ordPendQuant: product.order_quantity,
+                    dispatchedQuantity: createStocksDto.dispatchedQuantity,
+                    product: productEntity,
+                    variation_options: variationOptions,
+                    user: dealer,
+                    order: orderEntity,
+                });
+
+                const savedStock = await this.stocksRepository.save(stock);
+
+                await this.updateInventoryStocks({
+                    user_id,
+                    product_id: product.product_id,
+                    variation_option_id: product.variation_option_id,
+                    ordPendQuant: product.order_quantity,
+                });
+
+                updatedStocks.push(savedStock);
             }
+
             return updatedStocks;
         } catch (error) {
-            throw new NotFoundException(`Error updating stock: ${error.message}`);
+            throw new BadRequestException(`Error updating stock: ${error.message}`);
+        }
+    }
+
+    async updateInventoryStocks(createStocksDto: any): Promise<InventoryStocks[]> {
+        try {
+            const { user_id, product_id, variation_option_id, ordPendQuant } = createStocksDto;
+
+            const dealer = await this.userRepository.findOneOrFail({ where: user_id, relations: ['dealer'] });
+
+            let existingStock = await this.inventoryStocksRepository.findOne({
+                where: { user: { id: user_id }, product: { id: product_id }, variation_options: { id: variation_option_id } },
+                relations: ['product', 'variation_options'],
+            });
+
+            if (!existingStock) {
+                existingStock = this.inventoryStocksRepository.create({
+                    quantity: ordPendQuant,
+                    status: ordPendQuant > 2,
+                    inStock: ordPendQuant > 2,
+                    product: { id: product_id },
+                    variation_options: [{ id: variation_option_id }],
+                    user: dealer,
+                });
+
+                await this.inventoryStocksRepository.save(existingStock);
+            } else {
+                existingStock.quantity += ordPendQuant;
+                existingStock.status = existingStock.quantity > 2;
+                existingStock.inStock = existingStock.quantity > 2;
+                await this.inventoryStocksRepository.save(existingStock);
+            }
+
+            return [existingStock];
+        } catch (error) {
+            throw new BadRequestException(`Error updating inventory stock: ${error.message}`);
         }
     }
 
     async update(user_id: number, updateStkQuantityDto: UpdateStkQuantityDto) {
         try {
-            const { inStock, ordPendQuant, quantity, status, product } = updateStkQuantityDto;
+            const { updateDispatchQuant, order_id, product_id } = updateStkQuantityDto;
 
-            const dealer = await this.userRepository.findOne({ where: { id: user_id }, relations: ['dealer'] })
-
-            if (!dealer?.dealer) {
-                throw new NotFoundException(`Dealer not Found by ${user_id} ID`)
+            if (!user_id || !product_id) {
+                throw new NotFoundException(`User id or Product id is not defined`);
             }
 
-            // Fetch existing stocks for the given user
-            const existingStocks = await this.stocksRepository.findOne({
-                where: { user: { id: user_id }, product: { id: product } },
-                relations: ['product'],
-            });
+            const dealer = await this.userRepository.findOne({ where: { id: user_id }, relations: ['dealer'] });
 
-            const updatedStocks: Stocks[] = [];
+            if (!dealer?.dealer) {
+                throw new NotFoundException(`Dealer not found by ID ${user_id}`);
+            }
 
-            existingStocks.ordPendQuant = ordPendQuant;
-            existingStocks.quantity = quantity;
-            existingStocks.status = quantity === 0 ? false : status;
-            existingStocks.inStock = quantity === 0 ? false : inStock;
-            updatedStocks.push(await this.stocksRepository.save(existingStocks));
+            // Fetch existing stock for the given user and product
+            const existingStock = await this.stocksRepository.findOne({ where: { user: { id: dealer.id }, product: { id: product_id }, order: { id: order_id } } });
+
+            if (!existingStock) {
+                throw new NotFoundException(`Stock not found for user ID ${user_id} and product ID ${product_id} for order ${order_id}`);
+            }
+
+            // Update stock quantities and status
+            existingStock.ordPendQuant = existingStock.ordPendQuant - updateDispatchQuant;
+            existingStock.dispatchedQuantity = existingStock.dispatchedQuantity + updateDispatchQuant;
+
+            // Save the updated stock
+            await this.stocksRepository.save(existingStock);
 
         } catch (error) {
             throw new NotFoundException(`Error updating stock: ${error.message}`);
@@ -132,14 +175,24 @@ export class StocksService {
 
     async getAll(user_id: number): Promise<Stocks[]> {
         try {
+            if (!user_id) {
+                throw new NotFoundException(`User id is not defined`);
+            }
+
+            // Fetch all stocks for the given user
             return await this.stocksRepository.find({ where: { user: { id: user_id } }, relations: ['product'] });
         } catch (error) {
             throw new NotFoundException(`Error fetching stocks: ${error.message}`);
         }
     }
 
-    async getAllStocks(user_id) {
+    async getAllStocks(user_id: number) {
         try {
+            if (!user_id) {
+                throw new NotFoundException(`User id is not defined`);
+            }
+
+            // Fetch all dealers associated with the given user
             const dealerList = await this.userRepository.find({
                 where: { UsrBy: { id: user_id } },
                 select: ['id']
@@ -147,27 +200,26 @@ export class StocksService {
 
             const allStocks = [];
 
-            for (let el of dealerList) {
-                const dealer = await this.stocksRepository.find({
+            for (const el of dealerList) {
+                // Fetch all stocks for each dealer
+                const dealerStocks = await this.stocksRepository.find({
                     where: { user: { id: el.id } },
                     relations: ['product']
                 });
 
-                if (dealer.length > 0) {
+                if (dealerStocks.length > 0) {
                     // Flatten the array of stocks objects into a single array
-                    const stocks = dealer.flatMap((v) => ({
+                    const stocks = dealerStocks.map((v) => ({
                         id: v.id,
-                        quantity: v.quantity,
+                        orderedquantity: v.orderedQuantity,
                         ordPendQuant: v.ordPendQuant,
                         dispatchedQuantity: v.dispatchedQuantity,
-                        status: v.status,
-                        inStock: v.inStock,
                         product: v.product
                     }));
 
                     // Create an object with user property and the flattened stocks array
                     const obj = {
-                        user: dealer[0].user, // Assuming `dealer[0].user` represents the user
+                        user: dealerStocks[0].user, // Assuming `dealerStocks[0].user` represents the user
                         stocks: stocks
                     };
 
@@ -186,7 +238,7 @@ export class StocksService {
     async afterORD(createOrderDto: CreateOrderDto): Promise<any> {
         try {
 
-            const existingStocks = await this.stocksRepository.find({
+            const existingStocks = await this.inventoryStocksRepository.find({
                 where: { user: { id: Number(createOrderDto.dealerId) }, product: { id: In(createOrderDto.products.map(product => product.product_id)) } },
                 relations: ['product'],
             });
@@ -202,8 +254,6 @@ export class StocksService {
                 } else {
                     throw new NotFoundException(`This Product ${orderProduct.product_id} Out of Stock`);
                 }
-                stock.inStock = stock.quantity > 0 ? true : false;
-                stock.status = stock.quantity > 0 ? true : false;
                 await this.stocksRepository.save(stock);
             }
         } catch (error) {
@@ -348,14 +398,14 @@ export class StocksService {
     }: GetOrdersDto): Promise<OrderPaginator> {
         try {
 
-            const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
+            const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type', 'permission'] });
 
             if (!usr) {
                 throw new Error('User not found');
             }
 
             // Fetch permissions for the user
-            const permsn = await this.permissionRepository.findOneBy(usr.type);
+            const permsn = await this.permissionRepository.findOne({ where: { id: usr.type.id } });
 
             let query = this.StocksSellOrdRepository.createQueryBuilder('StocksSellOrd');
             query = query.leftJoinAndSelect('StocksSellOrd.status', 'status');

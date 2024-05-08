@@ -528,7 +528,7 @@ export class UploadXlService {
 
 
     async remove(name: string): Promise<void> {
-        console.log('name***remove',)
+
         const products = await this.productRepository.find({ where: { name: name }, relations: ['type', 'shop', 'image', 'categories', 'tags', 'gallery', 'related_products', 'variations', 'variation_options'] });
         for (const product of products) {
             if (!product) {
