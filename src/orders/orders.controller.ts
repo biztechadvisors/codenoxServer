@@ -31,7 +31,6 @@ import { StocksService } from 'src/stocks/stocks.service';
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
-    private readonly StocksService: StocksService
   ) { }
 
 

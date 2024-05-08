@@ -63,7 +63,7 @@ export class Product extends CoreEntity {
   @OneToMany(() => OrderProductPivot, orderProductPivot => orderProductPivot.product)
   pivot?: OrderProductPivot[];
 
-  @ManyToMany(() => Order, order => order.products)
+  @ManyToMany(() => Order, order => order.products, { cascade: true, eager: true })
   @JoinTable({ name: "product_order" })
   orders: Order[];
 
@@ -145,11 +145,9 @@ export class OrderProductPivot extends CoreEntity {
   unit_price: number;
   @Column()
   subtotal: number;
-  @ManyToOne(() => Product)
-  @JoinColumn()
+  @ManyToOne(() => Product, (product) => product.pivot, { cascade: true, eager: true })
   product: Product;
-  @ManyToOne(() => Order, order => order.products)
-  @JoinColumn()
+  @ManyToOne(() => Order)
   order: Order;
   @ManyToOne(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
   @JoinColumn()

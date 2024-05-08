@@ -44,16 +44,16 @@ export class StocksController {
     }
 
 
-    @Put()
-    async afterORD(@Body() createOrderDto: CreateOrderDto) {
-        return this.stocksService.afterORD(createOrderDto);
-    }
+    // @Put()
+    // async afterORD(@Body() createOrderDto: CreateOrderDto) {
+    //     return this.stocksService.afterORD(createOrderDto);
+    // }
 
-    @Post('ord')
-    async OrdfromStocks(@Body() createOrderDto: CreateOrderDto) {
-        await this.stocksService.OrdfromStocks(createOrderDto)
-        return await this.stocksService.afterORD(createOrderDto);
-    }
+    // @Post('ord')
+    // async OrdfromStocks(@Body() createOrderDto: CreateOrderDto) {
+    //     await this.stocksService.OrdfromStocks(createOrderDto)
+    //     return await this.stocksService.afterORD(createOrderDto);
+    // }
 
     @Get()
     async getOrders(@Query() query: GetOrdersDto): Promise<OrderPaginator> {
