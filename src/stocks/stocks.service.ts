@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { In, Repository } from 'typeorm';
 import { InventoryStocks, Stocks } from './entities/stocks.entity';
 import { CreateStocksDto, GetStocksDto, UpdateStkQuantityDto } from './dto/create-stock.dto';
@@ -52,9 +52,9 @@ export class StocksService {
         private readonly shopRepository: Repository<Shop>,
         @InjectRepository(Permission)
         private readonly permissionRepository: Repository<Permission>,
-        @InjectRepository(Product)
+        @InjectRepository(Variation)
         private readonly variationRepository: Repository<Variation>,
-        @InjectRepository(Product)
+        @InjectRepository(Order)
         private readonly orderRepository: Repository<Order>,
     ) { }
 
@@ -62,24 +62,36 @@ export class StocksService {
         try {
             const { user_id, order_id, products } = createStocksDto;
 
-            const dealer = await this.userRepository.findOneOrFail({ where: user_id, relations: ['dealer'] });
+            const dealer = await this.userRepository.findOne({ where: { id: user_id }, relations: ['dealer'] });
+
+            if (!dealer?.dealer) {
+                throw new NotFoundException(`Dealer not found by ID ${user_id}`);
+            }
 
             const updatedStocks: Stocks[] = [];
 
+            const orderEntity = await this.orderRepository.findOne({ where: { id: order_id } });
+            if (!orderEntity) {
+                throw new NotFoundException(`Order not found by ID ${order_id}`);
+            }
+
             for (const product of products) {
                 if (!product.product_id || !order_id) {
-                    throw new BadRequestException(`Product id or Order id is not defined`);
+                    throw new NotFoundException(`Product id or Order id is not defined`);
                 }
 
-                const productEntity = await this.productRepository.findOneOrFail(product.product_id);
+                const productEntity = await this.productRepository.findOne({ where: { id: product.product_id } });
+                if (!productEntity) {
+                    throw new NotFoundException(`Product not found by ID ${product.product_id}`);
+                }
 
-                const variationOptions = product.variation_option_id ? await this.variationRepository.findByIds([product.variation_option_id]) : [];
+                const variationOptions = product.variation_option_id ? await this.variationRepository.findOne({ where: { id: product.variation_option_id } }) : null;
 
-                const orderEntity = await this.orderRepository.findOneOrFail(order_id);
-
+                // Create new stock entry if not exists for the product and order combination
                 const stock = this.stocksRepository.create({
-                    orderedQuantity: product.order_quantity,
+                    orderedQuantity: product.quantity, // Assuming 'quantity' is used instead of 'order_quantity'
                     ordPendQuant: product.order_quantity,
+                    recievedQuantity: product?.recievedQuantity,
                     dispatchedQuantity: createStocksDto.dispatchedQuantity,
                     product: productEntity,
                     variation_options: variationOptions,
@@ -87,38 +99,34 @@ export class StocksService {
                     order: orderEntity,
                 });
 
+                // Save the stock entry
                 const savedStock = await this.stocksRepository.save(stock);
-
-                await this.updateInventoryStocks({
-                    user_id,
-                    product_id: product.product_id,
-                    variation_option_id: product.variation_option_id,
-                    ordPendQuant: product.order_quantity,
-                });
 
                 updatedStocks.push(savedStock);
             }
 
             return updatedStocks;
         } catch (error) {
-            throw new BadRequestException(`Error updating stock: ${error.message}`);
+            throw new NotFoundException(`Error updating stock: ${error.message}`);
         }
     }
 
-    async updateInventoryStocks(createStocksDto: any): Promise<InventoryStocks[]> {
+    async updateInventaryStocks(createStocksDto: any): Promise<InventoryStocks[]> {
         try {
             const { user_id, product_id, variation_option_id, ordPendQuant } = createStocksDto;
 
-            const dealer = await this.userRepository.findOneOrFail({ where: user_id, relations: ['dealer'] });
+            const dealer = await this.userRepository.findOneOrFail({ where: { id: user_id }, relations: ['dealer'] });
 
+            // Fetch existing stock for the given user, product, and variation
             let existingStock = await this.inventoryStocksRepository.findOne({
-                where: { user: { id: user_id }, product: { id: product_id }, variation_options: { id: variation_option_id } },
+                where: { user: { id: dealer.id }, product: product_id, variation_options: variation_option_id },
                 relations: ['product', 'variation_options'],
             });
 
             if (!existingStock) {
+                // Create a new stock record for the product and variation if it doesn't exist
                 existingStock = this.inventoryStocksRepository.create({
-                    quantity: ordPendQuant,
+                    quantity: 0, // Initialize quantity to 0
                     status: ordPendQuant > 2,
                     inStock: ordPendQuant > 2,
                     product: { id: product_id },
@@ -128,6 +136,7 @@ export class StocksService {
 
                 await this.inventoryStocksRepository.save(existingStock);
             } else {
+                // Update existing stock record
                 existingStock.quantity += ordPendQuant;
                 existingStock.status = existingStock.quantity > 2;
                 existingStock.inStock = existingStock.quantity > 2;
@@ -136,7 +145,7 @@ export class StocksService {
 
             return [existingStock];
         } catch (error) {
-            throw new BadRequestException(`Error updating inventory stock: ${error.message}`);
+            throw new NotFoundException(`Error updating inventory stock: ${error.message}`);
         }
     }
 
@@ -235,31 +244,31 @@ export class StocksService {
     }
 
 
-    async afterORD(createOrderDto: CreateOrderDto): Promise<any> {
-        try {
+    // async afterORD(createOrderDto: CreateOrderDto): Promise<any> {
+    //     try {
 
-            const existingStocks = await this.inventoryStocksRepository.find({
-                where: { user: { id: Number(createOrderDto.dealerId) }, product: { id: In(createOrderDto.products.map(product => product.product_id)) } },
-                relations: ['product'],
-            });
+    //         const existingStocks = await this.inventoryStocksRepository.find({
+    //             where: { user: { id: Number(createOrderDto.dealerId) }, product: { id: In(createOrderDto.products.map(product => product.product_id)) } },
+    //             relations: ['product'],
+    //         });
 
-            for (const orderProduct of createOrderDto.products) {
-                const stock = existingStocks.find(s => s.product.id === orderProduct.product_id);
+    //         for (const orderProduct of createOrderDto.products) {
+    //             const stock = existingStocks.find(s => s.product.id === orderProduct.product_id);
 
-                if (!stock) {
-                    throw new NotFoundException(`Stock with product ID ${orderProduct.product_id} not found for user ${createOrderDto.dealerId}`);
-                }
-                if (stock.quantity >= orderProduct.order_quantity) {
-                    stock.quantity -= orderProduct.order_quantity;
-                } else {
-                    throw new NotFoundException(`This Product ${orderProduct.product_id} Out of Stock`);
-                }
-                await this.stocksRepository.save(stock);
-            }
-        } catch (error) {
-            throw new NotFoundException(`Error updating stock after order: ${error.message}`);
-        }
-    }
+    //             if (!stock) {
+    //                 throw new NotFoundException(`Stock with product ID ${orderProduct.product_id} not found for user ${createOrderDto.dealerId}`);
+    //             }
+    //             if (stock.quantity >= orderProduct.order_quantity) {
+    //                 stock.quantity -= orderProduct.order_quantity;
+    //             } else {
+    //                 throw new NotFoundException(`This Product ${orderProduct.product_id} Out of Stock`);
+    //             }
+    //             await this.stocksRepository.save(stock);
+    //         }
+    //     } catch (error) {
+    //         throw new NotFoundException(`Error updating stock after order: ${error.message}`);
+    //     }
+    // }
 
 
     async OrdfromStocks(createOrderInput: CreateOrderDto): Promise<StocksSellOrd> {

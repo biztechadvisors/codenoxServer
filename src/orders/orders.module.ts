@@ -15,7 +15,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order, OrderFiles } from './entities/order.entity';
 import { OrderStatus } from './entities/order-status.entity';
 import { User } from 'src/users/entities/user.entity';
-import { OrderProductPivot, Product } from 'src/products/entities/product.entity';
+import { OrderProductPivot, Product, Variation } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { PaymentIntent, PaymentIntentInfo } from 'src/payment-intent/entries/payment-intent.entity';
 import { OrderProductPivotRepository } from 'src/products/products.repository';
@@ -38,7 +38,7 @@ import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
     TypeOrmExModule.forCustomRepository([
       OrderProductPivotRepository
     ]),
-    TypeOrmModule.forFeature([Order, UserAddress, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks]), // Include Order and OrderStatus here
+    TypeOrmModule.forFeature([Order, UserAddress, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks, Variation]), // Include Order and OrderStatus here
     HttpModule,
   ],
   controllers: [

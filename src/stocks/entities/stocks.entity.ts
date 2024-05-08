@@ -4,7 +4,6 @@ import { Dealer } from "src/users/entities/dealer.entity";
 import { User } from "src/users/entities/user.entity";
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
-// Stocks entity definition
 @Entity()
 export class Stocks {
     @PrimaryGeneratedColumn()
@@ -19,17 +18,22 @@ export class Stocks {
     @Column()
     dispatchedQuantity: number;
 
-    @ManyToOne(() => Product, { cascade: true })
+    @Column()
+    recievedQuantity: number;
+
+    @ManyToOne(() => Product)
+    @JoinColumn() // Specify the join column
     product: Product;
 
-    @ManyToMany(() => Variation, { cascade: true })
-    @JoinTable()
-    variation_options: Variation[];
+    @ManyToOne(() => Variation, { cascade: true })
+    variation_options: Variation;
 
-    @ManyToOne(() => User, { cascade: true, eager: true })
+    @ManyToOne(() => User, { eager: true })
+    @JoinColumn() // Specify the join column
     user: User;
 
-    @ManyToOne(() => Order, { cascade: true })
+    @ManyToOne(() => Order)
+    @JoinColumn() // Specify the join column
     order: Order;
 }
 
@@ -48,13 +52,15 @@ export class InventoryStocks {
     @Column()
     inStock: boolean;
 
-    @ManyToOne(() => Product, { cascade: true })
-    product: Product;
-
     @ManyToMany(() => Variation, { cascade: true })
     @JoinTable()
     variation_options: Variation[];
 
-    @ManyToOne(() => User, { cascade: true, eager: true })
+    @ManyToOne(() => Product)
+    @JoinColumn() // Specify the join column
+    product: Product;
+
+    @ManyToOne(() => User, { eager: true })
+    @JoinColumn() // Specify the join column
     user: User;
 }

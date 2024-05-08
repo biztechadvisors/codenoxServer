@@ -114,7 +114,7 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   delivery_time: string;
 
-  @ManyToMany(() => Product, product => product.orders, { cascade: true })
+  @ManyToMany(() => Product, product => product.orders)
   @JoinTable({ name: "product_order" })
   products: Product[];
 
@@ -156,6 +156,8 @@ export class Order extends CoreEntity {
   @JoinColumn({ name: 'dealerId' })
   dealer: User;
 
+  @OneToMany(() => Stocks, stocks => stocks.order, { cascade: true })
+  stocks: Stocks[];
 }
 
 @Entity()
