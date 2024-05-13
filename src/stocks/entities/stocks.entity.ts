@@ -19,7 +19,7 @@ export class Stocks {
     dispatchedQuantity: number;
 
     @Column()
-    recievedQuantity: number;
+    receivedQuantity: number;
 
     @ManyToOne(() => Product)
     @JoinColumn() // Specify the join column

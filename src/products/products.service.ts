@@ -26,7 +26,7 @@ import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRe
 import { User } from 'src/users/entities/user.entity';
 import items from 'razorpay/dist/types/items';
 import { clearConfigCache } from 'prettier';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, Equal, Repository } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { Cron } from '@nestjs/schedule';
 import { error } from 'console';
@@ -410,28 +410,37 @@ export class ProductsService {
     try {
       // check Id
       if (id) {
-        const dealer = await this.dealerRepository.findOne({
-          where: { id: id },
-          relations: [
-            'dealerProductMargins',
-            'dealerProductMargins.product',
-            'dealerProductMargins.product.tags',
-            'dealerProductMargins.product.variations',
-            'dealerProductMargins.product.variations.attribute',
-            'dealerProductMargins.product.variation_options.options',
-            'dealerProductMargins.product.related_products',
-            'dealerProductMargins.product.type',
-            // 'dealerProductMargins.product.image', 
-            'dealerCategoryMargins.category',
-            'dealerCategoryMargins.category.products',
-            'dealerCategoryMargins.category.products.variations',
-            'dealerCategoryMargins.category.products.variations.attribute',
-            'dealerCategoryMargins.category.products.variation_options.options',
-            'dealerCategoryMargins.category.products.related_products',
-            'dealerCategoryMargins.category.products.type',
 
+        const dealer = await this.dealerRepository.findOne({ where: { id } });
+
+        dealer.dealerProductMargins = await this.dealerProductMarginRepository.find({
+          where: { dealer: Equal(dealer.id) },
+          relations: [
+            'product',
+            'product.tags',
+            'product.variations',
+            'product.variations.attribute',
+            'product.variation_options.options',
+            'product.related_products',
+            'product.type',
+            'product.image',
           ]
-        })
+        });
+
+        dealer.dealerCategoryMargins = await this.dealerCategoryMarginRepository.find({
+          where: { dealer: Equal(dealer.id) },
+          relations: [
+            'category',
+            'category.products',
+            'category.products.tags',
+            'category.products.variations',
+            'category.products.variations.attribute',
+            'category.products.variation_options.options',
+            'category.products.related_products',
+            'category.products.type',
+            'category.products.image',
+          ]
+        });
 
         //check dealer
         if (dealer) {
@@ -585,7 +594,7 @@ export class ProductsService {
             } else {
               // Destructuring variations and variation_options  
               if (product) {
-  
+
                 // Destructuring variations
                 product.variations = product.variations.map((variation) => ({
                   ...variation,
