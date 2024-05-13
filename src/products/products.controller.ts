@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -39,15 +40,20 @@ export class ProductsController {
   async getProductBySlug(
     @Param('slug') slug: string,
     @Param('id') id: number
-  ): Promise<Product> {
-
-    console.log("slug, id**************", slug, id)
-    return this.productsService.getProductBySlug(slug, id);
+  ): Promise<Product | undefined> {
+    try {
+      if (!slug || !id) {
+        throw new NotFoundException(`Slug or id is not defined`);
+      }
+      return await this.productsService.getProductBySlug(slug, id);
+    } catch (error) {
+      throw new NotFoundException(`Error fetching product: ${error.message}`);
+    }
   }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    console.log('update***', updateProductDto.variation_options.upsert.map((m) => m.options))
+    // console.log('update***', updateProductDto.variation_options.upsert.map((m) => m.options))
     return this.productsService.update(+id, updateProductDto);
   }
 

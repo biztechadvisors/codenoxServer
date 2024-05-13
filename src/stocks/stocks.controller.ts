@@ -6,43 +6,54 @@ import {
     Body,
     Put,
     Param,
-    Query
+    Query,
+    ParseIntPipe
 } from '@nestjs/common';
 import { StocksService } from './stocks.service';
-import { CreateStocksDto, GetStocksDto, UpdateStkQuantityDto } from './dto/create-stock.dto';
-import { CreateOrderDto } from 'src/orders/dto/create-order.dto';
 import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
+import { Stocks } from './entities/stocks.entity';
 
 @Controller('stocks')
 export class StocksController {
     constructor(private readonly stocksService: StocksService) { }
 
-    // @Post()
-    // async create(@Body() createStocksDto: CreateStocksDto) {
-    //     return this.stocksService.create(createStocksDto);
-    // }
-
+    @Post()
+    async createStock(@Body() createStocksDto: any) {
+        return this.stocksService.create(createStocksDto);
+    }
 
     @Get('all/:id')
-    async getAllStocks(@Param('id') id: number) {
-        return this.stocksService.getAllStocks(id);
+    async getAllStocks(@Param('id') id: string) {
+        return this.stocksService.getAllStocks(parseInt(id));
     }
 
-    @Get(':id')
-    async getStocks(@Param('id') id: number) {
-        return this.stocksService.getAll(id);
+    @Get(':user_id/:order_id')
+    async getAllStocksByUserAndOrder(
+        @Param('user_id') userId: string,
+        @Param('order_id') orderId: string
+    ): Promise<Stocks[]> {
+        return await this.stocksService.getAll(parseInt(userId), parseInt(orderId));
     }
 
-    @Put(':user_id')
-    async updateQuantity(@Param('user_id') user_id: string, @Body() updateStkQuantityDto: UpdateStkQuantityDto) {
+    @Put('updateStocks/:user_id')
+    async updateStocks(@Param('user_id') user_id: string, @Body() updateStkQuantityDto: any) {
         try {
-            await this.stocksService.update(+user_id, updateStkQuantityDto);
+            await this.stocksService.updateStocksbyAdmin(+user_id, updateStkQuantityDto);
             return { message: 'Quantity updated successfully' };
         } catch (err) {
             return { error: err.message || 'Internal Server Error' };
         }
     }
 
+    @Put('updateInventoryStocks/:user_id')
+    async updateInventoryStocks(@Param('user_id') user_id: string, @Body() updateStkQuantityDto: any) {
+        try {
+            await this.stocksService.updateInventoryStocksByDealer(+user_id, updateStkQuantityDto);
+            return { message: 'Quantity updated successfully' };
+        } catch (err) {
+            return { error: err.message || 'Internal Server Error' };
+        }
+    }
 
     // @Put()
     // async afterORD(@Body() createOrderDto: CreateOrderDto) {
