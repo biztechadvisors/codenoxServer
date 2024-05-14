@@ -26,14 +26,17 @@ import { Order, PaymentGatewayType, PaymentStatusType } from './entities/order.e
 import { OrdersService } from './orders.service';
 import { ShiprocketService } from './shiprocket.service';
 import { error } from 'console';
+import { StocksService } from 'src/stocks/stocks.service';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) { }
+  constructor(
+    private readonly ordersService: OrdersService,
+  ) { }
+
 
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
-    console.log("createOrderDTO****35", createOrderDto)
     const OrdSuccess = await this.ordersService.create(createOrderDto);
     await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
     return OrdSuccess;

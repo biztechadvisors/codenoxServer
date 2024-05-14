@@ -8,11 +8,13 @@ import { Profile } from './profile.entity';
 import { Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
 import { Dealer } from './dealer.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
+import { InventoryStocks, Stocks } from 'src/stocks/entities/stocks.entity';
+import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 
 export enum UserType {
   Super_Admin = 'Super_Admin',
   Admin = 'Admin',
-  Dealer = 'Dealer',
+  Dealer = 'dealer',
   Vendor = 'Vendor',
   Customer = 'Customer',
 }
@@ -44,15 +46,21 @@ export class User extends CoreEntity {
   @JoinColumn()
   profile?: Profile;
 
-  @OneToOne(() => Dealer, (dealer) => dealer)
+  @OneToOne(() => Dealer, { eager: true, cascade: true })
   @JoinColumn()
   dealer?: Dealer;
 
   @ManyToOne(() => User, (user) => user)
   UsrBy?: User;
 
-  @OneToMany(() => Shop, (shop) => shop.owner, { cascade: true })
+  @OneToMany(() => Shop, (shop) => shop.owner)
   shops?: Shop[];
+
+  @OneToMany(() => InventoryStocks, (inventoryStocks) => inventoryStocks.user)
+  inventoryStocks?: InventoryStocks[];
+
+  @OneToMany(() => Stocks, (stocks) => stocks.user)
+  stocks?: Stocks[];
 
   @ManyToOne(() => Shop, (shop) => shop.staffs)
   managed_shop?: Shop;
@@ -66,10 +74,12 @@ export class User extends CoreEntity {
   @OneToMany(() => Order, (order) => order.customer)
   orders: Order[];
 
-  @ManyToOne(() => Permission)
-  @JoinColumn({ name: "permission_id" })
-  type?: Permission;
+  @OneToMany(() => StocksSellOrd, (stocksSellOrd) => stocksSellOrd.customer)
+  stocksSellOrd: StocksSellOrd[];
 
+  @ManyToOne(() => Permission, permission => permission.user)
+  @JoinColumn({ name: 'permission_id' })
+  type: Permission;
 
   @Column()
   walletPoints: number;

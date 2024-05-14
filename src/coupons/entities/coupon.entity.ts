@@ -25,7 +25,7 @@ export class Coupon extends CoreEntity {
   orders?: Order[];
   @Column()
   type: CouponType;
-  @OneToOne(() => Attachment)
+  @OneToOne(() => Attachment, { cascade: true })
   image: Attachment;
   @Column()
   is_valid: boolean;

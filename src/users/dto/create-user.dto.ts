@@ -19,7 +19,7 @@ export class CreateUserDto extends PickType(User, [
   'password',
   'otp',
   'isVerified',
-  'is_active'
+  'is_active',
 ]) {
   address: CreateAddressDto[];
   profile: CreateProfileDto;

@@ -24,12 +24,7 @@ export class StocksSellOrd extends CoreEntity {
     @Column()
     customer_contact: string;
 
-    @ManyToOne(() => User, user => user.orders, {
-        eager: true,
-    })
-    customer: User;
-
-    @OneToOne(() => OrderStatus)
+    @ManyToOne(() => OrderStatus)
     @JoinColumn()
     status: OrderStatus;
 
@@ -73,8 +68,8 @@ export class StocksSellOrd extends CoreEntity {
     @Column({ nullable: true })
     delivery_time: string;
 
-    @ManyToMany(() => Product, product => product.orders)
-    @JoinTable()
+    @ManyToMany(() => Product, product => product.StocksSellOrd, { cascade: true })
+    @JoinTable({ name: "product_StocksSellOrd" })
     products: Product[];
 
     @ManyToOne(() => UserAddress)
@@ -111,7 +106,6 @@ export class StocksSellOrd extends CoreEntity {
     @Column()
     wallet_point: number;
 
-    @ManyToOne(() => User, { nullable: true, cascade: true })
-    @JoinColumn({ name: 'dealerId' })
-    dealer: User;
+    @ManyToOne(() => User, user => user.stocksSellOrd, { eager: true, })
+    customer: User;
 }

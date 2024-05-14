@@ -10,6 +10,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { AttributeValue } from './entities/attribute-value.entity';
 import { convertToSlug } from '../helpers';
 import { GetAttributeArgs } from './dto/get-attribute.dto';
+import { Shop } from 'src/shops/entities/shop.entity';
+import { Repository } from 'typeorm';
 const attributes = plainToClass(Attribute, attributesJson);
 
 @Injectable()
@@ -18,6 +20,7 @@ export class AttributesService {
   constructor(
     @InjectRepository(AttributeRepository) private attributeRepository: AttributeRepository,
     @InjectRepository(AttributeValueRepository) private attributeValueRepository: AttributeValueRepository,
+    @InjectRepository(Shop) private shopRepository: Repository<Shop>,
   ) { }
 
   async convertToSlug(text) {
@@ -29,16 +32,18 @@ export class AttributesService {
     const existingAttribute = await this.attributeRepository.findOne({
       where: { name: createAttributeDto.name, shop_id: createAttributeDto.shop_id },
       relations: ['values',
-        // 'shop'
+        'shop'
       ],
     });
 
+    const shop = await this.shopRepository.findOne({ where: { id: Number(createAttributeDto.shop_id) } })
     // If the attribute does not exist, create a new attribute
     if (!existingAttribute) {
       const newAttribute = new Attribute();
       newAttribute.name = createAttributeDto.name;
       newAttribute.slug = await this.convertToSlug(createAttributeDto.name);
       newAttribute.shop_id = createAttributeDto.shop_id;
+      newAttribute.shop = shop;
       newAttribute.language = createAttributeDto.language;
 
       const savedAttribute = await this.attributeRepository.save(newAttribute);
@@ -152,6 +157,8 @@ export class AttributesService {
       relations: ['values'], // Load the attribute values
     });
 
+    const shop = await this.shopRepository.findOne({ where: { id: Number(updateAttributeDto.shop_id) } })
+
     if (!attribute) {
       return {
         status: false,
@@ -162,6 +169,7 @@ export class AttributesService {
     attribute.name = updateAttributeDto.name;
     attribute.slug = await this.convertToSlug(updateAttributeDto.name);
     attribute.shop_id = updateAttributeDto.shop_id;
+    attribute.shop = shop;
     attribute.language = updateAttributeDto.language;
 
     // Map the updated attribute values to an array of values

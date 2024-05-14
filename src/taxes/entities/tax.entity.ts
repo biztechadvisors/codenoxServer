@@ -3,7 +3,7 @@ import products from 'razorpay/dist/types/products';
 import { Category } from 'src/categories/entities/category.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Product } from 'src/products/entities/product.entity';
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 
 @Entity()
@@ -27,5 +27,5 @@ export class Tax extends CoreEntity {
   @Column()
   gst_Name: string; //goods - service
   @OneToMany(() => Product, (products) => products.taxes)
-  products: Product;
+  products: Product[];
 }

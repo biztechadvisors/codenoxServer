@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
-import { Category } from 'src/categories/entities/category.entity';
+import { Category, SubCategory } from 'src/categories/entities/category.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Order } from 'src/orders/entities/order.entity';
@@ -11,6 +11,8 @@ import { Review } from '../../reviews/entities/review.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
+import { Attribute } from 'src/attributes/entities/attribute.entity';
+import { Stocks } from 'src/stocks/entities/stocks.entity';
 
 enum ProductStatus {
   PUBLISH = 'publish',
@@ -30,39 +32,69 @@ export class Product extends CoreEntity {
   name: string;
   @Column()
   slug: string;
-  @ManyToOne(() => Type, (type) => type.product, { eager: true, cascade: true })
-  type: Type;
   @Column()
   type_id: number;
   @Column()
   product_type: ProductType;
-  @ManyToMany(() => Category, category => category.products)
-  @JoinTable()
+
+  @ManyToOne(() => Type, (type) => type.product, { eager: true, cascade: true })
+  type: Type;
+
+  @ManyToMany(() => Category, category => category.products, { eager: true, cascade: true })
+  @JoinTable({ name: "product_category" })
   categories: Category[];
-  @ManyToMany(() => Tag, tag => tag.products, { cascade: true })
-  @JoinTable()
+
+  @ManyToMany(() => SubCategory, subCategory => subCategory.products)
+  @JoinTable({ name: "product_subcategory" })
+  subCategories: SubCategory[];
+
+  @ManyToMany(() => Tag, tag => tag.products)
+  @JoinTable({ name: "product_tags" })
   tags: Tag[];
-  @ManyToMany(() => AttributeValue, { cascade: true })
+
+  @ManyToMany(() => AttributeValue, { cascade: true, })
   @JoinTable()
   variations?: AttributeValue[];
+
   @ManyToMany(() => Variation, { cascade: true })
   @JoinTable()
-  variation_options?: Variation[];
+  variation_options: Variation[];
 
   @OneToMany(() => OrderProductPivot, orderProductPivot => orderProductPivot.product)
   pivot?: OrderProductPivot[];
 
-  @ManyToMany(() => Order, order => order.products)
-  @JoinTable()
+  @ManyToMany(() => Order, order => order.products, { cascade: true, eager: true })
+  @JoinTable({ name: "product_order" })
   orders: Order[];
 
-  @ManyToOne(() => Shop, { eager: true, cascade: true })
+  @ManyToMany(() => StocksSellOrd, StocksSellOrd => StocksSellOrd.products)
+  @JoinTable({ name: "product_StocksSellOrd" })
+  StocksSellOrd: StocksSellOrd[];
+
+  @ManyToOne(() => Shop, (shop) => shop.product, { eager: true, cascade: true })
   shop: Shop;
+
   @Column()
   shop_id: number;
-  @ManyToMany(() => Product, { cascade: true })
+
+  @ManyToMany(() => Product, { cascade: true, })
   @JoinTable()
   related_products?: Product[];
+
+  @OneToMany(() => Review, review => review.product, { eager: true })
+  my_review?: Review[];
+
+  @ManyToOne(() => Tax, (tax) => tax.products, { eager: true, cascade: true })
+  taxes: Tax;
+
+  @ManyToMany(() => Attachment, { cascade: true, eager: true, nullable: true })
+  @JoinTable({ name: 'gallery' })
+  gallery?: Attachment[];
+
+  @ManyToOne(() => Attachment, { cascade: true, nullable: true })
+  @JoinColumn({ name: 'image_id' })
+  image?: Attachment;
+
   @Column()
   description: string;
   @Column()
@@ -77,12 +109,6 @@ export class Product extends CoreEntity {
   min_price?: number;
   @Column()
   sku?: string;
-  @ManyToMany(() => Attachment, { cascade: true, eager: true, nullable: true })
-  @JoinTable({ name: 'gallery' })
-  gallery?: Attachment[];
-  @ManyToOne(() => Attachment, { cascade: true, nullable: true })
-  @JoinColumn({ name: 'image_id' })
-  image?: Attachment;
   @Column()
   status: ProductStatus;
   @Column()
@@ -101,10 +127,6 @@ export class Product extends CoreEntity {
   ratings: number;
   @Column()
   in_wishlist: boolean;
-  @OneToMany(() => Review, review => review.product, { eager: true })
-  my_review?: Review[];
-  @ManyToOne(() => Tax, { eager: true, cascade: true })
-  taxes: Tax;
   @Column()
   language?: string;
   @Column({ type: "json" })
@@ -123,11 +145,9 @@ export class OrderProductPivot extends CoreEntity {
   unit_price: number;
   @Column()
   subtotal: number;
-  @ManyToOne(() => Product)
-  @JoinColumn()
+  @ManyToOne(() => Product, (product) => product.pivot, { cascade: true, eager: true })
   product: Product;
-  @ManyToOne(() => Order, order => order.products)
-  @JoinColumn()
+  @ManyToOne(() => Order)
   order: Order;
   @ManyToOne(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
   @JoinColumn()
@@ -174,11 +194,6 @@ export class Variation {
   @JoinColumn({ name: 'image_id' })
   image: File;
 
-  @Column()
-  attribute_value_id: number;
-
-  @Column()
-  attribute_id: number;
   @Column()
   value: string;
   @Column()

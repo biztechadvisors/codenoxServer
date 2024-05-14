@@ -5,9 +5,10 @@ import { AttributeRepository, AttributeValueRepository } from './attribute.repos
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Attribute } from './entities/attribute.entity';
+import { Shop } from 'src/shops/entities/shop.entity';
 
 @Module({
-  imports: [TypeOrmExModule.forCustomRepository([AttributeRepository, AttributeValueRepository]), TypeOrmModule.forFeature([Attribute])],
+  imports: [TypeOrmExModule.forCustomRepository([AttributeRepository, AttributeValueRepository]), TypeOrmModule.forFeature([Attribute, Shop])],
   controllers: [AttributesController],
   providers: [AttributesService],
 })

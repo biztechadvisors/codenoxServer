@@ -26,6 +26,8 @@ import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import Twilio from 'twilio';
 import * as AWS from 'aws-sdk';
+import { Response } from 'express';
+import { jwtConstants } from './constants';
 
 @Injectable()
 export class AuthService {
@@ -53,7 +55,6 @@ export class AuthService {
   }
 
   async destroyOtp(user: User): Promise<void> {
-    console.log("user-destroy*************", user)
     user.otp = null;
     // user.created_at = null;
     await this.userRepository.save(user);
@@ -61,7 +62,6 @@ export class AuthService {
 
   async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ message: string } | AuthResponse> {
     const user = await this.userRepository.findOne({ where: { email: resendOtpDto.email } });
-    console.log("email reasend otp", user)
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -69,7 +69,6 @@ export class AuthService {
     user.otp = otp;
     user.created_at = new Date();
     const repo = await this.userRepository.save(user);
-    console.log("first=========", repo)
     await this.mailService.sendUserConfirmation(user, otp.toString()); // Assuming you have a method to send OTP
     return { message: 'OTP resent successfully.' };
   }
@@ -97,7 +96,6 @@ export class AuthService {
     }
 
     if (user.otp !== Number(otp)) {
-      console.log("return false", false)
       return false;
     }
 
@@ -141,31 +139,27 @@ export class AuthService {
     return true;
   }
 
-  async signIn(email, pass) {
+  async signIn(email: string) {
+    try {
+      const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
 
-    console.log("email, pass*************", email, pass)
-    const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+      const payload = { sub: user.id, username: user.email };
+
+      const access_token = await this.jwtService.signAsync(payload, {
+        secret: jwtConstants.access_secret
+      });
+
+      return { access_token };
+    } catch (error) {
+      throw new UnauthorizedException(`signIn error ${error}`);
     }
-
-    const isMatch = await bcrypt.compare(pass, user.password);
-    console.log("isMatch*********signIn", isMatch)
-    if (!isMatch) {
-      throw new UnauthorizedException('Invalid password');
-    }
-
-    // The password is correct.
-    const payload = { sub: user.id, username: user.email };
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
   }
 
-
   async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
-    console.log("createUserInput###*******", createUserInput);
 
     const existingUser = await this.userRepository.findOne({
       where: { email: createUserInput.email },
@@ -269,7 +263,7 @@ export class AuthService {
   }
 
   async getPermissions(typeName: string): Promise<any[]> {
-    console.log("permission.type_name****169", typeName);
+
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
@@ -284,8 +278,6 @@ export class AuthService {
       ])
       .getMany();
 
-    console.log("result******", result);
-
     return result.map((permission) => ({
       id: permission.id,
       type_name: permission.type_name,
@@ -298,66 +290,77 @@ export class AuthService {
     }));
   }
 
-  async login(loginInput: LoginDto): Promise<{ message: string; } | AuthResponse> {
-    const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type'] });
+  async login(loginInput: LoginDto) {
+    try {
 
-    if (!user || !user.isVerified) {
+      const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type', 'dealer'] });
+
+      if (!user || !user.isVerified) {
+        throw new UnauthorizedException('User Is Not Registered!');
+      }
+
+      const isMatch = await bcrypt.compare(loginInput.password, user.password);
+      if (!isMatch) {
+        throw new UnauthorizedException('Invalid password');
+      }
+
+      const { access_token } = await this.signIn(loginInput.email);
+
+      const permission = user.type ? await this.permissionRepository.findOne({ where: { id: user.type.id } }) : null;
+
+      if (!permission || permission.id === null) {
+        return {
+          token: access_token,
+          permissions: ['customer', 'admin', 'super_admin'],
+        };
+      }
+
+      const result = await this.permissionRepository
+        .createQueryBuilder('permission')
+        .leftJoinAndSelect('permission.permissions', 'permissions')
+        .where(`permission.id = ${permission.id}`)
+        .select([
+          'permission.id',
+          'permission.type_name',
+          'permissions.id',
+          'permissions.type',
+          'permissions.read',
+          'permissions.write',
+        ])
+        .getMany();
+
+      const formattedResult = result.map((permission) => ({
+        id: permission.id,
+        type_name: permission.type_name,
+        permission: permission.permissions.map((p) => ({
+          id: p.id,
+          type: p.type,
+          read: p.read,
+          write: p.write,
+        })),
+      }));
+
       return {
-        message: 'User Is Not Registered!',
+        token: access_token,
+        type_name: [`${formattedResult[0].type_name}`],
+        permissions: formattedResult[0].permission,
       };
+    } catch (error) {
+      console.error(error);
+      throw new UnauthorizedException('An error occurred during login');
     }
+  }
 
-    var permission;
-    if (user.type) {
-      permission = await this.permissionRepository.findOneBy(user.type);
+  async logout(logoutDto: LoginDto): Promise<string> {
+    const user = await this.userRepository.findOne({ where: { email: logoutDto.email } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
+    user.is_active = false
+    await this.userRepository.save(user);
 
-    let access_token: { access_token: string };
-    console.log("permission****253", permission)
-    if (!permission || permission.id === null) {
-      access_token = await this.signIn(loginInput.email, loginInput.password);
-      return {
-        token: access_token.access_token,
-        permissions: ['customer', 'admin', 'super_admin'],
-      };
-    }
-
-    access_token = await this.signIn(loginInput.email, loginInput.password);
-    console.log("access_token*************", access_token)
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${permission.id}`)
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
-
-    console.log("result---236**************", result)
-
-    const formattedResult = result.map((permission) => ({
-      id: permission.id,
-      type_name: permission.type_name,
-      permission: permission.permissions.map((p) => ({
-        id: p.id,
-        type: p.type,
-        read: p.read,
-        write: p.write,
-      })),
-    }));
-
-    console.log("formattedResult---249**************", formattedResult)
-
-    return {
-      token: access_token.access_token,
-      type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission,
-    };
+    return 'User logged out successfully';
   }
 
   async changePassword(
@@ -393,7 +396,7 @@ export class AuthService {
 
   async forgetPassword(forgetPasswordInput: ForgetPasswordDto): Promise<CoreResponse> {
     const user = await this.userRepository.findOne({ where: { email: forgetPasswordInput.email }, relations: ['type'] });
-    console.log("DATA+++++++++", user);
+
     if (!user) {
       return {
         success: false,
@@ -436,7 +439,6 @@ export class AuthService {
 
   async verifyForgetPasswordToken(verifyForgetPasswordTokenInput: VerifyForgetPasswordDto): Promise<CoreResponse> {
 
-    console.log("verifyForgetPasswordTokenInput***", verifyForgetPasswordTokenInput)
     const existEmail = await this.userRepository.findOne({ where: { email: verifyForgetPasswordTokenInput.email }, relations: ['type'] });
 
     if (!existEmail) {
@@ -462,11 +464,9 @@ export class AuthService {
   }
 
   async resetPassword(resetPasswordInput: ResetPasswordDto): Promise<CoreResponse> {
-    console.log("resetPasswordInput****", resetPasswordInput)
 
     const user = await this.userRepository.findOne({ where: { email: resetPasswordInput.email }, relations: ['type'] });
 
-    console.log("user****reset", user)
     if (!user) {
       return {
         success: false,
@@ -567,8 +567,6 @@ export class AuthService {
     try {
       const result = await this.verifyOtp(verifyOtpInput.code);
 
-      console.log("result***************", result);
-
       return {
         success: result,
         message: result ? 'OTP verification successful' : 'OTP verification failed',
@@ -624,8 +622,6 @@ export class AuthService {
   }
 
   async me(email: string, id: number): Promise<User> {
-
-    console.log("Me-Error-service***************************")
 
     const user = await this.userRepository.findOne({
       where: email ? { email: email } : { id: id },

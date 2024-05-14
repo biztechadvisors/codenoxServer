@@ -1,31 +1,37 @@
+
 import { Product } from 'src/products/entities/product.entity';
 import { User } from 'src/users/entities/user.entity';
 
+// In CreateStocksDto
 export class CreateStocksDto {
-    products: Product[];
+    products: any[];
     ordPendQuant: number;
+    orderedQuantity: number;
+    receivedQuantity: number;
     dispatchedQuantity: number;
-    status: boolean;
     quantity: number;
-    inStock: boolean;
     user_id: number;
+    order_id: number;
 }
 
 export class GetStocksDto {
     products: Product[];
     quantity: number;
     ordPendQuant: number;
+    receivedQuantity: number;
     dispatchedQuantity: number;
-    status: boolean;
-    inStock: boolean;
     user_id: number;
+    order_id: number;
 }
 
 export class UpdateStkQuantityDto {
-    quantity: any;
-    ordPendQuant: number;
-    dispatchedQuantity: number;
-    inStock: boolean;
-    status: boolean;
-    product: number;
+    order_id: number;
+    product_id: number;
+    updateDispatchQuant: number;
+}
+
+export class UpdateInvStkQuantityDto {
+    order_id: number;
+    product_id: number;
+    updateReceivedQuantity: number;
 }

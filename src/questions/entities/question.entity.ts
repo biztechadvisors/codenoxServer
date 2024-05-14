@@ -23,14 +23,14 @@ export class Question extends CoreEntity {
   positive_feedbacks_count?: number;
   @Column()
   negative_feedbacks_count?: number;
-  @OneToOne(() => Product)
+  @OneToOne(() => Product, { cascade: true })
   @JoinColumn()
   product: number;
-  @OneToOne(() => User)
+  @OneToOne(() => User, { cascade: true })
   @JoinColumn()
   user: number;
-  @ManyToMany(() => Feedback)
+  @ManyToMany(() => Feedback, { cascade: true })
   feedbacks?: Feedback[];
-  @OneToOne(() => Feedback)
+  @OneToOne(() => Feedback, { cascade: true })
   my_feedback?: Feedback;
 }

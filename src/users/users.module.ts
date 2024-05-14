@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { DealerController, ProfilesController, UsersController } from './users.controller';
@@ -22,14 +21,17 @@ import { MailService } from 'src/mail/mail.service';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { Address, UserAddress } from 'src/addresses/entities/address.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
+import { JwtStrategy } from 'src/auth/jwt.strategy';
+import { JwtModule } from '@nestjs/jwt'; // Import JwtModule
 
 @Module({
   imports: [
     TypeOrmExModule.forCustomRepository([UserRepository, UserAddressRepository, ProfileRepository, AttachmentRepository, DealerRepository, CategoryRepository, DealerProductMarginRepository, SocialRepository, DealerCategoryMarginRepository, ShopRepository, AddressRepository]),
-    TypeOrmModule.forFeature([User, Address, UserAddress, Profile, Dealer, Social, Product, Category, Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission])
+    TypeOrmModule.forFeature([User, Address, UserAddress, Profile, Dealer, Social, Product, Category, Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission]),
+    JwtModule.register({}), // Import JwtModule and register it
   ],
   controllers: [UsersController, ProfilesController, DealerController],
-  providers: [UsersService, AuthService, MailService, AddressesService],
+  providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy], // Add JwtStrategy as a provider
   exports: [UsersService],
 })
 export class UsersModule { }

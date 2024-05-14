@@ -13,6 +13,7 @@ export class CreateProductDto extends OmitType(Product, [
   'pivot',
   'shop',
   'categories',
+  'subCategories',
   'tags',
   'type',
   'related_products',
@@ -25,17 +26,19 @@ export class CreateProductDto extends OmitType(Product, [
   'width',
 ]) {
   categories: number[];
+  subCategories: number[];
   tags: number[];
   type_id: number;
   shop_id: number;
   taxes: Tax;
   variations: AttributeValue[];
   variation_options: {
+    [x: string]: any;
     delete: any;
     upsert: VariationDto[];
-  };
+  } = { delete: [], upsert: [] };
   related_products: Product[];
-  translated_languages: string[]; // Added field
+  translated_languages: string[];
 }
 
 export class VariationDto {
@@ -51,16 +54,15 @@ export class VariationDto {
   id: any;
 }
 
-export class FileDto {
-  thumbnail: string;
-  original: string;
-  id: number;
-  file_name: string;
-}
-
 export class VariationOptionDto {
   id: number;
   name: string;
   value: string;
 }
 
+export class FileDto {
+  thumbnail: string;
+  original: string;
+  id: number;
+  file_name: string;
+}

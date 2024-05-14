@@ -13,3 +13,13 @@ export class CreateCategoryDto extends PickType(Category, [
 ]) {
   [x: string]: any;
 }
+
+export class CreateSubCategoryDto {
+  name: string;
+  category_id: number;
+  details?: string;
+  image: { id: number };
+  language: string;
+  shop_id: number;
+}
+

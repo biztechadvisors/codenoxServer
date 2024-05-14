@@ -169,7 +169,6 @@ export class ShopsService {
   }
 
   async getShops({ search, limit, page }: GetShopsDto): Promise<ShopPaginator> {
-    console.log(`${"search*****" + search + "page********" + page + "limit***********" + limit}`)
 
     page = page ? page : 1;
     const startIndex = (page - 1) * limit;
@@ -302,9 +301,7 @@ export class ShopsService {
 
   async getShop(slug: string): Promise<Shop | null> {
     try {
-
-      console.log("slug-getShop*******************************", slug)
-
+      console.log('slug** ', slug)
       const existShop = await this.shopRepository.findOne({
         where: { slug: slug },
         relations: [
@@ -321,6 +318,8 @@ export class ShopsService {
           'cover_image',
           'logo',
           'staffs',
+          'category',
+          'order'
         ],
       });
       if (!existShop) {
@@ -328,46 +327,45 @@ export class ShopsService {
         return null;
       }
 
-      console.log("existShop**********", existShop)
       // Map the retrieved shop data to the desired structure
       const mappedShop = {
-        id: existShop.id,
-        owner_id: existShop.owner_id,
+        id: existShop?.id,
+        owner_id: existShop?.owner_id,
         name: existShop.name,
         slug: existShop.slug,
         description: existShop.description,
         balance: {
-          id: existShop.balance.id,
-          admin_commission_rate: existShop.balance.admin_commission_rate,
-          total_earnings: existShop.balance.total_earnings,
-          withdrawn_amount: existShop.balance.withdrawn_amount,
-          current_balance: existShop.balance.current_balance,
-          shop: existShop.balance.shop, // Adjust accordingly
+          id: existShop?.balance?.id,
+          admin_commission_rate: existShop?.balance?.admin_commission_rate,
+          total_earnings: existShop?.balance?.total_earnings,
+          withdrawn_amount: existShop?.balance?.withdrawn_amount,
+          current_balance: existShop?.balance?.current_balance,
+          shop: existShop?.balance?.shop, // Adjust accordingly
           dealer: null, // Update with actual dealer data if available
           payment_info: {
-            id: existShop.balance.payment_info.id,
-            account: existShop.balance.payment_info.account,
-            name: existShop.balance.payment_info.name,
-            email: existShop.balance.payment_info.email,
-            bank: existShop.balance.payment_info.bank,
+            id: existShop?.balance?.payment_info?.id,
+            account: existShop?.balance?.payment_info?.account,
+            name: existShop?.balance?.payment_info?.name,
+            email: existShop?.balance?.payment_info?.email,
+            bank: existShop?.balance?.payment_info.bank,
           },
         },
         cover_image: {
-          id: existShop.cover_image?.id,
+          id: existShop?.cover_image?.id,
           original: existShop.cover_image?.original,
           thumbnail: existShop.cover_image?.thumbnail,
         },
         logo: {
-          id: existShop.logo?.id,
+          id: existShop?.logo?.id,
           original: existShop.logo?.original,
           thumbnail: existShop.logo?.thumbnail,
         },
         is_active: existShop.is_active,
         address: {
-          ...existShop.address,
+          ...existShop?.address,
         },
         settings: {
-          ...existShop.settings,
+          ...existShop?.settings,
         },
         created_at: existShop.created_at,
         updated_at: existShop.updated_at,
@@ -382,8 +380,10 @@ export class ShopsService {
           contact: '', // Set an appropriate default value
         },
         gst_number: existShop.gst_number, // Include the missing property
+        category: existShop.category,
+        order: existShop.order
       };
-      console.log("mappedShop*******", mappedShop)
+
       return mappedShop;
     } catch (error) {
       console.error("Error fetching shop:", error.message);

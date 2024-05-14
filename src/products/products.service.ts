@@ -18,7 +18,7 @@ import { TypeRepository } from 'src/types/types.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { ShopRepository } from 'src/shops/shops.repository';
 import { CategoryRepository } from 'src/categories/categories.repository';
-import { Category } from 'src/categories/entities/category.entity';
+import { Category, SubCategory } from 'src/categories/entities/category.entity';
 import { AttributeValueRepository } from 'src/attributes/attribute.repository';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from 'src/users/entities/dealer.entity';
@@ -26,9 +26,10 @@ import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRe
 import { User } from 'src/users/entities/user.entity';
 import items from 'razorpay/dist/types/items';
 import { clearConfigCache } from 'prettier';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, Equal, Repository } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { Cron } from '@nestjs/schedule';
+import { error } from 'console';
 
 const options = {
   keys: [
@@ -58,6 +59,7 @@ export class ProductsService {
     @InjectRepository(Type) private readonly typeRepository: TypeRepository,
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
     @InjectRepository(Category) private readonly categoryRepository: CategoryRepository,
+    @InjectRepository(SubCategory) private readonly subCategoryRepository: Repository<SubCategory>,
     @InjectRepository(AttributeValue) private readonly attributeValueRepository: AttributeValueRepository,
     @InjectRepository(File) private readonly fileRepository: FileRepository,
     @InjectRepository(Dealer) private readonly dealerRepository: DealerRepository,
@@ -115,116 +117,173 @@ export class ProductsService {
     }
   }
 
-  async create(createProductDto: CreateProductDto) {
-    const product = new Product();
-    product.name = createProductDto.name;
-    product.slug = createProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    product.description = createProductDto.description;
-    product.product_type = createProductDto.product_type;
-    product.status = createProductDto.status;
-    product.quantity = createProductDto.quantity;
-    product.max_price = createProductDto.max_price || createProductDto.price;
-    product.min_price = createProductDto.min_price || createProductDto.sale_price;
-    product.price = createProductDto.max_price || createProductDto.price;
-    product.sale_price = createProductDto.min_price || createProductDto.sale_price;
-    product.unit = createProductDto.unit;
-    product.height = createProductDto.height;
-    product.length = createProductDto.length;
-    product.width = createProductDto.width;
-    product.sku = createProductDto.sku;
-    product.language = createProductDto.language || "en";
-    product.translated_languages = createProductDto.translated_languages || ["en"];
+  async create(createProductDto: any): Promise<Product | { message: string }> {
 
-    if (createProductDto.taxes) {
-      const tax = this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } })
-      if (tax) {
-        product.taxes = createProductDto.taxes
+    const existedProduct = await this.productRepository.findOne({
+      where: {
+        name: createProductDto.name,
+        slug: createProductDto.slug
       }
-    }
+    });
 
-    const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
-    if (!type) {
-      throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
-    }
-    product.type = type;
-    product.type_id = type.id;
-    const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
-    product.shop = shop;
-    product.shop_id = shop.id;
-    const categories = await this.categoryRepository.findByIds(createProductDto.categories);
-    product.categories = categories;
-    const tags = await this.tagRepository.findByIds(createProductDto.tags);
-    product.tags = tags;
-    if (createProductDto.image) {
-      const image = await this.attachmentRepository.findOne({ where: { id: createProductDto.image.id } });
-      product.image = image;
-    }
-    if (createProductDto.gallery) {
-      const galleryAttachments = [];
-      for (const galleryImage of createProductDto.gallery) {
-        const image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
-        galleryAttachments.push(image);
+    if (existedProduct) {
+      return { message: "Product already exists." };
+    } else {
+      const product = new Product();
+      product.name = createProductDto.name;
+      product.slug = createProductDto.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      product.description = createProductDto.description;
+      product.product_type = createProductDto.product_type;
+      product.status = createProductDto.status;
+      product.quantity = createProductDto.quantity;
+      product.max_price = createProductDto.max_price || createProductDto.price;
+      product.min_price = createProductDto.min_price || createProductDto.sale_price;
+      product.price = createProductDto.max_price || createProductDto.price;
+      product.sale_price = createProductDto.min_price || createProductDto.sale_price;
+      product.unit = createProductDto.unit;
+      product.height = createProductDto.height;
+      product.length = createProductDto.length;
+      product.width = createProductDto.width;
+      product.sku = createProductDto.sku;
+      product.language = createProductDto.language || 'en';
+      product.translated_languages = createProductDto.translated_languages || ['en'];
+
+      if (createProductDto.taxes) {
+        const tax = await this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } });
+        if (tax) {
+          product.taxes = tax;
+        }
       }
-      product.gallery = galleryAttachments;
-    }
-    if (createProductDto.variations) {
-      const attributeValues: AttributeValue[] = [];
-      for (const variation of createProductDto.variations) {
-        const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
-        if (attributeValue) {
+
+      const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
+      if (!type) {
+        throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
+      }
+      product.type = type;
+      product.type_id = type.id;
+
+      const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
+      if (!shop) {
+        throw new NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
+      }
+      product.shop = shop;
+      product.shop_id = shop.id;
+
+      if (createProductDto.categories) {
+        const categories = await this.categoryRepository.findByIds(createProductDto.categories);
+        product.categories = categories;
+      }
+
+      if (createProductDto?.subCategories) {
+        const subCategories = await this.subCategoryRepository.findByIds(createProductDto.subCategories);
+        product.subCategories = subCategories;
+      }
+
+      const tags = await this.tagRepository.findByIds(createProductDto.tags);
+      product.tags = tags;
+
+      if (createProductDto.image?.length > 0 || undefined) {
+        const image = await this.attachmentRepository.findOne(createProductDto.image.id);
+        if (!image) {
+          throw new NotFoundException(`Image with ID ${createProductDto.image.id} not found`);
+        }
+        product.image = image;
+      }
+
+      if (createProductDto.gallery?.length > 0 || undefined) {
+        const galleryAttachments = [];
+        for (const galleryImage of createProductDto.gallery) {
+          const image = await this.attachmentRepository.findOne(galleryImage.id);
+          if (!image) {
+            throw new NotFoundException(`Gallery image with ID ${galleryImage.id} not found`);
+          }
+          galleryAttachments.push(image);
+        }
+        product.gallery = galleryAttachments;
+      }
+
+      if (createProductDto.variations) {
+        const attributeValues: AttributeValue[] = [];
+        for (const variation of createProductDto.variations) {
+          const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
+          if (!attributeValue) {
+            throw new NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
+          }
           attributeValues.push(attributeValue);
         }
+        product.variations = attributeValues;
       }
-      product.variations = attributeValues;
-    }
-    await this.productRepository.save(product);
-    if (createProductDto.product_type === 'variable' && createProductDto.variation_options && createProductDto.variation_options.upsert) {
-      const variationOPt = [];
-      for (const variationDto of createProductDto.variation_options.upsert) {
-        const newVariation = new Variation();
-        newVariation.title = variationDto.title;
-        newVariation.price = variationDto.price;
-        newVariation.sku = variationDto.sku;
-        newVariation.is_disable = variationDto.is_disable;
-        newVariation.sale_price = variationDto.sale_price;
-        newVariation.quantity = variationDto.quantity;
-        if (variationDto.image) {
-          let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
-          if (!image) {
-            image = new File();
-            image.attachment_id = variationDto.image.id;
-            image.url = variationDto.image.original;
-            image.fileable_id = newVariation.id;
-            await this.fileRepository.save(image);
-          }
-          newVariation.image = image;
-        }
-        const variationOptions = [];
-        for (const option of variationDto.options) {
-          const newVariationOption = new VariationOption();
-          newVariationOption.id = option.id;
-          newVariationOption.name = option.name;
-          newVariationOption.value = option.value;
-          await this.variationOptionRepository.save(newVariationOption);
-          variationOptions.push(newVariationOption);
-        }
-        newVariation.options = variationOptions;
-        await this.variationRepository.save(newVariation);
-        variationOPt.push(newVariation);
-      }
-      product.variation_options = variationOPt;
+
       await this.productRepository.save(product);
-    }
-    if (product) {
-      this.updateShopProductsCount(shop.id, product.id)
-    }
-    return product;
-  };
 
-  async getProducts({ limit = 30, page = 1, search, userId }: GetProductsDto): Promise<ProductPaginator> {
+      if (
+        product.product_type === ProductType.VARIABLE &&
+        createProductDto.variation_options &&
+        createProductDto.variation_options.upsert
+      ) {
+        const variationOptions = [];
+        for (const variationDto of createProductDto.variation_options.upsert) {
+          const newVariation = new Variation();
+          newVariation.title = variationDto?.title;
+          newVariation.price = variationDto?.price;
+          newVariation.sku = variationDto?.sku;
+          newVariation.is_disable = variationDto?.is_disable;
+          newVariation.sale_price = variationDto?.sale_price;
+          newVariation.quantity = variationDto?.quantity;
+
+          if (variationDto?.image) {
+            let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
+            if (!image) {
+              image = new File();
+              image.attachment_id = variationDto.image.id;
+              image.url = variationDto.image.original;
+              image.fileable_id = newVariation.id;
+              await this.fileRepository.save(image);
+            }
+            newVariation.image = image;
+          }
+
+          const savedVariation = await this.variationRepository.save(newVariation);
+
+          const variationOptionEntities = [];
+          if (variationDto && variationDto.options) {
+            for (const option of variationDto.options) {
+              const newVariationOption = new VariationOption();
+              newVariationOption.name = option.name;
+              newVariationOption.value = option.value;
+
+              const savedVariationOption = await this.variationOptionRepository.save(newVariationOption);
+              variationOptionEntities.push(savedVariationOption);
+            }
+          } else {
+            console.log("variationDto or its options are null or undefined");
+          }
+
+          savedVariation.options = variationOptionEntities;
+          await this.variationRepository.save(savedVariation);
+
+          variationOptions.push(savedVariation);
+        }
+
+        product.variation_options = variationOptions;
+
+        await this.productRepository.save(product);
+      }
+
+      if (product) {
+        await this.updateShopProductsCount(shop.id, product.id);
+      }
+      return product;
+    }
+  }
+
+  async getProducts({ limit = 20, page = 1, search, userId }: GetProductsDto): Promise<ProductPaginator> {
     const startIndex = (page - 1) * limit;
-
     const productQueryBuilder = this.productRepository.createQueryBuilder('product');
+
     productQueryBuilder
       .leftJoinAndSelect('product.type', 'type')
       .leftJoinAndSelect('product.shop', 'shop')
@@ -242,42 +301,34 @@ export class ProductsService {
       .leftJoinAndSelect('attributeValues.attribute', 'attribute');
 
     if (search) {
-      const parseSearchParams = search.split(';');
-      const searchConditions: any[] = [];
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        if (key === 'name') {
-          searchConditions.push({ name: `%${value}%` });
-        } else if (key === 'category') {
-          const searchTerm = value;
-          searchConditions.push(
-            {
-              'categories.name LIKE :searchTerm': { searchTerm: `%${searchTerm}%` },
-              'categories.description LIKE :searchTerm': { searchTerm: `%${searchTerm}%` },
-            }
-          );
-        } else if (key === 'categories.slug') {
-          const categorySlugs = value.split(',');
-          productQueryBuilder.andWhere('categories.slug IN (:...categorySlugs)', { categorySlugs });
-        } else if (key === 'type.slug') {
-          productQueryBuilder.andWhere(`type.slug LIKE :searchParam`, { searchParam: `%${value}%` });
-        } else {
-          searchConditions.push({ [key]: `%${value}%` });
-        }
-      }
-
-      if (searchConditions.length > 0) {
-        productQueryBuilder.andWhere(new Brackets(qb => {
-          searchConditions.forEach(condition => {
-            Object.entries(condition).forEach(([field, value]) => {
-              qb.orWhere(`product.${field} LIKE :value`, { value });
-            });
-          });
-        }));
-      }
+      const searchConditions = new Brackets(qb => {
+        const parseSearchParams = search.split(';');
+        parseSearchParams.forEach(searchParam => {
+          const [key, value] = searchParam.split(':');
+          if (key === 'name') {
+            qb.orWhere('product.name LIKE :name', { name: `%${value}%` });
+          } else if (key === 'category') {
+            const searchTerm = `%${value}%`;
+            qb.orWhere('categories.name LIKE :searchTerm OR categories.description LIKE :searchTerm', { searchTerm });
+          } else if (key === 'categories.slug') {
+            const categorySlugs = value.split(',');
+            qb.orWhere('categories.slug', categorySlugs);
+          } else if (key === 'type.slug') {
+            qb.orWhere('type.slug LIKE :slug', { slug: `%${value}%` });
+          } else if (key === 'shop_id') {
+            qb.orWhere(`shop.id = :shopId`, { shopId: value });
+          } else {
+            qb.orWhere(`product.${key} LIKE :value`, { value: `%${value}%` });
+          }
+        });
+      });
+      productQueryBuilder.andWhere(searchConditions);
     }
 
     try {
+      let products: Product[] = [];
+      let total: number;
+
       if (userId) {
         const dealer = await this.dealerRepository.findOne({
           where: { id: userId },
@@ -285,56 +336,32 @@ export class ProductsService {
         });
 
         if (dealer) {
-          let products: any[] = [];
           if (dealer.dealerProductMargins) {
             const marginFind = await this.dealerProductMarginRepository.find({
               relations: ['product']
             });
-
-            // console.log("product", marginFind)
-            const ProductCom = await productQueryBuilder.getMany()
-            products = marginFind.map(margin => {
-                const product = margin.product;
-                product.margin = margin.margin;
-                return product;
-              });
-
-              const allProducts = [...ProductCom, ...products];
-
-              // Efficiently remove duplicate products based on productId
-              products = allProducts.reduce((acc, product) => {
-                const existingIndex = acc.findIndex(p => p.id === product.id);
-                if (existingIndex === -1) {
-                  acc.push(product);
-                } else {
-                  // If a product with the same ID exists, merge margins if necessary
-                  acc[existingIndex].margin = product.margin || acc[existingIndex].margin;
-                }
-                return acc;
-              }, []);              
-
-
+            marginFind.forEach(margin => {
+              const product = margin.product;
+              product.margin = margin.margin;
+              products.push(product);
+            });
           } else if (dealer.dealerCategoryMargins) {
             const marginFind = await this.dealerCategoryMarginRepository.find({
               relations: ['category']
             });
-
             for (const findId of marginFind) {
               const found = findId.category.id;
               const findCatProd = await this.categoryRepository.findOne({
                 where: { id: found },
                 relations: ['products']
               });
-
               if (findCatProd && findCatProd.products) {
                 const matchingMargin = findId.margin;
                 const categoryProducts = findCatProd.products.map(product => {
                   product.margin = matchingMargin;
                   return product;
                 });
-
                 products.push(...categoryProducts);
-
               }
             }
           }
@@ -343,21 +370,16 @@ export class ProductsService {
             (product, index, self) => index === self.findIndex(p => p.id === product.id)
           );
 
-          const url = `/products?search=${search}&limit=${limit}`;
-          const paginator = paginate(products.length, page, limit, products.length, url);
-
-          return {
-            data: products,
-            ...paginator,
-          };
+          total = products.length;
         }
+      } else {
+        total = await productQueryBuilder.getCount();
+        productQueryBuilder.skip(startIndex).take(limit);
+        products = await productQueryBuilder.getMany();
       }
 
-      productQueryBuilder.skip(startIndex).take(limit);
-      const products = await productQueryBuilder.getMany();
-      // console.log("product", products)
       const url = `/products?search=${search}&limit=${limit}`;
-      const paginator = paginate(products.length, page, limit, products.length, url);
+      const paginator = paginate(total, page, limit, products.length, url);
 
       return {
         data: products,
@@ -367,7 +389,6 @@ export class ProductsService {
       throw new NotFoundException(error);
     }
   }
-
 
   async getProductBySlug(slug: string, id: number): Promise<Product | undefined> {
 
@@ -389,28 +410,37 @@ export class ProductsService {
     try {
       // check Id
       if (id) {
-        const dealer = await this.dealerRepository.findOne({
-          where: { id: id },
-          relations: [
-            'dealerProductMargins',
-            'dealerProductMargins.product',
-            'dealerProductMargins.product.tags',
-            'dealerProductMargins.product.variations',
-            'dealerProductMargins.product.variations.attribute',
-            'dealerProductMargins.product.variation_options.options',
-            'dealerProductMargins.product.related_products',
-            'dealerProductMargins.product.type',
-            // 'dealerProductMargins.product.image', 
-            'dealerCategoryMargins.category',
-            'dealerCategoryMargins.category.products',
-            'dealerCategoryMargins.category.products.variations',
-            'dealerCategoryMargins.category.products.variations.attribute',
-            'dealerCategoryMargins.category.products.variation_options.options',
-            'dealerCategoryMargins.category.products.related_products',
-            'dealerCategoryMargins.category.products.type',
 
+        const dealer = await this.dealerRepository.findOne({ where: { id } });
+
+        dealer.dealerProductMargins = await this.dealerProductMarginRepository.find({
+          where: { dealer: Equal(dealer.id) },
+          relations: [
+            'product',
+            'product.tags',
+            'product.variations',
+            'product.variations.attribute',
+            'product.variation_options.options',
+            'product.related_products',
+            'product.type',
+            'product.image',
           ]
-        })
+        });
+
+        dealer.dealerCategoryMargins = await this.dealerCategoryMarginRepository.find({
+          where: { dealer: Equal(dealer.id) },
+          relations: [
+            'category',
+            'category.products',
+            'category.products.tags',
+            'category.products.variations',
+            'category.products.variations.attribute',
+            'category.products.variation_options.options',
+            'category.products.related_products',
+            'category.products.type',
+            'category.products.image',
+          ]
+        });
 
         //check dealer
         if (dealer) {
@@ -422,13 +452,11 @@ export class ProductsService {
               let productWithMargin: any
               if (findprod.product.slug === product.slug) {
                 const { product, margin } = findprod;
-                // console.log("findPorduct", findprod.product.categories)
+
                 productWithMargin = {
                   ...product,
                   margin: margin,
                 };
-                // console.log("dealerproduct", productWithMargin)
-                //checking for particular product
 
                 //assign margin on variation
                 productWithMargin.variations = productWithMargin.variations.map((variation) => ({
@@ -566,7 +594,7 @@ export class ProductsService {
             } else {
               // Destructuring variations and variation_options  
               if (product) {
-                // console.log("product", product)
+
                 // Destructuring variations
                 product.variations = product.variations.map((variation) => ({
                   ...variation,
@@ -599,7 +627,7 @@ export class ProductsService {
 
           // Destructuring variations and variation_options  
           if (product) {
-            // console.log("product", product)
+
             // Destructuring variations
             product.variations = product.variations.map((variation) => ({
               ...variation,
@@ -704,6 +732,7 @@ export class ProductsService {
       product.shop = shop;
       product.shop_id = shop.id;
     }
+
     if (updateProductDto.categories) {
       const categories = await this.categoryRepository.findByIds(updateProductDto.categories);
       product.categories = categories;
@@ -879,6 +908,41 @@ export class ProductsService {
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
+    // Remove associations with tags
+    product.tags = [];
+
+    // Remove association with type
+    product.type = null;
+
+    // Remove associations with orders
+    product.related_products = [];
+
+    // Remove associations with related products
+    product.orders = [];
+
+    // Save the changes to update the associations in the database
+    await this.productRepository.save(product);
+
+    // Remove associations with categories
+    await Promise.all(product.categories.map(async category => {
+      category.products = category.products.filter(p => p.id !== product.id);
+      await this.categoryRepository.save(category);
+    }));
+
+    // Find related records in the dealer_product_margin table
+    const relatedRecords = await this.dealerProductMarginRepository.find({ where: { product: { id: product.id } } });
+
+    // Delete related records
+    await Promise.all(relatedRecords.map(async record => {
+      await this.dealerProductMarginRepository.delete(record.id);
+    }));
+
+    // Remove associations with subcategories
+    // await Promise.all(product.subCategories.map(async subCategory => {
+    //   subCategory.products = subCategory.products.filter(p => p.id !== product.id);
+    //   await this.subCategoryRepository.save(subCategory);
+    // }));
+
     if (product.image) {
       const image = product.image;
       product.image = null;

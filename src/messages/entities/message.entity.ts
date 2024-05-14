@@ -9,6 +9,6 @@ import { Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 export class Message extends LatestMessage {
   @PrimaryGeneratedColumn()
   id: number;
-  @ManyToOne(() => Conversation)
+  @ManyToOne(() => Conversation, { cascade: true })
   conversation: Conversation;
 }

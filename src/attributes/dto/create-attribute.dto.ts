@@ -1,5 +1,6 @@
 import { PickType } from '@nestjs/swagger';
 import { Attribute } from '../entities/attribute.entity';
+import { Shop } from 'src/shops/entities/shop.entity';
 
 export class CreateAttributeDto extends PickType(Attribute, [
   'name',
@@ -8,6 +9,7 @@ export class CreateAttributeDto extends PickType(Attribute, [
   'language',
 ]) {
   values: AttributeValueDto[];
+  shop: Shop;
 }
 
 export class AttributeValueDto {

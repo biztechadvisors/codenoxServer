@@ -8,7 +8,8 @@ import {
   Param,
   Post,
   Query,
-  Request,
+  Req,
+  Res,
   UseGuards
 } from '@nestjs/common';
 import { AuthGuard } from './auth.guards';
@@ -29,6 +30,9 @@ import {
 } from './dto/create-auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { UpdateUserDto } from 'src/users/dto/update-user.dto';
+import { Request, Response } from 'express';
+import { IncomingMessage, request } from 'http';
+
 
 @Controller()
 export class AuthController {
@@ -50,9 +54,13 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('token')
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
-
+  async login(@Body() loginDto: LoginDto) {
+    try {
+      return await this.authService.login(loginDto);
+    } catch (error) {
+      console.error(error);
+      throw error`Login Failed Error: ${error}`
+    }
   }
 
   @Post('social-login-token')
@@ -81,7 +89,7 @@ export class AuthController {
   }
   @Post('resend-otp')
   resendOtp(@Body() resendOtpDto: ResendOtpDto) {
-    console.log("RESENDOTPPPPPPPPP*******", resendOtpDto);
+
     return this.authService.resendOtp(resendOtpDto);
   }
   @Post('change-password')
@@ -89,9 +97,11 @@ export class AuthController {
     return this.authService.changePassword(changePasswordDto);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('logout')
-  async logout(): Promise<boolean> {
-    return true;
+  async logout(@Body() logoutDto: LoginDto): Promise<{ message: string }> {
+    const result = await this.authService.logout(logoutDto);
+    return { message: result };
   }
 
   @Post('verify-forget-password-token')
@@ -103,8 +113,6 @@ export class AuthController {
 
   @Get('me')
   async me(@Query('username') username: string, @Query('sub') sub: number) {
-    console.log("Me-Error-controller***************************")
-
     return await this.authService.me(username, sub);
   }
 

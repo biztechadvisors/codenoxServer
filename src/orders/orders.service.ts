@@ -54,11 +54,11 @@ import { MailService } from 'src/mail/mail.service';
 import { Dealer } from 'src/users/entities/dealer.entity';
 import { UserAddress } from 'src/addresses/entities/address.entity';
 import * as fs from 'fs';
-import express from 'express';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+// import express from 'express';
+// import jsPDF from 'jspdf';
+// import html2canvas from 'html2canvas';
 import path from 'path';
-import puppeteer from 'puppeteer';
+// import puppeteer from 'puppeteer';
 
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
@@ -67,6 +67,7 @@ const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 export class OrdersService {
   private orders: Order[]
   private orderFiles: OrderFiles[]
+  StocksService: any;
 
   constructor(
     private readonly authService: AuthService,
@@ -75,6 +76,7 @@ export class OrdersService {
     private readonly razorpayService: RazorpayService,
     private readonly shiprocketService: ShiprocketService,
     private readonly MailService: MailService,
+    // private readonly StocksService: StocksService,
 
 
     @InjectRepository(Order)
@@ -151,7 +153,7 @@ export class OrdersService {
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     try {
-      console.log("createOrderInput***", createOrderInput)
+
       const order = plainToClass(Order, createOrderInput)
       const newOrderStatus = new OrderStatus();
       const newOrderFile = new OrderFiles();
@@ -261,9 +263,10 @@ export class OrdersService {
         weight: 1
       };
 
-      const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
+      // const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
 
-      order.tracking_number = shiprocketResponse.shipment_id || shiprocketResponse.order_id;
+      order.tracking_number = "438234234";
+      // shiprocketResponse.shipment_id || shiprocketResponse.order_id;
 
       await this.orderRepository.save(order);
 
@@ -336,6 +339,20 @@ export class OrdersService {
         await this.downloadInvoiceUrl((savedOrder.id).toString())
       }
 
+      if (savedOrder && savedOrder.customerId == savedOrder.dealer) {
+
+        const createStocksDto = {
+          user_id: savedOrder.customerId,
+          order_id: savedOrder.id,
+          products: createOrderInput.products,
+        };
+
+        if (!createStocksDto.order_id) {
+          throw new Error('Order ID is required');
+        }
+
+        await this.StocksService.create(createStocksDto);
+      }
       return savedOrder;
     } catch (error) {
       console.error('Error creating order:', error);
@@ -352,10 +369,12 @@ export class OrdersService {
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
     try {
+      console.log("getOrders****", customer_id, shop_id)
 
-      console.log("customer_id****", customer_id,
-        tracking_number, shop_id)
-      const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
+      let usr;
+      if (customer_id) {
+        usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
+      }
 
       console.log('usr', usr)
       if (!usr) {
@@ -656,7 +675,7 @@ export class OrdersService {
         dealer: order.dealer?.dealer ? order.dealer?.dealer : '',
         products: await Promise.all(order.products.map(async (product) => {
           const pivot = product.pivot.find(p => p.Ord_Id === order.id);
-          // console.log("PIvot()()()()()",pivot);
+
           if (!pivot || !product.id) {  // Ensure product.id is defined
             return null;
           }
@@ -1009,7 +1028,7 @@ export class OrdersService {
           shop_address: shopProducts[0].shop,
           products: shopProducts,
         };
-        console.log("working properly++++++++", taxType);
+
         // Assuming all products in a shop have the same tax rates and state information
         if (shopProducts[0].shop.address.state === Invoice.shipping_address.state) {
           const stateCodeValue = stateCode[Invoice.shipping_address.state];
@@ -1022,7 +1041,6 @@ export class OrdersService {
           taxType.state_code = stateCodeValue;
         }
 
-        console.log("working properly")
         await this.MailService.sendInvoiceToCustomerORDealer(taxType);
 
       }
