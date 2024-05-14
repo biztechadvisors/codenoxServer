@@ -250,7 +250,8 @@ export class CategoriesService {
     subCategory.image = imageAttachment;
     subCategory.language = createSubCategoryDto.language;
     subCategory.shop = shop;
-
+    
+    console.log("SUB_category&&&&&",subCategory);
     // Save the SubCategory instance to the database
     return await this.subCategoryRepository.save(subCategory);
   }
