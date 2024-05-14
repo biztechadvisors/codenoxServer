@@ -363,7 +363,7 @@ export class OrdersService {
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
     try {
-      console.log("getOrders****", customer_id, shop_id)
+      console.log("getOrders****366", customer_id)
 
       let usr;
       if (customer_id) {
