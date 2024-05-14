@@ -7,7 +7,8 @@ import {
     Put,
     Param,
     Query,
-    ParseIntPipe
+    ParseIntPipe,
+    NotFoundException
 } from '@nestjs/common';
 import { StocksService } from './stocks.service';
 import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
@@ -17,26 +18,41 @@ import { Stocks } from './entities/stocks.entity';
 export class StocksController {
     constructor(private readonly stocksService: StocksService) { }
 
+    // Create a new stock
     @Post()
     async createStock(@Body() createStocksDto: any) {
         return this.stocksService.create(createStocksDto);
     }
 
-    @Get('all/:id')
-    async getAllStocks(@Param('id') id: string) {
+    // Get all stocks of a particular user
+    @Get('user/:id')
+    async getAllUserStocks(@Param('id') id: string) {
         return this.stocksService.getAllStocks(parseInt(id));
     }
 
-    @Get(':user_id/:order_id')
-    async getAllStocksByUserAndOrder(
+    // Get a particular stock by user and order id
+    @Get('user/:user_id/order/:order_id')
+    async getStockByUserAndOrder(
         @Param('user_id') userId: string,
         @Param('order_id') orderId: string
     ): Promise<Stocks[]> {
         return await this.stocksService.getAll(parseInt(userId), parseInt(orderId));
     }
 
-    @Put('updateStocks/:user_id')
-    async updateStocks(@Param('user_id') user_id: string, @Body() updateStkQuantityDto: any) {
+    // Get dealer inventory stocks
+    @Get('inventory/:userId')
+    async getDealerInventoryStocks(@Param('userId', ParseIntPipe) userId: number) {
+        try {
+            const stocks = await this.stocksService.getDealerInventoryStocks(userId);
+            return stocks;
+        } catch (error) {
+            throw new NotFoundException(`Error fetching inventory stocks for user ID ${userId}: ${error.message}`);
+        }
+    }
+
+    // Update stocks by admin
+    @Put('update/admin/:user_id')
+    async updateStocksByAdmin(@Param('user_id') user_id: string, @Body() updateStkQuantityDto: any) {
         try {
             await this.stocksService.updateStocksbyAdmin(+user_id, updateStkQuantityDto);
             return { message: 'Quantity updated successfully' };
@@ -45,8 +61,9 @@ export class StocksController {
         }
     }
 
-    @Put('updateInventoryStocks/:user_id')
-    async updateInventoryStocks(@Param('user_id') user_id: string, @Body() updateStkQuantityDto: any) {
+    // Update inventory stocks by dealer
+    @Put('update/inventory/:user_id')
+    async updateInventoryStocksByDealer(@Param('user_id') user_id: string, @Body() updateStkQuantityDto: any) {
         try {
             await this.stocksService.updateInventoryStocksByDealer(+user_id, updateStkQuantityDto);
             return { message: 'Quantity updated successfully' };
@@ -55,29 +72,28 @@ export class StocksController {
         }
     }
 
-    // @Put()
-    // async afterORD(@Body() createOrderDto: CreateOrderDto) {
-    //     return this.stocksService.afterORD(createOrderDto);
-    // }
+    // Process after order creation
+    @Put('after-order')
+    async afterOrder(@Body() createOrderDto: any) {
+        return this.stocksService.afterORD(createOrderDto);
+    }
 
-    // @Post('ord')
-    // async OrdfromStocks(@Body() createOrderDto: CreateOrderDto) {
-    //     await this.stocksService.OrdfromStocks(createOrderDto)
-    //     return await this.stocksService.afterORD(createOrderDto);
-    // }
+    // Create order from stocks
+    @Post('order')
+    async orderFromStocks(@Body() createOrderDto: any) {
+        await this.stocksService.OrdfromStocks(createOrderDto)
+        return await this.stocksService.afterORD(createOrderDto);
+    }
 
-    @Get()
+    // Get orders
+    @Get('orders')
     async getOrders(@Query() query: GetOrdersDto): Promise<OrderPaginator> {
         return this.stocksService.getOrders(query);
     }
 
-    @Get('ord/:id')
+    // Get order by ID
+    @Get('order/:id')
     getOrderById(@Param('id') id: number) {
         return this.stocksService.getOrderById(Number(id));
     }
-
-
 }
-
-
-

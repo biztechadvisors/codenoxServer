@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { In, Repository } from 'typeorm';
+import { DeepPartial, In, Repository } from 'typeorm';
 import { InventoryStocks, Stocks } from './entities/stocks.entity';
 import { CreateStocksDto, GetStocksDto, UpdateStkQuantityDto } from './dto/create-stock.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -253,11 +253,10 @@ export class StocksService {
         }
     }
 
-
     async getAll(user_id: number, order_id: number): Promise<Stocks[]> {
         try {
             if (!user_id || !order_id) {
-                throw new NotFoundException(`User id or Order id is not defined`);
+                throw new NotFoundException(`User ID or Order ID is not defined`);
             }
 
             // Fetch all stocks for the given user and order
@@ -266,7 +265,7 @@ export class StocksService {
                     user: { id: user_id },
                     order: { id: order_id }
                 },
-                relations: ['product', 'order', 'user']
+                relations: ['product', 'order', 'user', 'variation_options']
             });
 
         } catch (error) {
@@ -274,10 +273,8 @@ export class StocksService {
         }
     }
 
-
     async getAllStocks(user_id: number) {
         try {
-
             if (!user_id) {
                 throw new NotFoundException(`User id is not defined`);
             }
@@ -290,21 +287,24 @@ export class StocksService {
 
             const allStocks = [];
 
-            for (const el of dealerList) {
+            for (const dealer of dealerList) {
                 // Fetch all stocks for each dealer
                 const dealerStocks = await this.stocksRepository.find({
-                    where: { user: { id: el.id } },
-                    relations: ['product', 'order', 'user']
+                    where: { user: { id: dealer.id } },
+                    relations: ['product', 'order', 'user', 'variation_options']
                 });
 
                 if (dealerStocks.length > 0) {
                     // Flatten the array of stocks objects into a single array
-                    const stocks = dealerStocks.map((v) => ({
-                        id: v.id,
-                        orderedquantity: v.orderedQuantity,
-                        ordPendQuant: v.ordPendQuant,
-                        dispatchedQuantity: v.dispatchedQuantity,
-                        product: v.product
+                    const stocks = dealerStocks.map(stock => ({
+                        id: stock.id,
+                        orderedQuantity: stock.orderedQuantity,
+                        ordPendQuant: stock.ordPendQuant,
+                        dispatchedQuantity: stock.dispatchedQuantity,
+                        receivedQuantity: stock.receivedQuantity,
+                        product: stock.product,
+                        variation_options: stock.variation_options,
+                        order: stock.order
                     }));
 
                     // Create an object with user property and the flattened stocks array
@@ -324,33 +324,74 @@ export class StocksService {
         }
     }
 
+    // Dealer Invantory Stocks Products
 
-    // async afterORD(createOrderDto: CreateOrderDto): Promise<any> {
-    //     try {
+    async getDealerInventoryStocks(userId: number): Promise<any> {
+        try {
+            if (!userId) {
+                throw new NotFoundException(`User ID is not defined`);
+            }
 
-    //         const existingStocks = await this.inventoryStocksRepository.find({
-    //             where: { user: { id: Number(createOrderDto.dealerId) }, product: { id: In(createOrderDto.products.map(product => product.product_id)) } },
-    //             relations: ['product'],
-    //         });
+            // Fetch all inventory stocks for the given dealer (user)
+            const inventoryStocks = await this.inventoryStocksRepository.find({
+                where: { user: { id: userId } },
+                relations: ['product', 'variation_options', 'user'],
+            });
 
-    //         for (const orderProduct of createOrderDto.products) {
-    //             const stock = existingStocks.find(s => s.product.id === orderProduct.product_id);
+            if (inventoryStocks.length === 0) {
+                throw new NotFoundException(`No inventory stocks found for user ID ${userId}`);
+            }
 
-    //             if (!stock) {
-    //                 throw new NotFoundException(`Stock with product ID ${orderProduct.product_id} not found for user ${createOrderDto.dealerId}`);
-    //             }
-    //             if (stock.quantity >= orderProduct.order_quantity) {
-    //                 stock.quantity -= orderProduct.order_quantity;
-    //             } else {
-    //                 throw new NotFoundException(`This Product ${orderProduct.product_id} Out of Stock`);
-    //             }
-    //             await this.stocksRepository.save(stock);
-    //         }
-    //     } catch (error) {
-    //         throw new NotFoundException(`Error updating stock after order: ${error.message}`);
-    //     }
-    // }
+            // Map the inventory stocks to include the necessary details
+            const result = inventoryStocks.map(stock => ({
+                id: stock.id,
+                quantity: stock.quantity,
+                status: stock.status,
+                inStock: stock.inStock,
+                product: stock.product,
+                variation_options: stock.variation_options,
+            }));
 
+            return result;
+
+        } catch (error) {
+            throw new NotFoundException(`Error fetching inventory stocks: ${error.message}`);
+        }
+    }
+
+    async afterORD(createOrderDto: any): Promise<any> {
+        try {
+            const existingStocks = await this.inventoryStocksRepository.find({
+                where: {
+                    user: { id: Number(createOrderDto.dealerId) },
+                    product: { id: In(createOrderDto.products.map(product => product.product_id)) }
+                },
+                relations: ['product', 'variation_options'],
+            });
+
+            for (const orderProduct of createOrderDto.products) {
+                const stock = existingStocks.find(s => s.product.id === orderProduct.product_id);
+
+                if (!stock) {
+                    throw new NotFoundException(`Stock with product ID ${orderProduct.product_id} not found for user ${createOrderDto.dealerId}`);
+                }
+                if (stock.quantity >= orderProduct.order_quantity) {
+                    stock.quantity -= orderProduct.order_quantity;
+                } else {
+                    throw new NotFoundException(`This Product ${orderProduct.product_id} is out of stock`);
+                }
+
+                // Ensure stock is of the correct type
+                const updatedStock: DeepPartial<InventoryStocks> = {
+                    ...stock,
+                    variation_options: stock.variation_options.map(variation => ({ ...variation })) as DeepPartial<Variation>[]
+                };
+                await this.inventoryStocksRepository.save(updatedStock);
+            }
+        } catch (error) {
+            throw new NotFoundException(`Error updating stock after order: ${error.message}`);
+        }
+    }
 
     async OrdfromStocks(createOrderInput: CreateOrderDto): Promise<StocksSellOrd> {
         try {

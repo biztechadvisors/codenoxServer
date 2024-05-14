@@ -289,6 +289,7 @@ export class ProductsService {
       .leftJoinAndSelect('product.shop', 'shop')
       .leftJoinAndSelect('product.image', 'image')
       .leftJoinAndSelect('product.categories', 'categories')
+      .leftJoinAndSelect('product.subCategories', 'subCategories')
       .leftJoinAndSelect('product.tags', 'tags')
       .leftJoinAndSelect('product.related_products', 'related_products')
       .leftJoinAndSelect('product.variations', 'variations')
@@ -400,6 +401,7 @@ export class ProductsService {
         'shop',
         'image',
         'categories',
+        'subCategories',
         'tags',
         'gallery',
         'related_products',
@@ -924,10 +926,12 @@ export class ProductsService {
     await this.productRepository.save(product);
 
     // Remove associations with categories
-    await Promise.all(product.categories.map(async category => {
-      category.products = category.products.filter(p => p.id !== product.id);
-      await this.categoryRepository.save(category);
-    }));
+    if (product.categories) {
+      await Promise.all(product.categories.map(async category => {
+        category.products = category.products.filter(p => p.id !== product.id);
+        await this.categoryRepository.save(category);
+      }));
+    }
 
     // Find related records in the dealer_product_margin table
     const relatedRecords = await this.dealerProductMarginRepository.find({ where: { product: { id: product.id } } });
@@ -938,10 +942,12 @@ export class ProductsService {
     }));
 
     // Remove associations with subcategories
-    // await Promise.all(product.subCategories.map(async subCategory => {
-    //   subCategory.products = subCategory.products.filter(p => p.id !== product.id);
-    //   await this.subCategoryRepository.save(subCategory);
-    // }));
+    if (product.subCategories) {
+      await Promise.all(product.subCategories.map(async subCategory => {
+        subCategory.products = subCategory.products.filter(p => p.id !== product.id);
+        await this.subCategoryRepository.save(subCategory);
+      }));
+    }
 
     if (product.image) {
       const image = product.image;
