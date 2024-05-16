@@ -43,10 +43,14 @@ export class AnalyticsService {
       if (!user) {
         throw new NotFoundException(`User with ID ${customerId} not found`);
       }
+      console.log('user---46', user)
 
       const userPermissions = await this.permissionRepository.findOne({
         where: { permission_name: user.type.permission_name },
       });
+
+      console.log('userPermission---52', userPermissions)
+      
       if (!(userPermissions && ['Admin', 'super_admin', 'dealer', 'Vendor'].includes(userPermissions.type_name))) {
         throw new ForbiddenException(`User with ID ${customerId} does not have permission to access analytics`);
       }

@@ -366,15 +366,17 @@ export class OrdersService {
 
       let query = this.orderRepository.createQueryBuilder('order');
 
-      let customer_id;
+      let customerId = customer_id;
+
+      console.log('first-366 ', customerId)
       // Check if search term is provided
       if (search) {
         const [key, value] = search.split(":");
 
         // Check if the key is customer_id
         if (key === 'customer_id') {
-          // Assign the value to customer_id
-          customer_id = parseInt(value); // Parse the value to ensure it's a number
+          // Assign the value to customerId
+          customerId = parseInt(value); // Parse the value to ensure it's a number
         }
       }
 
