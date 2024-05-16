@@ -19,11 +19,24 @@ export class UploadsService {
     secretAccessKey: this.configService.get('AWS_SECRET_KEY'),
   });
 
-  async uploadFiles(files: Express.Multer.File | Express.Multer.File[]): Promise<AttachmentDTO[]> {
+  async uploadFiles(files: Express.Multer.File | Express.Multer.File[]): Promise<{ data: { upload: AttachmentDTO[] } }> {
     const filesArray = Array.isArray(files) ? files : [files];
     const uploadPromises = filesArray.map(file => this.uploadToS3(file.buffer, file.originalname, file.mimetype));
     const results = await Promise.all(uploadPromises);
-    return Array.isArray(results) ? results : [results];
+
+    // Construct the response object
+    const uploadData = {
+      data: {
+        upload: results.map(result => ({
+          original: result.original,
+          thumbnail: result.thumbnail,
+          id: result.id,
+          __typename: 'Attachment'
+        }))
+      }
+    };
+
+    return uploadData;
   }
 
 
