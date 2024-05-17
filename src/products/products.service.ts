@@ -462,6 +462,7 @@ export class ProductsService {
 
     productsQueryBuilder
       .leftJoinAndSelect('product.shop', 'shop')
+      .leftJoinAndSelect('product.type', 'type')
       .leftJoinAndSelect('product.image', 'image')
       .leftJoinAndSelect('product.categories', 'categories')
       .leftJoinAndSelect('product.tags', 'tags')

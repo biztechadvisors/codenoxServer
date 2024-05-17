@@ -42,6 +42,9 @@ export class ProductsController {
     @Param('shop_id') shop_id: number
   ): Promise<Product | undefined> {
     try {
+
+      console.log('first')
+
       if (!slug || !shop_id) {
         throw new NotFoundException(`Slug or Shop_Id is not defined`);
       }
