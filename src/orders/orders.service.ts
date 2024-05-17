@@ -363,82 +363,78 @@ export class OrdersService {
     shop_id,
   }: GetOrdersDto): Promise<OrderPaginator> {
     try {
-
-      let query = this.orderRepository.createQueryBuilder('order');
-
       let customerId = customer_id;
 
-      console.log('first-366 ', customerId)
-      // Check if search term is provided
+      // Handle search string if provided
       if (search) {
         const [key, value] = search.split(":");
-
-        // Check if the key is customer_id
         if (key === 'customer_id') {
-          // Assign the value to customerId
-          customerId = parseInt(value); // Parse the value to ensure it's a number
+          customerId = parseInt(value); // Ensure customerId is a number
         }
       }
 
-      // Apply the customer_id filter if it exists
-      if (customer_id) {
-        query = query.andWhere('order.customer_id = :customerId', { customerId: customer_id });
-      }
-
-      // Apply the search query for status name or tracking number
-      if (search && !customer_id) { // Apply the search query only if customer_id filter is not applied
-        query = query.andWhere('(status.name LIKE :searchValue OR order.tracking_number LIKE :searchValue)', {
-          searchValue: `%${search}%`,
-        });
-      }
-
-
-      let usr;
-      if (customer_id) {
-        usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type'] });
-      }
+      // Find the user by customerId
+      const usr = await this.userRepository.findOne({
+        where: { id: customerId },
+        relations: ['type'],
+      });
 
       if (!usr) {
         throw new Error('User not found');
       }
 
       // Fetch permissions for the user
-      const permsn = await this.permissionRepository.findOneBy(usr.type);
+      const permsn = await this.permissionRepository.findOneBy({ id: usr.type.id });
 
-      query = query.leftJoinAndSelect('order.status', 'status');
-      query = query.leftJoinAndSelect('order.dealer', 'dealer');
-      query = query.leftJoinAndSelect('order.billing_address', 'billing_address');
-      query = query.leftJoinAndSelect('order.shipping_address', 'shipping_address');
-      query = query.leftJoinAndSelect('order.customer', 'customer');
-      query = query.leftJoinAndSelect('order.products', 'products')
+      // Create the initial query builder for orders
+      let query = this.orderRepository.createQueryBuilder('order');
+      query = query
+        .leftJoinAndSelect('order.status', 'status')
+        .leftJoinAndSelect('order.dealer', 'dealer')
+        .leftJoinAndSelect('order.billing_address', 'billing_address')
+        .leftJoinAndSelect('order.shipping_address', 'shipping_address')
+        .leftJoinAndSelect('order.customer', 'customer')
+        .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('products.taxes', 'taxes')
-        .leftJoinAndSelect('products.variation_options', 'variation_options');
-      query = query.leftJoinAndSelect('order.payment_intent', 'payment_intent')
-        .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info');
-      query = query.leftJoinAndSelect('order.shop_id', 'shop');  // Corrected relation to match ManyToMany relation
-      query = query.leftJoinAndSelect('order.coupon', 'coupon');
+        .leftJoinAndSelect('products.variation_options', 'variation_options')
+        .leftJoinAndSelect('order.payment_intent', 'payment_intent')
+        .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
+        .leftJoinAndSelect('order.shop_id', 'shop') // Adjusted relation to match shop entity
+        .leftJoinAndSelect('order.coupon', 'coupon');
 
+      // If the user is not an admin or super_admin, restrict orders by customer_id
       if (!(permsn && (permsn.type_name === 'Admin' || permsn.type_name === 'super_admin'))) {
-        // If the user has other permissions, filter orders by customer_id
         const usrByIdUsers = await this.userRepository.find({
           where: { UsrBy: { id: usr.id } },
-          relations: ['type']
+          relations: ['type'],
         });
 
-        const userIds = usrByIdUsers.map(user => user.id);
-        query = query.andWhere('order.customer.id NOT IN (:...userIds)', { userIds });
+        const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
+        query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
       }
 
+      // Filter by shop_id if provided
       if (shop_id && shop_id !== 'undefined') {
-        query = query.andWhere('shop.id = :shopId', { shopId: Number(shop_id) });
+        query = query.andWhere('products.shop_id = :shopId', { shopId: Number(shop_id) });
       }
 
+      // Apply customer_id filter if it exists
+      if (customer_id) {
+        query = query.andWhere('order.customer_id = :customerId', { customerId });
+      }
 
+      // Search within status name and tracking number if no customer_id from search
+      if (search && !customerId) {
+        query = query.andWhere('(status.name LIKE :searchValue OR order.tracking_number LIKE :searchValue)', {
+          searchValue: `%${search}%`,
+        });
+      }
+
+      // Filter by tracking number if provided
       if (tracking_number) {
         query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
       }
-
       // Handle pagination
       if (!page) page = 1;
       if (!limit) limit = 15;
