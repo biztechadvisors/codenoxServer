@@ -280,10 +280,11 @@ export class ProductsService {
     }
   }
 
-  async getProducts({ limit = 20, page = 1, search, userId }: GetProductsDto): Promise<ProductPaginator> {
+  async getProducts({ limit = 20, page = 1, search, dealerId, shopId, shopName }: GetProductsDto): Promise<ProductPaginator> {
     const startIndex = (page - 1) * limit;
     const productQueryBuilder = this.productRepository.createQueryBuilder('product');
 
+    // Perform the necessary joins
     productQueryBuilder
       .leftJoinAndSelect('product.type', 'type')
       .leftJoinAndSelect('product.shop', 'shop')
@@ -301,8 +302,21 @@ export class ProductsService {
       .leftJoinAndSelect('product.variations', 'attributeValues')
       .leftJoinAndSelect('attributeValues.attribute', 'attribute');
 
+    // Adding conditions dynamically
+    if (dealerId) {
+      productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
+    }
+
+    if (shopId) {
+      productQueryBuilder.andWhere('product.shopId = :shopId', { shopId });
+    }
+
+    if (shopName) {
+      productQueryBuilder.andWhere('shop.name = :shopName', { shopName });
+    }
+
     if (search) {
-      const searchConditions = new Brackets(qb => {
+      productQueryBuilder.andWhere(new Brackets(qb => {
         const parseSearchParams = search.split(';');
         parseSearchParams.forEach(searchParam => {
           const [key, value] = searchParam.split(':');
@@ -313,32 +327,32 @@ export class ProductsService {
             qb.orWhere('categories.name LIKE :searchTerm OR categories.description LIKE :searchTerm', { searchTerm });
           } else if (key === 'categories.slug') {
             const categorySlugs = value.split(',');
-            qb.orWhere('categories.slug', categorySlugs);
+            qb.orWhere('categories.slug IN (:...categorySlugs)', { categorySlugs });
           } else if (key === 'type.slug') {
             qb.orWhere('type.slug LIKE :slug', { slug: `%${value}%` });
           } else if (key === 'shop_id') {
-            qb.orWhere(`shop.id = :shopId`, { shopId: value });
+            qb.orWhere('shop.id = :shopId', { shopId: value });
           } else {
             qb.orWhere(`product.${key} LIKE :value`, { value: `%${value}%` });
           }
         });
-      });
-      productQueryBuilder.andWhere(searchConditions);
+      }));
     }
 
     try {
       let products: Product[] = [];
       let total: number;
 
-      if (userId) {
+      if (dealerId) {
         const dealer = await this.dealerRepository.findOne({
-          where: { id: userId },
+          where: { id: dealerId },
           relations: ['dealerProductMargins', 'dealerCategoryMargins']
         });
 
         if (dealer) {
           if (dealer.dealerProductMargins) {
             const marginFind = await this.dealerProductMarginRepository.find({
+              where: { dealer: { id: dealerId } },
               relations: ['product']
             });
             marginFind.forEach(margin => {
@@ -346,8 +360,11 @@ export class ProductsService {
               product.margin = margin.margin;
               products.push(product);
             });
-          } else if (dealer.dealerCategoryMargins) {
+          }
+
+          if (dealer.dealerCategoryMargins) {
             const marginFind = await this.dealerCategoryMarginRepository.find({
+              where: { dealer: { id: dealerId } },
               relations: ['category']
             });
             for (const findId of marginFind) {
@@ -379,7 +396,7 @@ export class ProductsService {
         products = await productQueryBuilder.getMany();
       }
 
-      const url = `/products?search=${search}&limit=${limit}`;
+      const url = `/products?search=${search}&limit=${limit}&page=${page}`;
       const paginator = paginate(total, page, limit, products.length, url);
 
       return {
@@ -391,15 +408,15 @@ export class ProductsService {
     }
   }
 
-  async getProductBySlug(slug: string, shop_id: number): Promise<Product | undefined> {
-
-    const shop = await this.shopRepository.findOne({ where: { id: shop_id } })
+  async getProductBySlug(slug: string, shop_id: number, dealerId?: number): Promise<Product | undefined> {
+    const shop = await this.shopRepository.findOne({ where: { id: shop_id } });
     if (!shop) {
-      throw new NotFoundException(`Product is not found in Shop : ${shop.name}`);
+      throw new NotFoundException(`Shop not found with id: ${shop_id}`);
     }
-    // Fetch the product using the slug
+
+    // Fetch the product using the slug and shop_id
     const product = await this.productRepository.findOne({
-      where: { slug: slug, shop_id: shop.id },
+      where: { slug, shop_id: shop.id },
       relations: [
         'type',
         'shop',
@@ -413,39 +430,58 @@ export class ProductsService {
         'variation_options.options',
       ],
     });
-    try {
 
-      // Destructuring variations and variation_options  
-      if (product) {
-
-        // Destructuring variations
-        product.variations = product.variations.map((variation) => ({
-          ...variation,
-          attribute: variation.attribute, // Extract attribute value
-        }));
-
-        // Destructuring variation_options
-        product.variation_options = product.variation_options.map((option) => ({
-          ...option,
-          options: option.options.map((optionAttribute) => optionAttribute), // Extract option values
-        }));
-      }
-      // Fetch related products using type_id
-      if (product) {
-        const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
-          .where('related_products.type_id = :type_id', { type_id: product.type_id })
-          .andWhere('related_products.id != :productId', { productId: product.id })
-          .limit(20)
-          .getMany();
-
-        product.related_products = relatedProducts;
-      }
-      return product;
-
-    } catch (error) {
-      throw new NotFoundException(error);
+    if (!product) {
+      throw new NotFoundException(`Product not found with slug: ${slug}`);
     }
+
+    if (dealerId) {
+      const dealer = await this.dealerRepository.findOne({
+        where: { id: dealerId },
+        relations: ['dealerProductMargins', 'dealerCategoryMargins']
+      });
+
+      if (!dealer) {
+        throw new NotFoundException(`Dealer not found with id: ${dealerId}`);
+      }
+
+      // Fetch product-specific margins
+      const productMargin = await this.dealerProductMarginRepository.findOne({
+        where: { dealer: { id: dealerId }, product: { id: product.id } }
+      });
+
+      if (productMargin) {
+        product.margin = productMargin.margin;
+      } else {
+        // If no product-specific margin, fetch category-specific margins
+        const categoryMargins = await this.dealerCategoryMarginRepository.find({
+          where: { dealer: { id: dealerId } },
+          relations: ['category']
+        });
+
+        // Find the margin for the first matching category
+        for (const categoryMargin of categoryMargins) {
+          if (product.categories.some(category => category.id === categoryMargin.category.id)) {
+            product.margin = categoryMargin.margin;
+            break;
+          }
+        }
+      }
+    }
+
+    // Fetch related products using type_id
+    const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
+      .where('related_products.type_id = :type_id', { type_id: product.type.id })
+      .andWhere('related_products.id != :productId', { productId: product.id })
+      .limit(20)
+      .getMany();
+
+    product.related_products = relatedProducts;
+
+    // Return the product with updated margins and related products
+    return product;
   }
+
 
   async getPopularProducts(query: GetPopularProductsDto): Promise<Product[]> {
     const { limit = 10, type_slug, shop_id } = query;
