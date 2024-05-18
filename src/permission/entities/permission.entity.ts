@@ -9,8 +9,9 @@ export class Permission {
 
   @Column()
   type_name: string;
+
   @Column()
-  permission_name: string
+  permission_name: string;
 
   @OneToMany(() => PermissionType, PermissionType => PermissionType.permissions)
   permissions: PermissionType[];
@@ -21,7 +22,6 @@ export class Permission {
 
 @Entity()
 export class PermissionType {
-  [x: string]: any;
   @PrimaryGeneratedColumn()
   id: number;
 

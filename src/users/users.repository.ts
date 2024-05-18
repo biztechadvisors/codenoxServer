@@ -6,7 +6,21 @@ import { Profile, Social } from "./entities/profile.entity";
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from "./entities/dealer.entity";
 
 @CustomRepository(User)
-export class UserRepository extends Repository<User> { }
+export class UserRepository extends Repository<User> {
+    async findById(id: any): Promise<User | undefined> {
+        return await this.findOne(id);
+    }
+
+    async findAll(): Promise<User[]> {
+        return await this.find();
+    }
+
+    async findByNameOrEmail(text: string): Promise<User[]> {
+        return await this.createQueryBuilder('user')
+            .where('user.name LIKE :text OR user.email LIKE :text', { text: `%${text}%` })
+            .getMany();
+    }
+}
 
 @CustomRepository(Profile)
 export class ProfileRepository extends Repository<Profile> { }
