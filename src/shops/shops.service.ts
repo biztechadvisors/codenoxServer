@@ -215,19 +215,19 @@ export class ShopsService {
       description: shop.description,
       gst_number: shop.gst_number,
       balance: {
-        id: shop.balance.id,
-        admin_commission_rate: shop.balance.admin_commission_rate,
-        total_earnings: shop.balance.total_earnings,
-        withdrawn_amount: shop.balance.withdrawn_amount,
-        current_balance: shop.balance.current_balance,
-        shop: shop.balance.shop, // Adjust accordingly
+        id: shop?.balance?.id,
+        admin_commission_rate: shop.balance?.admin_commission_rate,
+        total_earnings: shop.balance?.total_earnings,
+        withdrawn_amount: shop.balance?.withdrawn_amount,
+        current_balance: shop.balance?.current_balance,
+        shop: shop.balance?.shop, // Adjust accordingly
         dealer: null, // Update with actual dealer data if available
         payment_info: {
-          id: shop.balance.payment_info.id,
-          account: shop.balance.payment_info.account,
-          name: shop.balance.payment_info.name,
-          email: shop.balance.payment_info.email,
-          bank: shop.balance.payment_info.bank,
+          id: shop.balance?.payment_info.id,
+          account: shop.balance?.payment_info.account,
+          name: shop.balance?.payment_info.name,
+          email: shop.balance?.payment_info.email,
+          bank: shop.balance?.payment_info.bank,
         },
       },
       settings: {
