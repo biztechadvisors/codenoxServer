@@ -39,16 +39,14 @@ export class ProductsController {
   @Get(':slug/:shop_id')
   async getProductBySlug(
     @Param('slug') slug: string,
-    @Param('shop_id') shop_id: number
+    @Param('shop_id') shop_id: number,
+    @Query('dealerId') dealerId?: number
   ): Promise<Product | undefined> {
     try {
-
-      console.log('first')
-
       if (!slug || !shop_id) {
         throw new NotFoundException(`Slug or Shop_Id is not defined`);
       }
-      return await this.productsService.getProductBySlug(slug, shop_id);
+      return await this.productsService.getProductBySlug(slug, shop_id, dealerId);
     } catch (error) {
       throw new NotFoundException(`Error fetching product: ${error.message}`);
     }
