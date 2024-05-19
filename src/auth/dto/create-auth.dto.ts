@@ -74,6 +74,7 @@ export class OtpResponse {
   provider: string;
   is_contact_exist: boolean;
 }
+
 export class OtpDto {
   phone_number: string;
 }

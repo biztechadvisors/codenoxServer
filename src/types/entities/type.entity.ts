@@ -47,16 +47,15 @@ export class Type extends CoreEntity {
   icon: string
 
   @OneToMany(() => Banner, (banner) => banner.type, { cascade: true })
-  banners?: Banner[]
+  banners?: Banner[];
 
   @ManyToMany(() => Attachment)
   @JoinTable({
-    // Create a join table between Type and Attachment
     name: 'type_promotional_sliders',
     joinColumn: { name: 'typeId', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'attachmentId', referencedColumnName: 'id' },
   })
-  promotional_sliders?: Attachment[]
+  promotional_sliders?: Attachment[];
 
   @OneToOne(() => TypeSettings)
   @JoinColumn()
