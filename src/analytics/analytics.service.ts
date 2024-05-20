@@ -47,6 +47,7 @@ export class AnalyticsService {
       const userPermissions = await this.permissionRepository.findOne({
         where: { permission_name: user.type.permission_name },
       });
+
       if (!(userPermissions && ['Admin', 'super_admin', 'dealer', 'Vendor'].includes(userPermissions.type_name))) {
         throw new ForbiddenException(`User with ID ${customerId} does not have permission to access analytics`);
       }

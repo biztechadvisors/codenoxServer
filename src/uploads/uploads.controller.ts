@@ -1,10 +1,7 @@
-import { Controller, Post, UseInterceptors, UploadedFiles, Get, Param, Delete, Req, Res } from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFiles, Get, Param, Delete, Req, Res, BadRequestException } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from './uploads.service';
-import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 import { Attachment } from 'src/common/entities/attachment.entity';
-import { diskStorage } from 'multer';
-import { editFileName } from './edit-file-name.util';
 
 @Controller('attachments')
 export class UploadsController {
@@ -12,29 +9,13 @@ export class UploadsController {
 
   @Post()
   @UseInterceptors(
-    FilesInterceptor('attachment[]'
-      //   , 10, {
-      //   storage: diskStorage({
-      //     destination: './uploads',
-      //     filename: editFileName,
-      //   }),
-      // }
-    ),
+    FilesInterceptor('attachment[]'),
   )
-  async uploadFile(@UploadedFiles() attachments: Array<Express.Multer.File>, @Req() request, @Res() response) {
-    console.log(attachments, "**********************")
-    try {
-      const uploadedFiles = await this.uploadsService.uploadFiles(attachments);
-      console.log("uploadedFiles ", uploadedFiles)
-      return uploadedFiles.map(file => ({
-        id: file.id,
-        original: file.original,
-        thumbnail: file.thumbnail,
-      }));
-    } catch (err) {
-      console.log(err);
-      return response.status(500).json({ error: 'Failed to upload files' });
+  async uploadFile(@UploadedFiles() attachments: Array<Express.Multer.File>) {
+    if (!attachments || attachments.length === 0) {
+      throw new BadRequestException('No attachments provided');
     }
+    return await this.uploadsService.uploadFiles(attachments);
   }
 
   @Get()
@@ -44,6 +25,7 @@ export class UploadsController {
 
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<Attachment> {
+    console.log('findOne**', id)
     return this.uploadsService.findOne(Number(id));
   }
 

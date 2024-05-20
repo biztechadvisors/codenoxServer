@@ -622,6 +622,8 @@ export class AuthService {
   }
 
   async me(email: string, id: number): Promise<User> {
+    console.log('me****623', email)
+    console.log('me****623--id', id)
 
     const user = await this.userRepository.findOne({
       where: email ? { email: email } : { id: id },
