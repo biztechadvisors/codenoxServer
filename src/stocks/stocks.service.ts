@@ -69,7 +69,7 @@ export class StocksService {
 
             const updatedStocks: Stocks[] = [];
 
-            const orderEntity = await this.orderRepository.findOne(order_id);
+            const orderEntity = await this.orderRepository.findOne({ where: { id: order_id } });
             if (!orderEntity) {
                 throw new NotFoundException(`Order not found by ID ${order_id}`);
             }
@@ -79,12 +79,12 @@ export class StocksService {
                     throw new NotFoundException(`Product id or Order id is not defined`);
                 }
 
-                const productEntity = await this.productRepository.findOne(product.product_id);
+                const productEntity = await this.productRepository.findOne({ where: { id: product.product_id } });
                 if (!productEntity) {
                     throw new NotFoundException(`Product not found by ID ${product.product_id}`);
                 }
 
-                const variationOptions = product.variation_option_id ? await this.variationRepository.findOne(product.variation_option_id) : null;
+                const variationOptions = product.variation_option_id ? await this.variationRepository.findOne({ where: { id: product.variation_option_id } }) : null;
 
                 const stock = this.stocksRepository.create({
                     orderedQuantity: product.order_quantity,
@@ -114,6 +114,7 @@ export class StocksService {
         }
     }
 
+
     async updateInventoryStocks(createStocksDto: any): Promise<InventoryStocks[]> {
         try {
             const { user_id, product_id, variation_option_id, orderedQuantity } = createStocksDto;
@@ -128,9 +129,9 @@ export class StocksService {
             });
 
             if (!existingStock) {
-                const userEntity = await this.userRepository.findOne(user_id);
-                const productEntity = await this.productRepository.findOne(product_id);
-                const variationOptionEntity = variation_option_id ? await this.variationRepository.findOne(variation_option_id) : null;
+                const userEntity = await this.userRepository.findOne({ where: { id: user_id } });
+                const productEntity = await this.productRepository.findOne({ where: { id: product_id } });
+                const variationOptionEntity = variation_option_id ? await this.variationRepository.findOne({ where: { id: variation_option_id } }) : null;
 
                 existingStock = this.inventoryStocksRepository.create({
                     quantity: 0,
