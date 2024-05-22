@@ -35,9 +35,6 @@ export class AnalyticsService {
 
   async findAll(customerId: number, state: string): Promise<AnalyticsResponseDTO> {
     try {
-
-      console.log('customerId***39', customerId)
-
       const user = await this.userRepository.findOne({ where: { id: customerId }, relations: ['type'] });
 
       if (!user) {
@@ -64,6 +61,7 @@ export class AnalyticsService {
 
       return analyticsResponse;
     } catch (error) {
+      console.error('Error fetching analytics:', error);
       throw new NotFoundException(`Error fetching analytics: ${error.message}`);
     }
   }
