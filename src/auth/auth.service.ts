@@ -187,6 +187,9 @@ export class AuthService {
       }
 
       if (permission) {
+
+        console.log('permission', permission)
+
         // User with permission
         const hashPass = await bcrypt.hash(createUserInput.password, 12);
         const userData = new User();

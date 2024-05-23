@@ -15,6 +15,7 @@ import { CoreEntity } from 'src/common/entities/core.entity'
 import { Product } from 'src/products/entities/product.entity'
 import { Shop } from 'src/shops/entities/shop.entity'
 import { Tag } from 'src/tags/entities/tag.entity'
+import { Category } from 'src/categories/entities/category.entity'
 
 // TypeSettings entity
 @Entity()
@@ -29,22 +30,23 @@ export class TypeSettings {
   productCard: string
 }
 
-// Type entity
 @Entity()
 export class Type extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  name: string
+  name: string;
+
   @Column()
-  slug: string
+  slug: string;
 
   @OneToOne(() => Attachment)
   @JoinColumn()
-  image: Attachment
+  image: Attachment;
 
   @Column()
-  icon: string
+  icon: string;
 
   @OneToMany(() => Banner, (banner) => banner.type, { cascade: true })
   banners?: Banner[];
@@ -57,25 +59,30 @@ export class Type extends CoreEntity {
   })
   promotional_sliders?: Attachment[];
 
-  @OneToOne(() => TypeSettings)
+  @OneToOne(() => TypeSettings, { cascade: true, onDelete: 'SET NULL' })
   @JoinColumn()
-  settings?: TypeSettings
+  settings?: TypeSettings;
 
   @OneToMany(() => Product, (product) => product.type)
-  product?: Product[]
+  products?: Product[];
 
-  @OneToMany(() => Tag, (tag) => tag.type)
-  tags?: Tag[]
+  @OneToMany(() => Tag, (tag) => tag.type, { cascade: ['insert', 'update', 'remove'] })
+  tags?: Tag[];
+
+  @OneToMany(() => Category, (category) => category.type)
+  categories?: Category[];
 
   @ManyToOne(() => Shop)
   @JoinColumn()
   shop?: Shop;
 
   @Column()
-  language: string
+  language: string;
+
   @Column({ type: 'json' })
-  translated_languages: string[]
+  translated_languages: string[];
 }
+
 
 // Banner entity
 @Entity()
@@ -86,9 +93,10 @@ export class Banner {
   title?: string
   @Column({ nullable: true })
   description?: string
-  @OneToOne(() => Attachment)
-  @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
-  image: Attachment
-  @ManyToOne(() => Type, (type) => type.banners)
-  type: Type
+  @ManyToOne(() => Type, (type) => type.banners, { onDelete: 'CASCADE' })
+  type: Type;
+
+  @ManyToOne(() => Attachment, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'imageId' })
+  image: Attachment | null;
 }
