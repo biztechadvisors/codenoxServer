@@ -30,17 +30,12 @@ export class Tag extends CoreEntity {
   @Column()
   icon: string;
 
-  @ManyToOne(() => Type, (type) => type.tags, { nullable: true, eager: true })
+  @ManyToOne(() => Type, (type) => type.tags, { nullable: true, eager: true, onDelete: 'SET NULL' })
   type: Type | null;
 
-  @ManyToMany(() => Product, product => product.tags, { cascade: true })
-  @JoinTable({ name: "product_tags" })
+  @ManyToMany(() => Product, (product) => product.tags, { cascade: true })
+  @JoinTable({ name: 'product_tags' })
   products: Product[];
-
-  // @ManyToOne(() => Shop, { eager: true, cascade: true })
-  // shop: Shop;
-  // @Column()
-  // shop_id: number;
 
   @Column()
   language: string;

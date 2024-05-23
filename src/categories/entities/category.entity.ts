@@ -37,9 +37,9 @@ export class Category extends CoreEntity {
   @Column()
   icon?: string;
 
-  @ManyToOne(() => Type)
-  @JoinColumn()
-  type?: Type;
+  @ManyToOne(() => Type, (type) => type.categories, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'typeId' })
+  type: Type | null;
 
   @ManyToMany(() => Product, product => product.categories)
   @JoinTable({ name: "product_category" })

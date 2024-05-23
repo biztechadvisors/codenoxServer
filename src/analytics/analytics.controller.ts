@@ -9,7 +9,6 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) { }
 
   @Post()
-  @UseGuards(AuthGuard)
   async getAnalytics(@Body() query: { customerId: number; state: string }): Promise<AnalyticsResponseDTO> {
     try {
       const result = await this.analyticsService.findAll(query.customerId, query.state);
@@ -17,9 +16,9 @@ export class AnalyticsController {
     } catch (error) {
       console.error('Error fetching analytics:', error);
       if (error instanceof NotFoundException || error instanceof ForbiddenException) {
-        throw error;
+        throw error; // Propagate specific HTTP exceptions
       }
-      throw new Error('Error fetching analytics data');
+      throw new Error('Error fetching analytics data'); // Generic error for unexpected cases
     }
   }
 
