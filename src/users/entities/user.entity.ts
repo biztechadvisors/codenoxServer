@@ -14,7 +14,7 @@ import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 export enum UserType {
   Super_Admin = 'Super_Admin',
   Admin = 'Admin',
-  Dealer = 'dealer',
+  Dealer = 'Dealer',
   Vendor = 'Vendor',
   Customer = 'Customer',
 }
@@ -42,7 +42,7 @@ export class User extends CoreEntity {
   @Column({ nullable: true })
   shop_id?: number;
 
-  @OneToOne(() => Profile, (profile) => profile.customer)
+  @OneToOne(() => Profile, profile => profile.customer)
   @JoinColumn()
   profile?: Profile;
 
@@ -50,31 +50,31 @@ export class User extends CoreEntity {
   @JoinColumn()
   dealer?: Dealer;
 
-  @ManyToOne(() => User, (user) => user)
+  @ManyToOne(() => User, user => user)
   UsrBy?: User;
 
-  @OneToMany(() => Shop, (shop) => shop.owner)
+  @OneToMany(() => Shop, shop => shop.owner)
   shops?: Shop[];
 
-  @OneToMany(() => InventoryStocks, (inventoryStocks) => inventoryStocks.user)
+  @OneToMany(() => InventoryStocks, inventoryStocks => inventoryStocks.user)
   inventoryStocks?: InventoryStocks[];
 
-  @OneToMany(() => Stocks, (stocks) => stocks.user)
+  @OneToMany(() => Stocks, stocks => stocks.user)
   stocks?: Stocks[];
 
-  @ManyToOne(() => Shop, (shop) => shop.staffs)
+  @ManyToOne(() => Shop, shop => shop.staffs)
   managed_shop?: Shop;
 
   @Column()
   is_active?: boolean = true;
 
-  @OneToMany(() => Address, (address) => address.customer, { cascade: true })
+  @OneToMany(() => Address, address => address.customer, { cascade: true })
   address?: Address[];
 
-  @OneToMany(() => Order, (order) => order.customer)
+  @OneToMany(() => Order, order => order.customer)
   orders: Order[];
 
-  @OneToMany(() => StocksSellOrd, (stocksSellOrd) => stocksSellOrd.customer)
+  @OneToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.customer)
   stocksSellOrd: StocksSellOrd[];
 
   @ManyToOne(() => Permission, permission => permission.user)
@@ -86,6 +86,7 @@ export class User extends CoreEntity {
 
   @Column('varchar', { length: 200, nullable: true })
   contact: string;
+
   @Column('datetime', { nullable: true })
   email_verified_at: Date;
 }

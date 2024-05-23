@@ -31,6 +31,7 @@ import { jwtConstants } from './constants';
 
 @Injectable()
 export class AuthService {
+  relationsCache: any;
   save(user: User) {
     throw new Error('Method not implemented.');
   }
@@ -60,214 +61,189 @@ export class AuthService {
     await this.userRepository.save(user);
   }
 
-  async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ message: string } | AuthResponse> {
-    const user = await this.userRepository.findOne({ where: { email: resendOtpDto.email } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    const otp = await this.generateOtp();
-    user.otp = otp;
-    user.created_at = new Date();
-    const repo = await this.userRepository.save(user);
-    await this.mailService.sendUserConfirmation(user, otp.toString()); // Assuming you have a method to send OTP
-    return { message: 'OTP resent successfully.' };
-  }
-  async verifyOtp(otp: number): Promise<boolean> {
-    const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
-
-    if (!user) {
-      return false;
-    }
-
-    const otpCreatedAt = new Date(user.created_at);
-
-    // If created_at is a string, parse it to Date
-    if (!(otpCreatedAt instanceof Date && !isNaN(otpCreatedAt.getTime()))) {
-      user.created_at = new Date(user.created_at);
-    }
-
-    const now = new Date();
-    const elapsedTime = now.getTime() - user.created_at.getTime();
-    const oneMinuteInMilliseconds = 60 * 1000;
-
-    if (elapsedTime > oneMinuteInMilliseconds) {
-      await this.destroyOtp(user);
-      return false;
-    }
-
-    if (user.otp !== Number(otp)) {
-      return false;
-    }
-
-    user.isVerified = true;
-    // const access_token = await this.signIn(userData.email, createUserInput.password);
-
-    await this.userRepository.save(user);
-    const twilioClient = Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      try {
-        await twilioClient.messages.create({
-          body: 'You have successfully registered!',
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: user.contact
-        });
-      } catch (error) {
-        console.error("Failed to send SMS:", error.message);
-      }
-    console.log("first000000000000000000", user.contact);
-    // Send SMS using AWS SNS
-    // const params = {
-    //   Message: 'You have successfully registered!',
-    //   PhoneNumber: user.contact, // Ensure the phone number is in E.164 format
-    //   MessageAttributes: {
-    //     'AWS.SNS.SMS.SenderID': {
-    //       'DataType': 'String',
-    //       'StringValue': 'Codenox' // This is optional and used for Sender ID capabilities in supported countries
-    //     }
-    //   }
-    // };
-
-    // try {
-    //   const sms = await this.sns.publish(params).promise();
-    //   console.log('sms**', sms)
-    //   console.log("Message sent successfully 📩.");
-    // } catch (error) {
-    //   console.error("Failed to send SMS:", error.message);
-    // }
-
-
-    await this.mailService.successfullyRegister(user);
-    return true;
-  }
-
-  async signIn(email: string) {
+  async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ message: string }> {
     try {
-      const user = await this.userRepository.findOne({ where: { email: email, isVerified: true } });
+      const user = await this.userRepository.findOne({ where: { email: resendOtpDto.email } });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const otp = await this.generateOtp();
+      user.otp = otp;
+      user.created_at = new Date();
+      await this.userRepository.save(user);
+      await this.mailService.sendUserConfirmation(user, otp.toString());
+
+      return { message: 'OTP resent successfully.' };
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      throw new Error('Failed to resend OTP. Please try again.');
+    }
+  }
+
+  async verifyOtp(otp: number): Promise<boolean> {
+    try {
+      const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
+
+      if (!user) {
+        return false;
+      }
+
+      const otpCreatedAt = new Date(user.created_at);
+      const now = new Date();
+      const elapsedTime = now.getTime() - otpCreatedAt.getTime();
+      const oneMinuteInMilliseconds = 60 * 1000;
+
+      if (elapsedTime > oneMinuteInMilliseconds) {
+        await this.destroyOtp(user);
+        return false;
+      }
+
+      if (user.otp !== otp) {
+        return false;
+      }
+
+      user.isVerified = true;
+      await this.userRepository.save(user);
+
+      // Send SMS
+      const smsParams = {
+        Message: 'You have successfully registered!',
+        PhoneNumber: user.contact, // Ensure the phone number is in E.164 format
+        MessageAttributes: {
+          'AWS.SNS.SMS.SenderID': {
+            'DataType': 'String',
+            'StringValue': 'Codenox' // Optional: Sender ID for supported countries
+          }
+        }
+      };
+
+      await this.sns.publish(smsParams).promise();
+      console.log("Message sent successfully.");
+
+      await this.mailService.successfullyRegister(user);
+
+      return true;
+    } catch (error) {
+      console.error('Verify OTP error:', error);
+      throw new Error('Failed to verify OTP. Please try again.');
+    }
+  }
+
+  async signIn(email: string): Promise<{ access_token: string }> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { email, isVerified: true },
+      });
 
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
 
       const payload = { sub: user.id, username: user.email };
-
       const access_token = await this.jwtService.signAsync(payload, {
-        secret: jwtConstants.access_secret
+        secret: jwtConstants.access_secret,
       });
 
       return { access_token };
     } catch (error) {
-      throw new UnauthorizedException(`signIn error ${error}`);
+      console.error('signIn error:', error);
+      throw new UnauthorizedException('An error occurred during sign-in');
     }
   }
 
-  async register(createUserInput: RegisterDto): Promise<{ message: string; } | AuthResponse> {
-
-    const existingUser = await this.userRepository.findOne({
-      where: { email: createUserInput.email },
-      relations: ['type'],
-    });
-
-    if (existingUser) {
-      const usr_type = existingUser.type;
-
-      const otp = await this.generateOtp();
-      const token = Math.floor(100 + Math.random() * 9999).toString();
-
-      existingUser.otp = otp;
-      existingUser.created_at = new Date();
-
-      await this.userRepository.save(existingUser);
-
-      if (usr_type?.type_name === UserType.Customer) {
-        // Send confirmation email for customers
-        await this.mailService.sendUserConfirmation(existingUser, token);
-      }
-
-      return {
-        message: 'OTP sent to your email.',
-      };
-    }
-
-    let permission;
-
-    if (createUserInput.type?.permission_name) {
-      permission = await this.permissionRepository.findOne({
-        where: { permission_name: createUserInput.type.permission_name }
+  async register(createUserInput: RegisterDto): Promise<{ message: string }> {
+    try {
+      console.log("DATA COME OR NOT ",createUserInput);
+      const existingUser = await this.userRepository.findOne({
+        where: { email: createUserInput.email },
+        relations: ['type'],
       });
-    }
 
-    if (permission) {
-      // User with permission
-      const hashPass = await bcrypt.hash(createUserInput.password, 12);
-      const userData = new User();
-      userData.name = createUserInput.name;
-      userData.email = createUserInput.email;
-      userData.contact = createUserInput.contact;
-      userData.password = hashPass;
-      userData.created_at = new Date();
-      userData.UsrBy = createUserInput.UsrBy;
-      userData.type = permission;
+      if (existingUser) {
+        // If user already exists, generate OTP and send confirmation email
+        const otp = await this.generateOtp();
+        const token = Math.floor(100 + Math.random() * 9999).toString();
 
-      if (createUserInput.UsrBy) {
-        userData.isVerified = true;
+        existingUser.otp = otp;
+        existingUser.created_at = new Date();
+
+        await this.userRepository.save(existingUser);
+
+        if (existingUser.type?.type_name === UserType.Customer) {
+          // Send confirmation email for customers
+          await this.mailService.sendUserConfirmation(existingUser, token);
+        }
+
+        return { message: 'OTP sent to your email.' };
       }
 
-      await this.userRepository.save(userData);
+      let permission;
 
-      const token = Math.floor(100 + Math.random() * 900).toString();
-      // Send confirmation email for users with permission
+      if (createUserInput.type?.permission_name) {
+        // Check if user type has a permission name
+        permission = await this.permissionRepository.findOne({
+          where: { permission_name: createUserInput.type.permission_name }
+        });
+      }
 
-      await this.mailService.sendUserConfirmation(userData, token);
+      if (permission) {
+        // User with permission
+        const hashPass = await bcrypt.hash(createUserInput.password, 12);
+        const userData = new User();
+        userData.name = createUserInput.name;
+        userData.email = createUserInput.email;
+        userData.contact = createUserInput.contact;
+        userData.password = hashPass;
+        userData.created_at = new Date();
+        userData.UsrBy = createUserInput.UsrBy;
+        userData.type = permission;
 
-      // const access_token = await this.signIn(userData.email, createUserInput.password);
+        if (createUserInput.UsrBy) {
+          userData.isVerified = true;
+        }
 
-      // Fetch permissions based on user type
-      // const result = await this.getPermissions(userData.type.type_name);
+        await this.userRepository.save(userData);
 
-      // return {
-      //   token: access_token.access_token,
-      //   type_name: [`${userData.type.type_name}`],
-      //   permissions: result,
-      // };
-      return { message: `Registerd Successfull OTP send in your Email` }
-    } else {
-      // Customer registration
-      const hashPass = await bcrypt.hash(createUserInput.password, 12);
-      const userData = new User();
-      userData.name = createUserInput.name;
-      userData.email = createUserInput.email;
-      userData.contact = createUserInput.contact;
-      userData.password = hashPass;
-      userData.created_at = new Date();
-      userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
-      userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
-      const token = Math.floor(100 + Math.random() * 9999).toString();
-
-      if (!createUserInput.UsrBy) {
-        userData.otp = Number(token)
-        // Send confirmation email for customers
+        const token = Math.floor(100 + Math.random() * 900).toString();
+        // Send confirmation email for users with permission
         await this.mailService.sendUserConfirmation(userData, token);
+
+        return { message: 'Registered successfully. OTP sent to your email.' };
+      } else {
+        // Customer registration
+        const hashPass = await bcrypt.hash(createUserInput.password, 12);
+        const userData = new User();
+        userData.name = createUserInput.name;
+        userData.email = createUserInput.email;
+        userData.contact = createUserInput.contact;
+        userData.password = hashPass;
+        userData.created_at = new Date();
+        userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
+        userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
+        const token = Math.floor(100 + Math.random() * 9999).toString();
+
+        if (!createUserInput.UsrBy) {
+          userData.otp = Number(token);
+          // Send confirmation email for customers
+          await this.mailService.sendUserConfirmation(userData, token);
+        }
+
+        await this.userRepository.save(userData);
+
+        return { message: 'Registered successfully. OTP sent to your email.' };
       }
-
-      await this.userRepository.save(userData);
-
-      return { message: `Registerd Successfull OTP send in your Email` }
-
-      // const access_token = await this.signIn(userData.email, createUserInput.password);
-
-      // return {
-      //   token: access_token.access_token,
-      //   type_name: [UserType.Customer],
-      //   permissions: [],
-      // };
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw new Error('Registration failed. Please try again.');
     }
   }
 
   async getPermissions(typeName: string): Promise<any[]> {
-
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
       .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.type_name = :typeName`, { typeName })
+      .where('permission.type_name = :typeName', { typeName })
       .select([
         'permission.id',
         'permission.type_name',
@@ -292,11 +268,13 @@ export class AuthService {
 
   async login(loginInput: LoginDto) {
     try {
-
-      const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type', 'dealer'] });
+      const user = await this.userRepository.findOne({
+        where: { email: loginInput.email },
+        relations: ['type', 'dealer'],
+      });
 
       if (!user || !user.isVerified) {
-        throw new UnauthorizedException('User Is Not Registered!');
+        throw new UnauthorizedException('User is not registered or not verified');
       }
 
       const isMatch = await bcrypt.compare(loginInput.password, user.password);
@@ -306,50 +284,126 @@ export class AuthService {
 
       const { access_token } = await this.signIn(loginInput.email);
 
-      const permission = user.type ? await this.permissionRepository.findOne({ where: { id: user.type.id } }) : null;
-
-      if (!permission || permission.id === null) {
-        return {
-          token: access_token,
-          permissions: ['customer', 'admin', 'super_admin'],
-        };
+      let formattedPermissions: any[] = [];
+      if (user.type && user.type.type_name) {
+        const permissions = await this.getPermissions(user.type.type_name);
+        formattedPermissions = permissions.map((permission) => ({
+          id: permission.id,
+          type_name: permission.type_name,
+          permission: permission.permission,
+        }));
+      } else {
+        formattedPermissions = [{
+          id: null,
+          type_name: 'default',
+          permission: [
+            { id: 'customer', type: 'default', read: true, write: true },
+            { id: 'admin', type: 'default', read: true, write: true },
+            { id: 'super_admin', type: 'default', read: true, write: true }
+          ]
+        }];
       }
-
-      const result = await this.permissionRepository
-        .createQueryBuilder('permission')
-        .leftJoinAndSelect('permission.permissions', 'permissions')
-        .where(`permission.id = ${permission.id}`)
-        .select([
-          'permission.id',
-          'permission.type_name',
-          'permissions.id',
-          'permissions.type',
-          'permissions.read',
-          'permissions.write',
-        ])
-        .getMany();
-
-      const formattedResult = result.map((permission) => ({
-        id: permission.id,
-        type_name: permission.type_name,
-        permission: permission.permissions.map((p) => ({
-          id: p.id,
-          type: p.type,
-          read: p.read,
-          write: p.write,
-        })),
-      }));
 
       return {
         token: access_token,
-        type_name: [`${formattedResult[0].type_name}`],
-        permissions: formattedResult[0].permission,
+        type_name: formattedPermissions[0]?.type_name ? [formattedPermissions[0].type_name] : [],
+        permissions: formattedPermissions[0]?.permission || [],
       };
     } catch (error) {
-      console.error(error);
+      console.error('Login error:', error);
       throw new UnauthorizedException('An error occurred during login');
     }
   }
+
+
+  // async getPermissions(typeName: string): Promise<any[]> {
+  //   const result = await this.permissionRepository
+  //     .createQueryBuilder('permission')
+  //     .leftJoinAndSelect('permission.permissions', 'permissions')
+  //     .where(`permission.type_name = :typeName`, { typeName })
+  //     .select([
+  //       'permission.id',
+  //       'permission.type_name',
+  //       'permissions.id',
+  //       'permissions.type',
+  //       'permissions.read',
+  //       'permissions.write',
+  //     ])
+  //     .getMany();
+
+  //   return result.map((permission) => ({
+  //     id: permission.id,
+  //     type_name: permission.type_name,
+  //     permission: permission.permissions.map((p) => ({
+  //       id: p.id,
+  //       type: p.type,
+  //       read: p.read,
+  //       write: p.write,
+  //     })),
+  //   }));
+  // }
+
+  // async login(loginInput: LoginDto) {
+  //   try {
+
+  //     const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type', 'dealer'] });
+
+  //     if (!user || !user.isVerified) {
+  //       throw new UnauthorizedException('User Is Not Registered!');
+  //     }
+
+  //     const isMatch = await bcrypt.compare(loginInput.password, user.password);
+  //     if (!isMatch) {
+  //       throw new UnauthorizedException('Invalid password');
+  //     }
+
+  //     const { access_token } = await this.signIn(loginInput.email);
+
+  //     const permission = user.type ? await this.permissionRepository.findOne({ where: { id: user.type.id } }) : null;
+
+  //     if (!permission || permission.id === null) {
+  //       return {
+  //         token: access_token,
+  //         permissions: ['customer', 'admin', 'super_admin'],
+  //       };
+  //     }
+
+  //     const result = await this.permissionRepository
+  //       .createQueryBuilder('permission')
+  //       .leftJoinAndSelect('permission.permissions', 'permissions')
+  //       .where(`permission.id = ${permission.id}`)
+  //       .select([
+  //         'permission.id',
+  //         'permission.type_name',
+  //         'permissions.id',
+  //         'permissions.type',
+  //         'permissions.read',
+  //         'permissions.write',
+  //       ])
+  //       .getMany();
+
+  //     const formattedResult = result.map((permission) => ({
+  //       id: permission.id,
+  //       type_name: permission.type_name,
+  //       permission: permission.permissions.map((p) => ({
+  //         id: p.id,
+  //         type: p.type,
+  //         read: p.read,
+  //         write: p.write,
+  //       })),
+  //     }));
+
+  //     return {
+  //       token: access_token,
+  //       type_name: [`${formattedResult[0].type_name}`],
+  //       permissions: formattedResult[0].permission,
+  //     };
+  //   } catch (error) {
+  //     console.error(error);
+  //     throw new UnauthorizedException('An error occurred during login');
+  //   }
+  // }
+
 
   async logout(logoutDto: LoginDto): Promise<string> {
     const user = await this.userRepository.findOne({ where: { email: logoutDto.email } });
@@ -494,85 +548,42 @@ export class AuthService {
   }
 
   async socialLogin(socialLoginDto: SocialLoginDto): Promise<AuthResponse> {
-
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${6}`)
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
-
-    const formattedResult = result.map(permission => ({
-      id: permission.id,
-      type_name: permission.type_name,
-      permission: permission.permissions.map(p => ({
-        id: p.id,
-        type: p.type,
-        read: p.read,
-        write: p.write,
-      })),
-    }));
-
-    return {
-      // token: access_token.access_token,
-      token: "jwt token",
-      type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission
-    };
-
+    try {
+      const result = await this.getPermissionsByPermissionId(6);
+      return {
+        token: "jwt token",
+        type_name: [result.type_name],
+        permissions: result.permission,
+      };
+    } catch (error) {
+      console.error('Social login error:', error);
+      throw new Error('Failed to perform social login.');
+    }
   }
 
   async otpLogin(otpLoginDto: OtpLoginDto): Promise<AuthResponse> {
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where(`permission.id = ${6}`)
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
-
-    const formattedResult = result.map(permission => ({
-      id: permission.id,
-      type_name: permission.type_name,
-      permission: permission.permissions.map(p => ({
-        id: p.id,
-        type: p.type,
-        read: p.read,
-        write: p.write,
-      })),
-    }));
-
-    return {
-      // token: access_token.access_token,
-      token: "jwt token",
-      type_name: [`${formattedResult[0].type_name}`],
-      permissions: formattedResult[0].permission
-    };
+    try {
+      const result = await this.getPermissionsByPermissionId(6);
+      return {
+        token: "jwt token",
+        type_name: [result.type_name],
+        permissions: result.permission,
+      };
+    } catch (error) {
+      console.error('OTP login error:', error);
+      throw new Error('Failed to perform OTP login.');
+    }
   }
 
   async verifyOtpCode(verifyOtpInput: VerifyOtpDto): Promise<CoreResponse> {
     try {
       const result = await this.verifyOtp(verifyOtpInput.code);
-
       return {
         success: result,
         message: result ? 'OTP verification successful' : 'OTP verification failed',
       };
     } catch (error) {
-      // Handle verification error
+      console.error('OTP verification error:', error);
       return {
         success: false,
         message: 'Error verifying OTP',
@@ -580,63 +591,156 @@ export class AuthService {
     }
   }
 
-  async sendOtpCode(otpInput: OtpDto): Promise<OtpResponse> {
+  async sendOtpToPhoneNumber(phoneNumber: string): Promise<Object> {
+    try {
+      // Generate OTP
+      const otp = await this.generateOtp();
 
-    return {
-      message: 'success',
-      success: true,
-      id: '1',
-      provider: 'google',
-      phone_number: '+919494949494',
-      is_contact_exist: true,
-    };
-  }
+      // Prepare SMS message
+      const params = {
+        Message: `Your OTP is: ${otp}`, // Message body containing the OTP
+        PhoneNumber: phoneNumber, // Phone number to which the OTP will be sent
+      };
 
-  // async getUsers({ text, first, page }: GetUsersArgs): Promise<UserPaginator> {
-  //   const startIndex = (page - 1) * first;
-  //   const endIndex = page * first;
-  //   let data: User[] = this.users;
-  //   if (text?.replace(/%/g, '')) {
-  //     data = fuse.search(text)?.map(({ item }) => item);
-  //   }
-  //   const results = data.slice(startIndex, endIndex);
-  //   return {
-  //     data: results,
-  //     paginatorInfo: paginate(data.length, page, first, results.length),
-  //   };
-  // }
-  // public getUser(getUserArgs: GetUserArgs): User {
-  //   return this.users.find((user) => user.id === getUserArgs.id);
-  // }
+      // Send OTP using AWS SNS
+      await this.sns.publish(params).promise();
 
-  async getRelations(email) {
-    const userWithDealer = await this.userRepository.findOne({
-      where: { email: email, dealer: Not(IsNull()) }
-    });
+      console.log(`OTP sent to ${phoneNumber}: ${otp}`); // For testing purpose
 
-    if (userWithDealer) {
-      return ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "dealer"];
-    } else {
-      return ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type"];
+      return params; // Return the generated OTP
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      throw new Error('Failed to send OTP.');
     }
   }
 
+  async sendOtpCode(otpInput: OtpDto): Promise<OtpResponse> {
+    try {
+      const { phone_number } = otpInput;
+
+      // Call the function to send OTP to the provided phone number
+      const otp = await this.sendOtpToPhoneNumber(phone_number);
+
+      // Return the response
+      return {
+        message: 'success',
+        success: true,
+        id: '1',
+        provider: 'aws-sns', // Update with the correct provider name
+        phone_number: phone_number,
+        is_contact_exist: true, // Assuming the contact always exists when OTP is sent
+      };
+    } catch (error) {
+      console.error('OTP sending error:', error);
+      throw new Error('Failed to send OTP.');
+    }
+  }
+
+  private async getPermissionsByPermissionId(permissionId: number): Promise<{ type_name: string; permission: any }> {
+    const result = await this.permissionRepository
+      .createQueryBuilder('permission')
+      .leftJoinAndSelect('permission.permissions', 'permissions')
+      .where(`permission.id = ${permissionId}`)
+      .select([
+        'permission.id',
+        'permission.type_name',
+        'permissions.id',
+        'permissions.type',
+        'permissions.read',
+        'permissions.write',
+      ])
+      .getMany();
+
+    const formattedResult = result.map(permission => ({
+      id: permission.id,
+      type_name: permission.type_name,
+      permission: permission.permissions.map(p => ({
+        id: p.id,
+        type: p.type,
+        read: p.read,
+        write: p.write,
+      })),
+    }));
+
+    if (formattedResult.length === 0) {
+      throw new NotFoundException(`Permission not found with ID: ${permissionId}`);
+    }
+
+    return {
+      type_name: formattedResult[0].type_name,
+      permission: formattedResult[0].permission,
+    };
+  }
+
+  async getUser({ id }: any): Promise<User | undefined> {
+    // Use the appropriate method to find a user by ID in your UserRepository
+    return this.userRepository.findOne(id); // Assuming findOne is the method to find a user by ID
+  }
+
+  async getUsers({ text, first, page }: any) {
+    const startIndex = (page - 1) * first;
+    const endIndex = page * first;
+    let data: User[];
+
+    if (text) {
+      // Use the appropriate method to find users by name or email
+      data = await this.userRepository.find({ where: { name: text } }); // Adjust the condition according to your requirements
+    } else {
+      // Use the appropriate method to find all users
+      data = await this.userRepository.find();
+    }
+
+    const results = data.slice(startIndex, endIndex);
+
+    return {
+      data: results,
+      paginatorInfo: (data.length, page, first), // Assuming paginate is defined elsewhere
+    };
+  }
+
   async me(email: string, id: number): Promise<User> {
-    console.log('me****623', email)
-    console.log('me****623--id', id)
+    const relations = await this.getRelations(email);
 
     const user = await this.userRepository.findOne({
-      where: email ? { email: email } : { id: id },
-      relations: await this.getRelations(email)
+      where: email ? { email } : { id },
+      relations,
     });
 
     if (!user) {
       throw new NotFoundException(`User with email ${email} and id ${id} not found`);
     }
+
     return user;
   }
 
-  // updateUser(id: number, updateUserInput: UpdateUserInput) {
-  //   return `This action updates a #${id} user`;
-  // }
+  private async getRelations(email: string): Promise<string[]> {
+
+    const userWithDealer = await this.userRepository.findOne({
+      where: { email, dealer: Not(IsNull()) },
+    });
+
+    let relations: string[];
+    if (userWithDealer) {
+      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "dealer"];
+    } else {
+      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type"];
+    }
+
+    return relations;
+  }
+
+  async updateUser(id: number, updateUserInput: any): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // Update user properties with the values from updateUserInput
+    Object.assign(user, updateUserInput);
+
+    // Save the updated user entity back to the database
+    return this.userRepository.save(user);
+  }
+
 }
