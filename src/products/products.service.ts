@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
@@ -308,7 +308,7 @@ export class ProductsService {
     }
 
     if (shopId) {
-      productQueryBuilder.andWhere('product.shopId = :shopId', { shopId });
+      productQueryBuilder.andWhere('product.shop_id = :shopId', { shopId });
     }
 
     if (shopName) {
@@ -350,45 +350,45 @@ export class ProductsService {
         });
 
         if (dealer) {
-          if (dealer.dealerProductMargins) {
-            const marginFind = await this.dealerProductMarginRepository.find({
-              where: { dealer: { id: dealerId } },
-              relations: ['product']
-            });
-            marginFind.forEach(margin => {
-              const product = margin.product;
-              product.margin = margin.margin;
-              products.push(product);
-            });
-          }
+          const marginFind = await this.dealerProductMarginRepository.find({
+            where: { dealer: { id: dealerId } },
+            relations: ['product']
+          });
 
-          if (dealer.dealerCategoryMargins) {
-            const marginFind = await this.dealerCategoryMarginRepository.find({
-              where: { dealer: { id: dealerId } },
-              relations: ['category']
+          marginFind.forEach(margin => {
+            const product = margin.product;
+            product.margin = margin.margin;
+            products.push(product);
+          });
+
+          const categoryMargins = await this.dealerCategoryMarginRepository.find({
+            where: { dealer: { id: dealerId } },
+            relations: ['category']
+          });
+
+          for (const categoryMargin of categoryMargins) {
+            const foundCategory = await this.categoryRepository.findOne({
+              where: { id: categoryMargin.category.id },
+              relations: ['products']
             });
-            for (const findId of marginFind) {
-              const found = findId.category.id;
-              const findCatProd = await this.categoryRepository.findOne({
-                where: { id: found },
-                relations: ['products']
+
+            if (foundCategory && foundCategory.products) {
+              const categoryProducts = foundCategory.products.map(product => {
+                product.margin = categoryMargin.margin;
+                return product;
               });
-              if (findCatProd && findCatProd.products) {
-                const matchingMargin = findId.margin;
-                const categoryProducts = findCatProd.products.map(product => {
-                  product.margin = matchingMargin;
-                  return product;
-                });
-                products.push(...categoryProducts);
-              }
+              products.push(...categoryProducts);
             }
           }
+
           // Remove duplicate products based on their IDs
           products = products.filter(
             (product, index, self) => index === self.findIndex(p => p.id === product.id)
           );
 
           total = products.length;
+        } else {
+          throw new NotFoundException(`Dealer not found with id: ${dealerId}`);
         }
       } else {
         total = await productQueryBuilder.getCount();
@@ -404,84 +404,98 @@ export class ProductsService {
         ...paginator,
       };
     } catch (error) {
-      throw new NotFoundException(error);
+      throw new NotFoundException(error.message);
     }
   }
 
+
   async getProductBySlug(slug: string, shop_id: number, dealerId?: number): Promise<Product | undefined> {
-    const shop = await this.shopRepository.findOne({ where: { id: shop_id } });
-    if (!shop) {
-      throw new NotFoundException(`Shop not found with id: ${shop_id}`);
-    }
-
-    // Fetch the product using the slug and shop_id
-    const product = await this.productRepository.findOne({
-      where: { slug, shop_id: shop.id },
-      relations: [
-        'type',
-        'shop',
-        'image',
-        'categories',
-        'subCategories',
-        'tags',
-        'gallery',
-        'related_products',
-        'variations.attribute',
-        'variation_options.options',
-      ],
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Product not found with slug: ${slug}`);
-    }
-
-    if (dealerId) {
-      const dealer = await this.dealerRepository.findOne({
-        where: { id: dealerId },
-        relations: ['dealerProductMargins', 'dealerCategoryMargins']
-      });
-
-      if (!dealer) {
-        throw new NotFoundException(`Dealer not found with id: ${dealerId}`);
+    try {
+      const shop = await this.shopRepository.findOne({ where: { id: shop_id } });
+      if (!shop) {
+        throw new NotFoundException(`Shop not found with id: ${shop_id}`);
       }
 
-      // Fetch product-specific margins
-      const productMargin = await this.dealerProductMarginRepository.findOne({
-        where: { dealer: { id: dealerId }, product: { id: product.id } }
+      // Fetch the product using the slug and shop_id
+      const product = await this.productRepository.findOne({
+        where: { slug, shop_id: shop_id },
+        relations: [
+          'type',
+          'shop',
+          'image',
+          'categories',
+          'subCategories',
+          'tags',
+          'gallery',
+          'related_products',
+          'variations.attribute',
+          'variation_options.options',
+        ],
       });
 
-      if (productMargin) {
-        product.margin = productMargin.margin;
-      } else {
-        // If no product-specific margin, fetch category-specific margins
-        const categoryMargins = await this.dealerCategoryMarginRepository.find({
-          where: { dealer: { id: dealerId } },
-          relations: ['category']
+      if (!product) {
+        throw new NotFoundException(`Product not found with slug: ${slug}`);
+      }
+
+      if (dealerId) {
+        const dealer = await this.dealerRepository.findOne({
+          where: { id: dealerId },
+          relations: ['dealerProductMargins', 'dealerCategoryMargins']
         });
 
-        // Find the margin for the first matching category
-        for (const categoryMargin of categoryMargins) {
-          if (product.categories.some(category => category.id === categoryMargin.category.id)) {
-            product.margin = categoryMargin.margin;
-            break;
+        if (!dealer) {
+          throw new NotFoundException(`Dealer not found with id: ${dealerId}`);
+        }
+
+        // Fetch product-specific margins
+        const productMargin = await this.dealerProductMarginRepository.findOne({
+          where: { dealer: { id: dealerId }, product: { id: product.id } }
+        });
+
+        if (productMargin) {
+          product.margin = productMargin.margin;
+        } else {
+          // If no product-specific margin, fetch category-specific margins
+          const categoryMargins = await this.dealerCategoryMarginRepository.find({
+            where: { dealer: { id: dealerId } },
+            relations: ['category']
+          });
+
+          // Find the margin for the first matching category
+          for (const categoryMargin of categoryMargins) {
+            if (product.categories && product.categories.some(category => category.id === categoryMargin.category.id)) {
+              product.margin = categoryMargin.margin;
+              break;
+            }
           }
         }
       }
+
+      // Ensure product.type is not null before accessing its properties
+      if (product.type) {
+        // Fetch related products using type_id
+        const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
+          .where('related_products.type_id = :type_id', { type_id: product.type.id })
+          .andWhere('related_products.id != :productId', { productId: product.id })
+          .limit(20)
+          .getMany();
+
+        product.related_products = relatedProducts;
+      } else {
+        product.related_products = [];
+      }
+
+      // Return the product with updated margins and related products
+      return product;
+    } catch (error) {
+      // Handle specific error types if necessary, otherwise rethrow
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else {
+        throw new InternalServerErrorException('An error occurred while fetching the product.');
+      }
     }
-
-    // Fetch related products using type_id
-    const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
-      .where('related_products.type_id = :type_id', { type_id: product.type.id })
-      .andWhere('related_products.id != :productId', { productId: product.id })
-      .limit(20)
-      .getMany();
-
-    product.related_products = relatedProducts;
-
-    // Return the product with updated margins and related products
-    return product;
   }
-
 
   async getPopularProducts(query: GetPopularProductsDto): Promise<Product[]> {
     const { limit = 10, type_slug, shop_id } = query;
