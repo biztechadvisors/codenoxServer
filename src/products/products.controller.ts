@@ -79,6 +79,7 @@ export class PopularProductsController {
   constructor(private readonly productsService: ProductsService) { }
   @Get()
   async getProducts(@Query() query: GetPopularProductsDto): Promise<Product[]> {
+    console.log('query___', query)
     return this.productsService.getPopularProducts(query);
   }
 }

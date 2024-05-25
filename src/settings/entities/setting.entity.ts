@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
+import { Shop } from 'src/shops/entities/shop.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
@@ -410,6 +411,9 @@ export class SettingsOptions extends CoreEntity {
 export class Setting extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @OneToOne(() => Shop, (shop) => shop.setting)
+  shop: Shop;
 
   @ManyToOne(() => SettingsOptions)
   options: SettingsOptions;

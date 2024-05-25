@@ -12,14 +12,18 @@ import {
 @Entity()
 export class ShopSettings {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @ManyToMany(() => ShopSocials, { cascade: true })
   @JoinTable()
-  socials: ShopSocials[]
+  socials: ShopSocials[];
+
   @Column()
-  contact: string
+  contact: string;
+
   @ManyToOne(() => Location)
-  location: Location
+  location: Location;
+
   @Column()
-  website: string
+  website: string;
 }
