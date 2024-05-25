@@ -136,28 +136,53 @@ export class UsersService {
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    let data: User[];
+    let data: User[] = [];
 
     if (usrById) {
-      const user = await this.userRepository.findOne({ where: { id: Number(usrById) }, relations: ['type'] });
+      const user = await this.userRepository.findOne({
+        where: { id: Number(usrById) },
+        relations: ['type', 'shops'],
+      });
 
       if (user) {
-        const dealerPermission = await this.permissionRepository.findOne({ where: { type_name: UserType.Dealer } });
+        if (user.type.type_name === 'owner') {
+          // Ensure shopIds is not empty before querying
+          const shopIds = user.shops.map(shop => shop.id);
+          if (shopIds.length > 0) {
+            data = await this.userRepository
+              .createQueryBuilder('user')
+              .leftJoinAndSelect('user.shops', 'shop')
+              .where('shop.id IN (:...shopIds)', { shopIds })
+              .getMany();
+          }
+        } else if (user.type.type_name === 'dealer') {
+          const dealerPermission = await this.permissionRepository.findOne({
+            where: { type_name: UserType.Dealer },
+          });
 
-        if (!dealerPermission) {
-          throw new Error('Permission for type "Dealer" not found.'); // Handle the case if the permission is not found
+          if (!dealerPermission) {
+            throw new Error('Permission for type "Dealer" not found.');
+          }
+
+          data = await this.userRepository.find({
+            where: {
+              UsrBy: { id: user.id },
+              type: { id: dealerPermission.id },
+            },
+            relations: [
+              'dealer',
+              'profile',
+              'address',
+              'shops',
+              'orders',
+              'address.address',
+              'type',
+            ],
+          });
         }
-
-        data = await this.userRepository.find({
-          where: { UsrBy: Equal(user.id), type: Equal(dealerPermission.id) }, // Use Equal operator to compare with the ID of dealerPermission
-          relations: ["dealer", "profile", "address", "shops", "orders", "address.address", "type"]
-        });
-      } else {
-        // Handle the case where usrById doesn't correspond to any user
-        data = [];
       }
     } else {
-      // If usrById is not provided, return all users
+      // If usrById is not provided, return all users with pagination
       const findOptions = {
         skip: startIndex,
         take: limit,
@@ -167,12 +192,13 @@ export class UsersService {
     }
 
     if (search) {
-      const searchKey = search.split(':')[0];
-      const searchValue = search.split(':')[1];
+      const [searchKey, searchValue] = search.split(':');
 
       data = await this.userRepository
-        .createQueryBuilder("user")
-        .where(`user.${searchKey} LIKE :searchValue`, { searchValue: `%${searchValue}%` })
+        .createQueryBuilder('user')
+        .where(`user.${searchKey} LIKE :searchValue`, {
+          searchValue: `%${searchValue}%`,
+        })
         .getMany();
     }
 

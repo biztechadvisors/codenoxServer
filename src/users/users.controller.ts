@@ -30,7 +30,6 @@ export class UsersController {
 
   @Get()
   getAllUsers(@Query() query: GetUsersDto) {
-
     return this.usersService.getUsers(query);
   }
 

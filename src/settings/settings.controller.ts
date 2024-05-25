@@ -7,11 +7,11 @@ import { UpdateSettingDto } from './dto/update-setting.dto'
 
 @Controller('settings')
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(private readonly settingsService: SettingsService) { }
 
   @Post()
   create(
-    @Param('id') id:number,
+    @Param('id') id: number,
     @Body() createSettingDto: CreateSettingDto) {
     return this.settingsService.create(id, createSettingDto)
   }
@@ -24,17 +24,17 @@ export class SettingsController {
   @Put('/:id')
   update(
     @Param('id') id: number,
-    @Body() updateSettingDto: UpdateSettingDto){
+    @Body() updateSettingDto: UpdateSettingDto) {
     return this.settingsService.update(id, updateSettingDto)
   }
 
-  @Get()
-  findOne( @Param('id') id:number ) {
-    return this.settingsService.findOne(id)
+  @Get(':id/:shop_id')
+  findOne(@Param('id') id: number, @Param('shop_id') shop_id: number) {
+    return this.settingsService.findOne(id, shop_id);
   }
 
   @Delete(':id')
-  remove( @Param('id') id:number) {
+  remove(@Param('id') id: number) {
     return this.settingsService.remove(id)
   }
 }

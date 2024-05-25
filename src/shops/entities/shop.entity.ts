@@ -20,6 +20,7 @@ import { ShopSettings } from './shopSettings.entity'
 import { Category } from 'src/categories/entities/category.entity'
 import { Product } from 'src/products/entities/product.entity'
 import { Order } from 'src/orders/entities/order.entity'
+import { Setting } from 'src/settings/entities/setting.entity'
 
 @Entity()
 export class Shop extends CoreEntity {
@@ -75,11 +76,15 @@ export class Shop extends CoreEntity {
   @JoinColumn()
   settings?: ShopSettings;
 
+  @OneToOne(() => Setting, (setting) => setting.shop, { cascade: true })
+  @JoinColumn()
+  setting?: Setting;
+
   @Column()
   gst_number: string;
 
   @OneToMany(() => Category, (category) => category.shop)
-  category: Category[]
+  category: Category[];
 
   @ManyToMany(() => Order, (order) => order.shop_id, { cascade: true, nullable: true })
   @JoinTable({ name: "shop_order" })
