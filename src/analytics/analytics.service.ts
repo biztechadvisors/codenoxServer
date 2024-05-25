@@ -1,18 +1,14 @@
-// analytics.service.ts
-
-import { ForbiddenException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, In, MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
+import { MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
 import { Order } from 'src/orders/entities/order.entity';
 import { Analytics, TotalYearSaleByMonth } from './entities/analytics.entity';
 import { AnalyticsResponseDTO, TotalYearSaleByMonthDTO } from './dto/analytics.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
-import { Address, UserAddress } from 'src/addresses/entities/address.entity';
-import { Dealer } from 'src/users/entities/dealer.entity';
-import { User, UserType } from 'src/users/entities/user.entity';
+import { UserAddress } from 'src/addresses/entities/address.entity';
+import { User } from 'src/users/entities/user.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { UserAddressRepository } from 'src/addresses/addresses.repository';
-import { error } from 'console';
 
 @Injectable()
 export class AnalyticsService {
@@ -35,9 +31,6 @@ export class AnalyticsService {
 
   async findAll(customerId: number, state: string): Promise<AnalyticsResponseDTO> {
     try {
-
-      console.log('customerId***39', customerId)
-
       const user = await this.userRepository.findOne({ where: { id: customerId }, relations: ['type'] });
 
       if (!user) {
@@ -64,7 +57,11 @@ export class AnalyticsService {
 
       return analyticsResponse;
     } catch (error) {
-      throw new NotFoundException(`Error fetching analytics: ${error.message}`);
+      console.error('Error fetching analytics:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error; // Propagate specific exceptions
+      }
+      throw new NotFoundException(`Error fetching analytics: ${error.message}`); // Convert other errors to NotFoundException
     }
   }
 
@@ -103,6 +100,7 @@ export class AnalyticsService {
 
       if (state && state.trim() !== '') {
         if (permissionName === 'super_admin' || permissionName === 'Admin') {
+          // Handle cases where permissionName is super_admin or Admin
         } else {
           query = query
             .innerJoin('refund.order', 'order')
@@ -114,18 +112,17 @@ export class AnalyticsService {
       const totalRefunds = await query
         .select('COUNT(DISTINCT refund.id)', 'totalRefunds')
         .getRawOne()
-        .then(result => result.totalRefunds || 0);
+        .then(result => result?.totalRefunds || 0); // Ensure accessing totalRefunds safely
 
       return totalRefunds;
     } catch (error) {
       console.error('Error calculating total refunds:', error.message);
-      return 0;
+      return 0; // Return 0 if there's an error
     }
   }
 
   private async calculateTotalShops(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-
       if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
         return 0;
       }
@@ -147,7 +144,6 @@ export class AnalyticsService {
       return 0;
     }
   }
-
 
   private async calculateTodaysRevenue(userId: number, permissionName: string, state: string): Promise<number> {
     try {

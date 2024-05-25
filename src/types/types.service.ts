@@ -17,6 +17,9 @@ import { UploadsService } from 'src/uploads/uploads.service';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Repository } from 'typeorm';
+import { Tag } from 'src/tags/entities/tag.entity';
+import { Category } from 'src/categories/entities/category.entity';
+import { Product } from 'src/products/entities/product.entity';
 
 const types = plainToClass(Type, typesJson);
 const options = {
@@ -34,7 +37,11 @@ export class TypesService {
     @InjectRepository(TypeSettings) private readonly typeSettingsRepository: TypeSettingsRepository,
     @InjectRepository(Banner) private readonly bannerRepository: BannerRepository,
     @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
-    @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>
+    @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
+    @InjectRepository(Tag) private readonly tagRepository: Repository<Tag>,
+    @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(Product) private readonly productRepository: Repository<Product>
+
 
   ) { }
 
@@ -79,10 +86,11 @@ export class TypesService {
   async getTypeBySlug(slug: string): Promise<Type> {
     const type = await this.typeRepository.findOne({
       where: { slug: slug },
-      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'product']
+      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'products']
     });
     return type;
   }
+
 
   async create(data: CreateTypeDto) {
 
@@ -196,9 +204,13 @@ export class TypesService {
     return this.typeRepository.save(type);
   }
 
-
   async remove(id: number): Promise<void> {
-    const type = await this.typeRepository.findOne({ where: { id:id }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
+    const type = await this.typeRepository.findOne({
+      where: { id },
+      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'categories', 'tags', 'products'],
+    });
+
+
     if (!type) {
       throw new Error(`Type with ID ${id} not found`);
     }
@@ -206,10 +218,10 @@ export class TypesService {
     // Remove banners and their images
     if (type.banners) {
       const bannerIds = type.banners.map(banner => banner.id);
-      const imageIds = type.banners.filter(banner => banner.image).map(banner => banner.image.id);
       if (bannerIds.length > 0) {
         await this.bannerRepository.delete(bannerIds);
       }
+      const imageIds = type.banners.filter(banner => banner.image).map(banner => banner.image.id);
       if (imageIds.length > 0) {
         await this.attachmentRepository.delete(imageIds);
       }
@@ -220,13 +232,40 @@ export class TypesService {
       await Promise.all(type.promotional_sliders.map(slider => this.attachmentRepository.delete(slider.id)));
     }
 
-    // Remove Type
-    await this.typeRepository.remove(type);
+    // Nullify the settings reference in the Type entity
+    if (type.settings) {
+      type.settings = null;
+      await this.typeRepository.save(type);
+    }
 
     // Remove TypeSettings
     if (type.settings) {
       await this.typeSettingsRepository.delete(type.settings.id);
     }
+
+    // Set the typeId to null for all associated categories
+    if (type.categories && type.categories.length > 0) {
+      await Promise.all(type.categories.map(category => {
+        category.type = null;
+        return this.categoryRepository.save(category);
+      }));
+    }
+
+    // Remove associated tags
+    if (type.tags && type.tags.length > 0) {
+      await this.tagRepository.remove(type.tags);
+    }
+
+    // Set the typeId to null for all associated products
+    if (type.products && type.products.length > 0) {
+      await Promise.all(type.products.map(product => {
+        product.type = null;
+        return this.productRepository.save(product);
+      }));
+    }
+
+    // Remove Type
+    await this.typeRepository.remove(type);
   }
 
 

@@ -37,8 +37,9 @@ export class Product extends CoreEntity {
   @Column()
   product_type: ProductType;
 
-  @ManyToOne(() => Type, (type) => type.product, { eager: true, cascade: true })
-  type: Type;
+  @ManyToOne(() => Type, (type) => type.products, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'typeId' })
+  type: Type | null;
 
   @ManyToMany(() => Category, category => category.products, { eager: true, cascade: true })
   @JoinTable({ name: "product_category" })

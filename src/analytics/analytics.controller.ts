@@ -1,20 +1,24 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
+import { BadRequestException, Body, Controller, ForbiddenException, Get, NotFoundException, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { AnalyticsService } from './analytics.service'
 import { Order } from 'src/orders/entities/order.entity';
 import { AuthGuard } from 'src/auth/auth.guards';
+import { AnalyticsResponseDTO } from './dto/analytics.dto';
 
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) { }
 
   @Post()
-  @UseGuards(AuthGuard)
-  async getAnalytics(@Body() query: { customerId: number; state: string }) {
+  async getAnalytics(@Body() query: { customerId: number; state: string }): Promise<AnalyticsResponseDTO> {
     try {
       const result = await this.analyticsService.findAll(query.customerId, query.state);
       return result;
     } catch (error) {
-      throw error;
+      console.error('Error fetching analytics:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error; // Propagate specific HTTP exceptions
+      }
+      throw new Error('Error fetching analytics data'); // Generic error for unexpected cases
     }
   }
 
