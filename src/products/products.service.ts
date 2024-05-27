@@ -330,7 +330,11 @@ export class ProductsService {
             qb.orWhere('categories.slug IN (:...categorySlugs)', { categorySlugs });
           } else if (key === 'type.slug') {
             qb.orWhere('type.slug LIKE :slug', { slug: `%${value}%` });
-          } else if (key === 'shop_id') {
+          }
+          else if (key === 'tags.slug') {
+            qb.orWhere('tags.slug LIKE :slug', { slug: `%${value}%` });
+          }
+          else if (key === 'shop_id') {
             qb.orWhere('shop.id = :shopId', { shopId: value });
           } else {
             qb.orWhere(`product.${key} LIKE :value`, { value: `%${value}%` });

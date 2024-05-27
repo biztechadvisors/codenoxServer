@@ -54,7 +54,6 @@ export class ProductsController {
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    // console.log('update***', updateProductDto.variation_options.upsert.map((m) => m.options))
     return this.productsService.update(+id, updateProductDto);
   }
 
@@ -79,7 +78,6 @@ export class PopularProductsController {
   constructor(private readonly productsService: ProductsService) { }
   @Get()
   async getProducts(@Query() query: GetPopularProductsDto): Promise<Product[]> {
-    console.log('query___', query)
     return this.productsService.getPopularProducts(query);
   }
 }
@@ -94,7 +92,7 @@ export class UploadProductsXl {
     if (!file) {
       throw new BadRequestException('File not uploaded');
     }
-    const buffer = file.buffer; // Accessing the file buffer directly
+    const buffer = file.buffer;
     console.log('upload')
     await this.uploadXlService.uploadProductsFromExcel(buffer);
     return { message: 'Products uploaded successfully' };

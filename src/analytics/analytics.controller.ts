@@ -9,7 +9,7 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) { }
 
   @Post()
-  async getAnalytics(@Body() query: { customerId: number; state: string }): Promise<AnalyticsResponseDTO> {
+  async getAnalytics(@Body() query: { customerId: number; state: string }): Promise<AnalyticsResponseDTO | { message: string }> {
     try {
       const result = await this.analyticsService.findAll(query.customerId, query.state);
       return result;
@@ -18,9 +18,10 @@ export class AnalyticsController {
       if (error instanceof NotFoundException || error instanceof ForbiddenException) {
         throw error; // Propagate specific HTTP exceptions
       }
-      throw new Error('Error fetching analytics data'); // Generic error for unexpected cases
+      return { message: 'Error fetching analytics data' }; // Return a message for unexpected errors
     }
   }
+
 
   @Get()
   async getTopCustomers(@Query() query: { userId: string }) {

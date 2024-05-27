@@ -52,7 +52,6 @@ export class TypesService {
   }
 
   async findAll(query: GetTypesDto) {
-    console.log("query ", query);
     let { text, search, shop } = query;
 
     let data: Type[] = await this.typeRepository.find({ where: { shop: { id: shop } }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
@@ -108,7 +107,6 @@ export class TypesService {
     let banners = [];
     if (data.banners && Array.isArray(data.banners)) {
 
-      console.log('data.banners', data.banners)
       banners = await Promise.all(data.banners.map(async (bannerData) => {
         if (bannerData.image || bannerData.image.id || bannerData.title) {
           const image = await this.attachmentRepository.findOne({
@@ -122,7 +120,6 @@ export class TypesService {
             image: image,
           });
 
-          console.log('banner', banner)
           return this.bannerRepository.save(banner);
         }
       }));

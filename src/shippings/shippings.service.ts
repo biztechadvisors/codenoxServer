@@ -22,7 +22,6 @@ export class ShippingsService {
   ) { }
 
   async create(createShippingDto: CreateShippingDto) {
-    console.log("create Shipping data", createShippingDto)
     const shipping = new Shipping()
     shipping.name = createShippingDto.name
     shipping.amount = createShippingDto.amount
@@ -40,8 +39,6 @@ export class ShippingsService {
     }
 
     let shippingFind = await this.shippingRepository.find()
-    console.log("shipping", shippingFind)
-
     const fuse = new Fuse(shippingFind, options)
     if (search) {
       const parseSearchParams = search.split(';')
@@ -56,14 +53,12 @@ export class ShippingsService {
   }
 
   async findOne(id: number) {
-    console.log("id", id)
-    const finalValue = await this.shippingRepository.findOne({ where: { id:id } });
-    console.log("finalValue", finalValue)
+    const finalValue = await this.shippingRepository.findOne({ where: { id: id } });
     return finalValue
   }
 
   async update(id: number, updateShippingDto: UpdateShippingDto) {
-    const existingShipping = await this.shippingRepository.findOne({ where: { id:id } })
+    const existingShipping = await this.shippingRepository.findOne({ where: { id: id } })
 
     if (!existingShipping) {
       throw new NotFoundException('Address not found');
@@ -81,7 +76,7 @@ export class ShippingsService {
   }
 
   async remove(id: number) {
-    const existingShipping = await this.shippingRepository.findOne({ where: { id:id } });
+    const existingShipping = await this.shippingRepository.findOne({ where: { id: id } });
 
     if (!existingShipping) {
       throw new NotFoundException('Address not found');

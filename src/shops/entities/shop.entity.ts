@@ -45,7 +45,8 @@ export class Shop extends CoreEntity {
   @Column()
   products_count: number;
 
-  @ManyToOne(() => Balance, (balance) => balance.shop)
+  @OneToOne(() => Balance, (balance) => balance.shop)
+  @JoinColumn()
   balance?: Balance;
 
   @OneToMany(() => Product, (product) => product.shop)
@@ -60,15 +61,15 @@ export class Shop extends CoreEntity {
   @Column()
   description?: string;
 
-  @OneToOne(() => Attachment, { cascade: true })
+  @ManyToOne(() => Attachment, { cascade: true })
   @JoinColumn()
   cover_image: Attachment;
 
-  @OneToOne(() => Attachment, { cascade: true })
+  @ManyToOne(() => Attachment, { cascade: true })
   @JoinColumn()
   logo?: Attachment;
 
-  @OneToOne(() => UserAddress, { cascade: true })
+  @ManyToOne(() => UserAddress, { cascade: true })
   @JoinColumn()
   address: UserAddress;
 
@@ -90,6 +91,7 @@ export class Shop extends CoreEntity {
   @JoinTable({ name: "shop_order" })
   order: Order[];
 }
+
 
 @Entity()
 export class PaymentInfo {
