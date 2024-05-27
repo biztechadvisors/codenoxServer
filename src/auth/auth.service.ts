@@ -318,7 +318,6 @@ export class AuthService {
     }
   }
 
-
   // async getPermissions(typeName: string): Promise<any[]> {
   //   const result = await this.permissionRepository
   //     .createQueryBuilder('permission')

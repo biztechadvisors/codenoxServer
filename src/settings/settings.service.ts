@@ -602,11 +602,12 @@ export class SettingsService {
     }
   }
 
-  //find one setting 
-  async findOne(id: number) {
+  // Find one setting
+  async findOne(id: number, shop_id: number) {
     const settingData = await this.settingRepository.findOne({
-      where: { id: id },
+      where: { id: id, shop: { id: shop_id } },
       relations: [
+        'shop',  // Include shop relation if needed
         'options.contactDetails',
         'options.contactDetails.socials',
         'options.contactDetails.location',
@@ -625,12 +626,12 @@ export class SettingsService {
         'options.paymentGateway',
         'options.logo',
       ]
-    })
-    if (!settingData) {
-      return null
-    } else {
+    });
 
-      return settingData
+    if (!settingData) {
+      return null;
+    } else {
+      return settingData;
     }
   }
 

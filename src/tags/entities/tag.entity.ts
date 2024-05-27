@@ -43,3 +43,6 @@ export class Tag extends CoreEntity {
   @Column({ type: 'json' })
   translatedLanguages: string[];
 }
+
+
+
