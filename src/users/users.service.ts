@@ -31,7 +31,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
-import { Equal, FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
+import { Equal, FindManyOptions, FindOptionsWhere, In, Like, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -124,90 +124,121 @@ export class UsersService {
   }
 
   async getUsers({
-    text,
-    limit,
-    page,
-    search,
+    searchJoin = 'and',
+    with: include,
+    limit = 30,
+    page = 1,
+    name,
+    orderBy,
+    sortedBy,
     usrById,
+    search,
     type,
   }: GetUsersDto): Promise<UserPaginator> {
-    if (!page) page = 1;
-    if (!limit) limit = 30;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
+    const limitNum = Number(limit);
+    const pageNum = Number(page);
+    const startIndex = (pageNum - 1) * limitNum;
 
-    let data: User[] = [];
+    const findOptions: any = {
+      relations: [
+        'profile',
+        'dealer',
+        'shops',
+        'inventoryStocks',
+        'stocks',
+        'managed_shop',
+        'address',
+        'orders',
+        'stocksSellOrd',
+        'type',
+      ],
+      skip: startIndex,
+      take: limitNum,
+      order: {},
+      where: {},
+    };
 
+    if (orderBy && sortedBy) {
+      findOptions.order[orderBy] = sortedBy.toUpperCase();
+    }
+
+    // Fetch user by ID and apply type-based filtering
     if (usrById) {
       const user = await this.userRepository.findOne({
         where: { id: Number(usrById) },
         relations: ['type', 'shops'],
       });
 
-      if (user) {
-        if (user.type.type_name === 'owner') {
-          // Ensure shopIds is not empty before querying
-          const shopIds = user.shops.map(shop => shop.id);
-          if (shopIds.length > 0) {
-            data = await this.userRepository
-              .createQueryBuilder('user')
-              .leftJoinAndSelect('user.shops', 'shop')
-              .where('shop.id IN (:...shopIds)', { shopIds })
-              .getMany();
-          }
-        } else if (user.type.type_name === 'dealer') {
-          const dealerPermission = await this.permissionRepository.findOne({
-            where: { type_name: UserType.Dealer },
-          });
-
-          if (!dealerPermission) {
-            throw new Error('Permission for type "Dealer" not found.');
-          }
-
-          data = await this.userRepository.find({
-            where: {
-              UsrBy: { id: user.id },
-              type: { id: dealerPermission.id },
-            },
-            relations: [
-              'dealer',
-              'profile',
-              'address',
-              'shops',
-              'orders',
-              'address.address',
-              'type',
-            ],
-          });
-        }
+      if (!user) {
+        throw new NotFoundException(`User with ID ${usrById} not found`);
       }
-    } else {
-      // If usrById is not provided, return all users with pagination
-      const findOptions = {
-        skip: startIndex,
-        take: limit,
-      };
 
-      data = await this.userRepository.find(findOptions);
+      findOptions.where.UsrBy = user.id;
+
+      if (user.type.type_name === 'owner') {
+        // Fetch all users with type 'store_owner'
+        const storeOwnerPermission = await this.permissionRepository.findOne({
+          where: { type_name: 'store_owner' },
+        });
+
+        if (!storeOwnerPermission) {
+          throw new NotFoundException('Permission for type "store_owner" not found.');
+        }
+
+        const storeOwners = await this.userRepository.find({
+          where: { type: storeOwnerPermission }
+        });
+
+        const UsrByIds = storeOwners.flatMap(owner => owner.UsrBy);
+        if (UsrByIds.length > 0) {
+          findOptions.where.UsrBy = In(UsrByIds);
+        } else {
+          findOptions.where.shop_id = -1; // Set to a value that will not match any record
+        }
+      } else if (user.type.type_name === 'dealer') {
+        const dealerPermission = await this.permissionRepository.findOne({
+          where: { type_name: 'dealer' },
+        });
+
+        if (!dealerPermission) {
+          throw new NotFoundException('Permission for type "Dealer" not found.');
+        }
+        findOptions.where.type = dealerPermission;
+      } else {
+        findOptions.where.id = user.id; // General case for other user types
+      }
+    }
+
+    // Apply additional filtering by type
+    if (type) {
+      const permission = await this.permissionRepository.findOne({ where: { type_name: type } });
+      if (!permission) {
+        throw new NotFoundException(`Permission for type "${type}" not found.`);
+      }
+      findOptions.where.type = permission;
+    }
+
+    if (name) {
+      findOptions.where.name = Like(`%${name}%`); // Use Like for partial matching
     }
 
     if (search) {
       const [searchKey, searchValue] = search.split(':');
-
-      data = await this.userRepository
-        .createQueryBuilder('user')
-        .where(`user.${searchKey} LIKE :searchValue`, {
-          searchValue: `%${searchValue}%`,
-        })
-        .getMany();
+      if (this.userRepository.metadata.columns.find(column => column.propertyName === searchKey)) {
+        findOptions.where[searchKey] = Like(`%${searchValue}%`); // Use Like for partial matching
+      } else {
+        throw new Error(`Invalid search key: ${searchKey}. Make sure it is a valid property of the User entity.`);
+      }
     }
 
+    // Use findAndCount to get paginated results
+    const [users, total] = await this.userRepository.findAndCount(findOptions);
+
     return {
-      data,
-      ...paginate(data.length, page, limit, data.length, `/users?type=${type || 'customer'}&limit=${limit}`),
+      data: users,
+      ...paginate(total, pageNum, limitNum, total, `/users?type=${type || 'customer'}&limit=${limitNum}`),
     };
   }
-
 
   async getUsersNotify({ limit }: GetUsersDto): Promise<User[]> {
     const data = await this.userRepository.find({

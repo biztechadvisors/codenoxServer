@@ -14,20 +14,27 @@ import { PaymentInfo, Shop } from './shop.entity'
 @Entity()
 export class Balance {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  admin_commission_rate: number
-  @OneToMany(() => Shop, shop => shop.balance, { cascade: true })
-  shop: Shop
+  admin_commission_rate: number;
+
+  @OneToOne(() => Shop, shop => shop.balance, { cascade: true })
+  shop: Shop;
+
   @ManyToOne(() => Dealer, (dealer) => dealer.balance)
   dealer: Dealer;
+
   @Column()
-  total_earnings: number
+  total_earnings: number;
+
   @Column()
-  withdrawn_amount: number
+  withdrawn_amount: number;
+
   @Column()
-  current_balance: number
+  current_balance: number;
+
   @OneToOne(() => PaymentInfo)
   @JoinColumn()
-  payment_info: PaymentInfo
+  payment_info: PaymentInfo;
 }

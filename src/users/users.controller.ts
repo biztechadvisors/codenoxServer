@@ -35,13 +35,11 @@ export class UsersController {
 
   @Get(':id')
   getUser(@Param('id') id: string) {
-
     return this.usersService.findOne(+id);
   }
 
   @Put(':id')
   updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-
     return this.usersService.update(+id, updateUserDto);
   }
 

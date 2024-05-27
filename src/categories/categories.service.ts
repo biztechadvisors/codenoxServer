@@ -79,9 +79,6 @@ export class CategoriesService {
 
   async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
     let { limit = '10', page = '1', search, parent, shop } = query;
-
-    console.log('shop****', shop)
-
     // Convert to numbers
     const numericPage = Number(page);
     const numericLimit = Number(limit);
@@ -101,9 +98,7 @@ export class CategoriesService {
       }
     }
 
-
     if (shop) {
-      console.log('shop****', typeof shop)
       where['shop'] = typeof shop === "string" ? { id: Number(shop) } : { id: shop }; // This line is likely causing the error
     }
 
@@ -259,7 +254,6 @@ export class CategoriesService {
     // Try to parse the param as a number to see if it's an id
     const id = Number(param);
 
-    console.log('param**', param, " ", shopId, " ", categoryId)
     if (!isNaN(id)) {
       // If it's an id, find the subcategory by id
       return this.subCategoryRepository.findOne({

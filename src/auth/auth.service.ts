@@ -22,7 +22,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/users/users.repository';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
-import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
+import { FindOperator, FindOptionsWhere, ILike, IsNull, Not, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import Twilio from 'twilio';
 import * as AWS from 'aws-sdk';
@@ -177,64 +177,43 @@ export class AuthService {
         return { message: 'OTP sent to your email.' };
       }
 
-      let permission;
+      let permission: Permission | null = null;
 
-      if (createUserInput.type?.permission_name) {
+      if (createUserInput.type) {
         // Check if user type has a permission name
         permission = await this.permissionRepository.findOne({
-          where: { permission_name: createUserInput.type.permission_name }
+          where: { permission_name: ILike(createUserInput.type) as unknown as FindOperator<string> },
         });
       }
 
+      const hashPass = await bcrypt.hash(createUserInput.password, 12);
+      const userData = new User();
+      userData.name = createUserInput.name;
+      userData.email = createUserInput.email;
+      userData.contact = createUserInput.contact;
+      userData.password = hashPass;
+      userData.created_at = new Date();
+      userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
+      userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
+
       if (permission) {
-
-        console.log('permission', permission)
-
-        // User with permission
-        const hashPass = await bcrypt.hash(createUserInput.password, 12);
-        const userData = new User();
-        userData.name = createUserInput.name;
-        userData.email = createUserInput.email;
-        userData.contact = createUserInput.contact;
-        userData.password = hashPass;
-        userData.created_at = new Date();
-        userData.UsrBy = createUserInput.UsrBy;
         userData.type = permission;
-
-        if (createUserInput.UsrBy) {
-          userData.isVerified = true;
-        }
-
-        await this.userRepository.save(userData);
-
         const token = Math.floor(100 + Math.random() * 900).toString();
         // Send confirmation email for users with permission
         await this.mailService.sendUserConfirmation(userData, token);
-
-        return { message: 'Registered successfully. OTP sent to your email.' };
       } else {
         // Customer registration
-        const hashPass = await bcrypt.hash(createUserInput.password, 12);
-        const userData = new User();
-        userData.name = createUserInput.name;
-        userData.email = createUserInput.email;
-        userData.contact = createUserInput.contact;
-        userData.password = hashPass;
-        userData.created_at = new Date();
-        userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
-        userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
         const token = Math.floor(100 + Math.random() * 9999).toString();
-
         if (!createUserInput.UsrBy) {
           userData.otp = Number(token);
           // Send confirmation email for customers
           await this.mailService.sendUserConfirmation(userData, token);
         }
-
-        await this.userRepository.save(userData);
-
-        return { message: 'Registered successfully. OTP sent to your email.' };
       }
+
+      await this.userRepository.save(userData);
+
+      return { message: 'Registered successfully. OTP sent to your email.' };
     } catch (error) {
       console.error('Registration error:', error);
       throw new Error('Registration failed. Please try again.');
@@ -605,9 +584,6 @@ export class AuthService {
 
       // Send OTP using AWS SNS
       await this.sns.publish(params).promise();
-
-      console.log(`OTP sent to ${phoneNumber}: ${otp}`); // For testing purpose
-
       return params; // Return the generated OTP
     } catch (error) {
       console.error('Error sending OTP:', error);

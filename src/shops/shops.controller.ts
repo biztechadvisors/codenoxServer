@@ -31,8 +31,6 @@ export class ShopsController {
   @Get()
   async getShops(@Query() query: GetShopsDto): Promise<ShopPaginator> {
     return this.shopsService.getShops(query);
-    // console.log("result shopsssssss", result)
-    // return result
   }
 
   @Get(':slug')

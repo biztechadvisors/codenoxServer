@@ -25,7 +25,6 @@ export class UploadsController {
 
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<Attachment> {
-    console.log('findOne**', id)
     return this.uploadsService.findOne(Number(id));
   }
 

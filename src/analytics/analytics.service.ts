@@ -29,20 +29,33 @@ export class AnalyticsService {
     @InjectRepository(UserAddress) private readonly: UserAddressRepository,
   ) { }
 
-  async findAll(customerId: number, state: string): Promise<AnalyticsResponseDTO> {
+  async findAll(customerId: number | null, state: string): Promise<AnalyticsResponseDTO | { message: string }> {
     try {
-      const user = await this.userRepository.findOne({ where: { id: customerId }, relations: ['type'] });
+      // Check if customerId is provided
+      if (!customerId) {
+        return { message: 'Customer ID is required' };
+      }
+
+      const user = await this.userRepository.findOne({
+        where: { id: customerId },
+        relations: ['type']
+      });
 
       if (!user) {
-        throw new NotFoundException(`User with ID ${customerId} not found`);
+        return { message: `User with ID ${customerId} not found` };
       }
 
       const userPermissions = await this.permissionRepository.findOne({
         where: { permission_name: user.type.permission_name },
       });
 
-      if (!(userPermissions && ['Admin', 'super_admin', 'dealer', 'Vendor'].includes(userPermissions.type_name))) {
-        throw new ForbiddenException(`User with ID ${customerId} does not have permission to access analytics`);
+      if (!userPermissions) {
+        return { message: `User with ID ${customerId} does not have any permissions` };
+      }
+
+      const allowedPermissions = ['Admin', 'super_admin', 'dealer', 'Vendor', 'store_owner'];
+      if (!allowedPermissions.includes(userPermissions.type_name)) {
+        return { message: `User with ID ${customerId} does not have permission to access analytics` };
       }
 
       const analyticsResponse: AnalyticsResponseDTO = {
@@ -58,12 +71,10 @@ export class AnalyticsService {
       return analyticsResponse;
     } catch (error) {
       console.error('Error fetching analytics:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
-        throw error; // Propagate specific exceptions
-      }
-      throw new NotFoundException(`Error fetching analytics: ${error.message}`); // Convert other errors to NotFoundException
+      return { message: `Error fetching analytics: ${error.message}` };
     }
   }
+
 
   private async calculateTotalRevenue(userId: number, state: string): Promise<number> {
     try {
