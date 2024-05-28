@@ -25,7 +25,7 @@ export class ShiprocketService {
             return response.data;
         } catch (error) {
             if (error.response && error.response.status === 401) {
-                console.log("error.response.data********", error.response.data)
+                // console.log("error.response.data********", error.response.data)
                 this.logger.error('Shiprocket API Authentication Error:', error.response.data);
                 throw new Error('Shiprocket API Authentication Error. Check your credentials.');
             } else {

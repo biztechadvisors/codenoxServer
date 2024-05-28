@@ -16,6 +16,7 @@ export enum UserType {
   Admin = 'Admin',
   Dealer = 'Dealer',
   Vendor = 'Vendor',
+  Store_Owner = 'store_owner',
   Customer = 'Customer',
   Owner = 'owner'
 }

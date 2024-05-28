@@ -56,9 +56,7 @@ export class AuthController {
   @Post('token')
   async login(@Body() loginDto: LoginDto) {
     try {
-      const result = await this.authService.login(loginDto);
-      console.log('result-login', result)
-      return result;
+      return await this.authService.login(loginDto);
     } catch (error) {
       console.error(error);
       throw error`Login Failed Error: ${error}`

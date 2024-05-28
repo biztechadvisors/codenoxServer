@@ -185,7 +185,6 @@ export class SettingsService {
 
   async saveEmailEvent(emailEvent: any): Promise<EmailEvent> {
     try {
-      console.log("emailEvent*********", emailEvent)
 
       return await this.emailEventRepository.save(emailEvent);
     } catch (error) {
@@ -196,7 +195,6 @@ export class SettingsService {
 
   async saveSmsEvent(smsEvent: any): Promise<SmsEvent> {
     try {
-      console.log("smsEvent*********", smsEvent)
 
       return await this.smsEventRepository.save(smsEvent);
     } catch (error) {
@@ -207,7 +205,6 @@ export class SettingsService {
 
   async saveSeoSettings(seoSettings: any): Promise<SeoSettings> {
     try {
-      console.log("seoSettings*********", seoSettings)
       return await this.seoSettingsRepository.save(seoSettings);
     } catch (error) {
       console.error(error);
@@ -217,7 +214,6 @@ export class SettingsService {
 
   async saveServerInfo(serverInfo: any): Promise<ServerInfo> {
     try {
-      console.log("serverInfo*********", serverInfo)
 
       return await this.serverInfoRepository.save(serverInfo);
     } catch (error) {
@@ -228,8 +224,7 @@ export class SettingsService {
 
   async saveLogoSettings(logoSettings: any): Promise<LogoSettings> {
     try {
-      console.log("logoSettings*********", logoSettings)
-
+    
       return await this.logoSettingsRepository.save(logoSettings);
     } catch (error) {
       console.error(error);

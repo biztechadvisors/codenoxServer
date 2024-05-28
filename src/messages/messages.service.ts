@@ -33,13 +33,12 @@ console.log("create Message", createMessageDto);
       where: { shop_id: createMessageDto.conversation.shop_id, user_id: createMessageDto.conversation.user_id },
       relations: ['latest_message', 'shop_id']
     });
-console.log("conversation", conversationCheck)
+
     if (conversationCheck) {
       const latestMessage = await this.latestMessageRepository.findOne({
         where: { conversation_id: conversationCheck.id, user_id: createMessageDto.conversation.latest_message.user_id }
       });
 
-      console.log("latest Messages", latestMessage)
       if (latestMessage) {
         latestMessage.body = createMessageDto.conversation.latest_message.body;
         await this.latestMessageRepository.save(latestMessage);
@@ -81,7 +80,7 @@ console.log("conversation", conversationCheck)
 
   async getMessages({ search, limit, page, shop }: GetConversationsDto) {
     let shopSearch
-    let message = await this.messageRepository.find({ 
+    let message = await this.messageRepository.find({
       relations: [
         'conversation',
         'conversation.latest_message',
@@ -91,18 +90,18 @@ console.log("conversation", conversationCheck)
         'conversation.shop.cover_image',
         'conversation.shop.logo',
         'conversation.shop.address'
-              ] });
-              console.log("message", message)
+      ]
+    });
     if (search) {
       message = message.filter((msg) => msg.conversation);
     }
-    if(shop){
-     shopSearch = await this.conversationRepository.findOne({
-      where: {
-       shop_id: shop.id
-      }
-     })
-     return shopSearch
+    if (shop) {
+      shopSearch = await this.conversationRepository.findOne({
+        where: {
+          shop_id: shop.id
+        }
+      })
+      return shopSearch
     }
     const url = `/message?limit=${limit}`;
     const paginatedData = paginate(message.length, page, limit, message.length, url);

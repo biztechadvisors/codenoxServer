@@ -18,7 +18,7 @@ import { CreateAuthorDto } from './dto/create-author.dto'
 
 @Controller('authors')
 export class AuthorsController {
-  constructor(private readonly authorsService: AuthorsService) {}
+  constructor(private readonly authorsService: AuthorsService) { }
 
   @Post()
   createAuthor(@Body() createAuthorDto: CreateAuthorDto) {
@@ -37,7 +37,6 @@ export class AuthorsController {
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateAuthorDto: UpdateAuthorDto) {
-    console.log("idsssssssssss", id, updateAuthorDto)
     return this.authorsService.update(+id, updateAuthorDto)
   }
 
@@ -49,7 +48,7 @@ export class AuthorsController {
 
 @Controller('top-authors')
 export class TopAuthors {
-  constructor(private authorsService: AuthorsService) {}
+  constructor(private authorsService: AuthorsService) { }
 
   @Get()
   getTopAuthors(@Query() query: GetTopAuthorsDto): Promise<Author[]> {

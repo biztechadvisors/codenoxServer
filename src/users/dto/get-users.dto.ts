@@ -10,11 +10,13 @@ export class UserPaginator extends Paginator<User> {
 }
 
 export class GetUsersDto extends PaginationArgs {
+  searchJoin?: 'and' | 'or';
+  with?: string;
+  name?: string;
   orderBy?: QueryUsersOrderByColumn;
   sortedBy?: SortOrder;
-  text?: string;
   search?: string;
-  usrById?: string;
+  usrById?: string | number;
   type?: UserType;
 }
 
