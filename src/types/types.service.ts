@@ -207,37 +207,46 @@ export class TypesService {
       relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'categories', 'tags', 'products'],
     });
 
-
     if (!type) {
       throw new Error(`Type with ID ${id} not found`);
     }
 
     // Remove banners and their images
     if (type.banners) {
+      for (const banner of type.banners) {
+        // Check if the banner has an associated image
+        if (banner.image) {
+          // Temporarily store the imageId
+          const imageId = banner.image.id;
+          // Set the image field of the banner to null and save the banner
+          banner.image = null;
+          await this.bannerRepository.save(banner);
+          // Now it's safe to delete the image
+          await this.attachmentRepository.delete(imageId);
+        }
+      }
+      // Remove all banners
       const bannerIds = type.banners.map(banner => banner.id);
       if (bannerIds.length > 0) {
         await this.bannerRepository.delete(bannerIds);
       }
-      const imageIds = type.banners.filter(banner => banner.image).map(banner => banner.image.id);
-      if (imageIds.length > 0) {
-        await this.attachmentRepository.delete(imageIds);
-      }
     }
 
-    // Remove promotional_sliders
+    // Remove promotional sliders
     if (type.promotional_sliders) {
-      await Promise.all(type.promotional_sliders.map(slider => this.attachmentRepository.delete(slider.id)));
-    }
-
-    // Nullify the settings reference in the Type entity
-    if (type.settings) {
-      type.settings = null;
-      await this.typeRepository.save(type);
+      const promotionalSliderIds = type.promotional_sliders.map(slider => slider.id);
+      if (promotionalSliderIds.length > 0) {
+        // First, remove the promotional sliders
+        await this.typeRepository.delete(promotionalSliderIds);
+      }
     }
 
     // Remove TypeSettings
     if (type.settings) {
       await this.typeSettingsRepository.delete(type.settings.id);
+      // Nullify the settings reference in the Type entity
+      type.settings = null;
+      await this.typeRepository.save(type);
     }
 
     // Set the typeId to null for all associated categories
@@ -266,7 +275,5 @@ export class TypesService {
   }
 
 
+
 }
-
-
-
