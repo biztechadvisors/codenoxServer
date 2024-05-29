@@ -25,7 +25,7 @@ export class Category extends CoreEntity {
   children?: Category[];
 
   @OneToMany(() => SubCategory, subCategory => subCategory.category)
-  subCategories?: SubCategory[];
+  subCategories: SubCategory[];
 
   @Column()
   details?: string;
@@ -70,14 +70,14 @@ export class SubCategory extends CoreEntity {
   slug: string
 
   @ManyToOne(() => Category, category => category.subCategories)
-  category?: Category;
+  category: Category;
 
   @ManyToMany(() => Product, product => product.subCategories, { cascade: true })
   @JoinTable({ name: "product_subcategory" })
   products: Product[];
 
-  @ManyToOne(() => Shop, (shop) => shop.category)
-  shop?: Shop;
+  @ManyToOne(() => Shop, shop => shop.subCategories)
+  shop: Shop;
 
   @Column()
   details?: string
