@@ -151,7 +151,7 @@ export class ProductsService {
       product.language = createProductDto.language || 'en';
       product.translated_languages = createProductDto.translated_languages || ['en'];
 
-      if (createProductDto.taxes) {
+      if (createProductDto?.taxes) {
         const tax = await this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } });
         if (tax) {
           product.taxes = tax;
@@ -193,10 +193,10 @@ export class ProductsService {
         product.image = image;
       }
 
-      if (createProductDto.gallery?.length > 0 || undefined) {
+      if (createProductDto?.gallery?.length > 0 || undefined) {
         const galleryAttachments = [];
         for (const galleryImage of createProductDto.gallery) {
-          const image = await this.attachmentRepository.findOne(galleryImage.id);
+          const image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
           if (!image) {
             throw new NotFoundException(`Gallery image with ID ${galleryImage.id} not found`);
           }
@@ -205,7 +205,7 @@ export class ProductsService {
         product.gallery = galleryAttachments;
       }
 
-      if (createProductDto.variations) {
+      if (createProductDto?.variations) {
         const attributeValues: AttributeValue[] = [];
         for (const variation of createProductDto.variations) {
           const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
