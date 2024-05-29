@@ -273,23 +273,20 @@ export class CategoriesService {
   async getSubCategories(query: GetSubCategoriesDto): Promise<SubCategory[]> {
     const { categoryId, shopId } = query;
 
-    // Log the provided categoryId and shopId
-    console.log('first---categoryId', categoryId);
-    console.log('first---shopId', shopId);
-
-    // Check if either categoryId or shopId is provided
     if (!categoryId && !shopId) {
       throw new BadRequestException('Either categoryId or shopId must be provided in the query');
     }
 
-    // Specify the relations to be included in the query
+    let where: { [key: string]: any } = {};
+    if (categoryId) {
+      where['category'] = typeof categoryId === "string" ? { id: Number(categoryId) } : { id: categoryId };;
+    }
+    if (shopId) {
+      where['shop'] = typeof shopId === "string" ? { id: Number(shopId) } : { id: shopId };;
+    }
+
     const relations = ['category', 'image', 'shop'];
-
-    // Fetch and return the subcategories based on the where clause and relations
-    const subCat = await this.subCategoryRepository.find({ where: { category: { id: categoryId }, shop: { id: shopId } }, relations });
-    console.log('subCat', subCat)
-    return subCat;
-
+    return await this.subCategoryRepository.find({ where, relations });
   }
 
   async updateSubCategory(id: number, updateSubCategoryDto: UpdateSubCategoryDto): Promise<SubCategory> {
