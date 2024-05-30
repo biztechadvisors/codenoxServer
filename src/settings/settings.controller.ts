@@ -11,9 +11,9 @@ export class SettingsController {
 
   @Post()
   create(
-    @Param('id') id: number,
+    @Param('shopId') shopId: number,
     @Body() createSettingDto: CreateSettingDto) {
-    return this.settingsService.create(id, createSettingDto)
+    return this.settingsService.create(shopId, createSettingDto)
   }
 
   @Get()

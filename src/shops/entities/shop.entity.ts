@@ -93,6 +93,7 @@ export class Shop extends CoreEntity {
   @ManyToMany(() => Order, (order) => order.shop_id, { cascade: true, nullable: true })
   @JoinTable({ name: "shop_order" })
   order: Order[];
+
 }
 
 

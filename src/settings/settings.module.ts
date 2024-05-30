@@ -9,6 +9,7 @@ import { ContactDetailsRepository, CurrencyOptionsRepository, DeliveryTimeReposi
 import { LocationRepository, ShopSocialsRepository } from 'src/shops/shops.repository'
 import { AttachmentRepository } from 'src/common/common.repository'
 import { Attachment } from 'src/common/entities/attachment.entity'
+import { Shop } from 'src/shops/entities/shop.entity'
 
 @Module({
   imports: [TypeOrmExModule.forCustomRepository([
@@ -32,9 +33,9 @@ import { Attachment } from 'src/common/entities/attachment.entity'
     LogoSettingsRepository,
     PaymentGateWayRepository,
     AttachmentRepository,
-  ]),TypeOrmModule.forFeature([Setting, Attachment, PaymentGateway, LogoSettings, DeliveryTime, ServerInfo, SeoSettings, SmsEvent, SmsAdmin, SmsVendor, SmsCustomer, EmailAdmin, EmailVendor, EmailCustomer, EmailEvent, CurrencyOptions, ShopSocials, SettingsOptions, ContactDetails, Location])],
+  ]), TypeOrmModule.forFeature([Setting, Attachment, PaymentGateway, LogoSettings, DeliveryTime, ServerInfo, SeoSettings, SmsEvent, SmsAdmin, SmsVendor, SmsCustomer, EmailAdmin, EmailVendor, EmailCustomer, EmailEvent, CurrencyOptions, ShopSocials, SettingsOptions, ContactDetails, Location, Shop])],
   controllers: [SettingsController],
   providers: [SettingsService],
   exports: [SettingsService],
 })
-export class SettingsModule {}
+export class SettingsModule { }

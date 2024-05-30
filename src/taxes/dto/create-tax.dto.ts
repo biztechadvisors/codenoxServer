@@ -7,7 +7,9 @@ export class CreateTaxDto extends OmitType(Tax, [
   'id',
   'created_at',
   'updated_at',
-]) {}
+]) {
+  shop_id: number;
+}
 
 export class ValidateGstDto {
   @IsNotEmpty()
