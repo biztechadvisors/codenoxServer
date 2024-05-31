@@ -12,6 +12,7 @@ import {
   UploadedFile,
   BadRequestException,
   NotFoundException,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -32,7 +33,7 @@ export class ProductsController {
   }
 
   @Get()
-  async getProducts(@Query() query: GetProductsDto): Promise<ProductPaginator> {
+  async getProducts(@Query(ValidationPipe) query: GetProductsDto): Promise<ProductPaginator> {
     return this.productsService.getProducts(query);
   }
 

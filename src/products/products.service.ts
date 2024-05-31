@@ -317,38 +317,47 @@ export class ProductsService {
 
     if (search) {
       const parseSearchParams = search.split(';');
+      const searchConditions = [];
+      let searchTerm;
+
       parseSearchParams.forEach(searchParam => {
         const [key, value] = searchParam.split(':');
-        const searchTerm = `%${value}%`;
+        searchTerm = `%${value}%`;
 
         switch (key) {
-          case 'name':
-            productQueryBuilder.orWhere('product.name LIKE :searchTerm', { searchTerm });
+          case 'product':
+            searchConditions.push(`(product.name LIKE :productSearchTerm OR product.slug LIKE :productSearchTerm)`);
             break;
           case 'category':
-            productQueryBuilder.orWhere('categories.name LIKE :searchTerm OR categories.description LIKE :searchTerm', { searchTerm });
+            searchConditions.push(`(categories.name LIKE :categorySearchTerm OR categories.slug LIKE :categorySearchTerm)`);
             break;
-          case 'categories.slug':
-          case 'subCategories.slug':
-            const slugs = value.split(',');
-            productQueryBuilder.orWhere(`${key} IN (:...slugs)`, { slugs });
+          case 'subCategories':
+            searchConditions.push(`(subCategories.name LIKE :subCategorySearchTerm OR subCategories.slug LIKE :subCategorySearchTerm)`);
             break;
-          case 'type.slug':
-          case 'tags.slug':
-          case 'product.slug':
-            productQueryBuilder.orWhere(`${key} LIKE :searchTerm`, { searchTerm });
+          case 'type':
+            searchConditions.push(`(type.name LIKE :typeSearchTerm OR type.slug LIKE :typeSearchTerm)`);
             break;
-          case 'variations.value':
-            productQueryBuilder.orWhere('variations.value LIKE :searchTerm', { searchTerm });
+          case 'tags':
+            searchConditions.push(`(tags.name LIKE :tagSearchTerm OR tags.slug LIKE :tagSearchTerm)`);
             break;
-          case 'shop_id':
-            productQueryBuilder.orWhere('shop.id = :value', { value });
+          case 'variations':
+            searchConditions.push(`(attributeValues.value LIKE :variationSearchTerm)`);
             break;
           default:
-            productQueryBuilder.orWhere(`product.${key} LIKE :searchTerm`, { searchTerm });
             break;
         }
       });
+
+      if (searchConditions.length > 0) {
+        productQueryBuilder.andWhere(`(${searchConditions.join(' OR ')})`, {
+          productSearchTerm: searchTerm,
+          categorySearchTerm: searchTerm,
+          subCategorySearchTerm: searchTerm,
+          typeSearchTerm: searchTerm,
+          tagSearchTerm: searchTerm,
+          variationSearchTerm: searchTerm,
+        });
+      }
     }
 
     try {
