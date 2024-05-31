@@ -75,7 +75,7 @@ export class TaxesService {
     try {
       const existingData = await this.taxRepository.find({
         where: { shop: { id: shopId } },
-        relations: ['shop'], // Ensure that the shop relationship is loaded
+        relations: ['shop']
       });
 
       if (!existingData || existingData.length === 0) {

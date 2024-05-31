@@ -4,7 +4,7 @@ import { Category } from 'src/categories/entities/category.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
-import { Column, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 
 @Entity()
@@ -29,6 +29,7 @@ export class Tax extends CoreEntity {
   gst_Name: string; //goods - service
 
   @ManyToOne(() => Shop, { cascade: true })
+  @JoinColumn()
   shop: Shop
 
   @OneToMany(() => Product, (products) => products.taxes)
