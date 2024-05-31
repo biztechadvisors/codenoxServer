@@ -145,8 +145,8 @@ export class SettingsService {
         createSettingDto.options.server_info
           ? this.saveServerInfo(createSettingDto.options.server_info)
           : null,
-        createSettingDto.options.logo
-          ? this.saveLogoSettings(createSettingDto.options.logo)
+        createSettingDto?.options?.logo
+          ? this.saveLogoSettings(createSettingDto?.options?.logo)
           : null,
         createSettingDto.options.paymentGateway
           ? this.savePaymentGateway(createSettingDto.options.paymentGateway)
@@ -286,8 +286,8 @@ export class SettingsService {
 
   async saveLogoSettings(logoSettings: LogoSettings): Promise<LogoSettings> {
     try {
-      if (logoSettings.id) {
-        await this.logoSettingsRepository.update(logoSettings.id, logoSettings);
+      if (logoSettings?.id) {
+        await this.logoSettingsRepository.update(logoSettings?.id, logoSettings);
         return await this.logoSettingsRepository.findOne({ where: { id: logoSettings.id } });
       } else {
         const newLogoSettings = this.logoSettingsRepository.create(logoSettings);
