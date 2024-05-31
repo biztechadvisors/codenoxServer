@@ -194,19 +194,16 @@ export class SettingsService {
     }
   }
 
-  async saveContactDetails(contactDetails: ContactDetails): Promise<ContactDetails> {
-    try {
-      if (contactDetails.id) {
-        await this.contactDetailRepository.update(contactDetails.id, contactDetails);
-        return await this.contactDetailRepository.findOne({ where: { id: contactDetails.id } });
-      } else {
-        const newContactDetails = this.contactDetailRepository.create(contactDetails);
-        return await this.contactDetailRepository.save(newContactDetails);
-      }
-    } catch (error) {
-      console.error('Error saving ContactDetails:', error);
-      throw new InternalServerErrorException('Error saving ContactDetails');
+  async saveContactDetails(contactDetailsData: Partial<ContactDetails>): Promise<ContactDetails> {
+    const contactDetailsToUpdate = await this.contactDetailRepository.findOne({ where: { id: contactDetailsData.id } });
+
+    if (!contactDetailsToUpdate) {
+      console.warn('ContactDetails not found');
+      return null;
     }
+
+    Object.assign(contactDetailsToUpdate, contactDetailsData);
+    return await this.contactDetailRepository.save(contactDetailsToUpdate);
   }
 
   async saveCurrencyOptions(currencyOptions: CurrencyOptions): Promise<CurrencyOptions> {
@@ -224,49 +221,48 @@ export class SettingsService {
     }
   }
 
-  async saveEmailEvent(emailEvent: EmailEvent): Promise<EmailEvent> {
-    try {
-      if (emailEvent.id) {
-        await this.emailEventRepository.update(emailEvent.id, emailEvent);
-        return await this.emailEventRepository.findOne({ where: { id: emailEvent.id } });
-      } else {
-        const newEmailEvent = this.emailEventRepository.create(emailEvent);
-        return await this.emailEventRepository.save(newEmailEvent);
-      }
-    } catch (error) {
-      console.error('Error saving EmailEvent:', error);
-      throw new InternalServerErrorException('Error saving EmailEvent');
+  async saveEmailEvent(emailEventData: Partial<EmailEvent>): Promise<EmailEvent> {
+    const emailEventToUpdate = await this.emailEventRepository.findOne({ where: { id: emailEventData.id } });
+
+    if (!emailEventToUpdate) {
+      console.warn('EmailEvent not found');
+      return null;
     }
+
+
+    // Update the email event entity with the new data
+    Object.assign(emailEventToUpdate, emailEventData);
+
+    // Save the updated email event entity
+    return await this.emailEventRepository.save(emailEventToUpdate);
   }
 
-  async saveSmsEvent(smsEvent: SmsEvent): Promise<SmsEvent> {
-    try {
-      if (smsEvent.id) {
-        await this.smsEventRepository.update(smsEvent.id, smsEvent);
-        return await this.smsEventRepository.findOne({ where: { id: smsEvent.id } });
-      } else {
-        const newSmsEvent = this.smsEventRepository.create(smsEvent);
-        return await this.smsEventRepository.save(newSmsEvent);
-      }
-    } catch (error) {
-      console.error('Error saving SmsEvent:', error);
-      throw new InternalServerErrorException('Error saving SmsEvent');
+  async saveSmsEvent(smsEventData: Partial<SmsEvent>): Promise<SmsEvent> {
+    const smsEventToUpdate = await this.smsEventRepository.findOne({ where: { id: smsEventData.id } });
+
+    if (!smsEventToUpdate) {
+      console.warn('SmsEvent not found');
+      return null;
     }
+
+    Object.assign(smsEventToUpdate, smsEventData);
+    return await this.smsEventRepository.save(smsEventToUpdate);
   }
 
-  async saveSeoSettings(seoSettings: SeoSettings): Promise<SeoSettings> {
-    try {
-      if (seoSettings.id) {
-        await this.seoSettingsRepository.update(seoSettings.id, seoSettings);
-        return await this.seoSettingsRepository.findOne({ where: { id: seoSettings.id } });
-      } else {
-        const newSeoSettings = this.seoSettingsRepository.create(seoSettings);
-        return await this.seoSettingsRepository.save(newSeoSettings);
-      }
-    } catch (error) {
-      console.error('Error saving SeoSettings:', error);
-      throw new InternalServerErrorException('Error saving SeoSettings');
+
+  async saveSeoSettings(seoSettingsData: Partial<SeoSettings>): Promise<SeoSettings> {
+    const seoSettingsToUpdate = await this.seoSettingsRepository.findOne({ where: { id: seoSettingsData.id } });
+
+    if (!seoSettingsToUpdate) {
+      console.warn('SeoSettings not found');
+      return null;
     }
+
+    // Update the SEO settings entity with the new data
+    Object.assign(seoSettingsToUpdate, seoSettingsData);
+
+    // Save the updated SEO settings entity
+    return await this.seoSettingsRepository.save(seoSettingsToUpdate);
   }
 
   async saveServerInfo(serverInfo: ServerInfo): Promise<ServerInfo> {

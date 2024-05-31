@@ -13,6 +13,7 @@ export class SettingsController {
   create(
     @Query('shopId') shopId: number,
     @Body() createSettingDto: CreateSettingDto) {
+    console.log('shopId**', shopId)
     return this.settingsService.create(shopId, createSettingDto)
   }
 

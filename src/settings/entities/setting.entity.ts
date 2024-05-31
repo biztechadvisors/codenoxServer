@@ -107,6 +107,9 @@ export class LogoSettings {
 
   @Column()
   thumbnail: string;
+
+  @Column()
+  file_name: string;
 }
 
 @Entity()
