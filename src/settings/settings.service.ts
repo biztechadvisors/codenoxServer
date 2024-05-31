@@ -173,9 +173,21 @@ export class SettingsService {
     }
   }
 
-  async savePaymentGateway(paymentGateway: PaymentGateway[]): Promise<PaymentGateway[]> {
+  async savePaymentGateway(paymentGateways: PaymentGateway[]): Promise<PaymentGateway[]> {
     try {
-      return await this.paymentGatewayRepository.save(paymentGateway);
+      const savedPaymentGateways: PaymentGateway[] = [];
+      for (const gateway of paymentGateways) {
+        if (gateway.id) {
+          await this.paymentGatewayRepository.update(gateway.id, gateway);
+          const updatedGateway = await this.paymentGatewayRepository.findOne({ where: { id: gateway.id } });
+          if (updatedGateway) savedPaymentGateways.push(updatedGateway);
+        } else {
+          const newGateway = this.paymentGatewayRepository.create(gateway);
+          const savedGateway = await this.paymentGatewayRepository.save(newGateway);
+          savedPaymentGateways.push(savedGateway);
+        }
+      }
+      return savedPaymentGateways;
     } catch (error) {
       console.error('Error saving PaymentGateway:', error);
       throw new InternalServerErrorException('Error saving PaymentGateway');
@@ -184,7 +196,13 @@ export class SettingsService {
 
   async saveContactDetails(contactDetails: ContactDetails): Promise<ContactDetails> {
     try {
-      return await this.contactDetailRepository.save(contactDetails);
+      if (contactDetails.id) {
+        await this.contactDetailRepository.update(contactDetails.id, contactDetails);
+        return await this.contactDetailRepository.findOne({ where: { id: contactDetails.id } });
+      } else {
+        const newContactDetails = this.contactDetailRepository.create(contactDetails);
+        return await this.contactDetailRepository.save(newContactDetails);
+      }
     } catch (error) {
       console.error('Error saving ContactDetails:', error);
       throw new InternalServerErrorException('Error saving ContactDetails');
@@ -193,7 +211,13 @@ export class SettingsService {
 
   async saveCurrencyOptions(currencyOptions: CurrencyOptions): Promise<CurrencyOptions> {
     try {
-      return await this.currencyOptionRepository.save(currencyOptions);
+      if (currencyOptions.id) {
+        await this.currencyOptionRepository.update(currencyOptions.id, currencyOptions);
+        return await this.currencyOptionRepository.findOne({ where: { id: currencyOptions.id } });
+      } else {
+        const newCurrencyOptions = this.currencyOptionRepository.create(currencyOptions);
+        return await this.currencyOptionRepository.save(newCurrencyOptions);
+      }
     } catch (error) {
       console.error('Error saving CurrencyOptions:', error);
       throw new InternalServerErrorException('Error saving CurrencyOptions');
@@ -202,7 +226,13 @@ export class SettingsService {
 
   async saveEmailEvent(emailEvent: EmailEvent): Promise<EmailEvent> {
     try {
-      return await this.emailEventRepository.save(emailEvent);
+      if (emailEvent.id) {
+        await this.emailEventRepository.update(emailEvent.id, emailEvent);
+        return await this.emailEventRepository.findOne({ where: { id: emailEvent.id } });
+      } else {
+        const newEmailEvent = this.emailEventRepository.create(emailEvent);
+        return await this.emailEventRepository.save(newEmailEvent);
+      }
     } catch (error) {
       console.error('Error saving EmailEvent:', error);
       throw new InternalServerErrorException('Error saving EmailEvent');
@@ -211,7 +241,13 @@ export class SettingsService {
 
   async saveSmsEvent(smsEvent: SmsEvent): Promise<SmsEvent> {
     try {
-      return await this.smsEventRepository.save(smsEvent);
+      if (smsEvent.id) {
+        await this.smsEventRepository.update(smsEvent.id, smsEvent);
+        return await this.smsEventRepository.findOne({ where: { id: smsEvent.id } });
+      } else {
+        const newSmsEvent = this.smsEventRepository.create(smsEvent);
+        return await this.smsEventRepository.save(newSmsEvent);
+      }
     } catch (error) {
       console.error('Error saving SmsEvent:', error);
       throw new InternalServerErrorException('Error saving SmsEvent');
@@ -220,7 +256,13 @@ export class SettingsService {
 
   async saveSeoSettings(seoSettings: SeoSettings): Promise<SeoSettings> {
     try {
-      return await this.seoSettingsRepository.save(seoSettings);
+      if (seoSettings.id) {
+        await this.seoSettingsRepository.update(seoSettings.id, seoSettings);
+        return await this.seoSettingsRepository.findOne({ where: { id: seoSettings.id } });
+      } else {
+        const newSeoSettings = this.seoSettingsRepository.create(seoSettings);
+        return await this.seoSettingsRepository.save(newSeoSettings);
+      }
     } catch (error) {
       console.error('Error saving SeoSettings:', error);
       throw new InternalServerErrorException('Error saving SeoSettings');
@@ -229,7 +271,13 @@ export class SettingsService {
 
   async saveServerInfo(serverInfo: ServerInfo): Promise<ServerInfo> {
     try {
-      return await this.serverInfoRepository.save(serverInfo);
+      if (serverInfo.id) {
+        await this.serverInfoRepository.update(serverInfo.id, serverInfo);
+        return await this.serverInfoRepository.findOne({ where: { id: serverInfo.id } });
+      } else {
+        const newServerInfo = this.serverInfoRepository.create(serverInfo);
+        return await this.serverInfoRepository.save(newServerInfo);
+      }
     } catch (error) {
       console.error('Error saving ServerInfo:', error);
       throw new InternalServerErrorException('Error saving ServerInfo');
@@ -238,12 +286,19 @@ export class SettingsService {
 
   async saveLogoSettings(logoSettings: LogoSettings): Promise<LogoSettings> {
     try {
-      return await this.logoSettingsRepository.save(logoSettings);
+      if (logoSettings.id) {
+        await this.logoSettingsRepository.update(logoSettings.id, logoSettings);
+        return await this.logoSettingsRepository.findOne({ where: { id: logoSettings.id } });
+      } else {
+        const newLogoSettings = this.logoSettingsRepository.create(logoSettings);
+        return await this.logoSettingsRepository.save(newLogoSettings);
+      }
     } catch (error) {
       console.error('Error saving LogoSettings:', error);
       throw new InternalServerErrorException('Error saving LogoSettings');
     }
   }
+
 
   async findAll(): Promise<Setting[] | null> {
     const settingData = await this.settingRepository.find({

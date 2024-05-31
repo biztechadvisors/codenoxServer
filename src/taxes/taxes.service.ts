@@ -98,7 +98,6 @@ export class TaxesService {
     }
   }
 
-
   async update(id: number, updateTaxDto: UpdateTaxDto) {
     try {
       const existingTaxes = await this.taxRepository.findOne({
