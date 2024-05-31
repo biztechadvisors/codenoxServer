@@ -78,11 +78,7 @@ export class TaxesService {
         relations: ['shop']
       });
 
-      if (!existingData || existingData.length === 0) {
-        throw new NotFoundException(`No tax data found for shop with ID ${shopId}`);
-      }
-
-      return existingData;
+      return existingData ? existingData : [];
     } catch (error) {
       console.error("Error retrieving tax data:", error);
       throw new NotFoundException("Failed to retrieve tax data");
