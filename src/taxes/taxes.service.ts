@@ -42,7 +42,7 @@ export class TaxesService {
       let shop: any
       const tax = new Tax()
 
-      if (createTaxDto.shop) {
+      if (createTaxDto.shop_id) {
         shop = await this.shopRepository.findOne({ where: { id: createTaxDto.shop_id } })
         if (!shop) {
           throw new NotFoundException(`Shop with ID ${createTaxDto.shop_id} not found`);
