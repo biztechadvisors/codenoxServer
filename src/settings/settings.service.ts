@@ -178,9 +178,14 @@ export class SettingsService {
       const savedPaymentGateways: PaymentGateway[] = [];
       for (const gateway of paymentGateways) {
         if (gateway.id) {
-          await this.paymentGatewayRepository.update(gateway.id, gateway);
-          const updatedGateway = await this.paymentGatewayRepository.findOne({ where: { id: gateway.id } });
-          if (updatedGateway) savedPaymentGateways.push(updatedGateway);
+          const existingGateway = await this.paymentGatewayRepository.findOne({ where: { id: gateway.id } });
+          if (!existingGateway) {
+            console.warn(`PaymentGateway with id ${gateway.id} not found`);
+            continue;
+          }
+          Object.assign(existingGateway, gateway);
+          const updatedGateway = await this.paymentGatewayRepository.save(existingGateway);
+          savedPaymentGateways.push(updatedGateway);
         } else {
           const newGateway = this.paymentGatewayRepository.create(gateway);
           const savedGateway = await this.paymentGatewayRepository.save(newGateway);
@@ -193,6 +198,7 @@ export class SettingsService {
       throw new InternalServerErrorException('Error saving PaymentGateway');
     }
   }
+
 
   async saveContactDetails(contactDetailsData: Partial<ContactDetails>): Promise<ContactDetails> {
     const contactDetailsToUpdate = await this.contactDetailRepository.findOne({ where: { id: contactDetailsData.id } });
@@ -209,8 +215,13 @@ export class SettingsService {
   async saveCurrencyOptions(currencyOptions: CurrencyOptions): Promise<CurrencyOptions> {
     try {
       if (currencyOptions.id) {
-        await this.currencyOptionRepository.update(currencyOptions.id, currencyOptions);
-        return await this.currencyOptionRepository.findOne({ where: { id: currencyOptions.id } });
+        const existingCurrencyOptions = await this.currencyOptionRepository.findOne({ where: { id: currencyOptions.id } });
+        if (!existingCurrencyOptions) {
+          console.warn(`CurrencyOptions with id ${currencyOptions.id} not found`);
+          return null;
+        }
+        Object.assign(existingCurrencyOptions, currencyOptions);
+        return await this.currencyOptionRepository.save(existingCurrencyOptions);
       } else {
         const newCurrencyOptions = this.currencyOptionRepository.create(currencyOptions);
         return await this.currencyOptionRepository.save(newCurrencyOptions);
@@ -220,6 +231,7 @@ export class SettingsService {
       throw new InternalServerErrorException('Error saving CurrencyOptions');
     }
   }
+
 
   async saveEmailEvent(emailEventData: Partial<EmailEvent>): Promise<EmailEvent> {
     const emailEventToUpdate = await this.emailEventRepository.findOne({ where: { id: emailEventData.id } });
@@ -268,8 +280,13 @@ export class SettingsService {
   async saveServerInfo(serverInfo: ServerInfo): Promise<ServerInfo> {
     try {
       if (serverInfo.id) {
-        await this.serverInfoRepository.update(serverInfo.id, serverInfo);
-        return await this.serverInfoRepository.findOne({ where: { id: serverInfo.id } });
+        const existingServerInfo = await this.serverInfoRepository.findOne({ where: { id: serverInfo.id } });
+        if (!existingServerInfo) {
+          console.warn(`ServerInfo with id ${serverInfo.id} not found`);
+          return null;
+        }
+        Object.assign(existingServerInfo, serverInfo);
+        return await this.serverInfoRepository.save(existingServerInfo);
       } else {
         const newServerInfo = this.serverInfoRepository.create(serverInfo);
         return await this.serverInfoRepository.save(newServerInfo);
@@ -280,11 +297,17 @@ export class SettingsService {
     }
   }
 
+
   async saveLogoSettings(logoSettings: LogoSettings): Promise<LogoSettings> {
     try {
       if (logoSettings?.id) {
-        await this.logoSettingsRepository.update(logoSettings?.id, logoSettings);
-        return await this.logoSettingsRepository.findOne({ where: { id: logoSettings.id } });
+        const existingLogoSettings = await this.logoSettingsRepository.findOne({ where: { id: logoSettings.id } });
+        if (!existingLogoSettings) {
+          console.warn(`LogoSettings with id ${logoSettings.id} not found`);
+          return null;
+        }
+        Object.assign(existingLogoSettings, logoSettings);
+        return await this.logoSettingsRepository.save(existingLogoSettings);
       } else {
         const newLogoSettings = this.logoSettingsRepository.create(logoSettings);
         return await this.logoSettingsRepository.save(newLogoSettings);
@@ -294,6 +317,7 @@ export class SettingsService {
       throw new InternalServerErrorException('Error saving LogoSettings');
     }
   }
+
 
 
   async findAll(): Promise<Setting[] | null> {
