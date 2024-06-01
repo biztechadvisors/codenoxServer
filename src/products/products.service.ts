@@ -318,47 +318,58 @@ export class ProductsService {
     if (search) {
       const parseSearchParams = search.split(';');
       const searchConditions = [];
-      let searchTerm;
+      const searchParams: any = {};
 
       parseSearchParams.forEach(searchParam => {
         const [key, value] = searchParam.split(':');
-        searchTerm = `%${value}%`;
+        const searchTerm = `%${value}%`;
 
         switch (key) {
           case 'product':
             searchConditions.push(`(product.name LIKE :productSearchTerm OR product.slug LIKE :productSearchTerm)`);
+            searchParams.productSearchTerm = searchTerm;
             break;
           case 'category':
             searchConditions.push(`(categories.name LIKE :categorySearchTerm OR categories.slug LIKE :categorySearchTerm)`);
+            searchParams.categorySearchTerm = searchTerm;
             break;
           case 'subCategories':
             searchConditions.push(`(subCategories.name LIKE :subCategorySearchTerm OR subCategories.slug LIKE :subCategorySearchTerm)`);
+            searchParams.subCategorySearchTerm = searchTerm;
             break;
           case 'type':
             searchConditions.push(`(type.name LIKE :typeSearchTerm OR type.slug LIKE :typeSearchTerm)`);
+            searchParams.typeSearchTerm = searchTerm;
             break;
           case 'tags':
             searchConditions.push(`(tags.name LIKE :tagSearchTerm OR tags.slug LIKE :tagSearchTerm)`);
+            searchParams.tagSearchTerm = searchTerm;
             break;
           case 'variations':
-            searchConditions.push(`(attributeValues.value LIKE :variationSearchTerm)`);
+            // Handle key-value pairs for variations
+            const variationParams = value.split(','); // Assuming key-value pairs are comma-separated
+            variationParams.forEach(variationParam => {
+              const [attrKey, attrValue] = variationParam.split('=');
+              const variationSearchTerm = `%${attrValue}%`;
+              const paramKey = `variation_${attrKey}`;
+              searchConditions.push(`(attribute.name = :${paramKey}_name AND attributeValues.value LIKE :${paramKey}_value)`);
+              searchParams[`${paramKey}_name`] = attrKey;
+              searchParams[`${paramKey}_value`] = variationSearchTerm;
+            });
             break;
           default:
             break;
         }
       });
 
+      console.log('searchConditions', searchConditions);
+      console.log('searchParams', searchParams);
+
       if (searchConditions.length > 0) {
-        productQueryBuilder.andWhere(`(${searchConditions.join(' OR ')})`, {
-          productSearchTerm: searchTerm,
-          categorySearchTerm: searchTerm,
-          subCategorySearchTerm: searchTerm,
-          typeSearchTerm: searchTerm,
-          tagSearchTerm: searchTerm,
-          variationSearchTerm: searchTerm,
-        });
+        productQueryBuilder.andWhere(`(${searchConditions.join(' OR ')})`, searchParams);
       }
     }
+
 
     try {
       let products: Product[] = [];

@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { CreateSettingDto } from './dto/create-setting.dto'
 import { UpdateSettingDto } from './dto/update-setting.dto'
 import {
@@ -46,7 +46,7 @@ import {
 import { LocationRepository, ShopSocialsRepository } from 'src/shops/shops.repository'
 import { AttachmentRepository } from 'src/common/common.repository'
 import { Shop } from 'src/shops/entities/shop.entity'
-import { Repository } from 'typeorm'
+import { EntityNotFoundError, Repository } from 'typeorm'
 
 
 
@@ -97,7 +97,7 @@ export class SettingsService {
     private shopRepository: Repository<Shop>,
   ) { }
 
-  async create(shopId: number, createSettingDto: CreateSettingDto): Promise<Setting> {
+  async create(shopId: number, createSettingDto: CreateSettingDto): Promise<Setting | { message: string }> {
     try {
       if (!shopId) {
         throw new BadRequestException('shopId is compulsory');
@@ -108,6 +108,11 @@ export class SettingsService {
         throw new NotFoundException('Shop not found');
       }
 
+      const existingSettings = await this.settingRepository.findOne({ where: { shop: { id: shopId }, language: createSettingDto.language } });
+      if (existingSettings) {
+        return { message: 'Settings for this shop and language already exist' };
+      }
+
       const newSettings = new Setting();
       newSettings.created_at = new Date();
       newSettings.language = createSettingDto.language;
@@ -115,55 +120,9 @@ export class SettingsService {
       newSettings.updated_at = new Date();
       newSettings.shop = shop;
 
-      const newOptions = new SettingsOptions();
+      const newOptions = await this.createSettingsOptions(createSettingDto.options);
 
-      const [
-        location,
-        currencyId,
-        emailId,
-        smsId,
-        seoId,
-        serverInfoId,
-        logoId,
-        paymentGateway
-      ] = await Promise.all([
-        createSettingDto.options.contactDetails
-          ? this.saveContactDetails(createSettingDto.options.contactDetails)
-          : null,
-        createSettingDto.options.currencyOptions
-          ? this.saveCurrencyOptions(createSettingDto.options.currencyOptions)
-          : null,
-        createSettingDto.options.emailEvent
-          ? this.saveEmailEvent(createSettingDto.options.emailEvent)
-          : null,
-        createSettingDto.options.smsEvent
-          ? this.saveSmsEvent(createSettingDto.options.smsEvent)
-          : null,
-        createSettingDto.options.seo
-          ? this.saveSeoSettings(createSettingDto.options.seo)
-          : null,
-        createSettingDto.options.server_info
-          ? this.saveServerInfo(createSettingDto.options.server_info)
-          : null,
-        createSettingDto?.options?.logo
-          ? this.saveLogoSettings(createSettingDto?.options?.logo)
-          : null,
-        createSettingDto.options.paymentGateway
-          ? this.savePaymentGateway(createSettingDto.options.paymentGateway)
-          : null,
-      ]);
-
-      newOptions.contactDetails = location;
-      newOptions.emailEvent = emailId;
-      newOptions.currencyOptions = currencyId;
-      newOptions.smsEvent = smsId;
-      newOptions.seo = seoId;
-      newOptions.server_info = serverInfoId;
-      newOptions.logo = logoId;
-      newOptions.paymentGateway = paymentGateway;
-
-      const savedOptions = await this.settingsOptionsRepository.save(newOptions);
-      newSettings.options = savedOptions;
+      newSettings.options = newOptions;
 
       const savedSetting = await this.settingRepository.save(newSettings);
       return savedSetting;
@@ -173,14 +132,65 @@ export class SettingsService {
     }
   }
 
+  async createSettingsOptions(optionsData: Partial<SettingsOptions>): Promise<SettingsOptions> {
+    try {
+      const newOptions = new SettingsOptions();
+
+      newOptions.contactDetails = optionsData.contactDetails ? await this.saveContactDetails(optionsData.contactDetails) : null;
+      newOptions.currency = optionsData.currency;
+      newOptions.currencyOptions = optionsData.currencyOptions ? await this.saveCurrencyOptions(optionsData.currencyOptions) : null;
+      newOptions.currencyToWalletRatio = optionsData.currencyToWalletRatio;
+      newOptions.defaultAi = optionsData.defaultAi;
+      newOptions.defaultPaymentGateway = optionsData.defaultPaymentGateway;
+      newOptions.deliveryTime = optionsData.deliveryTime;
+      newOptions.emailEvent = optionsData.emailEvent ? await this.saveEmailEvent(optionsData.emailEvent) : null;
+      newOptions.freeShipping = optionsData.freeShipping;
+      newOptions.freeShippingAmount = optionsData.freeShippingAmount;
+      newOptions.guestCheckout = optionsData.guestCheckout;
+      newOptions.isProductReview = optionsData.isProductReview;
+      newOptions.logo = optionsData.logo ? await this.saveLogoSettings(optionsData.logo) : null;
+      newOptions.maximumQuestionLimit = optionsData.maximumQuestionLimit;
+      newOptions.maxShopDistance = optionsData.maxShopDistance;
+      newOptions.minimumOrderAmount = optionsData.minimumOrderAmount;
+      newOptions.paymentGateway = optionsData.paymentGateway ? await this.savePaymentGateway(optionsData.paymentGateway) : [];
+      newOptions.seo = optionsData.seo ? await this.saveSeoSettings(optionsData.seo) : null;
+      newOptions.server_info = optionsData.server_info ? await this.saveServerInfo(optionsData.server_info) : null;
+      newOptions.shippingClass = optionsData.shippingClass;
+      newOptions.signupPoints = optionsData.signupPoints;
+      newOptions.siteSubtitle = optionsData.siteSubtitle;
+      newOptions.siteTitle = optionsData.siteTitle;
+      newOptions.smsEvent = optionsData.smsEvent ? await this.saveSmsEvent(optionsData.smsEvent) : null;
+      newOptions.StripeCardOnly = optionsData.StripeCardOnly;
+      newOptions.taxClass = optionsData.taxClass;
+      newOptions.useAi = optionsData.useAi;
+      newOptions.useCashOnDelivery = optionsData.useCashOnDelivery;
+      newOptions.useEnableGateway = optionsData.useEnableGateway;
+      newOptions.useGoogleMap = optionsData.useGoogleMap;
+      newOptions.useMustVerifyEmail = optionsData.useMustVerifyEmail;
+      newOptions.useOtp = optionsData.useOtp;
+
+      const savedOptions = await this.settingsOptionsRepository.save(newOptions);
+
+      return savedOptions;
+    } catch (error) {
+      console.error('Error creating SettingsOptions:', error);
+      throw new InternalServerErrorException('Error creating SettingsOptions');
+    }
+  }
+
   async savePaymentGateway(paymentGateways: PaymentGateway[]): Promise<PaymentGateway[]> {
     try {
       const savedPaymentGateways: PaymentGateway[] = [];
       for (const gateway of paymentGateways) {
         if (gateway.id) {
-          await this.paymentGatewayRepository.update(gateway.id, gateway);
-          const updatedGateway = await this.paymentGatewayRepository.findOne({ where: { id: gateway.id } });
-          if (updatedGateway) savedPaymentGateways.push(updatedGateway);
+          const existingGateway = await this.paymentGatewayRepository.findOne({ where: { id: gateway.id } });
+          if (!existingGateway) {
+            console.warn(`PaymentGateway with id ${gateway.id} not found`);
+            continue;
+          }
+          Object.assign(existingGateway, gateway);
+          const updatedGateway = await this.paymentGatewayRepository.save(existingGateway);
+          savedPaymentGateways.push(updatedGateway);
         } else {
           const newGateway = this.paymentGatewayRepository.create(gateway);
           const savedGateway = await this.paymentGatewayRepository.save(newGateway);
@@ -195,22 +205,39 @@ export class SettingsService {
   }
 
   async saveContactDetails(contactDetailsData: Partial<ContactDetails>): Promise<ContactDetails> {
-    const contactDetailsToUpdate = await this.contactDetailRepository.findOne({ where: { id: contactDetailsData.id } });
+    try {
+      if (contactDetailsData.id) {
+        const contactDetailsToUpdate = await this.contactDetailRepository.findOne({ where: { id: contactDetailsData.id } });
 
-    if (!contactDetailsToUpdate) {
-      console.warn('ContactDetails not found');
-      return null;
+        console.log('contactDetailsToUpdate 212', contactDetailsToUpdate)
+        if (contactDetailsToUpdate) {
+          Object.assign(contactDetailsToUpdate, contactDetailsData);
+          return await this.contactDetailRepository.save(contactDetailsToUpdate);
+        } else {
+          console.warn('ContactDetails not found');
+          return null;
+        }
+      } else {
+        const newContactDetails = this.contactDetailRepository.create(contactDetailsData);
+        return await this.contactDetailRepository.save(newContactDetails);
+      }
+    } catch (error) {
+      console.error('Error saving ContactDetails:', error);
+      throw new InternalServerErrorException('Error saving ContactDetails');
     }
-
-    Object.assign(contactDetailsToUpdate, contactDetailsData);
-    return await this.contactDetailRepository.save(contactDetailsToUpdate);
   }
 
   async saveCurrencyOptions(currencyOptions: CurrencyOptions): Promise<CurrencyOptions> {
     try {
       if (currencyOptions.id) {
-        await this.currencyOptionRepository.update(currencyOptions.id, currencyOptions);
-        return await this.currencyOptionRepository.findOne({ where: { id: currencyOptions.id } });
+        const existingCurrencyOptions = await this.currencyOptionRepository.findOne({ where: { id: currencyOptions.id } });
+        if (existingCurrencyOptions) {
+          Object.assign(existingCurrencyOptions, currencyOptions);
+          return await this.currencyOptionRepository.save(existingCurrencyOptions);
+        } else {
+          console.warn(`CurrencyOptions with id ${currencyOptions.id} not found`);
+          return null;
+        }
       } else {
         const newCurrencyOptions = this.currencyOptionRepository.create(currencyOptions);
         return await this.currencyOptionRepository.save(newCurrencyOptions);
@@ -221,55 +248,74 @@ export class SettingsService {
     }
   }
 
-  async saveEmailEvent(emailEventData: Partial<EmailEvent>): Promise<EmailEvent> {
-    const emailEventToUpdate = await this.emailEventRepository.findOne({ where: { id: emailEventData.id } });
+  async saveEmailEvent(emailEventData: Partial<EmailEvent>): Promise<EmailEvent | null> {
+    try {
+      if (!emailEventData?.id) {
+        const newEmailEvent = this.emailEventRepository.create(emailEventData);
+        return await this.emailEventRepository.save(newEmailEvent);
+      }
 
-    if (!emailEventToUpdate) {
-      console.warn('EmailEvent not found');
-      return null;
+      const emailEventToUpdate = await this.emailEventRepository.findOne({ where: { id: emailEventData.id } });
+      if (!emailEventToUpdate) {
+        console.warn(`EmailEvent with id ${emailEventData.id} not found`);
+        return null;
+      }
+
+      // Update only the specified fields
+      const updatedEmailEvent = this.emailEventRepository.merge(emailEventToUpdate, emailEventData);
+
+      return await this.emailEventRepository.save(updatedEmailEvent);
+    } catch (error) {
+      console.error('Error saving EmailEvent:', error);
+      throw new InternalServerErrorException('Error saving EmailEvent');
     }
-
-
-    // Update the email event entity with the new data
-    Object.assign(emailEventToUpdate, emailEventData);
-
-    // Save the updated email event entity
-    return await this.emailEventRepository.save(emailEventToUpdate);
   }
+
+  // Implement other save helper methods similarly...
 
   async saveSmsEvent(smsEventData: Partial<SmsEvent>): Promise<SmsEvent> {
-    const smsEventToUpdate = await this.smsEventRepository.findOne({ where: { id: smsEventData.id } });
-
-    if (!smsEventToUpdate) {
-      console.warn('SmsEvent not found');
-      return null;
+    if (smsEventData.id) {
+      const smsEventToUpdate = await this.smsEventRepository.findOne({ where: { id: smsEventData.id } });
+      if (smsEventToUpdate) {
+        Object.assign(smsEventToUpdate, smsEventData);
+        return await this.smsEventRepository.save(smsEventToUpdate);
+      } else {
+        console.warn('SmsEvent not found');
+        return null;
+      }
+    } else {
+      const newSmsEvent = this.smsEventRepository.create(smsEventData);
+      return await this.smsEventRepository.save(newSmsEvent);
     }
-
-    Object.assign(smsEventToUpdate, smsEventData);
-    return await this.smsEventRepository.save(smsEventToUpdate);
   }
 
-
   async saveSeoSettings(seoSettingsData: Partial<SeoSettings>): Promise<SeoSettings> {
-    const seoSettingsToUpdate = await this.seoSettingsRepository.findOne({ where: { id: seoSettingsData.id } });
-
-    if (!seoSettingsToUpdate) {
-      console.warn('SeoSettings not found');
-      return null;
+    if (seoSettingsData.id) {
+      const seoSettingsToUpdate = await this.seoSettingsRepository.findOne({ where: { id: seoSettingsData.id } });
+      if (seoSettingsToUpdate) {
+        Object.assign(seoSettingsToUpdate, seoSettingsData);
+        return await this.seoSettingsRepository.save(seoSettingsToUpdate);
+      } else {
+        console.warn('SeoSettings not found');
+        return null;
+      }
+    } else {
+      const newSeoSettings = this.seoSettingsRepository.create(seoSettingsData);
+      return await this.seoSettingsRepository.save(newSeoSettings);
     }
-
-    // Update the SEO settings entity with the new data
-    Object.assign(seoSettingsToUpdate, seoSettingsData);
-
-    // Save the updated SEO settings entity
-    return await this.seoSettingsRepository.save(seoSettingsToUpdate);
   }
 
   async saveServerInfo(serverInfo: ServerInfo): Promise<ServerInfo> {
     try {
       if (serverInfo.id) {
-        await this.serverInfoRepository.update(serverInfo.id, serverInfo);
-        return await this.serverInfoRepository.findOne({ where: { id: serverInfo.id } });
+        const existingServerInfo = await this.serverInfoRepository.findOne({ where: { id: serverInfo.id } });
+        if (existingServerInfo) {
+          Object.assign(existingServerInfo, serverInfo);
+          return await this.serverInfoRepository.save(existingServerInfo);
+        } else {
+          console.warn(`ServerInfo with id ${serverInfo.id} not found`);
+          return null;
+        }
       } else {
         const newServerInfo = this.serverInfoRepository.create(serverInfo);
         return await this.serverInfoRepository.save(newServerInfo);
@@ -280,15 +326,21 @@ export class SettingsService {
     }
   }
 
-  async saveLogoSettings(logoSettings: LogoSettings): Promise<LogoSettings> {
+  async saveLogoSettings(logoSettings: LogoSettings): Promise<LogoSettings | null> {
     try {
-      if (logoSettings?.id) {
-        await this.logoSettingsRepository.update(logoSettings?.id, logoSettings);
-        return await this.logoSettingsRepository.findOne({ where: { id: logoSettings.id } });
-      } else {
-        const newLogoSettings = this.logoSettingsRepository.create(logoSettings);
-        return await this.logoSettingsRepository.save(newLogoSettings);
+      if (!logoSettings?.id) {
+        console.warn('Cannot update LogoSettings without ID');
+        return null; // Return null when ID is not provided
       }
+
+      const existingLogoSettings = await this.logoSettingsRepository.findOne({ where: { id: logoSettings.id } });
+      if (!existingLogoSettings) {
+        console.warn(`LogoSettings with id ${logoSettings.id} not found`);
+        return null; // Return null when LogoSettings with the provided ID is not found
+      }
+
+      Object.assign(existingLogoSettings, logoSettings);
+      return await this.logoSettingsRepository.save(existingLogoSettings);
     } catch (error) {
       console.error('Error saving LogoSettings:', error);
       throw new InternalServerErrorException('Error saving LogoSettings');
@@ -778,26 +830,40 @@ export class SettingsService {
 
   async remove(id: number) {
     try {
-      const setting = await this.settingRepository.findOne({ where: { id: id }, relations: ['options'] });
+      // Find the setting with the specified ID along with its options and shop
+      const setting = await this.settingRepository.findOneOrFail({
+        where: { id },
+        relations: ['options', 'shop'],
+      });
 
+      // If setting doesn't exist, throw NotFoundException
       if (!setting) {
         throw new NotFoundException(`Setting with ID ${id} not found`);
       }
 
+      // If setting has a shop associated, remove it
+      if (setting.shop) {
+        await this.shopRepository.remove(setting.shop);
+      }
+
+      // If setting has options associated, remove them
       if (setting.options) {
-        // Delete related entities
-        await this.deliveryTimeRepository.remove(setting.options.deliveryTime);
-        await this.paymentGatewayRepository.remove(setting.options.paymentGateway);
-        // Remove setting's options (will cascade delete related entities)
         await this.settingsOptionsRepository.remove(setting.options);
       }
 
-      // Finally, delete the setting
+      // Delete the setting itself
       await this.settingRepository.remove(setting);
 
       return `Deleted setting with ID ${id} successfully!`;
     } catch (error) {
-      throw new NotFoundException(error.message || 'Error deleting setting');
+      // If the error is EntityNotFoundError, return a custom error message
+      if (error instanceof EntityNotFoundError) {
+        throw new NotFoundException(`Setting with ID ${id} not found`);
+      } else {
+        // Otherwise, handle other errors and throw an InternalServerErrorException
+        console.error('Error deleting setting:', error);
+        throw new InternalServerErrorException('Failed to delete setting');
+      }
     }
   }
 

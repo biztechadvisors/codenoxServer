@@ -415,9 +415,9 @@ export class Setting extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => Shop, (shop) => shop.setting)
+  @OneToOne(() => Shop, { nullable: true })
   @JoinColumn()
-  shop: Shop;
+  shop: Shop | null;
 
   @ManyToOne(() => SettingsOptions)
   options: SettingsOptions;
