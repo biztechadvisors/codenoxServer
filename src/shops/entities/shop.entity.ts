@@ -77,10 +77,6 @@ export class Shop extends CoreEntity {
   @JoinColumn()
   settings?: ShopSettings;
 
-  @OneToOne(() => Setting, (setting) => setting.shop, { cascade: true })
-  @JoinColumn()
-  setting?: Setting;
-
   @Column()
   gst_number: string;
 
