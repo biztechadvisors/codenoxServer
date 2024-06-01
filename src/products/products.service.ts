@@ -151,7 +151,7 @@ export class ProductsService {
       product.language = createProductDto.language || 'en';
       product.translated_languages = createProductDto.translated_languages || ['en'];
 
-      if (createProductDto.taxes) {
+      if (createProductDto?.taxes) {
         const tax = await this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } });
         if (tax) {
           product.taxes = tax;
@@ -193,10 +193,10 @@ export class ProductsService {
         product.image = image;
       }
 
-      if (createProductDto.gallery?.length > 0 || undefined) {
+      if (createProductDto?.gallery?.length > 0 || undefined) {
         const galleryAttachments = [];
         for (const galleryImage of createProductDto.gallery) {
-          const image = await this.attachmentRepository.findOne(galleryImage.id);
+          const image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
           if (!image) {
             throw new NotFoundException(`Gallery image with ID ${galleryImage.id} not found`);
           }
@@ -205,7 +205,7 @@ export class ProductsService {
         product.gallery = galleryAttachments;
       }
 
-      if (createProductDto.variations) {
+      if (createProductDto?.variations) {
         const attributeValues: AttributeValue[] = [];
         for (const variation of createProductDto.variations) {
           const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
@@ -308,7 +308,7 @@ export class ProductsService {
     }
 
     if (shopId) {
-      productQueryBuilder.andWhere('product.shop_id = :shopId', { shopId });
+      productQueryBuilder.andWhere('shop.id = :shopId', { shopId });
     }
 
     if (shopName) {
@@ -316,31 +316,48 @@ export class ProductsService {
     }
 
     if (search) {
-      productQueryBuilder.andWhere(new Brackets(qb => {
-        const parseSearchParams = search.split(';');
-        parseSearchParams.forEach(searchParam => {
-          const [key, value] = searchParam.split(':');
-          if (key === 'name') {
-            qb.orWhere('product.name LIKE :name', { name: `%${value}%` });
-          } else if (key === 'category') {
-            const searchTerm = `%${value}%`;
-            qb.orWhere('categories.name LIKE :searchTerm OR categories.description LIKE :searchTerm', { searchTerm });
-          } else if (key === 'categories.slug') {
-            const categorySlugs = value.split(',');
-            qb.orWhere('categories.slug IN (:...categorySlugs)', { categorySlugs });
-          } else if (key === 'type.slug') {
-            qb.orWhere('type.slug LIKE :slug', { slug: `%${value}%` });
-          }
-          else if (key === 'tags.slug') {
-            qb.orWhere('tags.slug LIKE :slug', { slug: `%${value}%` });
-          }
-          else if (key === 'shop_id') {
-            qb.orWhere('shop.id = :shopId', { shopId: value });
-          } else {
-            qb.orWhere(`product.${key} LIKE :value`, { value: `%${value}%` });
-          }
+      const parseSearchParams = search.split(';');
+      const searchConditions = [];
+      let searchTerm;
+
+      parseSearchParams.forEach(searchParam => {
+        const [key, value] = searchParam.split(':');
+        searchTerm = `%${value}%`;
+
+        switch (key) {
+          case 'product':
+            searchConditions.push(`(product.name LIKE :productSearchTerm OR product.slug LIKE :productSearchTerm)`);
+            break;
+          case 'category':
+            searchConditions.push(`(categories.name LIKE :categorySearchTerm OR categories.slug LIKE :categorySearchTerm)`);
+            break;
+          case 'subCategories':
+            searchConditions.push(`(subCategories.name LIKE :subCategorySearchTerm OR subCategories.slug LIKE :subCategorySearchTerm)`);
+            break;
+          case 'type':
+            searchConditions.push(`(type.name LIKE :typeSearchTerm OR type.slug LIKE :typeSearchTerm)`);
+            break;
+          case 'tags':
+            searchConditions.push(`(tags.name LIKE :tagSearchTerm OR tags.slug LIKE :tagSearchTerm)`);
+            break;
+          case 'variations':
+            searchConditions.push(`(attributeValues.value LIKE :variationSearchTerm)`);
+            break;
+          default:
+            break;
+        }
+      });
+
+      if (searchConditions.length > 0) {
+        productQueryBuilder.andWhere(`(${searchConditions.join(' OR ')})`, {
+          productSearchTerm: searchTerm,
+          categorySearchTerm: searchTerm,
+          subCategorySearchTerm: searchTerm,
+          typeSearchTerm: searchTerm,
+          tagSearchTerm: searchTerm,
+          variationSearchTerm: searchTerm,
         });
-      }));
+      }
     }
 
     try {
@@ -353,47 +370,47 @@ export class ProductsService {
           relations: ['dealerProductMargins', 'dealerCategoryMargins']
         });
 
-        if (dealer) {
-          const marginFind = await this.dealerProductMarginRepository.find({
-            where: { dealer: { id: dealerId } },
-            relations: ['product']
-          });
-
-          marginFind.forEach(margin => {
-            const product = margin.product;
-            product.margin = margin.margin;
-            products.push(product);
-          });
-
-          const categoryMargins = await this.dealerCategoryMarginRepository.find({
-            where: { dealer: { id: dealerId } },
-            relations: ['category']
-          });
-
-          for (const categoryMargin of categoryMargins) {
-            const foundCategory = await this.categoryRepository.findOne({
-              where: { id: categoryMargin.category.id },
-              relations: ['products']
-            });
-
-            if (foundCategory && foundCategory.products) {
-              const categoryProducts = foundCategory.products.map(product => {
-                product.margin = categoryMargin.margin;
-                return product;
-              });
-              products.push(...categoryProducts);
-            }
-          }
-
-          // Remove duplicate products based on their IDs
-          products = products.filter(
-            (product, index, self) => index === self.findIndex(p => p.id === product.id)
-          );
-
-          total = products.length;
-        } else {
+        if (!dealer) {
           throw new NotFoundException(`Dealer not found with id: ${dealerId}`);
         }
+
+        const marginFind = await this.dealerProductMarginRepository.find({
+          where: { dealer: { id: dealerId } },
+          relations: ['product']
+        });
+
+        marginFind.forEach(margin => {
+          const product = margin.product;
+          product.margin = margin.margin;
+          products.push(product);
+        });
+
+        const categoryMargins = await this.dealerCategoryMarginRepository.find({
+          where: { dealer: { id: dealerId } },
+          relations: ['category']
+        });
+
+        for (const categoryMargin of categoryMargins) {
+          const foundCategory = await this.categoryRepository.findOne({
+            where: { id: categoryMargin.category.id },
+            relations: ['products']
+          });
+
+          if (foundCategory && foundCategory.products) {
+            const categoryProducts = foundCategory.products.map(product => {
+              product.margin = categoryMargin.margin;
+              return product;
+            });
+            products.push(...categoryProducts);
+          }
+        }
+
+        // Remove duplicate products based on their IDs
+        products = products.filter(
+          (product, index, self) => index === self.findIndex(p => p.id === product.id)
+        );
+
+        total = products.length;
       } else {
         total = await productQueryBuilder.getCount();
         productQueryBuilder.skip(startIndex).take(limit);

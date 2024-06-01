@@ -13,6 +13,7 @@ import { Category } from 'src/categories/entities/category.entity';
 import { CategoryRepository } from 'src/categories/categories.repository';
 // import {gstinValidator } from 'gstin-validator';
 import { stateCode } from './state_code.tax';
+import { Shop } from 'src/shops/entities/shop.entity';
 
 export enum GST_NAME {
   GOODS = 'goods',
@@ -30,13 +31,24 @@ export class TaxesService {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Category)
-    private readonly categoryRepository: CategoryRepository
+    private readonly categoryRepository: CategoryRepository,
+    @InjectRepository(Shop)
+    private readonly shopRepository: Repository<Shop>
   ) { }
 
   async create(createTaxDto: CreateTaxDto) {
     try {
       let gst: any
+      let shop: any
       const tax = new Tax()
+
+      if (createTaxDto.shop_id) {
+        shop = await this.shopRepository.findOne({ where: { id: createTaxDto.shop_id } })
+        if (!shop) {
+          throw new NotFoundException(`Shop with ID ${createTaxDto.shop_id} not found`);
+        }
+      }
+
       if (createTaxDto.rate) {
         gst = createTaxDto.rate / 2
       }
@@ -47,6 +59,7 @@ export class TaxesService {
       } else {
         tax.hsn_no = createTaxDto.hsn_no
       }
+      tax.shop = shop
       tax.cgst = gst ? gst : createTaxDto.cgst
       tax.sgst = gst ? gst : createTaxDto.sgst
       tax.gst_Name = createTaxDto.gst_Name
@@ -58,25 +71,19 @@ export class TaxesService {
     }
   }
 
-  async findAll() {
-    const existingData = await this.taxRepository.find();
-    return existingData;
-  }
-
-
-  async findOnePro(id: number, proId: number) {
+  async findAllByShopId(shopId: number): Promise<Tax[]> {
     try {
-      const existingTax = await this.taxRepository.findOne({ where: { id: id } });
-      if (existingTax) {
-        return existingTax
-      } else {
-        return { message: 'Cannot find TaxRate' }
-      }
-    } catch {
-      return 'Cannot Find Data Here'
+      const existingData = await this.taxRepository.find({
+        where: { shop: { id: shopId } },
+        relations: ['shop']
+      });
+
+      return existingData ? existingData : [];
+    } catch (error) {
+      console.error("Error retrieving tax data:", error);
+      throw new NotFoundException("Failed to retrieve tax data");
     }
   }
-
 
   async findOne(id: number) {
     try {
@@ -90,7 +97,6 @@ export class TaxesService {
       return 'Cannot Find Data Here'
     }
   }
-
 
   async update(id: number, updateTaxDto: UpdateTaxDto) {
     try {

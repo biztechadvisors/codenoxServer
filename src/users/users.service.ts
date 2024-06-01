@@ -162,8 +162,8 @@ export class UsersService {
       findOptions.order[orderBy] = sortedBy.toUpperCase();
     }
 
-    // Fetch user by ID and apply type-based filtering
     if (usrById) {
+      // Fetch user by ID and apply type-based filtering if provided
       const user = await this.userRepository.findOne({
         where: { id: Number(usrById) },
         relations: ['type', 'shops'],
@@ -173,59 +173,25 @@ export class UsersService {
         throw new NotFoundException(`User with ID ${usrById} not found`);
       }
 
-      findOptions.where.UsrBy = user.id;
+      findOptions.where.UsrBy = { id: user.id };
 
-      if (user.type.type_name === 'owner') {
-        // Fetch all users with type 'store_owner'
-        const storeOwnerPermission = await this.permissionRepository.findOne({
-          where: { type_name: 'store_owner' },
-        });
-
-        if (!storeOwnerPermission) {
-          throw new NotFoundException('Permission for type "store_owner" not found.');
+      if (type) {
+        const permission = await this.permissionRepository.findOne({ where: { type_name: type } });
+        if (!permission) {
+          throw new NotFoundException(`Permission for type "${type}" not found.`);
         }
-
-        const storeOwners = await this.userRepository.find({
-          where: { type: storeOwnerPermission }
-        });
-
-        const UsrByIds = storeOwners.flatMap(owner => owner.UsrBy);
-        if (UsrByIds.length > 0) {
-          findOptions.where.UsrBy = In(UsrByIds);
-        } else {
-          findOptions.where.shop_id = -1; // Set to a value that will not match any record
-        }
-      } else if (user.type.type_name === 'dealer') {
-        const dealerPermission = await this.permissionRepository.findOne({
-          where: { type_name: 'dealer' },
-        });
-
-        if (!dealerPermission) {
-          throw new NotFoundException('Permission for type "Dealer" not found.');
-        }
-        findOptions.where.type = dealerPermission;
-      } else {
-        findOptions.where.id = user.id; // General case for other user types
+        findOptions.where.type = permission;
       }
-    }
-
-    // Apply additional filtering by type
-    if (type) {
-      const permission = await this.permissionRepository.findOne({ where: { type_name: type } });
-      if (!permission) {
-        throw new NotFoundException(`Permission for type "${type}" not found.`);
-      }
-      findOptions.where.type = permission;
     }
 
     if (name) {
-      findOptions.where.name = Like(`%${name}%`); // Use Like for partial matching
+      findOptions.where.name = Like(`%${name}%`);
     }
 
     if (search) {
       const [searchKey, searchValue] = search.split(':');
       if (this.userRepository.metadata.columns.find(column => column.propertyName === searchKey)) {
-        findOptions.where[searchKey] = Like(`%${searchValue}%`); // Use Like for partial matching
+        findOptions.where[searchKey] = Like(`%${searchValue}%`);
       } else {
         throw new Error(`Invalid search key: ${searchKey}. Make sure it is a valid property of the User entity.`);
       }
@@ -239,6 +205,7 @@ export class UsersService {
       ...paginate(total, pageNum, limitNum, total, `/users?type=${type || 'customer'}&limit=${limitNum}`),
     };
   }
+
 
   async getUsersNotify({ limit }: GetUsersDto): Promise<User[]> {
     const data = await this.userRepository.find({

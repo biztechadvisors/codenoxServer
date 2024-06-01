@@ -107,6 +107,9 @@ export class LogoSettings {
 
   @Column()
   thumbnail: string;
+
+  @Column()
+  file_name: string;
 }
 
 @Entity()
@@ -413,6 +416,7 @@ export class Setting extends CoreEntity {
   id: number;
 
   @OneToOne(() => Shop, (shop) => shop.setting)
+  @JoinColumn()
   shop: Shop;
 
   @ManyToOne(() => SettingsOptions)

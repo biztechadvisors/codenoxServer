@@ -17,7 +17,7 @@ import {
 } from 'typeorm'
 import { Balance } from './balance.entity'
 import { ShopSettings } from './shopSettings.entity'
-import { Category } from 'src/categories/entities/category.entity'
+import { Category, SubCategory } from 'src/categories/entities/category.entity'
 import { Product } from 'src/products/entities/product.entity'
 import { Order } from 'src/orders/entities/order.entity'
 import { Setting } from 'src/settings/entities/setting.entity'
@@ -87,9 +87,13 @@ export class Shop extends CoreEntity {
   @OneToMany(() => Category, (category) => category.shop)
   category: Category[];
 
+  @OneToMany(() => SubCategory, subCategory => subCategory.shop)
+  subCategories: SubCategory[];
+
   @ManyToMany(() => Order, (order) => order.shop_id, { cascade: true, nullable: true })
   @JoinTable({ name: "shop_order" })
   order: Order[];
+
 }
 
 

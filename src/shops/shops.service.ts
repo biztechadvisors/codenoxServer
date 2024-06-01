@@ -385,6 +385,7 @@ export class ShopsService {
         },
         gst_number: existShop.gst_number, // Include the missing property
         category: existShop.category,
+        subCategories: existShop.subCategories,
         order: existShop.order
       };
 

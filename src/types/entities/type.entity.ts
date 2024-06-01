@@ -51,7 +51,7 @@ export class Type extends CoreEntity {
   @OneToMany(() => Banner, (banner) => banner.type, { cascade: true })
   banners?: Banner[];
 
-  @ManyToMany(() => Attachment)
+  @ManyToMany(() => Attachment, { cascade: true })
   @JoinTable({
     name: 'type_promotional_sliders',
     joinColumn: { name: 'typeId', referencedColumnName: 'id' },

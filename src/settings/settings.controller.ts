@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common'
 import { CreateSettingDto } from './dto/create-setting.dto'
 import { SettingsService } from './settings.service'
 import { UpdateSettingDto } from './dto/update-setting.dto'
@@ -11,9 +11,10 @@ export class SettingsController {
 
   @Post()
   create(
-    @Param('id') id: number,
+    @Query('shopId') shopId: number,
     @Body() createSettingDto: CreateSettingDto) {
-    return this.settingsService.create(id, createSettingDto)
+    console.log('shopId**', shopId)
+    return this.settingsService.create(shopId, createSettingDto)
   }
 
   @Get()
