@@ -346,8 +346,16 @@ export class ProductsService {
             searchParams.tagSearchTerm = searchTerm;
             break;
           case 'variations':
-            searchConditions.push(`(attributeValues.value LIKE :variationSearchTerm)`);
-            searchParams.variationSearchTerm = searchTerm;
+            // Handle key-value pairs for variations
+            const variationParams = value.split(','); // Assuming key-value pairs are comma-separated
+            variationParams.forEach(variationParam => {
+              const [attrKey, attrValue] = variationParam.split('=');
+              const variationSearchTerm = `%${attrValue}%`;
+              const paramKey = `variation_${attrKey}`;
+              searchConditions.push(`(attribute.name = :${paramKey}_name AND attributeValues.value LIKE :${paramKey}_value)`);
+              searchParams[`${paramKey}_name`] = attrKey;
+              searchParams[`${paramKey}_value`] = variationSearchTerm;
+            });
             break;
           default:
             break;
