@@ -9,10 +9,11 @@ import { AttachmentRepository } from 'src/common/common.repository';
 import { TypeRepository } from 'src/types/types.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Type } from 'src/types/entities/type.entity';
+import { Shop } from 'src/shops/entities/shop.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tag, Attachment, Type])],
+  imports: [TypeOrmModule.forFeature([Tag, Attachment, Type, Shop])],
   controllers: [TagsController],
   providers: [TagsService, TagRepository, AttachmentRepository, TypeRepository],
 })
-export class TagsModule {}
+export class TagsModule { }

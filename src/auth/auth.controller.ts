@@ -5,14 +5,9 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Post,
   Query,
-  Req,
-  Res,
-  UseGuards
 } from '@nestjs/common';
-import { AuthGuard } from './auth.guards';
 import { AuthService } from './auth.service';
 import {
   ChangePasswordDto,
@@ -28,18 +23,11 @@ import {
   VerifyForgetPasswordDto,
   VerifyOtpDto,
 } from './dto/create-auth.dto';
-import { JwtService } from '@nestjs/jwt';
-import { UpdateUserDto } from 'src/users/dto/update-user.dto';
-import { Request, Response } from 'express';
-import { IncomingMessage, request } from 'http';
-
 
 @Controller()
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    // private jwtService: JwtService
-
   ) { }
 
   @Post('register')

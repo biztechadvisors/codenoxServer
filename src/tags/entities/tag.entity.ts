@@ -23,7 +23,7 @@ export class Tag extends CoreEntity {
   @Column()
   details: string;
 
-  @OneToOne(() => Attachment)
+  @ManyToOne(() => Attachment)
   @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
   image: Attachment | null;
 
@@ -36,6 +36,10 @@ export class Tag extends CoreEntity {
   @ManyToMany(() => Product, (product) => product.tags, { cascade: true })
   @JoinTable({ name: 'product_tags' })
   products: Product[];
+
+  @ManyToOne(() => Shop, { cascade: true })
+  @JoinColumn()
+  shop?: Shop;
 
   @Column()
   language: string;
