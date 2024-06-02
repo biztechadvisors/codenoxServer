@@ -22,7 +22,6 @@ export class AnalyticsController {
     }
   }
 
-
   @Get()
   async getTopCustomers(@Query() query: { userId: string }) {
     try {

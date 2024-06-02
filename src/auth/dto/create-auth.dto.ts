@@ -10,7 +10,7 @@ import { User } from 'src/users/entities/user.entity';
 //   STAFF = 'Staff',
 //   CUSTOMER = 'Customer',
 // }
-export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type', 'UsrBy', 'contact']) {
+export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type', 'UsrBy', 'contact', 'dealerCount']) {
   permission: Permission
   isVerified: boolean;
 }

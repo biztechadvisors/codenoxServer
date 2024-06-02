@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { paginate } from 'src/common/pagination/paginate';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { GetTagsDto } from './dto/get-tags.dto';
@@ -15,6 +15,7 @@ import { Type } from 'src/types/entities/type.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { AttachmentRepository } from 'src/common/common.repository';
 import { TagRepository } from './tags.repository';
+import { Shop } from 'src/shops/entities/shop.entity';
 
 const tags = plainToClass(Tag, tagsJson)
 
@@ -30,48 +31,47 @@ export class TagsService {
     @InjectRepository(Tag) private tagRepository: TagRepository,
     @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
     @InjectRepository(Type) private typeRepository: TypeRepository,
+    @InjectRepository(Shop) private shopRepository: Repository<Shop>
   ) { }
 
-
-  private tags: Tag[] = tags;
-
   async create(createTagDto: CreateTagDto): Promise<Tag> {
-    const imageId = createTagDto.image.id;
-    const imageOptions: FindOneOptions<Attachment> = {
-      where: { id: imageId },
-    };
+    const { name, icon, details, language, translatedLanguages, shop, image, type_id } = createTagDto;
 
-    const image = await this.attachmentRepository.findOne(imageOptions);
-    if (!image) {
-      throw new Error(`Image with ID ${imageId} not found`);
+    const shopId = shop?.id; // Assuming shop is a field in the DTO
+    const shopRes = await this.shopRepository.findOne({ where: { id: shopId } });
+    if (!shop) {
+      throw new NotFoundException(`Shop with ID ${shopId} not found`);
     }
 
-    const typeId = createTagDto.type_id; // Changed from createTagDto.type.id to createTagDto.type_id
-    const typeOptions: FindOneOptions<Type> = {
-      where: { id: typeId },
-    };
+    const imageId = image?.id; // Assuming image is a field in the DTO
+    const imageRes = await this.attachmentRepository.findOne({ where: { id: imageId } });
+    if (!image) {
+      throw new NotFoundException(`Image with ID ${imageId} not found`);
+    }
 
-    const type = await this.typeRepository.findOne(typeOptions);
+    const typeId = type_id; // Assuming type_id is a field in the DTO
+    const type = await this.typeRepository.findOne(typeId);
     if (!type) {
-      throw new Error(`Type with ID ${typeId} not found`);
+      throw new NotFoundException(`Type with ID ${typeId} not found`);
     }
 
     const tag = new Tag();
-    tag.name = createTagDto.name;
-    tag.slug = createTagDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    tag.name = name;
+    tag.slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     tag.parent = createTagDto.parent;
-    tag.details = createTagDto.details;
-    tag.icon = createTagDto.icon;
+    tag.details = details;
+    tag.icon = icon;
     tag.type = type;
-    tag.language = createTagDto.language;
-    tag.translatedLanguages = createTagDto.translatedLanguages;
-    tag.image = image;
+    tag.language = language;
+    tag.translatedLanguages = translatedLanguages;
+    tag.image = imageRes;
+    tag.shop = shopRes;
 
     return await this.tagRepository.save(tag);
   }
 
   async findAll(query: GetTagsDto) {
-    let { limit = '10', page = '1', search } = query;
+    let { limit = '10', page = '1', search, shopSlug } = query;
 
     // Convert to numbers
     const numericPage = Number(page);
@@ -83,12 +83,25 @@ export class TagsService {
     }
 
     const skip = (numericPage - 1) * numericLimit;
-    const where: { [key: string]: any } = {};
+
+    let shop;
+    // Find shop by slug
+    if (shopSlug) {
+      shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+    }
+
+    if (!shop) {
+      throw new BadRequestException(`Shop with slug ${shopSlug} not found`);
+    }
+
+    const where: { [key: string]: any } = {
+      shop: shop.id,
+    };
 
     if (search) {
       const type = await this.typeRepository.findOne({ where: { slug: search } });
       if (type) {
-        where['type'] = ILike(`%${type.id}%`);
+        where['type'] = type.id;
       }
     }
 
@@ -108,14 +121,13 @@ export class TagsService {
       return { ...item, type_id: type_id };
     });
 
-    const url = `/tags?search=${search}&limit=${numericLimit}`;
+    const url = `/tags?search=${search}&limit=${numericLimit}&shopSlug=${shopSlug}`;
 
     return {
       data: formattedData,
       ...paginate(total, numericPage, numericLimit, formattedData.length, url),
     };
   }
-
 
   async findOne(param: string, language: string): Promise<Tag> {
     const isNumeric = !isNaN(parseFloat(param)) && isFinite(Number(param));

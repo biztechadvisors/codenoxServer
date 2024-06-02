@@ -78,11 +78,13 @@ export class FacebookSettings {
 @Entity()
 export class ShopSocials {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  icon: string
+  icon: string;
+
   @Column()
-  url: string
+  url: string;
 }
 
 @Entity()
@@ -292,7 +294,7 @@ export class ContactDetails {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToMany(() => ShopSocials)
+  @ManyToMany(() => ShopSocials, { cascade: true })
   @JoinTable()
   socials: ShopSocials[];
 
@@ -311,7 +313,7 @@ export class SettingsOptions extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => ContactDetails)
+  @ManyToOne(() => ContactDetails, { cascade: true })
   contactDetails: ContactDetails;
 
   @Column()
@@ -329,7 +331,7 @@ export class SettingsOptions extends CoreEntity {
   @Column()
   defaultPaymentGateway: string;
 
-  @ManyToMany(() => DeliveryTime)
+  @ManyToMany(() => DeliveryTime, { cascade: true })
   @JoinTable()
   deliveryTime: DeliveryTime[];
 
