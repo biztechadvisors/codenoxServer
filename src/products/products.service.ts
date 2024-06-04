@@ -280,7 +280,7 @@ export class ProductsService {
     }
   }
 
-  async getProducts({ limit = 20, page = 1, search, dealerId, shopId, shopName }: GetProductsDto): Promise<ProductPaginator> {
+  async getProducts({ limit = 20, page = 1, search, filter, dealerId, shopId, shopName }: GetProductsDto): Promise<ProductPaginator> {
     const startIndex = (page - 1) * limit;
     const productQueryBuilder = this.productRepository.createQueryBuilder('product');
 
@@ -315,8 +315,8 @@ export class ProductsService {
       productQueryBuilder.andWhere('shop.name = :shopName', { shopName });
     }
 
-    if (search) {
-      const parseSearchParams = search.split(';');
+    if (search || filter) {
+      const parseSearchParams = filter ? filter.split(';') : [];
       const searchConditions = [];
       const searchParams: any = {};
 
@@ -348,28 +348,41 @@ export class ProductsService {
           case 'variations':
             // Handle key-value pairs for variations
             const variationParams = value.split(','); // Assuming key-value pairs are comma-separated
-            variationParams.forEach(variationParam => {
-              const [attrKey, attrValue] = variationParam.split('=');
-              const variationSearchTerm = `%${attrValue}%`;
-              const paramKey = `variation_${attrKey}`;
-              searchConditions.push(`(attribute.name = :${paramKey}_name AND attributeValues.value LIKE :${paramKey}_value)`);
-              searchParams[`${paramKey}_name`] = attrKey;
-              searchParams[`${paramKey}_value`] = variationSearchTerm;
-            });
+            const variationSearchTerm = variationParams.map(param => param.split('=')[1]).join('/');
+            const paramName = `variation_title`;
+            searchConditions.push(`(variation_options.title LIKE :${paramName})`);
+            searchParams[paramName] = `%${variationSearchTerm}%`;
             break;
           default:
             break;
         }
       });
 
-      console.log('searchConditions', searchConditions);
-      console.log('searchParams', searchParams);
+      // Search filter query
+      if (search) {
+        const filterTerms = search.split(' ');
+        filterTerms.forEach(term => {
+          const searchTerm = `%${term}%`;
+          searchConditions.push(`(product.name LIKE :filterSearchTerm OR categories.name LIKE :filterSearchTerm OR subCategories.name LIKE :filterSearchTerm OR type.name LIKE :filterSearchTerm OR tags.name LIKE :filterSearchTerm OR variation_options.title LIKE :filterSearchTerm)`);
+          searchParams.filterSearchTerm = searchTerm;
+        });
+      }
 
       if (searchConditions.length > 0) {
-        productQueryBuilder.andWhere(`(${searchConditions.join(' OR ')})`, searchParams);
-      }
-    }
+        // Combine conditions using AND
+        const combinedConditions = searchConditions.join(' AND ');
 
+        productQueryBuilder
+          .leftJoinAndSelect('product.categories', 'categories1')
+          .leftJoinAndSelect('product.subCategories', 'subCategories1')
+          .leftJoinAndSelect('product.type', 'type1')
+          .leftJoinAndSelect('product.tags', 'tags1')
+          .leftJoinAndSelect('product.variation_options', 'variation_options1')
+          .where(combinedConditions, searchParams);
+      }
+
+
+    }
 
     try {
       let products: Product[] = [];

@@ -72,7 +72,7 @@ export class Type extends CoreEntity {
   @OneToMany(() => Category, (category) => category.type)
   categories?: Category[];
 
-  @ManyToOne(() => Shop)
+  @ManyToOne(() => Shop, { cascade: true })
   @JoinColumn()
   shop?: Shop;
 

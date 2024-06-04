@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import {
   AuthResponse,
   ChangePasswordDto,
@@ -170,7 +170,7 @@ export class AuthService {
 
         await this.userRepository.save(existingUser);
 
-        if (existingUser.type?.type_name === UserType.Customer) {
+        if (existingUser.type?.type_name === 'customer') {
           // Send confirmation email for customers
           await this.mailService.sendUserConfirmation(existingUser, token);
         }
@@ -197,8 +197,33 @@ export class AuthService {
       userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
       userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
 
+      if (createUserInput.UsrBy) {
+        const parentUsr = await this.userRepository.findOne({
+          where: { id: createUserInput.UsrBy.id },
+          relations: ['type'],
+        });
+
+        if (parentUsr?.type?.type_name === 'store_owner' || 'vendor') {
+          const existingDealerCount = await this.userRepository.createQueryBuilder('user')
+            .innerJoin('user.type', 'permission')
+            .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
+            .andWhere('permission.type_name = :type_name', { type_name: 'dealer' })
+            .getCount();
+
+          if (existingDealerCount >= (parentUsr.dealerCount || 0)) {
+            throw new BadRequestException('Cannot add more users, dealerCount limit reached.');
+          }
+        }
+      }
+
       if (permission) {
         userData.type = permission;
+
+        // Set dealerCount only if the user is of type store_owner
+        if (permission.type_name === 'store_owner' || 'vendor') {
+          userData.dealerCount = createUserInput.dealerCount || 0;
+        }
+
         const token = Math.floor(100 + Math.random() * 900).toString();
         // Send confirmation email for users with permission
         await this.mailService.sendUserConfirmation(userData, token);
@@ -217,7 +242,7 @@ export class AuthService {
       return { message: 'Registered successfully. OTP sent to your email.' };
     } catch (error) {
       console.error('Registration error:', error);
-      throw new Error('Registration failed. Please try again.');
+      throw error; // Throw the original error
     }
   }
 
@@ -708,17 +733,64 @@ export class AuthService {
   }
 
   async updateUser(id: number, updateUserInput: any): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({ where: { id }, relations: ['type', 'UsrBy'] });
 
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // Update user properties with the values from updateUserInput
+    // Handle password update
+    if (updateUserInput.password) {
+      updateUserInput.password = await bcrypt.hash(updateUserInput.password, 12);
+    }
+
+    // Handle UsrBy validation if present
+    if (updateUserInput.UsrBy) {
+      const parentUsr = await this.userRepository.findOne({
+        where: { id: updateUserInput.UsrBy },
+        relations: ['type'],
+      });
+
+      if (parentUsr?.type?.type_name === 'store_owner') {
+        const existingDealerCount = await this.userRepository.createQueryBuilder('user')
+          .innerJoin('user.type', 'permission')
+          .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
+          .andWhere('permission.type_name = :type_name', { type_name: 'dealer' })
+          .getCount();
+
+        if (existingDealerCount >= (parentUsr.dealerCount || 0)) {
+          throw new BadRequestException('Cannot add more users, dealerCount limit reached.');
+        }
+      }
+
+      user.UsrBy = parentUsr;
+    }
+
+    // Handle type change if present
+    if (updateUserInput.type) {
+      const permission = await this.permissionRepository.findOne({
+        where: { permission_name: ILike(updateUserInput.type) as unknown as FindOperator<string> },
+      });
+
+      if (permission) {
+        user.type = permission;
+
+        // Set dealerCount only if the user is of type store_owner
+        if (permission.type_name === 'store_owner') {
+          user.dealerCount = updateUserInput.dealerCount || 0;
+        } else {
+          user.dealerCount = null; // Reset dealerCount if type changes to something else
+        }
+      }
+    }
+
+    // Update other user properties
     Object.assign(user, updateUserInput);
 
     // Save the updated user entity back to the database
     return this.userRepository.save(user);
   }
+
+
 
 }

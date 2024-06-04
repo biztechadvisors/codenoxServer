@@ -29,6 +29,7 @@ export class GetProductsDto extends PaginationArgs {
   sortedBy?: string;
   searchJoin?: string;
   search?: string;
+  filter?: string;
   date_range?: string;
   language?: string;
   with: string;

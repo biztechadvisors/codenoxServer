@@ -17,9 +17,9 @@ export class SettingsController {
     return this.settingsService.create(shopId, createSettingDto)
   }
 
-  @Get()
-  findAll() {
-    return this.settingsService.findAll()
+  @Get('/:shop_slug')
+  findAll(@Param('shop_slug') shop_slug: string) {
+    return this.settingsService.findAll(shop_slug)
   }
 
   @Put('/:id')

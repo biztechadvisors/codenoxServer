@@ -10,14 +10,16 @@ export class TagPaginator extends Paginator<Tag> {
 }
 
 export class GetTagsDto extends PaginationArgs {
-  orderBy?: QueryTagsOrderByColumn
-  sortedBy?: SortOrder
-  text?: string
-  name?: string
-  hasType?: string
-  language?: string
-  search?: string
+  orderBy?: QueryTagsOrderByColumn;
+  sortedBy?: SortOrder;
+  text?: string;
+  name?: string;
+  shopSlug?: string;
+  hasType?: string;
+  language?: string;
+  search?: string;
 }
+
 
 export enum QueryTagsOrderByColumn {
   CREATED_AT = 'CREATED_AT',

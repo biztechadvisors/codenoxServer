@@ -46,7 +46,8 @@ import {
 import { LocationRepository, ShopSocialsRepository } from 'src/shops/shops.repository'
 import { AttachmentRepository } from 'src/common/common.repository'
 import { Shop } from 'src/shops/entities/shop.entity'
-import { EntityNotFoundError, Repository } from 'typeorm'
+import { EntityNotFoundError, Repository, UpdateValuesMissingError } from 'typeorm'
+import { Attachment } from 'src/common/entities/attachment.entity'
 
 
 
@@ -108,24 +109,22 @@ export class SettingsService {
         throw new NotFoundException('Shop not found');
       }
 
-      const existingSettings = await this.settingRepository.findOne({ where: { shop: { id: shopId }, language: createSettingDto.language } });
+      const existingSettings = await this.settingRepository.findOne({
+        where: { shop: { id: shopId }, language: createSettingDto.language },
+      });
       if (existingSettings) {
         return { message: 'Settings for this shop and language already exist' };
       }
 
       const newSettings = new Setting();
-      newSettings.created_at = new Date();
       newSettings.language = createSettingDto.language;
       newSettings.translated_languages = createSettingDto.translated_languages;
-      newSettings.updated_at = new Date();
       newSettings.shop = shop;
 
       const newOptions = await this.createSettingsOptions(createSettingDto.options);
-
       newSettings.options = newOptions;
 
-      const savedSetting = await this.settingRepository.save(newSettings);
-      return savedSetting;
+      return await this.settingRepository.save(newSettings);
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException('An error occurred while creating settings');
@@ -136,220 +135,216 @@ export class SettingsService {
     try {
       const newOptions = new SettingsOptions();
 
-      newOptions.contactDetails = optionsData.contactDetails ? await this.saveContactDetails(optionsData.contactDetails) : null;
-      newOptions.currency = optionsData.currency;
-      newOptions.currencyOptions = optionsData.currencyOptions ? await this.saveCurrencyOptions(optionsData.currencyOptions) : null;
-      newOptions.currencyToWalletRatio = optionsData.currencyToWalletRatio;
-      newOptions.defaultAi = optionsData.defaultAi;
-      newOptions.defaultPaymentGateway = optionsData.defaultPaymentGateway;
-      newOptions.deliveryTime = optionsData.deliveryTime;
-      newOptions.emailEvent = optionsData.emailEvent ? await this.saveEmailEvent(optionsData.emailEvent) : null;
-      newOptions.freeShipping = optionsData.freeShipping;
-      newOptions.freeShippingAmount = optionsData.freeShippingAmount;
-      newOptions.guestCheckout = optionsData.guestCheckout;
-      newOptions.isProductReview = optionsData.isProductReview;
-      newOptions.logo = optionsData.logo ? await this.saveLogoSettings(optionsData.logo) : null;
-      newOptions.maximumQuestionLimit = optionsData.maximumQuestionLimit;
+      // Handle deliveryTime
+      if (optionsData.deliveryTime) {
+        const savedDeliveryTimes = await Promise.all(optionsData.deliveryTime.map(async time => {
+          const deliveryTime = new DeliveryTime();
+          deliveryTime.title = time.title;
+          deliveryTime.description = time.description;
+          return this.deliveryTimeRepository.save(deliveryTime);
+        }));
+
+        newOptions.deliveryTime = savedDeliveryTimes;
+      }
+
       newOptions.maxShopDistance = optionsData.maxShopDistance;
       newOptions.minimumOrderAmount = optionsData.minimumOrderAmount;
-      newOptions.paymentGateway = optionsData.paymentGateway ? await this.savePaymentGateway(optionsData.paymentGateway) : [];
-      newOptions.seo = optionsData.seo ? await this.saveSeoSettings(optionsData.seo) : null;
-      newOptions.server_info = optionsData.server_info ? await this.saveServerInfo(optionsData.server_info) : null;
-      newOptions.shippingClass = optionsData.shippingClass;
-      newOptions.signupPoints = optionsData.signupPoints;
-      newOptions.siteSubtitle = optionsData.siteSubtitle;
+      newOptions.maximumQuestionLimit = optionsData.maximumQuestionLimit;
+      newOptions.currency = optionsData.currency;
       newOptions.siteTitle = optionsData.siteTitle;
-      newOptions.smsEvent = optionsData.smsEvent ? await this.saveSmsEvent(optionsData.smsEvent) : null;
-      newOptions.StripeCardOnly = optionsData.StripeCardOnly;
-      newOptions.taxClass = optionsData.taxClass;
-      newOptions.useAi = optionsData.useAi;
-      newOptions.useCashOnDelivery = optionsData.useCashOnDelivery;
+      newOptions.siteSubtitle = optionsData.siteSubtitle;
+      newOptions.currencyToWalletRatio = optionsData.currencyToWalletRatio;
+      newOptions.signupPoints = optionsData.signupPoints;
+      newOptions.freeShippingAmount = optionsData.freeShippingAmount;
       newOptions.useEnableGateway = optionsData.useEnableGateway;
-      newOptions.useGoogleMap = optionsData.useGoogleMap;
-      newOptions.useMustVerifyEmail = optionsData.useMustVerifyEmail;
       newOptions.useOtp = optionsData.useOtp;
+      newOptions.useMustVerifyEmail = optionsData.useMustVerifyEmail;
+      newOptions.defaultAi = optionsData.defaultAi;
+      newOptions.guestCheckout = optionsData.guestCheckout;
+      newOptions.useCashOnDelivery = optionsData.useCashOnDelivery;
 
+      // Set currency options
+      if (optionsData.currencyOptions) {
+        const currencyOptions = new CurrencyOptions();
+        currencyOptions.formation = optionsData.currencyOptions.formation;
+        currencyOptions.fractions = optionsData.currencyOptions.fractions;
+        newOptions.currencyOptions = await this.currencyOptionRepository.save(currencyOptions);
+      }
+
+      // Set SEO settings
+      if (optionsData.seo) {
+        const seoSettings = new SeoSettings();
+        seoSettings.metaTitle = optionsData.seo.metaTitle;
+        seoSettings.metaDescription = optionsData.seo.metaDescription;
+        seoSettings.ogTitle = optionsData.seo.ogTitle;
+        seoSettings.ogDescription = optionsData.seo.ogDescription;
+        seoSettings.twitterHandle = optionsData.seo.twitterHandle;
+        seoSettings.twitterCardType = optionsData.seo.twitterCardType;
+        seoSettings.metaTags = optionsData.seo.metaTags;
+        seoSettings.canonicalUrl = optionsData.seo.canonicalUrl;
+        seoSettings.ogImage = optionsData.seo?.ogImage
+          ? await this.attachmentRepository.findOne({ where: { id: optionsData.seo.ogImage.id } })
+          : null;
+        newOptions.seo = await this.seoSettingsRepository.save(seoSettings);
+      }
+
+      // Set contact details
+      if (optionsData.contactDetails) {
+        const contactDetails = new ContactDetails();
+        contactDetails.contact = optionsData.contactDetails.contact;
+        contactDetails.website = optionsData.contactDetails.website;
+
+        const location = new Location;
+        location.city = optionsData.contactDetails.location?.city
+        location.country = optionsData.contactDetails.location?.country
+        location.formattedAddress = optionsData.contactDetails.location?.formattedAddress
+        location.lat = optionsData.contactDetails.location?.lat
+        location.lng = optionsData.contactDetails.location?.lng
+        location.state = optionsData.contactDetails.location?.state
+        location.zip = optionsData.contactDetails.location?.zip
+
+        contactDetails.location = await this.locationRepository.save(location);
+
+        // Log contactDetails before saving socials
+        console.log('contactDetails before saving socials:', JSON.stringify(contactDetails, null, 2));
+
+        if (optionsData.contactDetails.socials) {
+          const savedSocials = await Promise.all(optionsData.contactDetails.socials.map(async social => {
+            const shopSocial = new ShopSocials();
+            shopSocial.icon = social.icon;
+            shopSocial.url = social.url;
+            const savedSocial = await this.shopSocialRepository.save(shopSocial);
+            console.log('Saved social:', JSON.stringify(savedSocial, null, 2));
+            return savedSocial;
+          }));
+
+          contactDetails.socials = savedSocials;
+        } else {
+          contactDetails.socials = [];
+        }
+
+        // Log contactDetails before final save
+        console.log('contactDetails before final save:', JSON.stringify(contactDetails, null, 2));
+
+        // Save contact details
+        const savedContactDetails = await this.contactDetailRepository.save(contactDetails);
+        console.log('Saved contactDetails:', JSON.stringify(savedContactDetails, null, 2));
+        newOptions.contactDetails = savedContactDetails;
+      }
+
+      // Set SMS event
+      if (optionsData.smsEvent) {
+        const smsEvent = new SmsEvent();
+
+        if (optionsData.smsEvent.admin) {
+          const admin = new SmsAdmin();
+          admin.paymentOrder = optionsData.smsEvent.admin?.paymentOrder ? true : false;
+          admin.refundOrder = optionsData.smsEvent.admin?.refundOrder ? true : false;
+          admin.statusChangeOrder = optionsData.smsEvent.admin?.statusChangeOrder ? true : false;
+
+          smsEvent.admin = await this.smsAdminRepository.save(admin);
+        }
+
+        if (optionsData.smsEvent.vendor) {
+          const vendor = new SmsVendor();
+          vendor.paymentOrder = optionsData.smsEvent.vendor?.paymentOrder ? true : false;
+          vendor.refundOrder = optionsData.smsEvent.vendor?.refundOrder ? true : false;
+          vendor.statusChangeOrder = optionsData.smsEvent.vendor?.statusChangeOrder ? true : false;
+
+          smsEvent.vendor = await this.smsVendorRepository.save(vendor);
+        }
+
+        if (optionsData.smsEvent.customer) {
+          const customer = new SmsCustomer();
+          customer.paymentOrder = optionsData.smsEvent.customer?.paymentOrder ? true : false;
+          customer.refundOrder = optionsData.smsEvent.customer?.refundOrder ? true : false;
+          customer.statusChangeOrder = optionsData.smsEvent.customer?.statusChangeOrder ? true : false;
+
+          smsEvent.customer = await this.smsCustomerRepository.save(customer);
+        }
+
+        newOptions.smsEvent = await this.smsEventRepository.save(smsEvent);
+      }
+
+      // Set email event
+      if (optionsData.emailEvent) {
+        const emailEvent = new EmailEvent();
+        if (optionsData.emailEvent.admin) {
+          const admin = new EmailAdmin();
+          admin.paymentOrder = optionsData.emailEvent.admin?.paymentOrder ? true : false;
+          admin.refundOrder = optionsData.emailEvent.admin?.refundOrder ? true : false;
+          admin.statusChangeOrder = optionsData.emailEvent.admin?.statusChangeOrder ? true : false;
+
+          emailEvent.admin = await this.emailAdminRepository.save(admin);
+        }
+
+        if (optionsData.emailEvent.vendor) {
+          const vendor = new EmailVendor();
+          vendor.paymentOrder = optionsData.emailEvent.vendor?.paymentOrder ? true : false;
+          vendor.refundOrder = optionsData.emailEvent.vendor?.refundOrder ? true : false;
+          vendor.statusChangeOrder = optionsData.emailEvent.vendor?.statusChangeOrder ? true : false;
+          vendor.createReview = optionsData.emailEvent.vendor?.createReview ? true : false;
+          vendor.createQuestion = optionsData.emailEvent.vendor?.createQuestion ? true : false;
+
+          emailEvent.vendor = await this.emailVendorRepository.save(vendor);
+        }
+
+        if (optionsData.emailEvent.customer) {
+          const customer = new EmailCustomer();
+          customer.paymentOrder = optionsData.emailEvent.customer?.paymentOrder ? true : false;
+          customer.refundOrder = optionsData.emailEvent.customer?.refundOrder ? true : false;
+          customer.statusChangeOrder = optionsData.emailEvent.customer?.statusChangeOrder ? true : false;
+          customer.answerQuestion = optionsData.emailEvent.customer?.answerQuestion ? true : false;
+
+          emailEvent.customer = await this.emailCustomerRepository.save(customer);
+        }
+
+        newOptions.emailEvent = await this.emailEventRepository.save(emailEvent);
+      }
+
+      // Set payment gateways
+      if (optionsData.paymentGateway) {
+        const paymentGatewayPromises = optionsData.paymentGateway.map(gateway => {
+          const paymentGateway = new PaymentGateway();
+          paymentGateway.name = gateway.name;
+          paymentGateway.title = gateway.title;
+          return this.paymentGatewayRepository.save(paymentGateway);
+        });
+        newOptions.paymentGateway = await Promise.all(paymentGatewayPromises);
+      }
+
+      // Set logo
+      if (optionsData.logo) {
+        const logo = new LogoSettings();
+        logo.file_name = optionsData.logo.file_name;
+        logo.original = optionsData.logo.original;
+        logo.thumbnail = optionsData.logo.thumbnail;
+
+        newOptions.logo = await this.logoSettingsRepository.save(logo);
+      }
+
+      // Save newOptions
       const savedOptions = await this.settingsOptionsRepository.save(newOptions);
 
+      // Return saved SettingsOptions entity
       return savedOptions;
     } catch (error) {
+      if (error instanceof UpdateValuesMissingError) {
+        console.error('Error: Update values are missing.', error);
+        throw new BadRequestException('Cannot perform update because update values are missing.');
+      }
       console.error('Error creating SettingsOptions:', error);
       throw new InternalServerErrorException('Error creating SettingsOptions');
     }
   }
 
-  async savePaymentGateway(paymentGateways: PaymentGateway[]): Promise<PaymentGateway[]> {
-    try {
-      const savedPaymentGateways: PaymentGateway[] = [];
-      for (const gateway of paymentGateways) {
-        if (gateway.id) {
-          const existingGateway = await this.paymentGatewayRepository.findOne({ where: { id: gateway.id } });
-          if (!existingGateway) {
-            console.warn(`PaymentGateway with id ${gateway.id} not found`);
-            continue;
-          }
-          Object.assign(existingGateway, gateway);
-          const updatedGateway = await this.paymentGatewayRepository.save(existingGateway);
-          savedPaymentGateways.push(updatedGateway);
-        } else {
-          const newGateway = this.paymentGatewayRepository.create(gateway);
-          const savedGateway = await this.paymentGatewayRepository.save(newGateway);
-          savedPaymentGateways.push(savedGateway);
-        }
-      }
-      return savedPaymentGateways;
-    } catch (error) {
-      console.error('Error saving PaymentGateway:', error);
-      throw new InternalServerErrorException('Error saving PaymentGateway');
-    }
-  }
 
-  async saveContactDetails(contactDetailsData: Partial<ContactDetails>): Promise<ContactDetails> {
-    try {
-      if (contactDetailsData.id) {
-        const contactDetailsToUpdate = await this.contactDetailRepository.findOne({ where: { id: contactDetailsData.id } });
+  async findAll(shop_slug: string): Promise<Setting[] | null> {
 
-        console.log('contactDetailsToUpdate 212', contactDetailsToUpdate)
-        if (contactDetailsToUpdate) {
-          Object.assign(contactDetailsToUpdate, contactDetailsData);
-          return await this.contactDetailRepository.save(contactDetailsToUpdate);
-        } else {
-          console.warn('ContactDetails not found');
-          return null;
-        }
-      } else {
-        const newContactDetails = this.contactDetailRepository.create(contactDetailsData);
-        return await this.contactDetailRepository.save(newContactDetails);
-      }
-    } catch (error) {
-      console.error('Error saving ContactDetails:', error);
-      throw new InternalServerErrorException('Error saving ContactDetails');
-    }
-  }
+    const shop = await this.shopRepository.findOne({ where: { slug: shop_slug } })
 
-  async saveCurrencyOptions(currencyOptions: CurrencyOptions): Promise<CurrencyOptions> {
-    try {
-      if (currencyOptions.id) {
-        const existingCurrencyOptions = await this.currencyOptionRepository.findOne({ where: { id: currencyOptions.id } });
-        if (existingCurrencyOptions) {
-          Object.assign(existingCurrencyOptions, currencyOptions);
-          return await this.currencyOptionRepository.save(existingCurrencyOptions);
-        } else {
-          console.warn(`CurrencyOptions with id ${currencyOptions.id} not found`);
-          return null;
-        }
-      } else {
-        const newCurrencyOptions = this.currencyOptionRepository.create(currencyOptions);
-        return await this.currencyOptionRepository.save(newCurrencyOptions);
-      }
-    } catch (error) {
-      console.error('Error saving CurrencyOptions:', error);
-      throw new InternalServerErrorException('Error saving CurrencyOptions');
-    }
-  }
-
-  async saveEmailEvent(emailEventData: Partial<EmailEvent>): Promise<EmailEvent | null> {
-    try {
-      if (!emailEventData?.id) {
-        const newEmailEvent = this.emailEventRepository.create(emailEventData);
-        return await this.emailEventRepository.save(newEmailEvent);
-      }
-
-      const emailEventToUpdate = await this.emailEventRepository.findOne({ where: { id: emailEventData.id } });
-      if (!emailEventToUpdate) {
-        console.warn(`EmailEvent with id ${emailEventData.id} not found`);
-        return null;
-      }
-
-      // Update only the specified fields
-      const updatedEmailEvent = this.emailEventRepository.merge(emailEventToUpdate, emailEventData);
-
-      return await this.emailEventRepository.save(updatedEmailEvent);
-    } catch (error) {
-      console.error('Error saving EmailEvent:', error);
-      throw new InternalServerErrorException('Error saving EmailEvent');
-    }
-  }
-
-  // Implement other save helper methods similarly...
-
-  async saveSmsEvent(smsEventData: Partial<SmsEvent>): Promise<SmsEvent> {
-    if (smsEventData.id) {
-      const smsEventToUpdate = await this.smsEventRepository.findOne({ where: { id: smsEventData.id } });
-      if (smsEventToUpdate) {
-        Object.assign(smsEventToUpdate, smsEventData);
-        return await this.smsEventRepository.save(smsEventToUpdate);
-      } else {
-        console.warn('SmsEvent not found');
-        return null;
-      }
-    } else {
-      const newSmsEvent = this.smsEventRepository.create(smsEventData);
-      return await this.smsEventRepository.save(newSmsEvent);
-    }
-  }
-
-  async saveSeoSettings(seoSettingsData: Partial<SeoSettings>): Promise<SeoSettings> {
-    if (seoSettingsData.id) {
-      const seoSettingsToUpdate = await this.seoSettingsRepository.findOne({ where: { id: seoSettingsData.id } });
-      if (seoSettingsToUpdate) {
-        Object.assign(seoSettingsToUpdate, seoSettingsData);
-        return await this.seoSettingsRepository.save(seoSettingsToUpdate);
-      } else {
-        console.warn('SeoSettings not found');
-        return null;
-      }
-    } else {
-      const newSeoSettings = this.seoSettingsRepository.create(seoSettingsData);
-      return await this.seoSettingsRepository.save(newSeoSettings);
-    }
-  }
-
-  async saveServerInfo(serverInfo: ServerInfo): Promise<ServerInfo> {
-    try {
-      if (serverInfo.id) {
-        const existingServerInfo = await this.serverInfoRepository.findOne({ where: { id: serverInfo.id } });
-        if (existingServerInfo) {
-          Object.assign(existingServerInfo, serverInfo);
-          return await this.serverInfoRepository.save(existingServerInfo);
-        } else {
-          console.warn(`ServerInfo with id ${serverInfo.id} not found`);
-          return null;
-        }
-      } else {
-        const newServerInfo = this.serverInfoRepository.create(serverInfo);
-        return await this.serverInfoRepository.save(newServerInfo);
-      }
-    } catch (error) {
-      console.error('Error saving ServerInfo:', error);
-      throw new InternalServerErrorException('Error saving ServerInfo');
-    }
-  }
-
-  async saveLogoSettings(logoSettings: LogoSettings): Promise<LogoSettings | null> {
-    try {
-      if (!logoSettings?.id) {
-        console.warn('Cannot update LogoSettings without ID');
-        return null; // Return null when ID is not provided
-      }
-
-      const existingLogoSettings = await this.logoSettingsRepository.findOne({ where: { id: logoSettings.id } });
-      if (!existingLogoSettings) {
-        console.warn(`LogoSettings with id ${logoSettings.id} not found`);
-        return null; // Return null when LogoSettings with the provided ID is not found
-      }
-
-      Object.assign(existingLogoSettings, logoSettings);
-      return await this.logoSettingsRepository.save(existingLogoSettings);
-    } catch (error) {
-      console.error('Error saving LogoSettings:', error);
-      throw new InternalServerErrorException('Error saving LogoSettings');
-    }
-  }
-
-
-  async findAll(): Promise<Setting[] | null> {
     const settingData = await this.settingRepository.find({
+      where: { shop: { id: shop.id } },
       relations: [
         'options.contactDetails',
         'options.contactDetails.socials',
@@ -831,24 +826,39 @@ export class SettingsService {
   async remove(id: number) {
     try {
       // Find the setting with the specified ID along with its options and shop
-      const setting = await this.settingRepository.findOneOrFail({
+      const setting = await this.settingRepository.findOne({
         where: { id },
-        relations: ['options', 'shop'],
+        relations: ['shop', 'options'],
       });
 
-      // If setting doesn't exist, throw NotFoundException
       if (!setting) {
-        throw new NotFoundException(`Setting with ID ${id} not found`);
+        throw new InternalServerErrorException('Setting not found');
       }
 
-      // If setting has a shop associated, remove it
-      if (setting.shop) {
-        await this.shopRepository.remove(setting.shop);
-      }
 
       // If setting has options associated, remove them
       if (setting.options) {
-        await this.settingsOptionsRepository.remove(setting.options);
+        const settingsOptions = await this.settingsOptionsRepository.findOne({
+          where: { id: setting.options.id },
+          relations: [
+            'contactDetails',
+            'currencyOptions',
+            'deliveryTime',
+            'emailEvent',
+            'logo',
+            'paymentGateway',
+            'seo',
+            'server_info',
+            'smsEvent',
+          ],
+        });
+
+        if (!settingsOptions) {
+          throw new InternalServerErrorException('SettingsOptions not found');
+        }
+
+        // Delete the SettingsOptions entity
+        await this.settingsOptionsRepository.remove(settingsOptions);
       }
 
       // Delete the setting itself

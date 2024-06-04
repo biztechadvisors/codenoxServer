@@ -52,6 +52,9 @@ export class User extends CoreEntity {
   @JoinColumn()
   dealer?: Dealer;
 
+  @Column({ nullable: true })
+  dealerCount?: number;
+
   @ManyToOne(() => User, user => user)
   UsrBy?: User;
 
@@ -67,8 +70,8 @@ export class User extends CoreEntity {
   @ManyToOne(() => Shop, shop => shop.staffs)
   managed_shop?: Shop;
 
-  @Column()
-  is_active?: boolean = true;
+  @Column({ default: true })
+  is_active?: boolean;
 
   @OneToMany(() => Address, address => address.customer, { cascade: true })
   address?: Address[];

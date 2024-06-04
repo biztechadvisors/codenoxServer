@@ -3,6 +3,7 @@ import { PickType } from '@nestjs/swagger';
 import { Tag } from '../entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
+import { Shop } from 'src/shops/entities/shop.entity';
 
 export class CreateTagDto extends PickType(Tag, [
   'name',
@@ -13,10 +14,10 @@ export class CreateTagDto extends PickType(Tag, [
   'type',
   'language',
   'translatedLanguages',
-  // 'shop',
+  'shop',
 ]) {
   [x: string]: any;
   type: Type;
-  // shop_id: number;
+  shop?: Shop;
   image: Attachment;
 }
