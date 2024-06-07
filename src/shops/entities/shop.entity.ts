@@ -61,11 +61,11 @@ export class Shop extends CoreEntity {
   @Column()
   description?: string;
 
-  @ManyToOne(() => Attachment, { cascade: true })
+  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn()
   cover_image: Attachment;
 
-  @ManyToOne(() => Attachment, { cascade: true })
+  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn()
   logo?: Attachment;
 

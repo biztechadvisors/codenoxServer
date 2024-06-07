@@ -32,7 +32,7 @@ export class Review extends CoreEntity {
   // @JoinColumn()
   // customer: User;
 
-  @ManyToMany(() => Attachment)
+  @ManyToMany(() => Attachment, { cascade: true, eager: true })
   @JoinTable()
   photos: Attachment[];
 

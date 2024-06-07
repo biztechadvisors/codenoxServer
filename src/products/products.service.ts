@@ -1,7 +1,5 @@
 /* eslint-disable prettier/prettier */
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
-import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto, UpdateQuantityDto } from './dto/update-product.dto';
 import { File, OrderProductPivot, Product, ProductType, Variation, VariationOption } from './entities/product.entity';
@@ -24,26 +22,9 @@ import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from 'src/users/entities/dealer.entity';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, UserRepository } from 'src/users/users.repository';
 import { User } from 'src/users/entities/user.entity';
-import items from 'razorpay/dist/types/items';
-import { clearConfigCache } from 'prettier';
-import { Brackets, Equal, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { Cron } from '@nestjs/schedule';
-import { error } from 'console';
-
-const options = {
-  keys: [
-    'name',
-    'type.slug',
-    'categories.slug',
-    'status',
-    'shop_id',
-    'author.slug',
-    'tags',
-    'manufacturer.slug',
-  ],
-  threshold: 0.3,
-};
 
 @Injectable()
 export class ProductsService {

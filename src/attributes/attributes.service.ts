@@ -152,12 +152,13 @@ export class AttributesService {
 
   async update(id: number, updateAttributeDto: UpdateAttributeDto): Promise<{ message: string; status: boolean } | Attribute> {
     // Check if the attribute exists
+
     const attribute = await this.attributeRepository.findOne({
       where: { id },
       relations: ['values'], // Load the attribute values
     });
 
-    const shop = await this.shopRepository.findOne({ where: { id: Number(updateAttributeDto.shop_id) } })
+    const shop = await this.shopRepository.findOne({ where: { id: Number(updateAttributeDto.shop_id) } });
 
     if (!attribute) {
       return {
@@ -165,6 +166,7 @@ export class AttributesService {
         message: 'Attribute not found',
       };
     }
+
     // Update the attribute values
     attribute.name = updateAttributeDto.name;
     attribute.slug = await this.convertToSlug(updateAttributeDto.name);
@@ -177,8 +179,6 @@ export class AttributesService {
 
     // Filter out the attribute values that are not in the updated values
     const valuesToRemove = attribute.values.filter((value) => !updatedValues.includes(value.value));
-
-    attribute.values = attribute.values.filter((value) => updatedValues.includes(value.value));
 
     // Remove the attribute values from the database
     await this.attributeValueRepository.remove(valuesToRemove);
@@ -207,6 +207,7 @@ export class AttributesService {
 
     return attribute;
   }
+
 
   async delete(id: number) {
     // Get the attribute with the specified ID, including all of the associated attribute values.

@@ -41,7 +41,7 @@ export class Type extends CoreEntity {
   @Column()
   slug: string;
 
-  @OneToOne(() => Attachment)
+  @OneToOne(() => Attachment, { cascade: true })
   @JoinColumn()
   image: Attachment;
 
@@ -51,7 +51,7 @@ export class Type extends CoreEntity {
   @OneToMany(() => Banner, (banner) => banner.type, { cascade: true })
   banners?: Banner[];
 
-  @ManyToMany(() => Attachment, { cascade: true })
+  @ManyToMany(() => Attachment, { cascade: true, eager: true })
   @JoinTable({
     name: 'type_promotional_sliders',
     joinColumn: { name: 'typeId', referencedColumnName: 'id' },
@@ -96,7 +96,7 @@ export class Banner {
   @ManyToOne(() => Type, (type) => type.banners, { onDelete: 'CASCADE' })
   type: Type;
 
-  @ManyToOne(() => Attachment, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'imageId' })
   image: Attachment | null;
 }
