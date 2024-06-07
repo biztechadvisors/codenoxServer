@@ -23,7 +23,7 @@ export class Tag extends CoreEntity {
   @Column()
   details: string;
 
-  @ManyToOne(() => Attachment)
+  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
   image: Attachment | null;
 

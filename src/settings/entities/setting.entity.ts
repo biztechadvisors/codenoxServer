@@ -36,7 +36,7 @@ export class SeoSettings {
   @Column({ nullable: true })
   ogDescription?: string;
 
-  @OneToOne(() => Attachment)
+  @OneToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn()
   ogImage?: Attachment;
 

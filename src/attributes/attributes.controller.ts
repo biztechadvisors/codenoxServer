@@ -19,6 +19,7 @@ export class AttributesController {
 
   @Post()
   create(@Body() createAttributeDto: CreateAttributeDto) {
+    console.log('createAttributeDto', createAttributeDto)
     return this.attributesService.create(createAttributeDto);
   }
 
@@ -26,11 +27,6 @@ export class AttributesController {
   findAll() {
     return this.attributesService.findAll();
   }
-
-  // @Get(':param')
-  // findOne(@Param('param') param: string) {
-  //   return this.attributesService.findOne(param);
-  // }
 
   @Get(':slug')
   async findOne(@Param() param: GetAttributeArgs): Promise<{ message: string } | Attribute | undefined> {
@@ -43,6 +39,7 @@ export class AttributesController {
     @Param('id') id: string,
     @Body() updateAttributeDto: UpdateAttributeDto,
   ) {
+    console.log('updateAttributeDto', updateAttributeDto)
     return this.attributesService.update(+id, updateAttributeDto);
   }
 

@@ -88,11 +88,11 @@ export class Product extends CoreEntity {
   @ManyToOne(() => Tax, (tax) => tax.products, { eager: true, cascade: true })
   taxes: Tax;
 
-  @ManyToMany(() => Attachment, { cascade: true, eager: true, nullable: true })
+  @ManyToMany(() => Attachment, { cascade: true, eager: true })
   @JoinTable({ name: 'gallery' })
   gallery?: Attachment[];
 
-  @ManyToOne(() => Attachment, { cascade: true, nullable: true })
+  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'image_id' })
   image?: Attachment;
 

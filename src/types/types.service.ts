@@ -236,8 +236,27 @@ export class TypesService {
     if (type.promotional_sliders) {
       const promotionalSliderIds = type.promotional_sliders.map(slider => slider.id);
       if (promotionalSliderIds.length > 0) {
-        // First, remove the promotional sliders
-        await this.typeRepository.delete(promotionalSliderIds);
+        // First, remove the promotional sliders from the type
+        type.promotional_sliders = [];
+
+        // Save the modified type entity
+        await this.typeRepository.save(type);
+
+        // Now delete the references in the join table
+        await this.typeRepository
+          .createQueryBuilder()
+          .delete()
+          .from("type_promotional_sliders")
+          .where("attachmentId IN (:...ids)", { ids: promotionalSliderIds })
+          .execute();
+
+        // Delete the attachments
+        await this.attachmentRepository
+          .createQueryBuilder()
+          .delete()
+          .from(Attachment)
+          .where("id IN (:...ids)", { ids: promotionalSliderIds })
+          .execute();
       }
     }
 
