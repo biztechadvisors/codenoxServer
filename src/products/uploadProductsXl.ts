@@ -49,7 +49,7 @@ export class UploadXlService {
 
     ) { }
 
-    async parseExcelToDto(fileBuffer: Buffer): Promise<any[]> {
+    async parseExcelToDto(fileBuffer: Buffer, shopSlug: string): Promise<any[]> {
         try {
             const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -72,10 +72,10 @@ export class UploadXlService {
                     continue; // Skip empty rows
                 }
 
-                const productType = row[headerRow.indexOf('Type')];
+                const productType = row[headerRow.indexOf('Product Type')];
 
-                if (productType === 'variation' || productType === 'Variation') {
-                    const parentId = row[headerRow.indexOf('Parent Id')];
+                if (productType === 'child' || productType === 'Child') {
+                    const parentId = row[headerRow.indexOf('Parent ID')];
                     if (!parentId || !products[parentId]) {
                         console.error(new Error(`Invalid parent ID ${parentId} for variant.`));
                         return;
@@ -102,13 +102,27 @@ export class UploadXlService {
 
                     products[parentId].variation_options.upsert.push(variationOptions);
 
-                } else if (productType === 'main' || productType === 'Main') {
+                } else if (productType === 'parent' || productType === 'Parent') {
 
-                    const productIdIndex = headerRow.indexOf('Id');
+                    const productIdIndex = headerRow.indexOf('Product ID');
 
                     const productId = row[productIdIndex];
 
-                    const mainProduct = await this.createMainProduct(row, headerRow);
+                    // Collect variations for the parent
+                    let parentVariations = [];
+
+                    for (const childRow of rows) {
+                        const childProductType = childRow[headerRow.indexOf('Product Type')];
+                        const childParentId = childRow[headerRow.indexOf('Parent ID')];
+
+                        if ((childProductType === 'child' || childProductType === 'Child') && childParentId === productId) {
+                            const variationOptions = await this.createVariation(childRow, headerRow);
+                            parentVariations.push(variationOptions);
+                        }
+                    }
+
+                    const mainProduct = await this.createMainProduct(row, headerRow, shopSlug, parentVariations);
+
                     // Initialize variations array
                     mainProduct.variations = [];
                     mainProduct.attributes = [];
@@ -116,9 +130,9 @@ export class UploadXlService {
                     // Initialize variation options
                     mainProduct.variation_options = { delete: [], upsert: [] };
                     products[productId] = mainProduct;
+
                 }
             }
-
             const finalProducts = Object.values(products);
 
             return finalProducts;
@@ -145,51 +159,85 @@ export class UploadXlService {
         return Promise.all(promises);
     }
 
-    async createMainProduct(row: any, headerRow: any): Promise<any> {
-        let category = []
-        let subCategories = []
-        let tags = []
+    async createMainProduct(row: any, headerRow: any, shopSlug: string, variations: any[]): Promise<any> {
+        let category = [];
+        let subCategories = [];
+        let tags = [];
 
-        const categoryId = await this.categoryRepository.findOne({ where: { name: row[headerRow.indexOf('Category')] } });
-        const subCategoryId = await this.subCategoryRepository.findOne({ where: { name: row[headerRow.indexOf('SubCategory')] } });
-        const type = await this.typeRepository.findOne({ where: { name: row[headerRow.indexOf('Group')] } });
-        const shop = await this.shopRepository.findOne({ where: { name: row[headerRow.indexOf('Shop')] } });
-        const tagsId = await this.tagRepository.findOne({ where: { name: row[headerRow.indexOf('Tags')] } });
+        let categoryId;
+        if (row[headerRow.indexOf('Product Category')]) {
+            categoryId = await this.categoryRepository.findOne({ where: { name: row[headerRow.indexOf('Product Category')] } });
+        }
+        let subCategoryId;
+        if (row[headerRow.indexOf('Product SubCategory')]) {
+            subCategoryId = await this.subCategoryRepository.findOne({ where: { name: row[headerRow.indexOf('Product SubCategory')] } });
+        }
+        let type;
+        if (row[headerRow.indexOf('Product Collection')]) {
+            type = await this.typeRepository.findOne({ where: { name: row[headerRow.indexOf('Product Collection')] } });
+        }
+        let shop;
+        if (shopSlug) {
+            shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        }
+        let tagsId;
+        if (row[headerRow.indexOf('Product Tags')]) {
+            tagsId = await this.tagRepository.findOne({ where: { name: row[headerRow.indexOf('Product Tags')] } });
+        }
 
-        category.push(categoryId.id)
+        if (categoryId) {
+            category.push(categoryId.id);
+        }
         if (tagsId) {
-            tags.push(tagsId.id)
+            tags.push(tagsId.id);
         }
         if (subCategoryId) {
-            subCategories.push(subCategoryId.id)
+            subCategories.push(subCategoryId.id);
         }
 
+        // Collect all variation prices and sum the quantities
+        let prices: number[] = [];
+        let totalQuantity = 0;
+        variations.forEach(variation => {
+            if (variation.sale_price !== undefined && variation.sale_price !== null) {
+                prices.push(parseFloat(variation.sale_price));
+            }
+            if (variation.price !== undefined && variation.price !== null) {
+                prices.push(parseFloat(variation.price));
+            }
+            totalQuantity += parseInt(variation.quantity, 10);
+        });
+
+        // Calculate min and max prices
+        const min_price = prices.length > 0 ? Math.min(...prices) : 0;
+        const max_price = prices.length > 0 ? Math.max(...prices) : 0;
+
         return {
-            name: row[headerRow.indexOf('Name')],
-            description: row[headerRow.indexOf('Description')],
-            product_type: row[headerRow.indexOf('Product Type')],
-            status: row[headerRow.indexOf('Status')],
-            quantity: row[headerRow.indexOf('Total Quantity')],
-            min_price: row[headerRow.indexOf('Min Price')],
-            max_price: row[headerRow.indexOf('Max Price')],
-            price: row[headerRow.indexOf('Price')],
-            sale_price: row[headerRow.indexOf('Sale Price')],
-            unit: row[headerRow.indexOf('Unit')],
-            sku: row[headerRow.indexOf('SKU')],
+            name: row[headerRow.indexOf('Product Name')],
+            description: row[headerRow.indexOf('Product Description')],
+            product_type: "variable",
+            status: row[headerRow.indexOf('Product Status')] ? row[headerRow.indexOf('Product Status')] : "Publised",
+            quantity: totalQuantity,
+            min_price: min_price,
+            max_price: max_price,
+            price: parseFloat(row[headerRow.indexOf('Price')]),
+            sale_price: parseFloat(row[headerRow.indexOf('Sale Price')]),
+            unit: row[headerRow.indexOf('Product Unit')] ? row[headerRow.indexOf('Product Unit')] : 1,
+            sku: row[headerRow.indexOf('Product SKU')] ? row[headerRow.indexOf('Product SKU')] : null,
             category: category,
             subCategories: subCategories,
             type_id: type.id,
             shop_id: shop.id,
             tags: tags,
-            variations: [],
+            variations: variations,
             attributes: [],
             variation_options: {
                 delete: [],
                 upsert: []
             },
-            height: row[headerRow.indexOf('Height')],
-            length: row[headerRow.indexOf('Length')],
-            width: row[headerRow.indexOf('Width')],
+            height: row[headerRow.indexOf('Height')] ? row[headerRow.indexOf('Height')] : 1,
+            length: row[headerRow.indexOf('Length')] ? row[headerRow.indexOf('Length')] : 1,
+            width: row[headerRow.indexOf('Width')] ? row[headerRow.indexOf('Width')] : 1,
             related_products: [],
             translated_languages: []
         };
@@ -197,14 +245,28 @@ export class UploadXlService {
 
     async createVariation(row: any, headerRow: any): Promise<any> {
         const options: VariationOptionDto[] = await this.createVariationOptions(row, headerRow);
+        // Build the title from attribute values
+        let title = '';
+        let i = 1;
+        while (row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined && row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined) {
+            const attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
+            if (attributeValue) {
+                if (title) {
+                    title += '/';
+                }
+                title += attributeValue;
+            }
+            i++;
+        }
+
         return {
-            is_digital: row[headerRow.indexOf('Is Digital')] === 'true',
-            sku: row[headerRow.indexOf('SKU')],
-            quantity: parseInt(row[headerRow.indexOf('Quantity')]),
+            is_digital: row[headerRow.indexOf('Is Digital')] === true,
+            sku: row[headerRow.indexOf('Product SKU')],
+            quantity: parseInt(row[headerRow.indexOf('Child Inventory')]),
             sale_price: parseFloat(row[headerRow.indexOf('Sale Price')]),
             price: parseFloat(row[headerRow.indexOf('Price')]),
-            is_disable: row[headerRow.indexOf('Is Disable')] === 'true',
-            title: row[headerRow.indexOf('Title')],
+            is_disable: row[headerRow.indexOf('Is Disable')] === true,
+            title,
             options,
             id: null
         };
@@ -213,9 +275,9 @@ export class UploadXlService {
     async getVariations(row: any, headerRow: any): Promise<{ attribute_value_id: number }[]> {
         const variations: { attribute_value_id: number }[] = [];
         let i = 1;
-        while (row[headerRow.indexOf(`Attribute ${i}`)] !== undefined && row[headerRow.indexOf(`Value ${i}`)] !== undefined) {
-            const attributeName = row[headerRow.indexOf(`Attribute ${i}`)];
-            const attributeValue = row[headerRow.indexOf(`Value ${i}`)];
+        while (row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined && row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined) {
+            const attributeName = row[headerRow.indexOf(`Attribute ${i} Name`)];
+            const attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
             if (attributeName && attributeValue) {
                 const fetchedAttributeValue = await this.findAttributeValue(attributeValue);
                 if (!fetchedAttributeValue) {
@@ -230,9 +292,9 @@ export class UploadXlService {
 
     parseAttributes(row: any, headerRow: any): Record<string, string> {
         const attributes: Record<string, string> = {};
-        for (let i = 1; row[headerRow.indexOf(`Attribute ${i}`)] !== undefined && row[headerRow.indexOf(`Value ${i}`)] !== undefined; i++) {
-            const attributeName = row[headerRow.indexOf(`Attribute ${i}`)];
-            const attributeValue = row[headerRow.indexOf(`Value ${i}`)];
+        for (let i = 1; row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined && row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined; i++) {
+            const attributeName = row[headerRow.indexOf(`Attribute ${i} Name`)];
+            const attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
             if (attributeName && attributeValue) {
                 attributes[attributeName] = attributeValue;
             }
@@ -243,9 +305,9 @@ export class UploadXlService {
     async createVariationOptions(row: any, headerRow: any): Promise<VariationOptionDto[]> {
         const variationOptions = [];
         let i = 1;
-        while (row[headerRow.indexOf(`Attribute ${i}`)] !== undefined && row[headerRow.indexOf(`Value ${i}`)] !== undefined) {
-            const attributeName = row[headerRow.indexOf(`Attribute ${i}`)];
-            const attributeValue = row[headerRow.indexOf(`Value ${i}`)];
+        while (row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined && row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined) {
+            const attributeName = row[headerRow.indexOf(`Attribute ${i} Name`)];
+            const attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
             if (attributeName && attributeValue) {
                 const attribute = await this.attributeValueRepository.findOne({ where: { value: attributeValue } });
                 if (attribute) {
@@ -263,9 +325,9 @@ export class UploadXlService {
         return variationOptions;
     }
 
-    async uploadProductsFromExcel(fileBuffer: Buffer): Promise<void> {
+    async uploadProductsFromExcel(fileBuffer: Buffer, shopSlug: string): Promise<void> {
         try {
-            const products = await this.parseExcelToDto(fileBuffer);
+            const products = await this.parseExcelToDto(fileBuffer, shopSlug);
 
             if (products && products.length > 0) {
                 for (const product of products) {
@@ -296,15 +358,15 @@ export class UploadXlService {
                 product.description = createProductDto.description;
                 product.product_type = createProductDto.product_type;
                 product.status = createProductDto.status;
-                product.quantity = createProductDto.quantity;
-                product.max_price = createProductDto.max_price || createProductDto.price;
-                product.min_price = createProductDto.min_price || createProductDto.sale_price;
-                product.price = createProductDto.max_price || createProductDto.price;
-                product.sale_price = createProductDto.min_price || createProductDto.sale_price;
-                product.unit = createProductDto.unit;
-                product.height = createProductDto.height;
-                product.length = createProductDto.length;
-                product.width = createProductDto.width;
+                product.quantity = this.validateNumber(createProductDto.quantity);
+                product.max_price = this.validateNumber(createProductDto.max_price) || this.validateNumber(createProductDto.price);
+                product.min_price = this.validateNumber(createProductDto.min_price) || this.validateNumber(createProductDto.sale_price);
+                product.price = this.validateNumber(createProductDto.price);
+                product.sale_price = this.validateNumber(createProductDto.sale_price);
+                product.unit = createProductDto.unit ? createProductDto.unit : 1;
+                product.height = createProductDto.height ? createProductDto.height : 1;
+                product.length = createProductDto.length ? createProductDto.length : 1;
+                product.width = createProductDto.width ? createProductDto.width : 1;
                 product.sku = createProductDto.sku;
                 product.language = createProductDto.language || 'en';
                 product.translated_languages = createProductDto.translated_languages || ['en'];
@@ -366,15 +428,15 @@ export class UploadXlService {
                 product.description = createProductDto.description;
                 product.product_type = createProductDto.product_type;
                 product.status = createProductDto.status;
-                product.quantity = createProductDto.quantity;
-                product.max_price = createProductDto.max_price || createProductDto.price;
-                product.min_price = createProductDto.min_price || createProductDto.sale_price;
-                product.price = createProductDto.max_price || createProductDto.price;
-                product.sale_price = createProductDto.min_price || createProductDto.sale_price;
-                product.unit = createProductDto.unit;
-                product.height = createProductDto.height;
-                product.length = createProductDto.length;
-                product.width = createProductDto.width;
+                product.quantity = this.validateNumber(createProductDto.quantity);
+                product.max_price = this.validateNumber(createProductDto.max_price) || this.validateNumber(createProductDto.price);
+                product.min_price = this.validateNumber(createProductDto.min_price) || this.validateNumber(createProductDto.sale_price);
+                product.price = this.validateNumber(createProductDto.price);
+                product.sale_price = this.validateNumber(createProductDto.sale_price);
+                product.unit = createProductDto.unit ? createProductDto.unit : 1;
+                product.height = createProductDto.height ? createProductDto.height : 1;
+                product.length = createProductDto.length ? createProductDto.length : 1;
+                product.width = createProductDto.width ? createProductDto.width : 1;
                 product.sku = createProductDto.sku;
                 product.language = createProductDto.language || 'en';
                 product.translated_languages = createProductDto.translated_languages || ['en'];
@@ -427,7 +489,7 @@ export class UploadXlService {
             }
 
             // Set image
-            if (createProductDto.image?.id) {
+            if (createProductDto?.image?.id) {
                 const image = await this.attachmentRepository.findOne(createProductDto.image.id);
                 if (!image) {
                     throw new NotFoundException(`Image with ID ${createProductDto.image.id} not found`);
@@ -436,7 +498,7 @@ export class UploadXlService {
             }
 
             // Set gallery
-            if (createProductDto.gallery?.length > 0) {
+            if (createProductDto?.gallery?.length > 0) {
                 const galleryAttachments = [];
                 for (const galleryImage of createProductDto.gallery) {
                     const image = await this.attachmentRepository.findOne(galleryImage.id);
@@ -472,11 +534,11 @@ export class UploadXlService {
                 for (const variationDto of createProductDto.variation_options.upsert) {
                     const newVariation = new Variation();
                     newVariation.title = variationDto?.title;
-                    newVariation.price = variationDto?.price;
+                    newVariation.price = this.validateNumber(variationDto?.price);
                     newVariation.sku = variationDto?.sku;
                     newVariation.is_disable = variationDto?.is_disable;
-                    newVariation.sale_price = variationDto?.sale_price;
-                    newVariation.quantity = variationDto?.quantity;
+                    newVariation.sale_price = this.validateNumber(variationDto?.sale_price);
+                    newVariation.quantity = this.validateNumber(variationDto?.quantity);
 
                     if (variationDto?.image) {
                         let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
@@ -522,10 +584,17 @@ export class UploadXlService {
             return product;
 
         } catch (error) {
+            console.log('error', error)
             throw new Error('Error saving products: ' + error.message);
         }
     }
 
+    private validateNumber(value: any): number {
+        if (isNaN(value)) {
+            return 0;
+        }
+        return Number(value);
+    }
 
     async remove(name: string): Promise<void> {
 
