@@ -15,8 +15,8 @@ import { Attribute } from 'src/attributes/entities/attribute.entity';
 import { Stocks } from 'src/stocks/entities/stocks.entity';
 
 enum ProductStatus {
-  PUBLISH = 'publish',
-  DRAFT = 'draft',
+  PUBLISH = 'Publish',
+  DRAFT = 'Draft',
 }
 export enum ProductType {
   SIMPLE = 'simple',
@@ -130,6 +130,8 @@ export class Product extends CoreEntity {
   in_wishlist: boolean;
   @Column()
   language?: string;
+  @Column()
+  Google_Shopping?: string;
   @Column({ type: "json" })
   translated_languages?: string[];
 }
