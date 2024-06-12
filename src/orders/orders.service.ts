@@ -108,6 +108,7 @@ export class OrdersService {
   }
 
   async updateOrdQuantityProd(ordProducts: any[]): Promise<void> {
+    console.log('ordProducts', ordProducts)
     const entityManager = this.productRepository.manager;
     try {
       if (!ordProducts || ordProducts.length === 0) {

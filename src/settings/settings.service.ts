@@ -339,12 +339,18 @@ export class SettingsService {
   }
 
 
-  async findAll(shop_slug: string): Promise<Setting[] | null> {
+  async findAll(shop_slug: string): Promise<Setting | null> {
+    // Fetch the shop details using the shop slug
+    const shop = await this.shopRepository.findOne({ where: { slug: shop_slug } });
 
-    const shop = await this.shopRepository.findOne({ where: { slug: shop_slug } })
+    // If the shop is not found, return null
+    if (!shop) {
+      return null;
+    }
 
-    const settingData = await this.settingRepository.find({
-      where: { shop: { id: shop.id } },
+    // Fetch the settings using the shop ID
+    const settingData = await this.settingRepository.findOne({
+      where: { shop: { id: shop.id } }, // Use shop.id here
       relations: [
         'options.contactDetails',
         'options.contactDetails.socials',
@@ -366,7 +372,8 @@ export class SettingsService {
       ],
     });
 
-    if (!settingData || settingData.length === 0) {
+    // Return the settings if found, otherwise return null
+    if (!settingData) {
       return null;
     } else {
       return settingData;
