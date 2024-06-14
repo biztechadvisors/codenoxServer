@@ -19,9 +19,9 @@
       "twitterCardType": null
     },
     "logo": {
-      // "id": "862",
-      // "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/860/PickBazar.png",
-      // "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/860/conversions/PickBazar-thumbnail.jpg"
+      "id": "862",
+      "original": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/860/PickBazar.png",
+      "thumbnail": "https://pickbazarlaravel.s3.ap-southeast-1.amazonaws.com/860/conversions/PickBazar-thumbnail.jpg"
     },
     "useAi": true,
     "useOtp": false,

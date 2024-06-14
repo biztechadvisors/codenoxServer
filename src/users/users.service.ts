@@ -135,6 +135,7 @@ export class UsersService {
     search,
     type,
   }: GetUsersDto): Promise<UserPaginator> {
+
     const limitNum = Number(limit);
     const pageNum = Number(page);
     const startIndex = (pageNum - 1) * limitNum;
@@ -161,10 +162,10 @@ export class UsersService {
     if (orderBy && sortedBy) {
       findOptions.order[orderBy] = sortedBy.toUpperCase();
     }
-
+    let user;
     if (usrById) {
       // Fetch user by ID and apply type-based filtering if provided
-      const user = await this.userRepository.findOne({
+      user = await this.userRepository.findOne({
         where: { id: Number(usrById) },
         relations: ['type', 'shops'],
       });
@@ -201,11 +202,10 @@ export class UsersService {
     const [users, total] = await this.userRepository.findAndCount(findOptions);
 
     return {
-      data: users,
+      data: [user, ...users],
       ...paginate(total, pageNum, limitNum, total, `/users?type=${type || 'customer'}&limit=${limitNum}`),
     };
   }
-
 
   async getUsersNotify({ limit }: GetUsersDto): Promise<User[]> {
     const data = await this.userRepository.find({

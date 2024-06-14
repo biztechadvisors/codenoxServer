@@ -169,7 +169,7 @@ export class AuthService {
 
         await this.userRepository.save(existingUser);
 
-        if (existingUser.type?.type_name === 'customer') {
+        if (existingUser.type?.type_name === 'Customer') {
           // Send confirmation email for customers
           await this.mailService.sendUserConfirmation(existingUser, token);
         }
@@ -202,11 +202,11 @@ export class AuthService {
           relations: ['type'],
         });
 
-        if (parentUsr?.type?.type_name === 'store_owner' || 'vendor') {
+        if (parentUsr?.type?.type_name === 'Store_Owner' || 'Vendor') {
           const existingDealerCount = await this.userRepository.createQueryBuilder('user')
             .innerJoin('user.type', 'permission')
             .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
-            .andWhere('permission.type_name = :type_name', { type_name: 'dealer' })
+            .andWhere('permission.type_name = :type_name', { type_name: 'Dealer' })
             .getCount();
 
           if (existingDealerCount >= (parentUsr.dealerCount || 0)) {
@@ -219,7 +219,7 @@ export class AuthService {
         userData.type = permission;
 
         // Set dealerCount only if the user is of type store_owner
-        if (permission.type_name === 'store_owner' || 'vendor') {
+        if (permission.type_name === 'Store_Owner' || 'Vendor') {
           userData.dealerCount = createUserInput.dealerCount || 0;
         }
 
@@ -303,9 +303,9 @@ export class AuthService {
           id: null,
           type_name: 'default',
           permission: [
-            { id: 'customer', type: 'default', read: true, write: true },
-            { id: 'admin', type: 'default', read: true, write: true },
-            { id: 'super_admin', type: 'default', read: true, write: true }
+            { id: 'Customer', type: 'default', read: true, write: true },
+            { id: 'Admin', type: 'default', read: true, write: true },
+            { id: 'Super_Admin', type: 'default', read: true, write: true }
           ]
         }];
       }
@@ -723,9 +723,9 @@ export class AuthService {
 
     let relations: string[];
     if (userWithDealer) {
-      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "dealer"];
+      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "dealer", "managed_shop"];
     } else {
-      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type"];
+      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "managed_shop"];
     }
 
     return relations;
@@ -750,11 +750,11 @@ export class AuthService {
         relations: ['type'],
       });
 
-      if (parentUsr?.type?.type_name === 'store_owner') {
+      if (parentUsr?.type?.type_name === 'Store_Owner') {
         const existingDealerCount = await this.userRepository.createQueryBuilder('user')
           .innerJoin('user.type', 'permission')
           .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
-          .andWhere('permission.type_name = :type_name', { type_name: 'dealer' })
+          .andWhere('permission.type_name = :type_name', { type_name: 'Dealer' })
           .getCount();
 
         if (existingDealerCount >= (parentUsr.dealerCount || 0)) {
@@ -775,7 +775,7 @@ export class AuthService {
         user.type = permission;
 
         // Set dealerCount only if the user is of type store_owner
-        if (permission.type_name === 'store_owner') {
+        if (permission.type_name === 'Store_Owner') {
           user.dealerCount = updateUserInput.dealerCount || 0;
         } else {
           user.dealerCount = null; // Reset dealerCount if type changes to something else
