@@ -3,6 +3,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/
 import { CreateSettingDto } from './dto/create-setting.dto'
 import { SettingsService } from './settings.service'
 import { UpdateSettingDto } from './dto/update-setting.dto'
+import { query } from 'express'
 
 
 @Controller('settings')
@@ -17,9 +18,9 @@ export class SettingsController {
     return this.settingsService.create(shopId, createSettingDto)
   }
 
-  @Get('/:shop_slug')
-  findAll(@Param('shop_slug') shop_slug: string) {
-    return this.settingsService.findAll(shop_slug)
+  @Get('')
+  findAll(@Query('shopSlug') shopSlug: string) {
+    return this.settingsService.findAll(shopSlug);
   }
 
   @Put('/:id')
@@ -31,6 +32,7 @@ export class SettingsController {
 
   @Get(':id/:shop_id')
   findOne(@Param('id') id: number, @Param('shop_id') shop_id: number) {
+    console.log('shop_slug**', shop_id)
     return this.settingsService.findOne(id, shop_id);
   }
 

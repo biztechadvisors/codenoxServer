@@ -369,6 +369,7 @@ export class SettingsService {
         'options.deliveryTime',
         'options.paymentGateway',
         'options.logo',
+        'options.server_info',
       ],
     });
 
