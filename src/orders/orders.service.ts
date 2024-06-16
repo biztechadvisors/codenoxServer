@@ -40,7 +40,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, UpdateResult, getManager } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
-import { OrderProductPivot, Product } from 'src/products/entities/product.entity';
+import { OrderProductPivot, Product, Variation } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { RazorpayService } from 'src/payment/razorpay-payment.service';
 import { ShiprocketService } from 'src/orders/shiprocket.service';
@@ -83,6 +83,8 @@ export class OrdersService {
     private readonly dealerRepository: Repository<Dealer>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(Variation)
+    private readonly variationRepository: Repository<Variation>,
     @InjectRepository(OrderFiles)
     private readonly orderFilesRepository: Repository<Order>,
     @InjectRepository(Coupon)
@@ -108,7 +110,7 @@ export class OrdersService {
   }
 
   async updateOrdQuantityProd(ordProducts: any[]): Promise<void> {
-    console.log('ordProducts', ordProducts)
+    console.log('ordProducts', ordProducts);
     const entityManager = this.productRepository.manager;
     try {
       if (!ordProducts || ordProducts.length === 0) {
@@ -116,27 +118,42 @@ export class OrdersService {
       }
 
       const productIds = ordProducts.map(product => product.product_id);
-      const productEntities = await this.productRepository.find({ where: { id: In(productIds) } });
+      const variationOptionIds = ordProducts.map(product => product.variation_option_id);
 
-      if (productEntities.length === 0) {
+      const products = await this.productRepository.find({
+        where: { id: In(productIds) },
+        relations: ['variations'],
+      });
+
+      if (products.length === 0) {
         throw new NotFoundException('Products not found');
       }
 
       for (const ordProduct of ordProducts) {
-        const productEntity = productEntities.find(entity => entity.id === ordProduct.product_id);
+        const product = products.find(p => p.id === ordProduct.product_id);
 
-        if (productEntity) {
-          // Validate that the order quantity does not exceed the available quantity
-          if (ordProduct.order_quantity > productEntity.quantity) {
-            throw new BadRequestException(`Order quantity exceeds available quantity for product ID ${productEntity.id}`);
-          }
-
-          // Update the product quantity by subtracting the order quantity
-          productEntity.quantity -= ordProduct.order_quantity;
-
-          // Save the updated product
-          await entityManager.save(productEntity);
+        if (!product) {
+          throw new NotFoundException(`Product with ID ${ordProduct.product_id} not found`);
         }
+
+        const variation = product.variation_options.find(v => v.id === ordProduct.variation_option_id);
+
+        if (!variation) {
+          throw new NotFoundException(`Variation with ID ${ordProduct.variation_option_id} not found for product ID ${product.id}`);
+        }
+
+        // Validate order quantity against available quantity
+        if (ordProduct.order_quantity > variation.quantity) {
+          throw new BadRequestException(`Order quantity exceeds available quantity for variation ID ${variation.id}`);
+        }
+
+        // Update quantities
+        product.quantity -= ordProduct.order_quantity;
+        variation.quantity -= ordProduct.order_quantity;
+
+        // Save changes
+        await entityManager.save(product);
+        await entityManager.save(variation);
       }
 
       console.log('Product quantities updated successfully');
