@@ -50,14 +50,7 @@ export class StocksSellOrd extends CoreEntity {
     payment_id?: string;
 
     @Column()
-    payment_gateway: PaymentGatewayType;
-
-    @ManyToOne(() => Coupon, coupon => coupon.orders, { nullable: true })
-    coupon?: Coupon;
-
-    @ManyToMany(() => Shop, { nullable: true })
-    @JoinTable()
-    shop_id: Shop;
+    payment_gateway: string;
 
     @Column({ nullable: true })
     discount?: number;
@@ -72,6 +65,10 @@ export class StocksSellOrd extends CoreEntity {
     @JoinTable({ name: "product_StocksSellOrd" })
     products: Product[];
 
+    @ManyToMany(() => Shop, { nullable: true })
+    @JoinTable()
+    shop_id: Shop;
+
     @ManyToOne(() => UserAddress)
     billing_address: UserAddress;
 
@@ -84,15 +81,8 @@ export class StocksSellOrd extends CoreEntity {
     @Column({ type: "json" })
     translated_languages: string[];
 
-    @OneToOne(() => PaymentIntent)
-    @JoinColumn()
-    payment_intent: PaymentIntent;
-
     @Column()
-    altered_payment_gateway?: string;
-
-    @Column()
-    customerId: any;
+    customerId: number;
 
     @Column('json', { nullable: true })
     logistics_provider: object;

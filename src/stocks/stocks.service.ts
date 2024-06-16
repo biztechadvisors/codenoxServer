@@ -406,7 +406,6 @@ export class StocksService {
                 ? createOrderInput.payment_gateway
                 : PaymentGatewayType.CASH_ON_DELIVERY;
             order.payment_gateway = paymentGatewayType;
-            order.payment_intent = null;
             order.customerId = order.customerId ? order.customerId : order.customer_id;
             order.customer_id = order.customer_id;
             order.customer = createOrderInput.dealerId ? createOrderInput.dealerId : null;
@@ -479,15 +478,6 @@ export class StocksService {
 
             const createdOrderStatus = await this.orderStatusRepository.save(newOrderStatus);
             order.status = createdOrderStatus;
-
-            if (createOrderInput.coupon_id) {
-                const getCoupon = await this.couponRepository.findOne({ where: { id: createOrderInput.coupon_id } });
-                if (getCoupon) {
-                    order.coupon = getCoupon;
-                } else {
-                    throw new NotFoundException('Coupon not found');
-                }
-            }
 
             if (createOrderInput.shop_id) {
                 const getShop = await this.shopRepository.findOne({ where: { id: createOrderInput.shop_id.id } });
@@ -664,7 +654,6 @@ export class StocksService {
                         total: order.total,
                         cancelled_amount: order?.cancelled_amount,
                         language: order?.language,
-                        coupon_id: order.coupon,
                         saleBy: order?.saleBy,
                         discount: order?.discount,
                         payment_gateway: order.payment_gateway,
@@ -676,7 +665,6 @@ export class StocksService {
                         order_status: order.order_status,
                         payment_status: order.payment_status,
                         created_at: order.created_at,
-                        payment_intent: order.payment_intent,
                         customer: {
                             id: order.customer.id,
                             name: order.customer.name,
@@ -744,8 +732,6 @@ export class StocksService {
                 total: order.total,
                 cancelled_amount: order.cancelled_amount,
                 language: order.language,
-                coupon_id: order.coupon,
-                // parent_id: order.parentOrder,
                 saleBy: order.saleBy,
                 shop: order.shop_id,
                 discount: order.discount,
@@ -758,7 +744,6 @@ export class StocksService {
                 order_status: order.order_status,
                 payment_status: order.payment_status,
                 created_at: order.created_at,
-                payment_intent: order.payment_intent,
                 customer: {
                     id: order.customer.id,
                     name: order.customer.name,
@@ -772,11 +757,9 @@ export class StocksService {
                 dealer: order.customer ? order.customer : null,
                 products: await Promise.all(order.products.map(async (product) => {
                     const pivot = product.pivot.find(p => p.Ord_Id === order.id);
-
                     if (!pivot || !product.id) {
                         return null;
                     }
-
                     return {
                         id: product.id,
                         name: product.name,
