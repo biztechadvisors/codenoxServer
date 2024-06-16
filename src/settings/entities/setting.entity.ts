@@ -350,7 +350,8 @@ export class SettingsOptions extends CoreEntity {
   @Column()
   isProductReview: boolean;
 
-  @ManyToOne(() => LogoSettings)
+  @ManyToOne(() => LogoSettings, { cascade: true, eager: true, onDelete: 'CASCADE' })
+  @JoinColumn()
   logo: LogoSettings;
 
   @Column()

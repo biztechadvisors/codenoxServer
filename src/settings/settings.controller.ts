@@ -13,21 +13,25 @@ export class SettingsController {
   @Post()
   create(
     @Query('shopId') shopId: number,
-    @Body() createSettingDto: CreateSettingDto) {
-    console.log('shopId**', shopId)
-    return this.settingsService.create(shopId, createSettingDto)
-  }
-
-  @Get('')
-  findAll(@Query('shopSlug') shopSlug: string) {
-    return this.settingsService.findAll(shopSlug);
+    @Body() createSettingDto: CreateSettingDto
+  ) {
+    console.log('shopId**', shopId);
+    return this.settingsService.create(shopId, createSettingDto);
   }
 
   @Put('/:id')
   update(
     @Param('id') id: number,
-    @Body() updateSettingDto: UpdateSettingDto) {
-    return this.settingsService.update(id, updateSettingDto)
+    @Body() updateSettingDto: UpdateSettingDto
+  ) {
+    console.log('id 30**', id);
+    console.log('updateSettingDto 31**', updateSettingDto);
+    return this.settingsService.update(id, updateSettingDto);
+  }
+
+  @Get('')
+  findAll(@Query('shopSlug') shopSlug: string) {
+    return this.settingsService.findAll(shopSlug);
   }
 
   @Get(':id/:shop_id')
