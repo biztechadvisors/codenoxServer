@@ -38,36 +38,44 @@ export class TaxesService {
 
   async create(createTaxDto: CreateTaxDto) {
     try {
-      let gst: any
-      let shop: any
-      const tax = new Tax()
+      let gst: number | null = null;
+      let shop: any = null;
+      const tax = new Tax();
 
       if (createTaxDto.shop_id) {
-        shop = await this.shopRepository.findOne({ where: { id: createTaxDto.shop_id } })
+        shop = await this.shopRepository.findOne({ where: { id: createTaxDto.shop_id } });
         if (!shop) {
           throw new NotFoundException(`Shop with ID ${createTaxDto.shop_id} not found`);
         }
       }
 
       if (createTaxDto.rate) {
-        gst = createTaxDto.rate / 2
+        gst = createTaxDto.rate / 2;
       }
 
-      tax.name = createTaxDto.name
-      if (createTaxDto.sac_no != null) {
-        tax.sac_no = createTaxDto.sac_no
-      } else {
-        tax.hsn_no = createTaxDto.hsn_no
+      tax.name = createTaxDto.name;
+
+      // Ensure only one of sac_no or hsn_no is set, the other is null
+      if (createTaxDto.sac_no) {
+        tax.sac_no = createTaxDto.sac_no;
+        tax.gst_Name = GST_NAME.GOODS;
+        tax.hsn_no = null;
+      } else if (createTaxDto.hsn_no) {
+        tax.hsn_no = createTaxDto.hsn_no;
+        tax.gst_Name = GST_NAME.SERVICES;
+        tax.sac_no = null;
       }
-      tax.shop = shop
-      tax.cgst = gst ? gst : createTaxDto.cgst
-      tax.sgst = gst ? gst : createTaxDto.sgst
-      tax.gst_Name = createTaxDto.gst_Name
-      tax.compensation_Cess = createTaxDto.compensation_Cess
-      tax.rate = createTaxDto.rate  // IGST
-      return await this.taxRepository.save(tax)
-    } catch {
-      return 'Cannot Find Data Here'
+
+      tax.shop = shop;
+      tax.cgst = gst !== null ? gst : createTaxDto.cgst;
+      tax.sgst = gst !== null ? gst : createTaxDto.sgst;
+      tax.compensation_Cess = createTaxDto.compensation_Cess;
+      tax.rate = createTaxDto.rate;  // IGST
+
+      return await this.taxRepository.save(tax);
+    } catch (error) {
+      console.error('Error creating tax:', error);
+      return 'Cannot Find Data Here';
     }
   }
 
@@ -100,42 +108,44 @@ export class TaxesService {
 
   async update(id: number, updateTaxDto: UpdateTaxDto) {
     try {
+
       const existingTaxes = await this.taxRepository.findOne({
-        where: { id: id }
-      })
-      let gst
+        where: { id: id },
+      });
 
       if (!existingTaxes) {
-        throw new NotFoundException('Question not found');
+        throw new NotFoundException('Tax not found');
       }
-      if (updateTaxDto.rate) {
-        gst = updateTaxDto.rate / 2
-      }
-      existingTaxes.name = updateTaxDto.name
-      if (existingTaxes.sac_no != null) {
-        existingTaxes.sac_no = updateTaxDto.sac_no
-      } else {
-        existingTaxes.hsn_no = updateTaxDto.hsn_no
-      }
-      existingTaxes.cgst = gst ? gst : updateTaxDto.cgst
-      existingTaxes.sgst = gst ? gst : updateTaxDto.sgst
-      const GST = updateTaxDto.gst_Name ? updateTaxDto.gst_Name : GST_NAME.GOODS
-      switch (GST) {
-        case GST_NAME.GOODS:
-          existingTaxes.gst_Name = GST_NAME.GOODS
-          break;
-        case GST_NAME.SERVICES:
-          existingTaxes.gst_Name = GST_NAME.SERVICES
-        default:
-          break;
-      }
-      existingTaxes.gst_Name = GST
-      existingTaxes.compensation_Cess = updateTaxDto.compensation_Cess
-      existingTaxes.rate = updateTaxDto.rate
 
-      return this.taxRepository.save(existingTaxes);
-    } catch {
-      return 'Updated unSuccessfully'
+      let gst: number | null = null;
+
+      if (updateTaxDto.rate) {
+        gst = updateTaxDto.rate / 2;
+      }
+
+      existingTaxes.name = updateTaxDto.name;
+
+      // Ensure only one of sac_no or hsn_no is set, the other is null
+      if (updateTaxDto.sac_no) {
+        existingTaxes.sac_no = updateTaxDto.sac_no;
+        existingTaxes.gst_Name = GST_NAME.SERVICES;
+        existingTaxes.hsn_no = null;
+      } else if (updateTaxDto.hsn_no) {
+        existingTaxes.hsn_no = updateTaxDto.hsn_no;
+        existingTaxes.gst_Name = GST_NAME.GOODS;
+        existingTaxes.sac_no = null;
+      }
+
+      existingTaxes.cgst = gst !== null ? gst : updateTaxDto.cgst;
+      existingTaxes.sgst = gst !== null ? gst : updateTaxDto.sgst;
+
+      existingTaxes.compensation_Cess = updateTaxDto.compensation_Cess;
+      existingTaxes.rate = updateTaxDto.rate;
+
+      return await this.taxRepository.save(existingTaxes);
+    } catch (error) {
+      console.error('Error updating tax:', error);
+      return 'Updated unsuccessfully';
     }
   }
 
