@@ -96,6 +96,8 @@ export class SettingsService {
     private attachmentRepository: AttachmentRepository,
     @InjectRepository(Shop)
     private shopRepository: Repository<Shop>,
+    @InjectRepository(ServerInfo)
+    private ServerInfoRepository: Repository<ServerInfo>,
   ) { }
 
   async create(shopId: number, createSettingDto: CreateSettingDto): Promise<Setting | { message: string }> {
@@ -134,6 +136,17 @@ export class SettingsService {
   async createSettingsOptions(optionsData: Partial<SettingsOptions>): Promise<SettingsOptions> {
     try {
       const newOptions = new SettingsOptions();
+
+      // Server Info
+
+      const server_info = new ServerInfo;
+      server_info.memory_limit = '128M',
+        server_info.post_max_size = 8192,
+        server_info.max_input_time = '60',
+        server_info.max_execution_time = '30',
+        server_info.upload_max_filesize = 2048
+
+      newOptions.server_info = await this.ServerInfoRepository.save(server_info);
 
       // Handle deliveryTime
       if (optionsData.deliveryTime) {
@@ -739,25 +752,50 @@ export class SettingsService {
 
             if (updateSettingDto.options.deliveryTime) {
               try {
-                const updateDeliveryTime = [];
+                // Fetch the SettingsOptions entity including its deliveryTime relation
+                const findOption = await this.settingsOptionsRepository.findOne({
+                  where: { id: updateSettingDto.id },
+                  relations: ["deliveryTime"],
+                });
 
-                for (const updates of updateSettingDto.options.deliveryTime) {
-                  let existingTime = findOption.deliveryTime.find(time => time.title === updates.title);
+                if (!findOption) {
+                  throw new NotFoundException("Settings option not found");
+                }
+
+                const existingDeliveryTimes = findOption.deliveryTime;
+
+                const updateDeliveryTime: DeliveryTime[] = [];
+
+                // Ensure unique titles in the new delivery times
+                const uniqueDeliveryTimes = updateSettingDto.options.deliveryTime.reduce((acc, current) => {
+                  const x = acc.find(item => item.title === current.title);
+                  if (!x) {
+                    return acc.concat([current]);
+                  } else {
+                    return acc;
+                  }
+                }, [] as { title: string; description: string }[]);
+
+                // Filter out delivery times that already exist
+                for (const updates of uniqueDeliveryTimes) {
+                  let existingTime = existingDeliveryTimes.find(time => time.title === updates.title);
 
                   if (!existingTime) {
                     existingTime = this.deliveryTimeRepository.create(updates);
+                    const savedTime = await this.deliveryTimeRepository.save(existingTime);
+                    updateDeliveryTime.push(savedTime);
                   } else {
-                    existingTime = {
-                      ...existingTime,
-                      ...updates
-                    };
+                    existingTime.description = updates.description;
+                    const updatedTime = await this.deliveryTimeRepository.save(existingTime);
+                    updateDeliveryTime.push(updatedTime);
                   }
-
-                  const updatedTime = await this.deliveryTimeRepository.save(existingTime);
-                  updateDeliveryTime.push(updatedTime);
                 }
 
+                // Update the deliveryTime property in findOption with the newly saved delivery times
                 findOption.deliveryTime = updateDeliveryTime;
+
+                // Save the updated findOption to ensure the relationship is persisted
+                await this.settingsOptionsRepository.save(findOption);
               } catch (error) {
                 console.error("Error saving DeliveryTime:", error);
                 throw new NotFoundException("Failed to update delivery time");
@@ -766,24 +804,34 @@ export class SettingsService {
 
             if (updateSettingDto?.options?.logo) {
               try {
-                let updateLogo = await this.logoSettingsRepository.findOne({
-                  where: { id: findOption.logo.id }
-                });
 
-                if (!updateLogo) {
-                  updateLogo = this.logoSettingsRepository.create(updateSettingDto.options.logo);
-                } else {
-                  const findAttachment = await this.attachmentRepository.findOne({
-                    where: { original: updateLogo.original }
+                let updateLogo;
+                if (findOption.logo?.id) {
+                  updateLogo = await this.logoSettingsRepository.findOne({
+                    where: { id: findOption.logo.id }
                   });
-                  if (findAttachment) {
-                    await this.attachmentRepository.delete(findAttachment);
-                  }
-                  await this.logoSettingsRepository.delete(updateLogo);
                 }
 
-                const savedLogo = await this.logoSettingsRepository.save(updateLogo);
-                console.log("Saved Logo:", savedLogo);
+                if (!updateLogo) {
+                  const logo = new LogoSettings();
+                  logo.file_name = updateSettingDto.options.logo.file_name;
+                  logo.original = updateSettingDto.options.logo.original;
+                  logo.thumbnail = updateSettingDto.options.logo.thumbnail;
+
+                  findOption.logo = await this.logoSettingsRepository.save(logo);
+                } else {
+                  findOption.logo = null
+                  await this.settingsOptionsRepository.save(findOption)
+
+                  const logo = new LogoSettings();
+                  logo.file_name = updateSettingDto.options.logo.file_name;
+                  logo.original = updateSettingDto.options.logo.original;
+                  logo.thumbnail = updateSettingDto.options.logo.thumbnail;
+
+                  await this.logoSettingsRepository.delete({ id: updateLogo.id });
+                  findOption.logo = await this.logoSettingsRepository.save(logo);
+                }
+
               } catch (error) {
                 console.error("Error saving logo:", error);
                 throw new NotFoundException("Failed to update logo");
