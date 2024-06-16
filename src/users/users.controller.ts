@@ -30,13 +30,11 @@ export class UsersController {
 
   @Get()
   getAllUsers(@Query() query: GetUsersDto) {
-    console.log('query 33', query)
     return this.usersService.getUsers(query);
   }
 
   @Get(':id')
   getUser(@Param('id') id: string) {
-    console.log('usrById 39', id)
     return this.usersService.findOne(+id);
   }
 

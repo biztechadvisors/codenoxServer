@@ -352,7 +352,7 @@ export class SettingsService {
   }
 
 
-  async findAll(shop_slug: string): Promise<Setting | null> {
+  async findOne(shop_slug: string): Promise<Setting | null> {
     // Fetch the shop details using the shop slug
     const shop = await this.shopRepository.findOne({ where: { slug: shop_slug } });
 
@@ -389,38 +389,6 @@ export class SettingsService {
     // Return the settings if found, otherwise return null
     if (!settingData) {
       return null;
-    } else {
-      return settingData;
-    }
-  }
-
-  async findOne(id: number, shopId: number): Promise<Setting | null> {
-    const settingData = await this.settingRepository.findOne({
-      where: { id: id, shop: { id: shopId } },
-      relations: [
-        'shop',  // Include shop relation if needed
-        'options.contactDetails',
-        'options.contactDetails.socials',
-        'options.contactDetails.location',
-        'options.currencyOptions',
-        'options.emailEvent',
-        'options.emailEvent.admin',
-        'options.emailEvent.vendor',
-        'options.emailEvent.customer',
-        'options.smsEvent',
-        'options.smsEvent.admin',
-        'options.smsEvent.vendor',
-        'options.smsEvent.customer',
-        'options.seo',
-        'options.seo.ogImage',
-        'options.deliveryTime',
-        'options.paymentGateway',
-        'options.logo',
-      ]
-    });
-
-    if (!settingData) {
-      throw new NotFoundException('Setting not found');
     } else {
       return settingData;
     }
@@ -752,19 +720,8 @@ export class SettingsService {
 
             if (updateSettingDto.options.deliveryTime) {
               try {
-                // Fetch the SettingsOptions entity including its deliveryTime relation
-                const findOption = await this.settingsOptionsRepository.findOne({
-                  where: { id: updateSettingDto.id },
-                  relations: ["deliveryTime"],
-                });
-
-                if (!findOption) {
-                  throw new NotFoundException("Settings option not found");
-                }
-
-                const existingDeliveryTimes = findOption.deliveryTime;
-
-                const updateDeliveryTime: DeliveryTime[] = [];
+                // Clear existing delivery times associated with the option
+                findOption.deliveryTime = [];
 
                 // Ensure unique titles in the new delivery times
                 const uniqueDeliveryTimes = updateSettingDto.options.deliveryTime.reduce((acc, current) => {
@@ -776,26 +733,22 @@ export class SettingsService {
                   }
                 }, [] as { title: string; description: string }[]);
 
-                // Filter out delivery times that already exist
-                for (const updates of uniqueDeliveryTimes) {
-                  let existingTime = existingDeliveryTimes.find(time => time.title === updates.title);
+                const updateDeliveryTime: DeliveryTime[] = [];
 
-                  if (!existingTime) {
-                    existingTime = this.deliveryTimeRepository.create(updates);
-                    const savedTime = await this.deliveryTimeRepository.save(existingTime);
-                    updateDeliveryTime.push(savedTime);
-                  } else {
-                    existingTime.description = updates.description;
-                    const updatedTime = await this.deliveryTimeRepository.save(existingTime);
-                    updateDeliveryTime.push(updatedTime);
+                // Create or find and save new delivery times
+                for (const updates of uniqueDeliveryTimes) {
+                  let deliveryTime = await this.deliveryTimeRepository.findOne({ where: { title: updates.title } });
+
+                  if (!deliveryTime) {
+                    deliveryTime = this.deliveryTimeRepository.create(updates);
+                    deliveryTime = await this.deliveryTimeRepository.save(deliveryTime);
                   }
+
+                  updateDeliveryTime.push(deliveryTime);
                 }
 
                 // Update the deliveryTime property in findOption with the newly saved delivery times
                 findOption.deliveryTime = updateDeliveryTime;
-
-                // Save the updated findOption to ensure the relationship is persisted
-                await this.settingsOptionsRepository.save(findOption);
               } catch (error) {
                 console.error("Error saving DeliveryTime:", error);
                 throw new NotFoundException("Failed to update delivery time");
