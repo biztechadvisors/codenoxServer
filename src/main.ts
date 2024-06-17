@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import cookieParser from 'cookie-parser';
-import session from 'express-session';
+// import session from 'express-session';
 import cors from 'cors';
 
 async function bootstrap() {
@@ -15,19 +15,19 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, "..", "public"));
   app.use(cookieParser());
 
-  app.use(
-    session({
-      name: 'sessionName',
-      secret: "notagoodsecretnoreallydontusethisone",
-      resave: false,
-      saveUninitialized: false, // typically set to false to avoid storing empty sessions
-      cookie: {
-        httpOnly: true,  // Don't let browser JavaScript access cookie ever
-        secure: process.env.NODE_ENV === 'production', // Only use cookie over HTTPS in production
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours for example
-      }
-    })
-  );
+  // app.use(
+  //   session({
+  //     name: 'sessionName',
+  //     secret: "notagoodsecretnoreallydontusethisone",
+  //     resave: false,
+  //     saveUninitialized: false, // typically set to false to avoid storing empty sessions
+  //     cookie: {
+  //       httpOnly: true,  // Don't let browser JavaScript access cookie ever
+  //       secure: process.env.NODE_ENV === 'production', // Only use cookie over HTTPS in production
+  //       maxAge: 24 * 60 * 60 * 1000 // 24 hours for example
+  //     }
+  //   })
+  // );
 
   app.use(cors({
     origin: (origin, callback) => {
