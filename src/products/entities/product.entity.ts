@@ -15,8 +15,8 @@ import { Attribute } from 'src/attributes/entities/attribute.entity';
 import { Stocks } from 'src/stocks/entities/stocks.entity';
 
 enum ProductStatus {
-  PUBLISH = 'publish',
-  DRAFT = 'draft',
+  PUBLISH = 'Publish',
+  DRAFT = 'Draft',
 }
 export enum ProductType {
   SIMPLE = 'simple',
@@ -88,11 +88,11 @@ export class Product extends CoreEntity {
   @ManyToOne(() => Tax, (tax) => tax.products, { eager: true, cascade: true })
   taxes: Tax;
 
-  @ManyToMany(() => Attachment, { cascade: true, eager: true, nullable: true })
+  @ManyToMany(() => Attachment, { cascade: true, eager: true })
   @JoinTable({ name: 'gallery' })
   gallery?: Attachment[];
 
-  @ManyToOne(() => Attachment, { cascade: true, nullable: true })
+  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'image_id' })
   image?: Attachment;
 
@@ -130,6 +130,8 @@ export class Product extends CoreEntity {
   in_wishlist: boolean;
   @Column()
   language?: string;
+  @Column()
+  Google_Shopping?: string;
   @Column({ type: "json" })
   translated_languages?: string[];
 }

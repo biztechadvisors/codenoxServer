@@ -89,13 +89,16 @@ export class UploadProductsXl {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadProducts(@UploadedFile() file) {
+  async uploadProducts(@UploadedFile() file, @Query('shop_slug') shopSlug: string) {
     if (!file) {
       throw new BadRequestException('File not uploaded');
     }
+    if (!shopSlug) {
+      throw new BadRequestException('shop_slug is required');
+    }
+
     const buffer = file.buffer;
-    console.log('upload')
-    await this.uploadXlService.uploadProductsFromExcel(buffer);
+    await this.uploadXlService.uploadProductsFromExcel(buffer, shopSlug);
     return { message: 'Products uploaded successfully' };
   }
 }

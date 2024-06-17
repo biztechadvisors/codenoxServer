@@ -3,6 +3,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/
 import { CreateSettingDto } from './dto/create-setting.dto'
 import { SettingsService } from './settings.service'
 import { UpdateSettingDto } from './dto/update-setting.dto'
+import { query } from 'express'
 
 
 @Controller('settings')
@@ -12,26 +13,22 @@ export class SettingsController {
   @Post()
   create(
     @Query('shopId') shopId: number,
-    @Body() createSettingDto: CreateSettingDto) {
-    console.log('shopId**', shopId)
-    return this.settingsService.create(shopId, createSettingDto)
-  }
-
-  @Get('/:shop_slug')
-  findAll(@Param('shop_slug') shop_slug: string) {
-    return this.settingsService.findAll(shop_slug)
+    @Body() createSettingDto: CreateSettingDto
+  ) {
+    return this.settingsService.create(shopId, createSettingDto);
   }
 
   @Put('/:id')
   update(
     @Param('id') id: number,
-    @Body() updateSettingDto: UpdateSettingDto) {
-    return this.settingsService.update(id, updateSettingDto)
+    @Body() updateSettingDto: UpdateSettingDto
+  ) {
+    return this.settingsService.update(id, updateSettingDto);
   }
 
-  @Get(':id/:shop_id')
-  findOne(@Param('id') id: number, @Param('shop_id') shop_id: number) {
-    return this.settingsService.findOne(id, shop_id);
+  @Get('')
+  findOne(@Query('shopSlug') shopSlug: string) {
+    return this.settingsService.findOne(shopSlug);
   }
 
   @Delete(':id')

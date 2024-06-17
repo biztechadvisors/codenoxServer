@@ -96,6 +96,8 @@ export class SettingsService {
     private attachmentRepository: AttachmentRepository,
     @InjectRepository(Shop)
     private shopRepository: Repository<Shop>,
+    @InjectRepository(ServerInfo)
+    private ServerInfoRepository: Repository<ServerInfo>,
   ) { }
 
   async create(shopId: number, createSettingDto: CreateSettingDto): Promise<Setting | { message: string }> {
@@ -134,6 +136,17 @@ export class SettingsService {
   async createSettingsOptions(optionsData: Partial<SettingsOptions>): Promise<SettingsOptions> {
     try {
       const newOptions = new SettingsOptions();
+
+      // Server Info
+
+      const server_info = new ServerInfo;
+      server_info.memory_limit = '128M',
+        server_info.post_max_size = 8192,
+        server_info.max_input_time = '60',
+        server_info.max_execution_time = '30',
+        server_info.upload_max_filesize = 2048
+
+      newOptions.server_info = await this.ServerInfoRepository.save(server_info);
 
       // Handle deliveryTime
       if (optionsData.deliveryTime) {
@@ -339,12 +352,18 @@ export class SettingsService {
   }
 
 
-  async findAll(shop_slug: string): Promise<Setting[] | null> {
+  async findOne(shop_slug: string): Promise<Setting | null> {
+    // Fetch the shop details using the shop slug
+    const shop = await this.shopRepository.findOne({ where: { slug: shop_slug } });
 
-    const shop = await this.shopRepository.findOne({ where: { slug: shop_slug } })
+    // If the shop is not found, return null
+    if (!shop) {
+      return null;
+    }
 
-    const settingData = await this.settingRepository.find({
-      where: { shop: { id: shop.id } },
+    // Fetch the settings using the shop ID
+    const settingData = await this.settingRepository.findOne({
+      where: { shop: { id: shop.id } }, // Use shop.id here
       relations: [
         'options.contactDetails',
         'options.contactDetails.socials',
@@ -363,43 +382,13 @@ export class SettingsService {
         'options.deliveryTime',
         'options.paymentGateway',
         'options.logo',
+        'options.server_info',
       ],
     });
 
-    if (!settingData || settingData.length === 0) {
-      return null;
-    } else {
-      return settingData;
-    }
-  }
-
-  async findOne(id: number, shopId: number): Promise<Setting | null> {
-    const settingData = await this.settingRepository.findOne({
-      where: { id: id, shop: { id: shopId } },
-      relations: [
-        'shop',  // Include shop relation if needed
-        'options.contactDetails',
-        'options.contactDetails.socials',
-        'options.contactDetails.location',
-        'options.currencyOptions',
-        'options.emailEvent',
-        'options.emailEvent.admin',
-        'options.emailEvent.vendor',
-        'options.emailEvent.customer',
-        'options.smsEvent',
-        'options.smsEvent.admin',
-        'options.smsEvent.vendor',
-        'options.smsEvent.customer',
-        'options.seo',
-        'options.seo.ogImage',
-        'options.deliveryTime',
-        'options.paymentGateway',
-        'options.logo',
-      ]
-    });
-
+    // Return the settings if found, otherwise return null
     if (!settingData) {
-      throw new NotFoundException('Setting not found');
+      return null;
     } else {
       return settingData;
     }
@@ -731,24 +720,34 @@ export class SettingsService {
 
             if (updateSettingDto.options.deliveryTime) {
               try {
-                const updateDeliveryTime = [];
+                // Clear existing delivery times associated with the option
+                findOption.deliveryTime = [];
 
-                for (const updates of updateSettingDto.options.deliveryTime) {
-                  let existingTime = findOption.deliveryTime.find(time => time.title === updates.title);
-
-                  if (!existingTime) {
-                    existingTime = this.deliveryTimeRepository.create(updates);
+                // Ensure unique titles in the new delivery times
+                const uniqueDeliveryTimes = updateSettingDto.options.deliveryTime.reduce((acc, current) => {
+                  const x = acc.find(item => item.title === current.title);
+                  if (!x) {
+                    return acc.concat([current]);
                   } else {
-                    existingTime = {
-                      ...existingTime,
-                      ...updates
-                    };
+                    return acc;
+                  }
+                }, [] as { title: string; description: string }[]);
+
+                const updateDeliveryTime: DeliveryTime[] = [];
+
+                // Create or find and save new delivery times
+                for (const updates of uniqueDeliveryTimes) {
+                  let deliveryTime = await this.deliveryTimeRepository.findOne({ where: { title: updates.title } });
+
+                  if (!deliveryTime) {
+                    deliveryTime = this.deliveryTimeRepository.create(updates);
+                    deliveryTime = await this.deliveryTimeRepository.save(deliveryTime);
                   }
 
-                  const updatedTime = await this.deliveryTimeRepository.save(existingTime);
-                  updateDeliveryTime.push(updatedTime);
+                  updateDeliveryTime.push(deliveryTime);
                 }
 
+                // Update the deliveryTime property in findOption with the newly saved delivery times
                 findOption.deliveryTime = updateDeliveryTime;
               } catch (error) {
                 console.error("Error saving DeliveryTime:", error);
@@ -758,24 +757,34 @@ export class SettingsService {
 
             if (updateSettingDto?.options?.logo) {
               try {
-                let updateLogo = await this.logoSettingsRepository.findOne({
-                  where: { id: findOption.logo.id }
-                });
 
-                if (!updateLogo) {
-                  updateLogo = this.logoSettingsRepository.create(updateSettingDto.options.logo);
-                } else {
-                  const findAttachment = await this.attachmentRepository.findOne({
-                    where: { original: updateLogo.original }
+                let updateLogo;
+                if (findOption.logo?.id) {
+                  updateLogo = await this.logoSettingsRepository.findOne({
+                    where: { id: findOption.logo.id }
                   });
-                  if (findAttachment) {
-                    await this.attachmentRepository.delete(findAttachment);
-                  }
-                  await this.logoSettingsRepository.delete(updateLogo);
                 }
 
-                const savedLogo = await this.logoSettingsRepository.save(updateLogo);
-                console.log("Saved Logo:", savedLogo);
+                if (!updateLogo) {
+                  const logo = new LogoSettings();
+                  logo.file_name = updateSettingDto.options.logo.file_name;
+                  logo.original = updateSettingDto.options.logo.original;
+                  logo.thumbnail = updateSettingDto.options.logo.thumbnail;
+
+                  findOption.logo = await this.logoSettingsRepository.save(logo);
+                } else {
+                  findOption.logo = null
+                  await this.settingsOptionsRepository.save(findOption)
+
+                  const logo = new LogoSettings();
+                  logo.file_name = updateSettingDto.options.logo.file_name;
+                  logo.original = updateSettingDto.options.logo.original;
+                  logo.thumbnail = updateSettingDto.options.logo.thumbnail;
+
+                  await this.logoSettingsRepository.delete({ id: updateLogo.id });
+                  findOption.logo = await this.logoSettingsRepository.save(logo);
+                }
+
               } catch (error) {
                 console.error("Error saving logo:", error);
                 throw new NotFoundException("Failed to update logo");

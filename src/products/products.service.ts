@@ -1,7 +1,5 @@
 /* eslint-disable prettier/prettier */
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
-import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto, UpdateQuantityDto } from './dto/update-product.dto';
 import { File, OrderProductPivot, Product, ProductType, Variation, VariationOption } from './entities/product.entity';
@@ -24,26 +22,9 @@ import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from 'src/users/entities/dealer.entity';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, UserRepository } from 'src/users/users.repository';
 import { User } from 'src/users/entities/user.entity';
-import items from 'razorpay/dist/types/items';
-import { clearConfigCache } from 'prettier';
-import { Brackets, Equal, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { Cron } from '@nestjs/schedule';
-import { error } from 'console';
-
-const options = {
-  keys: [
-    'name',
-    'type.slug',
-    'categories.slug',
-    'status',
-    'shop_id',
-    'author.slug',
-    'tags',
-    'manufacturer.slug',
-  ],
-  threshold: 0.3,
-};
 
 @Injectable()
 export class ProductsService {
@@ -787,10 +768,25 @@ export class ProductsService {
   }
 
   async remove(id: number): Promise<void> {
-    const product = await this.productRepository.findOne({ where: { id: id }, relations: ['type', 'shop', 'image', 'categories', 'tags', 'gallery', 'related_products', 'variations', 'variation_options'] });
+    const product = await this.productRepository.findOne({
+      where: { id: id },
+      relations: [
+        'type',
+        'shop',
+        'image',
+        'categories',
+        'tags',
+        'gallery',
+        'related_products',
+        'variations',
+        'variation_options',
+        'subCategories'  // Make sure to include subCategories relation
+      ]
+    });
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
+
     // Remove associations with tags
     product.tags = [];
 
@@ -808,25 +804,31 @@ export class ProductsService {
 
     // Remove associations with categories
     if (product.categories) {
-      await Promise.all(product.categories.map(async category => {
-        category.products = category.products.filter(p => p.id !== product.id);
-        await this.categoryRepository.save(category);
+      await Promise.all(product.categories.map(async (category) => {
+        if (category.products) {
+          category.products = category.products.filter(p => p.id !== product.id);
+          await this.categoryRepository.save(category);
+        }
       }));
     }
 
     // Find related records in the dealer_product_margin table
-    const relatedRecords = await this.dealerProductMarginRepository.find({ where: { product: { id: product.id } } });
+    const relatedRecords = await this.dealerProductMarginRepository.find({
+      where: { product: { id: product.id } }
+    });
 
     // Delete related records
-    await Promise.all(relatedRecords.map(async record => {
+    await Promise.all(relatedRecords.map(async (record) => {
       await this.dealerProductMarginRepository.delete(record.id);
     }));
 
     // Remove associations with subcategories
     if (product.subCategories) {
-      await Promise.all(product.subCategories.map(async subCategory => {
-        subCategory.products = subCategory.products.filter(p => p.id !== product.id);
-        await this.subCategoryRepository.save(subCategory);
+      await Promise.all(product.subCategories.map(async (subCategory) => {
+        if (subCategory.products) {
+          subCategory.products = subCategory.products.filter(p => p.id !== product.id);
+          await this.subCategoryRepository.save(subCategory);
+        }
       }));
     }
 
@@ -842,11 +844,13 @@ export class ProductsService {
     }
 
     // Remove gallery attachments
-    const gallery = await this.attachmentRepository.findByIds(product.gallery.map(g => g.id));
-    await this.attachmentRepository.remove(gallery);
+    if (product.gallery && product.gallery.length > 0) {
+      const gallery = await this.attachmentRepository.findByIds(product.gallery.map(g => g.id));
+      await this.attachmentRepository.remove(gallery);
+    }
 
     // Fetch related entities
-    const variations = await Promise.all(product.variation_options.map(async v => {
+    const variations = await Promise.all(product.variation_options.map(async (v) => {
       const variation = await this.variationRepository.findOne({ where: { id: v.id }, relations: ['options', 'image'] });
       if (!variation) {
         throw new NotFoundException(`Variation with ID ${v.id} not found`);
@@ -856,7 +860,7 @@ export class ProductsService {
 
     await Promise.all([
       ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
-      ...variations.map(async v => {
+      ...variations.map(async (v) => {
         if (v.image) {
           const image = v.image;
           v.image = null;
@@ -877,8 +881,8 @@ export class ProductsService {
       this.variationRepository.remove(variations),
       this.productRepository.remove(product),
     ]);
-
   }
+
 
   async updateQuantity(id: number, updateQuantityDto: UpdateQuantityDto): Promise<void> {
     try {

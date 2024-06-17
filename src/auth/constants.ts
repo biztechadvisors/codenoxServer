@@ -1,5 +1,6 @@
 /* eslint-disable prettier/prettier */
 export const jwtConstants = {
   access_secret: 'CODENOXJWTACCESSTOKENSECRET',
-  refresh_secret: 'CODENOXJWTSECRETTOKENSECRET'
+  refresh_secret: 'CODENOXJWTSECRETTOKENSECRET',
+  cookies_secret: 'Codenoxsecretcookies'
 };

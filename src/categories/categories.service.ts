@@ -192,25 +192,34 @@ export class CategoriesService {
     // Find the Category instance to be removed
     const category = await this.categoryRepository.findOne({
       where: { id },
-      relations: ['image'],
+      relations: ['image', 'subCategories'], // Ensure to load subCategories as well
     });
 
     if (!category) {
-      throw new Error('Category not found')
+      throw new Error('Category not found');
     }
+
+    // Nullify the relationship for sub-categories
+    if (category.subCategories && category.subCategories.length > 0) {
+      for (const subCategory of category.subCategories) {
+        subCategory.category = null;
+        await this.subCategoryRepository.save(subCategory);
+      }
+    }
+
     // If the Category has an image, remove it first
     if (category.image) {
-      const image = category.image
+      const image = category.image;
       // Set the imageId to null in the category table before deleting the attachment
-      category.image = null
-      await this.categoryRepository.save(category)
+      category.image = null;
+      await this.categoryRepository.save(category);
       // Now, delete the image (attachment)
-      await this.attachmentRepository.remove(image)
+      await this.attachmentRepository.remove(image);
     }
-    // Remove the Category instance from the database
-    await this.categoryRepository.remove(category)
-  }
 
+    // Remove the Category instance from the database
+    await this.categoryRepository.remove(category);
+  }
 
   // SubCategory Services********************************
 
@@ -269,7 +278,6 @@ export class CategoriesService {
       });
     }
   }
-
 
   async getSubCategories(query: GetSubCategoriesDto): Promise<SubCategory[]> {
     const { categoryId, shopId } = query;
