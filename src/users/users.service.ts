@@ -136,8 +136,8 @@ export class UsersService {
     type,
   }: GetUsersDto): Promise<UserPaginator> {
 
-    const limitNum = Number(limit);
-    const pageNum = Number(page);
+    const limitNum = limit;
+    const pageNum = page;
     const startIndex = (pageNum - 1) * limitNum;
 
     const findOptions: any = {
@@ -162,7 +162,9 @@ export class UsersService {
     if (orderBy && sortedBy) {
       findOptions.order[orderBy] = sortedBy.toUpperCase();
     }
+
     let user;
+
     if (usrById) {
       // Fetch user by ID and apply type-based filtering if provided
       user = await this.userRepository.findOne({
