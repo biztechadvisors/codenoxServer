@@ -27,5 +27,5 @@ export enum QueryCategoriesOrderByColumn {
 export class GetSubCategoriesDto {
   search?: string
   categoryId: number;
-  shopId: number;
+  shopSlug: string;
 }

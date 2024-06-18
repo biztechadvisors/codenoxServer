@@ -259,38 +259,38 @@ export class CategoriesService {
     return await this.subCategoryRepository.save(subCategory);
   }
 
-  async getSubCategory(param: string, language: string, shopId: number, categoryId: number): Promise<SubCategory> {
+  async getSubCategory(param: string, language: string, shopSlug: string): Promise<SubCategory> {
     // Try to parse the param as a number to see if it's an id
     const id = Number(param);
 
     if (!isNaN(id)) {
       // If it's an id, find the subcategory by id
       return this.subCategoryRepository.findOne({
-        where: { id: id, shop: { id: shopId }, category: { id: categoryId } },
+        where: { id: id, shop: { slug: shopSlug } },
         relations: ['image', 'shop', 'category'],
       });
     } else {
       // If it's not an id, find the subcategory by slug
       return this.subCategoryRepository.findOne({
-        where: { slug: param, language: language, shop: { id: shopId }, category: { id: categoryId } },
+        where: { slug: param, language: language, shop: { slug: shopSlug } },
         relations: ['shop', 'image', 'category'],
       });
     }
   }
 
   async getSubCategories(query: GetSubCategoriesDto): Promise<SubCategory[]> {
-    const { categoryId, shopId } = query;
+    const { categoryId, shopSlug } = query;
 
-    if (!categoryId && !shopId) {
-      throw new BadRequestException('Either categoryId or shopId must be provided in the query');
+    if (!categoryId && !shopSlug) {
+      throw new BadRequestException('Either categoryId or shopSlug must be provided in the query');
     }
 
     let where: { [key: string]: any } = {};
     if (categoryId) {
-      where['category'] = typeof categoryId === "string" ? { id: Number(categoryId) } : { id: categoryId };;
+      where['category'] = { id: Number(categoryId) };
     }
-    if (shopId) {
-      where['shop'] = typeof shopId === "string" ? { id: Number(shopId) } : { id: shopId };;
+    if (shopSlug) {
+      where['shop'] = { slug: shopSlug };
     }
 
     const relations = ['category', 'image', 'shop'];

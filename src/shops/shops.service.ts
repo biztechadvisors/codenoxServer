@@ -48,7 +48,6 @@ export class ShopsService {
     @InjectRepository(Attachment)
     private readonly attachmentRepository: AttachmentRepository,
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
-
     private readonly addressesService: AddressesService,
   ) { }
 
@@ -69,7 +68,7 @@ export class ShopsService {
         throw new Error('User does not exist');
       }
 
-      if (userToUpdate.type.type_name !== 'store_owner') {
+      if (userToUpdate.type.type_name !== UserType.Store_Owner) {
         throw new Error('User is not a vendor');
       }
 

@@ -18,6 +18,8 @@ export class GetUsersDto extends PaginationArgs {
   search?: string;
   usrById?: string | number;
   type?: UserType;
+  limit?: number;
+  page?: number;
 }
 
 export enum QueryUsersOrderByColumn {
