@@ -59,7 +59,6 @@ export class SubCategoriesController {
 
   @Get()
   findAll(@Query() query: GetSubCategoriesDto) {
-    console.log('query 62**', query)
     return this.categoriesService.getSubCategories(query);
   }
 
