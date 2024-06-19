@@ -19,7 +19,7 @@ export class Balance {
   @Column()
   admin_commission_rate: number;
 
-  @OneToOne(() => Shop, shop => shop.balance, { cascade: true })
+  @OneToOne(() => Shop, shop => shop.balance)
   shop: Shop;
 
   @ManyToOne(() => Dealer, (dealer) => dealer.balance)
@@ -34,7 +34,7 @@ export class Balance {
   @Column()
   current_balance: number;
 
-  @OneToOne(() => PaymentInfo)
+  @OneToOne(() => PaymentInfo, { cascade: true })
   @JoinColumn()
   payment_info: PaymentInfo;
 }
