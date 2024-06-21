@@ -723,9 +723,9 @@ export class AuthService {
 
     let relations: string[];
     if (userWithDealer) {
-      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "dealer", "managed_shop"];
+      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "dealer", "managed_shop", "UsrBy", "UsrBy.managed_shop"];
     } else {
-      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "managed_shop"];
+      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "managed_shop", "UsrBy", "UsrBy.managed_shop"];
     }
 
     return relations;
@@ -789,7 +789,5 @@ export class AuthService {
     // Save the updated user entity back to the database
     return this.userRepository.save(user);
   }
-
-
 
 }
