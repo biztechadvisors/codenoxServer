@@ -110,52 +110,51 @@ export class OrdersService {
   }
 
   async updateOrdQuantityProd(ordProducts: any[]): Promise<void> {
-    console.log('ordProducts', ordProducts);
     const entityManager = this.productRepository.manager;
     try {
       if (!ordProducts || ordProducts.length === 0) {
         throw new BadRequestException('Invalid input. No products provided.');
       }
 
+      // Fetch products by IDs
       const productIds = ordProducts.map(product => product.product_id);
-      const variationOptionIds = ordProducts.map(product => product.variation_option_id);
-
       const products = await this.productRepository.find({
         where: { id: In(productIds) },
-        relations: ['variations'],
+        relations: ["variation_options"],
       });
-
       if (products.length === 0) {
         throw new NotFoundException('Products not found');
       }
 
       for (const ordProduct of ordProducts) {
-        const product = products.find(p => p.id === ordProduct.product_id);
-
-        if (!product) {
-          throw new NotFoundException(`Product with ID ${ordProduct.product_id} not found`);
+        let product;
+        let variation;
+        if (ordProduct.product_id) {
+          product = products.find(p => p.id === ordProduct.product_id);
+          if (!product) {
+            throw new NotFoundException(`Product with ID ${ordProduct.product_id} not found`);
+          }
         }
-
-        const variation = product.variation_options.find(v => v.id === ordProduct.variation_option_id);
-
-        if (!variation) {
-          throw new NotFoundException(`Variation with ID ${ordProduct.variation_option_id} not found for product ID ${product.id}`);
+        if (ordProduct.variation_option_id) {
+          variation = product.variation_options.find(v => v.id === ordProduct.variation_option_id);
+          if (!variation) {
+            throw new NotFoundException(`Variation with ID ${ordProduct.variation_option_id} not found for product ID ${product.id}`);
+          }
         }
-
         // Validate order quantity against available quantity
-        if (ordProduct.order_quantity > variation.quantity) {
-          throw new BadRequestException(`Order quantity exceeds available quantity for variation ID ${variation.id}`);
+        if (ordProduct.order_quantity > (variation ? variation.quantity : product.quantity)) {
+          throw new BadRequestException(`Order quantity exceeds available quantity for product ID ${product.id} ${variation ? 'and variation ID ' + variation.id : ''}`);
         }
-
         // Update quantities
-        product.quantity -= ordProduct.order_quantity;
-        variation.quantity -= ordProduct.order_quantity;
-
-        // Save changes
-        await entityManager.save(product);
-        await entityManager.save(variation);
+        if (product) {
+          product.quantity -= ordProduct.order_quantity;
+          await entityManager.save(product);
+        }
+        if (variation) {
+          variation.quantity -= ordProduct.order_quantity;
+          await entityManager.save(variation);
+        }
       }
-
       console.log('Product quantities updated successfully');
     } catch (error) {
       console.error('Error updating product quantities:', error.message || error);
