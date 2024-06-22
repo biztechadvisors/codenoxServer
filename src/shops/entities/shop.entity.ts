@@ -45,7 +45,7 @@ export class Shop extends CoreEntity {
   @Column()
   products_count: number;
 
-  @OneToOne(() => Balance, (balance) => balance.shop)
+  @OneToOne(() => Balance, (balance) => balance.shop, { cascade: true })
   @JoinColumn()
   balance?: Balance;
 
@@ -91,7 +91,6 @@ export class Shop extends CoreEntity {
   order: Order[];
 
 }
-
 
 @Entity()
 export class PaymentInfo {

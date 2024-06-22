@@ -35,10 +35,20 @@ export class OrdersController {
   ) { }
 
   @Post()
-  async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
-    const OrdSuccess = await this.ordersService.create(createOrderDto);
-    await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
-    return OrdSuccess;
+  async create(@Body() createOrderDto: CreateOrderDto): Promise<Order | { statusCode: number; message: string }> {
+    try {
+      // Attempt to create the order
+      const OrdSuccess = await this.ordersService.create(createOrderDto);
+
+      // Attempt to update product quantities
+      await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
+
+      // If everything is successful, return the order success response
+      return OrdSuccess;
+    } catch (error) {
+      // Log the error for debugging purposes
+      console.error('Error creating order:', error.message || error);
+    }
   }
 
   @Get()

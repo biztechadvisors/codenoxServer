@@ -63,8 +63,8 @@ export class SubCategoriesController {
   }
 
   @Get(':param')
-  findOne(@Param('param') param: string, @Query('language') language: string, @Query('shopId') shopId: number, @Query('categoryId') categoryId: number) {
-    return this.categoriesService.getSubCategory(param, language, shopId, categoryId);
+  findOne(@Param('param') param: string, @Query('language') language: string, @Query('shopSlug') shopSlug: string) {
+    return this.categoriesService.getSubCategory(param, language, shopSlug);
   }
 
   @Put(':id')
