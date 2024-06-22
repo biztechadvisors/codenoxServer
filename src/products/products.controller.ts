@@ -86,13 +86,13 @@ export class PopularProductsController {
 @Controller('uploadxl-products')
 export class UploadProductsXl {
   constructor(private readonly uploadXlService: UploadXlService) { }
-
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadProducts(@UploadedFile() file, @Query('shop_slug') shopSlug: string) {
     if (!file) {
       throw new BadRequestException('File not uploaded');
     }
+    console.log("UPLOAD_Products",Controller);
     if (!shopSlug) {
       throw new BadRequestException('shop_slug is required');
     }
