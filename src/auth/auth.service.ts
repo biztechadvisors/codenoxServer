@@ -166,14 +166,11 @@ export class AuthService {
 
         existingUser.otp = otp;
         existingUser.created_at = new Date();
-
         await this.userRepository.save(existingUser);
-
         if (existingUser.type?.type_name === 'Customer') {
           // Send confirmation email for customers
           await this.mailService.sendUserConfirmation(existingUser, token);
         }
-
         return { message: 'OTP sent to your email.' };
       }
 
@@ -201,15 +198,13 @@ export class AuthService {
           where: { id: createUserInput.UsrBy.id },
           relations: ['type'],
         });
-
-        if (parentUsr?.type?.type_name === 'Store_Owner' || 'Vendor') {
+        if (parentUsr?.type?.type_name === UserType.Store_Owner) {
           const existingDealerCount = await this.userRepository.createQueryBuilder('user')
             .innerJoin('user.type', 'permission')
             .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
             .andWhere('permission.type_name = :type_name', { type_name: 'Dealer' })
             .getCount();
-
-          if (existingDealerCount >= (parentUsr.dealerCount || 0)) {
+          if (existingDealerCount >= (parentUsr.dealerCount)) {
             throw new BadRequestException('Cannot add more users, dealerCount limit reached.');
           }
         }
@@ -217,12 +212,10 @@ export class AuthService {
 
       if (permission) {
         userData.type = permission;
-
         // Set dealerCount only if the user is of type store_owner
-        if (permission.type_name === 'Store_Owner' || 'Vendor') {
-          userData.dealerCount = createUserInput.dealerCount || 0;
+        if (permission.type_name === UserType.Store_Owner) {
+          userData.dealerCount = createUserInput.numberOfDealers || 0;
         }
-
         const token = Math.floor(100 + Math.random() * 900).toString();
         // Send confirmation email for users with permission
         await this.mailService.sendUserConfirmation(userData, token);
@@ -235,9 +228,7 @@ export class AuthService {
           await this.mailService.sendUserConfirmation(userData, token);
         }
       }
-
       await this.userRepository.save(userData);
-
       return { message: 'Registered successfully. OTP sent to your email.' };
     } catch (error) {
       console.error('Registration error:', error);

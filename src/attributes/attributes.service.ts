@@ -12,6 +12,7 @@ import { convertToSlug } from '../helpers';
 import { GetAttributeArgs } from './dto/get-attribute.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Repository } from 'typeorm';
+import { GetAttributesArgs } from './dto/get-attributes.dto';
 const attributes = plainToClass(Attribute, attributesJson);
 
 @Injectable()
@@ -25,6 +26,12 @@ export class AttributesService {
 
   async convertToSlug(text) {
     return await convertToSlug(text);
+  }
+
+  getValueFromSearch(searchString: string, key: string): string | null {
+    const regex = new RegExp(`${key}:(\\d+)`);
+    const match = searchString.match(regex);
+    return match ? match[1] : null;
   }
 
   async create(createAttributeDto: CreateAttributeDto): Promise<{ message: string; status: boolean } | Attribute> {
@@ -77,7 +84,7 @@ export class AttributesService {
     return existingAttribute;
   }
 
-  async findAll(): Promise<{
+  async findAll(params: GetAttributesArgs): Promise<{
     id: number;
     name: string;
     slug: string;
@@ -88,46 +95,44 @@ export class AttributesService {
       language?: string;
     }[];
   }[]> {
-    const attributes = await this.attributeRepository.find({
-      relations: ['values',
-        // 'shop'
-      ],
-    });
+    const { search, orderBy, sortedBy, language } = params;
+    const shop_id = this.getValueFromSearch(search, "shop_id");
+
+    const query = this.attributeRepository.createQueryBuilder('attribute')
+      .leftJoinAndSelect('attribute.values', 'value');
+
+    if (shop_id) {
+      query.where('attribute.shop_id = :shop_id', { shop_id });
+    }
+
+    if (language) {
+      if (shop_id) {
+        query.andWhere('attribute.language = :language', { language });
+      } else {
+        query.where('attribute.language = :language', { language });
+      }
+    }
+
+    if (orderBy && sortedBy) {
+      query.orderBy(`attribute.${orderBy}`, sortedBy.toUpperCase() as 'ASC' | 'DESC');
+    }
+
+    const attributes = await query.getMany();
 
     return attributes.map((attribute) => {
       return {
         id: attribute.id,
         name: attribute.name,
         slug: attribute.slug,
-        shop_id: attribute.shop_id,
-        language: attribute.language,
-        created_at: attribute.created_at,
-        updated_at: attribute.updated_at,
-        values: attribute.values.map((attributeValue) => {
-          return {
-            id: attributeValue.id,
-            value: attributeValue.value,
-            meta: attributeValue.meta,
-            attributeId: attributes[0].id,
-            language: attribute.language,
-            created_at: attribute.created_at,
-            updated_at: attribute.updated_at,
-          };
-        }),
-        // shop: {
-        //   id: attribute.shop.id,
-        //   name: attribute.shop.name,
-        // },
+        values: attribute.values.map((value) => ({
+          id: value.id,
+          value: value.value,
+          meta: value.meta,
+          // language: value.language,
+        })),
       };
     });
   }
-
-
-  // findOne(param: string) {
-  //   return this.attributes.find(
-  //     (p) => p.id === Number(param) || p.slug === param,
-  //   );
-  // }
 
   async findOne(param: GetAttributeArgs): Promise<{ message: string } | Attribute | undefined> {
 
