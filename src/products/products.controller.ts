@@ -34,6 +34,7 @@ export class ProductsController {
 
   @Get()
   async getProducts(@Query(ValidationPipe) query: GetProductsDto): Promise<ProductPaginator> {
+    console.log('getProducts 274', query)
     return this.productsService.getProducts(query);
   }
 
