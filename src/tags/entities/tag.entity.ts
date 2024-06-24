@@ -17,7 +17,7 @@ export class Tag extends CoreEntity {
   @Column()
   slug: string;
 
-  @Column()
+  @Column({ nullable: true })
   parent: number | null;
 
   @Column()
@@ -47,6 +47,3 @@ export class Tag extends CoreEntity {
   @Column({ type: 'json' })
   translatedLanguages: string[];
 }
-
-
-

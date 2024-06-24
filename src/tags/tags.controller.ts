@@ -16,10 +16,11 @@ import { GetTagsDto, TagPaginator } from './dto/get-tags.dto'
 
 @Controller('tags')
 export class TagsController {
-  constructor(private readonly tagsService: TagsService) {}
+  constructor(private readonly tagsService: TagsService) { }
 
   @Post()
   create(@Body() createTagDto: CreateTagDto) {
+    console.log('createTagDto 23', createTagDto)
     return this.tagsService.create(createTagDto)
   }
 
