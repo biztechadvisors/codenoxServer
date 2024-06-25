@@ -109,6 +109,12 @@ export class OrdersService {
     return date.toLocaleDateString('en-US', options);
   }
 
+  getValueFromSearch(searchString: string, key: string): string | null {
+    const regex = new RegExp(`${key}:(\\d+)`);
+    const match = searchString.match(regex);
+    return match ? match[1] : null;
+  }
+
   async updateOrdQuantityProd(ordProducts: any[]): Promise<void> {
     const entityManager = this.productRepository.manager;
     try {
@@ -382,26 +388,15 @@ export class OrdersService {
         shop_id,
       } = getOrdersDto;
 
-      console.log('first *** 383', getOrdersDto)
+      let customerId = this.getValueFromSearch(search, 'customer_id');
 
-      let customerId = customer_id;
-
-      // Handle search string if provided
-      if (search) {
-        const [key, value] = search.split(":");
-        if (key === 'customer_id') {
-          customerId = parseInt(value); // Ensure customerId is a number
-        }
-      }
+      console.log('customerId ', customerId)
 
       // Find the user by customerId
-      let usr;
-      if (usr) {
-        usr = await this.userRepository.findOne({
-          where: { id: customerId },
-          relations: ['type'],
-        });
-      }
+      const usr = await this.userRepository.findOne({
+        where: { id: parseInt(customerId) },
+        relations: ['type'],
+      });
 
       if (!usr) {
         throw new Error('User not found');
