@@ -39,7 +39,7 @@ import {
 } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, UpdateResult, getManager } from 'typeorm';
-import { User } from 'src/users/entities/user.entity';
+import { User, UserType } from 'src/users/entities/user.entity';
 import { OrderProductPivot, Product, Variation } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { RazorpayService } from 'src/payment/razorpay-payment.service';
@@ -371,15 +371,19 @@ export class OrdersService {
     }
   }
 
-  async getOrders({
-    limit,
-    page,
-    customer_id,
-    tracking_number,
-    search,
-    shop_id,
-  }: GetOrdersDto): Promise<OrderPaginator> {
+  async getOrders(getOrdersDto: GetOrdersDto): Promise<OrderPaginator> {
     try {
+      let {
+        limit,
+        page,
+        customer_id,
+        tracking_number,
+        search,
+        shop_id,
+      } = getOrdersDto;
+
+      console.log('first *** 383', getOrdersDto)
+
       let customerId = customer_id;
 
       // Handle search string if provided
@@ -391,10 +395,13 @@ export class OrdersService {
       }
 
       // Find the user by customerId
-      const usr = await this.userRepository.findOne({
-        where: { id: customerId },
-        relations: ['type'],
-      });
+      let usr;
+      if (usr) {
+        usr = await this.userRepository.findOne({
+          where: { id: customerId },
+          relations: ['type'],
+        });
+      }
 
       if (!usr) {
         throw new Error('User not found');
@@ -421,7 +428,7 @@ export class OrdersService {
         .leftJoinAndSelect('order.coupon', 'coupon');
 
       // If the user is not an admin or super_admin, restrict orders by customer_id
-      if (!(permsn && (permsn.type_name === 'Admin' || permsn.type_name === 'super_admin'))) {
+      if (!(permsn && (permsn.type_name === UserType.Store_Owner || permsn.type_name === UserType.Super_Admin))) {
         const usrByIdUsers = await this.userRepository.find({
           where: { UsrBy: { id: usr.id } },
           relations: ['type'],
