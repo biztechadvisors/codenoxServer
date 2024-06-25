@@ -2,8 +2,10 @@ import { SortOrder } from 'src/common/dto/generic-conditions.dto';
 
 export class GetAttributesArgs {
   orderBy?: QueryAttributesOrderByOrderByClause[];
+  sortedBy?: string;
   shop_id?: number;
   language?: string;
+  search?: any;
 }
 
 export class QueryAttributesOrderByOrderByClause {

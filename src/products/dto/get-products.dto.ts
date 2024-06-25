@@ -34,7 +34,7 @@ export class GetProductsDto extends PaginationArgs {
   language?: string;
   with: string;
   dealerId?: number;
-  shopId?: number;
+  shop_id?: number;
   shopName?: string;
 }
 

@@ -76,6 +76,13 @@ export class ProductsService {
       this.logger.error('Error updating product stock status:', err.message || err);
     }
   }
+
+  getValueFromSearch(searchString: string, key: string): string | null {
+    const regex = new RegExp(`${key}:(\\d+)`);
+    const match = searchString.match(regex);
+    return match ? match[1] : null;
+  }
+
   async updateShopProductsCount(shopId: number, productId: number) {
     try {
       const shop = await this.shopRepository.findOne({ where: { id: shopId } });
@@ -261,8 +268,9 @@ export class ProductsService {
     }
   }
 
-  async getProducts({ limit = 20, page = 1, search, filter, dealerId, shopId, shopName }: GetProductsDto): Promise<ProductPaginator> {
+  async getProducts({ limit = 20, page = 1, search, filter, dealerId, shop_id, shopName }: GetProductsDto): Promise<ProductPaginator> {
     const startIndex = (page - 1) * limit;
+
     const productQueryBuilder = this.productRepository.createQueryBuilder('product');
 
     // Perform the necessary joins
@@ -288,8 +296,8 @@ export class ProductsService {
       productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
     }
 
-    if (shopId) {
-      productQueryBuilder.andWhere('shop.id = :shopId', { shopId });
+    if (shop_id) {
+      productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
     }
 
     if (shopName) {
@@ -361,7 +369,6 @@ export class ProductsService {
           .leftJoinAndSelect('product.variation_options', 'variation_options1')
           .where(combinedConditions, searchParams);
       }
-
 
     }
 
@@ -524,7 +531,12 @@ export class ProductsService {
   }
 
   async getPopularProducts(query: GetPopularProductsDto): Promise<Product[]> {
-    const { limit = 10, type_slug, shop_id } = query;
+    const { limit = 10, type_slug, search } = query;
+    let { shop_id } = query;
+
+    if (!shop_id && search) {
+      shop_id = parseInt(this.getValueFromSearch(search, "shop_id"));
+    }
 
     const productsQueryBuilder = this.productRepository.createQueryBuilder('product');
 
@@ -533,7 +545,7 @@ export class ProductsService {
     }
 
     if (shop_id) {
-      productsQueryBuilder.andWhere('product.shop_id = :shopId', { shopId: shop_id });
+      productsQueryBuilder.andWhere('product.shop_id = :shop_id', { shop_id: shop_id });
     }
 
     productsQueryBuilder

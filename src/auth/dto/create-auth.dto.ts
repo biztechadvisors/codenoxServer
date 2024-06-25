@@ -4,15 +4,10 @@ import { CoreMutationOutput } from 'src/common/dto/core-mutation-output.dto';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { User } from 'src/users/entities/user.entity';
 
-// enum Permission {
-//   SUPER_ADMIN = 'Super admin',
-//   STORE_OWNER = 'Store owner',
-//   STAFF = 'Staff',
-//   CUSTOMER = 'Customer',
-// }
 export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type', 'UsrBy', 'contact', 'dealerCount']) {
   permission: Permission
   isVerified: boolean;
+  numberOfDealers?: any;
 }
 
 export class LoginDto extends PartialType(
