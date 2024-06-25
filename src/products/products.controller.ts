@@ -92,7 +92,7 @@ export class UploadProductsXl {
     if (!file) {
       throw new BadRequestException('File not uploaded');
     }
-    console.log("UPLOAD_Products",Controller);
+    console.log("UPLOAD_Products",file, shopSlug);
     if (!shopSlug) {
       throw new BadRequestException('shop_slug is required');
     }

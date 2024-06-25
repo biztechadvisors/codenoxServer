@@ -69,16 +69,16 @@ export class UploadXlService {
 
             for (const row of rows) {
                 if (headerRow.length === 0 || row.length === 0) {
-                    continue; // Skip empty rows
-                }
-
+                    continue; 
+                }     
                 const productType = row[headerRow.indexOf('Product Type')];
-
+  
                 if (productType === 'child' || productType === 'Child') {
                     const parentId = row[headerRow.indexOf('Parent ID')];
                     if (!parentId || !products[parentId]) {
                         console.error(new Error(`Invalid parent ID ${parentId} for variant.`));
-                        return;
+                        continue; 
+                        // return;
                     }
 
                     // Initialize variations array if not already initialized
