@@ -26,7 +26,6 @@ import { FindOperator, FindOptionsWhere, ILike, IsNull, Not, Repository } from '
 import { Permission } from 'src/permission/entities/permission.entity';
 import Twilio from 'twilio';
 import * as AWS from 'aws-sdk';
-import { Response } from 'express';
 import { jwtConstants } from './constants';
 
 @Injectable()
@@ -184,6 +183,7 @@ export class AuthService {
       }
 
       const hashPass = await bcrypt.hash(createUserInput.password, 12);
+
       const userData = new User();
       userData.name = createUserInput.name;
       userData.email = createUserInput.email;
@@ -219,7 +219,7 @@ export class AuthService {
         }
         const token = Math.floor(100 + Math.random() * 900).toString();
         // Send confirmation email for users with permission
-        await this.mailService.sendUserConfirmation(userData, token);
+        await this.mailService.sendPermissionUserConfirmation(createUserInput.password, userData, token);
       } else {
         // Customer registration
         const token = Math.floor(100 + Math.random() * 9999).toString();
