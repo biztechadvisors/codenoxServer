@@ -167,7 +167,7 @@ export class AuthService {
         existingUser.otp = otp;
         existingUser.created_at = new Date();
         await this.userRepository.save(existingUser);
-        if (existingUser.type?.type_name === 'Customer') {
+        if (existingUser.type?.type_name === UserType.Customer) {
           // Send confirmation email for customers
           await this.mailService.sendUserConfirmation(existingUser, token);
         }
@@ -194,15 +194,16 @@ export class AuthService {
       userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
 
       if (createUserInput.UsrBy) {
+
         const parentUsr = await this.userRepository.findOne({
           where: { id: createUserInput.UsrBy.id },
           relations: ['type'],
         });
-        if (parentUsr?.type?.type_name === UserType.Store_Owner) {
+        if (parentUsr?.type.type_name === UserType.Store_Owner) {
           const existingDealerCount = await this.userRepository.createQueryBuilder('user')
             .innerJoin('user.type', 'permission')
             .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
-            .andWhere('permission.type_name = :type_name', { type_name: 'Dealer' })
+            .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
             .getCount();
           if (existingDealerCount >= (parentUsr.dealerCount)) {
             throw new BadRequestException('Cannot add more users, dealerCount limit reached.');
