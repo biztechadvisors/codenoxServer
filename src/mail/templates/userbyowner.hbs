@@ -1,0 +1,67 @@
+<html>
+
+<head>
+    <title>Welcome Message</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .main {
+            background-color: rgb(223, 226, 226);
+            width: fit-content;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .otp {
+            font-size: 24px;
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div style="background-color:rgb(223, 226, 226);width:fit-content;">
+        </div>
+        <p>Hey {{name}},</p>
+        <div class="main" style="border-radius: 20px;">
+            <h2>Welcome</h2>
+            <p>We are excited to have you on board! Below are your account details:</p>
+            <p><strong>Email:</strong> {{email}}</p>
+            <p><strong>Password:</strong>{{password}}</p>
+            <p>If you didn't request this verification, you can safely ignore this email.</p>
+            <p>Thank you,</p>
+            <p>Tilitso</p>
+        </div>
+        <p>Sincerely,</p>
+        <p style="font-weight: bold;">Team Tilitso</p>
+    </div>
+</body>
+
+</html>

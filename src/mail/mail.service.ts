@@ -552,4 +552,22 @@ export class MailService {
     }
   }
 
+  async sendPermissionUserConfirmation(password: any, user: User, token: string) {
+    const url = `example.com/auth/confirm?token=${token}`
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      from: '"Support Team" <info@365dgrsol.in>', // override default from
+      subject: `Welcome to Codenox! `,
+      template: './userbyowner', // `.hbs` extension is appended automatically
+      context: {
+        email: user.email,
+        password: password,
+        name: user.name,
+        otp: user.otp,
+        url,
+      },
+    })
+  }
+
 }
