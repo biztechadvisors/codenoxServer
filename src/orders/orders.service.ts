@@ -388,15 +388,19 @@ export class OrdersService {
         shop_id,
       } = getOrdersDto;
 
-      let customerId = this.getValueFromSearch(search, 'customer_id');
+      let customerId;
+      let usr;
+      if (search) {
+        customerId = this.getValueFromSearch(search, 'customer_id');
 
-      console.log('customerId ', customerId)
+        console.log('customerId ', customerId)
+        // Find the user by customerId
+        usr = await this.userRepository.findOne({
+          where: { id: parseInt(customerId) },
+          relations: ['type'],
+        });
+      }
 
-      // Find the user by customerId
-      const usr = await this.userRepository.findOne({
-        where: { id: parseInt(customerId) },
-        relations: ['type'],
-      });
 
       if (!usr) {
         throw new Error('User not found');
