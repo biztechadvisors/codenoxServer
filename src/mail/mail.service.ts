@@ -557,14 +557,15 @@ export class MailService {
 
     await this.mailerService.sendMail({
       to: user.email,
-      from: '"Support Team" <info@365dgrsol.in>', // override default from
+      from: '"Support Team" <info@codenoxx.tech>',
       subject: `Welcome to Codenox! `,
-      template: './userbyowner', // `.hbs` extension is appended automatically
+      template: './userbyowner',
       context: {
         email: user.email,
         password: password,
         name: user.name,
         otp: user.otp,
+        type: user.type.type_name,
         url,
       },
     })

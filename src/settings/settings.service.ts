@@ -102,6 +102,7 @@ export class SettingsService {
 
   async create(shopId: number, createSettingDto: CreateSettingDto): Promise<Setting | { message: string }> {
     try {
+      console.log('shopId ****105', shopId)
       if (!shopId) {
         throw new BadRequestException('shopId is compulsory');
       }

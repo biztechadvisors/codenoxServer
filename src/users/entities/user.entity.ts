@@ -43,11 +43,11 @@ export class User extends CoreEntity {
   @Column({ nullable: true })
   shop_id?: number;
 
-  @OneToOne(() => Profile, profile => profile.customer)
+  @OneToOne(() => Profile, profile => profile.customer, { cascade: true, onDelete: 'CASCADE' })
   @JoinColumn()
   profile?: Profile;
 
-  @OneToOne(() => Dealer, { eager: true, cascade: true })
+  @OneToOne(() => Dealer, dealer => dealer.user, { cascade: ['insert', 'update'] })
   @JoinColumn()
   dealer?: Dealer;
 
