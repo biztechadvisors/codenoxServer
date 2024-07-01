@@ -28,8 +28,8 @@ export class MailService {
 
       await this.mailerService.sendMail({
         to: data.finalEmail,
-        from: '"Tilitso Purchase" <info@365dgrsol.in>',
-        subject: 'Your Tilitso Order Confirmation. Please share your feedback',
+        from: '"Codenox Purchase" <info@codenoxx.tech>',
+        subject: 'Your Codenox Order Confirmation. Please share your feedback',
         html: 'Please see the attached PDF for your order confirmation.',
         template: '/invoiceToCustomer',
         attachments: [
@@ -61,8 +61,8 @@ export class MailService {
 
       await this.mailerService.sendMail({
         to: data.customer.email,
-        from: '"Tilitso Purchase" <info@365dgrsol.in>',
-        subject: 'Your Tilitso Order Confirmation. Please share your feedback',
+        from: '"Codenox Purchase" <info@codenoxx.tech>',
+        subject: 'Your Codenox Order Confirmation. Please share your feedback',
         html: 'Please see the attached PDF for your order confirmation.',
         template: '/invoiceDealerToCustomer',
         attachments: [
@@ -171,8 +171,8 @@ async template(data:any) {
 
     await this.mailerService.sendMail({
       to: user.email,
-      from: '"Support Team" <info@365dgrsol.in>', // override default from
-      subject: `Welcome to Tilitso! Confirm your OTP: ${user.otp}`,
+      from: '"Support Team" <info@codenoxx.tech>', // override default from
+      subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
       template: './confirmation', // `.hbs` extension is appended automatically
       context: {
         // ✏️ filling curly brackets with content
@@ -189,8 +189,8 @@ async template(data:any) {
 
     await this.mailerService.sendMail({
       to: user.email,
-      from: '"Support Team" <info@365dgrsol.in>', // override default from
-      subject: `Welcome to Tilitso! Confirm your OTP: ${user.otp}`,
+      from: '"Support Team" <info@codenoxx.tech>', // override default from
+      subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
       template: './confirmation', // `.hbs` extension is appended automatically
       context: {
         // ✏️ filling curly brackets with content
@@ -207,8 +207,8 @@ async template(data:any) {
 
     await this.mailerService.sendMail({
       to: user.email,
-      from: '"Support Team" <info@365dgrsol.in>', // override default from
-      subject: `Welcome to Tilitso! Confirm your Forgot OTP: ${user.otp}`,
+      from: '"Support Team" <info@codenoxx.tech>', // override default from
+      subject: `Welcome to Codenox! Confirm your Forgot OTP: ${user.otp}`,
       template: './forgetPassWord', // `.hbs` extension is appended automatically
       context: {
         // ✏️ filling curly brackets with content
@@ -222,7 +222,7 @@ async template(data:any) {
   async successfullyRegister(user: User) {
     await this.mailerService.sendMail({
       to: user.email,
-      from: '"Support Team" <info@365dgrsol.in>',
+      from: '"Support Team" <info@codenoxx.tech>',
       subject: `Welcome to Our Platform! Confirm your registration.`,
       template: './successfullyRegister',
       context: {
@@ -247,7 +247,7 @@ async template(data:any) {
 
       await this.mailerService.sendMail({
         to: user.email,
-        from: '"Support Team" <info@365dgrsol.in>',
+        from: '"Support Team" <info@codenoxx.tech>',
         subject: 'New Order Placed',
         template: './invoiceToVendor',
         context: {
@@ -360,6 +360,66 @@ async template(data:any) {
 
   // send Email invoice Dealer to Customer
 
+  //     console.log('prodcuts-mail-135', total_tax_amount);
+
+  //     const totalSubtotal = products.reduce((accumulator, currentValue) => {
+  //       return accumulator + currentValue.pivot.subtotal;
+  //     }, 0);
+  //     // Convert subtotal to words
+  //     const totalSubtotalInWords = toWords(totalSubtotal);
+
+  //     const updatedProducts = products.map(product => {
+  //       const unit_price = Number(product.pivot?.unit_price || 0);
+  //       const quantity = Number(product.pivot?.order_quantity || 0);
+  //       const tax_rate = Number(product.taxes?.rate || 0) / 100;
+  //       const subtotal = unit_price * quantity;
+  //       const taxAmount = Math.round(subtotal * tax_rate);
+  //       const total = subtotal + taxAmount;
+  //       return { ...product, subtotal, taxAmount, total }; 
+  //     });
+
+  //     const orderDetails = {
+  //       IGST,
+  //       CGST,
+  //       SGST,
+  //       net_amount,
+  //       total_amount,
+  //       shop,
+  //       sales_tax_total,
+  //       total_amount_in_words,
+  //       payment_Mode,
+  //       paymentInfo,
+  //       billing_address,
+  //       shipping_address,
+  //       total_tax_amount,
+  //       shop_address,
+  //       customer,
+  //       dealer,
+  //       saleBy,
+  //       finalTotal:totalSubtotal,
+  //       amountinWord:totalSubtotalInWords,
+  //       products: updatedProducts, // Use the updated products
+  //       created_at,
+  //       order_no,
+  //       invoice_date,
+  //     };
+
+  //     console.log("orderDetails***184", orderDetails)
+
+  //     await this.mailerService.sendMail({
+  //       to: customer.email,
+  //       from: '"Codenox Purchase" <info@codenoxx.tech>',
+  //       subject: 'Your Codenox Order Confirmation. Please share your feedback',
+  //       template: './invoiceDealerToCustomer',
+  //       context: {
+  //         email: customer.email,
+  //         invoice: orderDetails,
+  //       },
+  //     });
+  //   } catch (error) {
+  //     console.error("Invoice sending failed to Customer", error);
+  //   }
+  // }
 
   async sendInvoiceDealerToCustomer(Invoice: any) {
 
@@ -452,7 +512,7 @@ async template(data:any) {
       }));
       await this.mailerService.sendMail({
         to: user.email,
-        from: '"Dealer" <info@365dgrsol.in>',
+        from: '"Dealer" <info@codenoxx.tech>',
         subject: 'Your Refund amount. Please share your feedback',
         template: './refund',
         context: {
@@ -476,8 +536,8 @@ async template(data:any) {
       }));
       await this.mailerService.sendMail({
         to: user.email,
-        from: '"Dealer" <info@365dgrsol.in>',
-        subject: 'Your Tilitso Order Confirmation. Please share your feedback',
+        from: '"Dealer" <info@codenoxx.tech>',
+        subject: 'Your Codenox Order Confirmation. Please share your feedback',
         template: './cancelOrder',
         context: {
           email: user.email,
@@ -500,8 +560,8 @@ async template(data:any) {
       }));
       await this.mailerService.sendMail({
         to: user.email,
-        from: '"Dealer" <info@365dgrsol.in>',
-        subject: 'Your Tilitso Order Confirmation. Please share your feedback',
+        from: '"Dealer" <info@codenoxx.tech>',
+        subject: 'Your Codenox Order Confirmation. Please share your feedback',
         template: './transactionDeclined',
         context: {
           email: user.email,
@@ -531,13 +591,13 @@ async template(data:any) {
         slug: item.slug
       }));
 
-      const CartUrl = "https://www.tilitso.in/shop-cart";
+      const CartUrl = "https://www.Codenox.in/shop-cart";
 
       await this.mailerService.sendMail({
         // to: "radhikaji.varfa@outlook.com",
         to: email,
-        from: '"Support Team" <info@365dgrsol.in>',
-        subject: "Don't forget your items! ️ Your cart reminder from Tilitso",
+        from: '"Support Team" <info@codenoxx.tech>',
+        subject: "Don't forget your items! ️ Your cart reminder from Codenox",
         template: './abandonmentCartReminder',
         context: {
           email: email,
@@ -549,6 +609,25 @@ async template(data:any) {
     } catch (error) {
       console.error("Email sending Failed", error)
     }
+  }
+
+  async sendPermissionUserConfirmation(password: any, user: User, token: string) {
+    const url = `example.com/auth/confirm?token=${token}`
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      from: '"Support Team" <info@codenoxx.tech>', 
+      subject: `Welcome to Codenox! `,
+      template: './userbyowner', 
+      context: {
+        email: user.email,
+        password: password,
+        name: user.name,
+        otp: user.otp,
+        type:user.type.type_name,
+        url,
+      },
+    })
   }
 
 }

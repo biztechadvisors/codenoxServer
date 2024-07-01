@@ -26,7 +26,6 @@ import { FindOperator, FindOptionsWhere, ILike, IsNull, Not, Repository } from '
 import { Permission } from 'src/permission/entities/permission.entity';
 import Twilio from 'twilio';
 import * as AWS from 'aws-sdk';
-import { Response } from 'express';
 import { jwtConstants } from './constants';
 
 @Injectable()
@@ -168,7 +167,7 @@ export class AuthService {
         existingUser.otp = otp;
         existingUser.created_at = new Date();
         await this.userRepository.save(existingUser);
-        if (existingUser.type?.type_name === 'Customer') {
+        if (existingUser.type?.type_name === UserType.Customer) {
           // Send confirmation email for customers
           await this.mailService.sendUserConfirmation(existingUser, token);
         }
@@ -185,6 +184,7 @@ export class AuthService {
       }
 
       const hashPass = await bcrypt.hash(createUserInput.password, 12);
+
       const userData = new User();
       userData.name = createUserInput.name;
       userData.email = createUserInput.email;
@@ -192,18 +192,18 @@ export class AuthService {
       userData.password = hashPass;
       userData.created_at = new Date();
       userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
-      userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
-
+      userData.isVerified = createUserInput.UsrBy ? true : false; 
       if (createUserInput.UsrBy) {
+
         const parentUsr = await this.userRepository.findOne({
           where: { id: createUserInput.UsrBy.id },
           relations: ['type'],
         });
-        if (parentUsr?.type?.type_name === UserType.Store_Owner) {
+        if (parentUsr?.type.type_name === UserType.Store_Owner) {
           const existingDealerCount = await this.userRepository.createQueryBuilder('user')
             .innerJoin('user.type', 'permission')
             .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
-            .andWhere('permission.type_name = :type_name', { type_name: 'Dealer' })
+            .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
             .getCount();
           if (existingDealerCount >= (parentUsr.dealerCount)) {
             throw new BadRequestException('Cannot add more users, dealerCount limit reached.');
@@ -219,7 +219,8 @@ export class AuthService {
         }
         const token = Math.floor(100 + Math.random() * 900).toString();
         // Send confirmation email for users with permission
-        await this.mailService.sendUserConfirmation(userData, token);
+        await this.mailService.sendPermissionUserConfirmation(createUserInput.password, userData, token);
+        console.log("DATA Come Or Not",userData)
       } else {
         // Customer registration
         const token = Math.floor(100 + Math.random() * 9999).toString();

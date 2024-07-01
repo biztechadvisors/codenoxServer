@@ -39,7 +39,7 @@ import {
 } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, UpdateResult, getManager } from 'typeorm';
-import { User } from 'src/users/entities/user.entity';
+import { User, UserType } from 'src/users/entities/user.entity';
 import { OrderProductPivot, Product, Variation } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { RazorpayService } from 'src/payment/razorpay-payment.service';
@@ -113,6 +113,12 @@ export class OrdersService {
     const date = new Date(dateInput);
     const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: '2-digit', day: '2-digit', year: 'numeric' };
     return date.toLocaleDateString('en-US', options);
+  }
+
+  getValueFromSearch(searchString: string, key: string): string | null {
+    const regex = new RegExp(`${key}:(\\d+)`);
+    const match = searchString.match(regex);
+    return match ? match[1] : null;
   }
 
   async updateOrdQuantityProd(ordProducts: any[]): Promise<void> {
@@ -377,30 +383,30 @@ export class OrdersService {
     }
   }
 
-  async getOrders({
-    limit,
-    page,
-    customer_id,
-    tracking_number,
-    search,
-    shop_id,
-  }: GetOrdersDto): Promise<OrderPaginator> {
+  async getOrders(getOrdersDto: GetOrdersDto): Promise<OrderPaginator> {
     try {
-      let customerId = customer_id;
+      let {
+        limit,
+        page,
+        customer_id,
+        tracking_number,
+        search,
+        shop_id,
+      } = getOrdersDto;
 
-      // Handle search string if provided
+      let customerId;
+      let usr;
       if (search) {
-        const [key, value] = search.split(":");
-        if (key === 'customer_id') {
-          customerId = parseInt(value); // Ensure customerId is a number
-        }
+        customerId = this.getValueFromSearch(search, 'customer_id');
+
+        console.log('customerId ', customerId)
+        // Find the user by customerId
+        usr = await this.userRepository.findOne({
+          where: { id: parseInt(customerId) },
+          relations: ['type'],
+        });
       }
 
-      // Find the user by customerId
-      const usr = await this.userRepository.findOne({
-        where: { id: customerId },
-        relations: ['type'],
-      });
 
       console.log('usr', usr)
       if (!usr) {
@@ -427,7 +433,7 @@ export class OrdersService {
         .leftJoinAndSelect('order.coupon', 'coupon');
 
       // If the user is not an admin or super_admin, restrict orders by customer_id
-      if (!(permsn && (permsn.type_name === 'Admin' || permsn.type_name === 'super_admin'))) {
+      if (!(permsn && (permsn.type_name === UserType.Store_Owner || permsn.type_name === UserType.Super_Admin))) {
         const usrByIdUsers = await this.userRepository.find({
           where: { UsrBy: { id: usr.id } },
           relations: ['type'],
