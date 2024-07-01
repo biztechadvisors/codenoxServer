@@ -34,6 +34,6 @@ export class Profile extends CoreEntity {
     @Column()
     contact?: string;
 
-    @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
+    @OneToOne(() => User, user => user.profile, { onDelete: 'CASCADE' })
     customer?: User;
 }
