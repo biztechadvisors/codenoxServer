@@ -210,7 +210,7 @@ async sendAbandonedCartReminder() {
   // console.log("r#tr============", pro, products)
 
         await this.mailService.sendAbandonmenCartReminder(email, products);
-   
+   console.log("Abondand CART ");
       } catch (error) {
         console.log("erroor___________", error)
       }
