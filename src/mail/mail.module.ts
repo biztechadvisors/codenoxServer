@@ -8,31 +8,29 @@ import { join } from 'path'
 @Module({
   imports: [
     MailerModule.forRoot({
-      // transport: 'smtps://user@example.com:topsecret@smtp.example.com',
-      // or
       transport: {
-        host: 'mail.365dgrsol.in',
+        host: 'mail.codenoxx.tech',
         port: 587,
-        secure: false,
+        secure: false, // set this to true if you are using secure connection
         auth: {
-          user: 'info@365dgrsol.in',
-          pass: 'Techguru1234@',
+          user: 'info@codenoxx.tech',
+          pass: 'codenox@123',
         },
-        tls: { rejectUnauthorized: false },
+        tls: { rejectUnauthorized: false }, // enable if server does not support TLS
       },
       defaults: {
-        from: '"No Reply" <info@365dgrsol.in>',
+        from: '"No Reply" <info@codenoxx.tech>',
       },
       template: {
-        dir: join(__dirname, 'templates'),
-        adapter: new HandlebarsAdapter(), // or new PugAdapter() or new EjsAdapter()
+        dir: join(__dirname, '..', 'templates'), // assuming your templates are in the 'templates' folder at the root level of your project
+        adapter: new HandlebarsAdapter(), // use Handlebars as the template engine
         options: {
-          strict: true,
+          strict: true, // enable strict mode for Handlebars
         },
       },
     }),
   ],
   providers: [MailService],
-  exports: [MailService], // 👈 export for DI
+  exports: [MailService], // export MailService for dependency injection
 })
 export class MailModule { }
