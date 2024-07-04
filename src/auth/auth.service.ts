@@ -72,7 +72,7 @@ export class AuthService {
       user.created_at = new Date();
       await this.userRepository.save(user);
       await this.mailService.sendUserConfirmation(user, otp.toString());
-
+      console.log("Mail send Successfully");
       return { message: 'OTP resent successfully.' };
     } catch (error) {
       console.error('Resend OTP error:', error);
@@ -475,7 +475,7 @@ export class AuthService {
     }
 
     try {
-      await this.mailService.sendUserConfirmation(user, token);
+      await this.mailService.forgetPasswordUserConfirmation(user, token);
       return {
         success: true,
         message: 'OTP sent to your email.',

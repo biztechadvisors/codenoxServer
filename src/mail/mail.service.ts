@@ -168,7 +168,7 @@ async template(data:any) {
   // OTP send for verify Registration Email
   async sendUserConfirmation(user: User, token: string) {
     const url = `example.com/auth/confirm?token=${token}`
-
+   console.log("MAIL SEND");
     await this.mailerService.sendMail({
       to: user.email,
       from: '"Support Team" <info@codenoxx.tech>', // override default from
@@ -184,26 +184,27 @@ async template(data:any) {
   }
 
   // Resend OTP for verify Registration 
-  async resendUserConfirmation(user: User, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`
+  // async resendUserConfirmation(user: User, token: string) {
+  //   const url = `example.com/auth/confirm?token=${token}`
 
-    await this.mailerService.sendMail({
-      to: user.email,
-      from: '"Support Team" <info@codenoxx.tech>', // override default from
-      subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
-      template: './confirmation', // `.hbs` extension is appended automatically
-      context: {
-        // ✏️ filling curly brackets with content
-        name: user.name,
-        otp: user.otp,
-        url,
-      },
-    })
-  }
+  //   await this.mailerService.sendMail({
+  //     to: user.email,
+  //     from: '"Support Team" <info@codenoxx.tech>', // override default from
+  //     subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
+  //     template: './confirmation', // `.hbs` extension is appended automatically
+  //     context: {
+  //       // ✏️ filling curly brackets with content
+  //       name: user.name,
+  //       otp: user.otp,
+  //       url,
+  //     },
+  //   })
+  // }
 
   // OTP for forgetPassword
   async forgetPasswordUserConfirmation(user: User, token: string) {
     const url = `example.com/auth/confirm?token=${token}`
+    console.log("MAIL SEND");
 
     await this.mailerService.sendMail({
       to: user.email,
