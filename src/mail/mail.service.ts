@@ -617,15 +617,15 @@ async template(data:any) {
 
     await this.mailerService.sendMail({
       to: user.email,
-      from: '"Support Team" <info@codenoxx.tech>', 
+      from: '"Support Team" <info@codenoxx.tech>',
       subject: `Welcome to Codenox! `,
-      template: './userbyowner', 
+      template: './userbyowner',
       context: {
         email: user.email,
         password: password,
         name: user.name,
         otp: user.otp,
-        type:user.type.type_name,
+        type: user.type.type_name,
         url,
       },
     })

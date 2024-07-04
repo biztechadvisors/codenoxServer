@@ -219,6 +219,7 @@ export class AuthService {
         }
         const token = Math.floor(100 + Math.random() * 900).toString();
         // Send confirmation email for users with permission
+        console.log("Email send ")
         await this.mailService.sendPermissionUserConfirmation(createUserInput.password, userData, token);
         console.log("DATA Come Or Not",userData)
       } else {
