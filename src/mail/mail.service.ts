@@ -27,7 +27,7 @@ export class MailService {
 
       await this.mailerService.sendMail({
         to: data.finalEmail,
-        from: '"Codenox Purchase" <info@365dgrsol.in>',
+        from: '"Codenox Purchase" <info@codenoxx.tech>',
         subject: 'Your Codenox Order Confirmation. Please share your feedback',
         html: 'Please see the attached PDF for your order confirmation.',
         template: '/invoiceToCustomer',
@@ -60,7 +60,7 @@ export class MailService {
 
       await this.mailerService.sendMail({
         to: data.customer.email,
-        from: '"Codenox Purchase" <info@365dgrsol.in>',
+        from: '"Codenox Purchase" <info@codenoxx.tech>',
         subject: 'Your Codenox Order Confirmation. Please share your feedback',
         html: 'Please see the attached PDF for your order confirmation.',
         template: '/invoiceDealerToCustomer',
@@ -86,7 +86,7 @@ export class MailService {
 
     await this.mailerService.sendMail({
       to: user.email,
-      from: '"Support Team" <info@365dgrsol.in>', // override default from
+      from: '"Support Team" <info@codenoxx.tech>', // override default from
       subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
       template: './confirmation', // `.hbs` extension is appended automatically
       context: {
@@ -104,7 +104,7 @@ export class MailService {
 
     await this.mailerService.sendMail({
       to: user.email,
-      from: '"Support Team" <info@365dgrsol.in>', // override default from
+      from: '"Support Team" <info@codenoxx.tech>', // override default from
       subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
       template: './confirmation', // `.hbs` extension is appended automatically
       context: {
@@ -122,7 +122,7 @@ export class MailService {
 
     await this.mailerService.sendMail({
       to: user.email,
-      from: '"Support Team" <info@365dgrsol.in>', // override default from
+      from: '"Support Team" <info@codenoxx.tech>', // override default from
       subject: `Welcome to Codenox! Confirm your Forgot OTP: ${user.otp}`,
       template: './forgetPassWord', // `.hbs` extension is appended automatically
       context: {
@@ -137,7 +137,7 @@ export class MailService {
   async successfullyRegister(user: User) {
     await this.mailerService.sendMail({
       to: user.email,
-      from: '"Support Team" <info@365dgrsol.in>',
+      from: '"Support Team" <info@codenoxx.tech>',
       subject: `Welcome to Our Platform! Confirm your registration.`,
       template: './successfullyRegister',
       context: {
@@ -162,7 +162,7 @@ export class MailService {
 
       await this.mailerService.sendMail({
         to: user.email,
-        from: '"Support Team" <info@365dgrsol.in>',
+        from: '"Support Team" <info@codenoxx.tech>',
         subject: 'New Order Placed',
         template: './invoiceToVendor',
         context: {
@@ -349,7 +349,7 @@ export class MailService {
 
   //     await this.mailerService.sendMail({
   //       to: customer.email,
-  //       from: '"Codenox Purchase" <info@365dgrsol.in>',
+  //       from: '"Codenox Purchase" <info@codenoxx.tech>',
   //       subject: 'Your Codenox Order Confirmation. Please share your feedback',
   //       template: './invoiceDealerToCustomer',
   //       context: {
@@ -453,7 +453,7 @@ export class MailService {
       }));
       await this.mailerService.sendMail({
         to: user.email,
-        from: '"Dealer" <info@365dgrsol.in>',
+        from: '"Dealer" <info@codenoxx.tech>',
         subject: 'Your Refund amount. Please share your feedback',
         template: './refund',
         context: {
@@ -477,7 +477,7 @@ export class MailService {
       }));
       await this.mailerService.sendMail({
         to: user.email,
-        from: '"Dealer" <info@365dgrsol.in>',
+        from: '"Dealer" <info@codenoxx.tech>',
         subject: 'Your Codenox Order Confirmation. Please share your feedback',
         template: './cancelOrder',
         context: {
@@ -501,7 +501,7 @@ export class MailService {
       }));
       await this.mailerService.sendMail({
         to: user.email,
-        from: '"Dealer" <info@365dgrsol.in>',
+        from: '"Dealer" <info@codenoxx.tech>',
         subject: 'Your Codenox Order Confirmation. Please share your feedback',
         template: './transactionDeclined',
         context: {
@@ -537,7 +537,7 @@ export class MailService {
       await this.mailerService.sendMail({
         // to: "radhikaji.varfa@outlook.com",
         to: email,
-        from: '"Support Team" <info@365dgrsol.in>',
+        from: '"Support Team" <info@codenoxx.tech>',
         subject: "Don't forget your items! ️ Your cart reminder from Codenox",
         template: './abandonmentCartReminder',
         context: {
@@ -570,5 +570,4 @@ export class MailService {
       },
     })
   }
-
 }
