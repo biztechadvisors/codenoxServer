@@ -29,43 +29,65 @@ export class AnalyticsService {
     @InjectRepository(UserAddress) private readonly: UserAddressRepository,
   ) { }
 
-  async findAll(customerId: number | null, state: string): Promise<AnalyticsResponseDTO | { message: string }> {
+  async findAll(shop_id: number | null, customerId: number, state: string): Promise<AnalyticsResponseDTO | { message: string }> {
     try {
-      // Check if customerId is provided
-      if (!customerId) {
-        return { message: 'Customer ID is required' };
+      console.log('analytics 34 shop_id ***', shop_id);
+      console.log('analytics 35 customerId ***', customerId);
+
+      if (!customerId && !shop_id) {
+        return { message: 'Customer ID or Shop ID is required' };
       }
 
-      const user = await this.userRepository.findOne({
-        where: { id: customerId },
-        relations: ['type']
-      });
+      let user = null;
+      let shop = null;
+      if (customerId) {
+        user = await this.userRepository.findOne({
+          where: { id: customerId },
+          relations: ['type'],
+        });
+      }
+      if (shop_id) {
+        shop = await this.shopRepository.findOne({
+          where: { id: shop_id },
+          relations: ['owner', 'owner.type']
+        });
+        console.log('shop ***53', shop);
+      }
 
-      if (!user) {
-        return { message: `User with ID ${customerId} not found` };
+      if (!user && !shop) {
+        return { message: `User with ID ${customerId} and Shop with ID ${shop_id} not found` };
+      }
+
+      const userTypePermissionName = user?.type?.permission_name;
+      const shopOwnerTypePermissionName = shop?.owner?.type?.permission_name;
+
+      if (!userTypePermissionName && !shopOwnerTypePermissionName) {
+        return { message: 'Permission type not found for user or shop owner' };
       }
 
       const userPermissions = await this.permissionRepository.findOne({
-        where: { permission_name: user.type.permission_name },
+        where: { permission_name: userTypePermissionName || shopOwnerTypePermissionName },
       });
 
       if (!userPermissions) {
         return { message: `User with ID ${customerId} does not have any permissions` };
       }
 
-      const allowedPermissions = ['Admin', 'super_admin', 'dealer', 'Vendor', 'store_owner'];
+      console.log('first', user?.id ? user.id : shop.owner_id);
+      const allowedPermissions = ['Admin', 'Super_Admin', 'Dealer', 'Company'];
       if (!allowedPermissions.includes(userPermissions.type_name)) {
         return { message: `User with ID ${customerId} does not have permission to access analytics` };
       }
 
+      const ownerId = user?.id ? user.id : shop.owner_id;
       const analyticsResponse: AnalyticsResponseDTO = {
-        totalRevenue: await this.calculateTotalRevenue(user.id, state),
+        totalRevenue: await this.calculateTotalRevenue(ownerId, state),
         totalRefunds: await this.calculateTotalRefunds(userPermissions.type_name, state),
-        totalShops: await this.calculateTotalShops(user.id, userPermissions.type_name, state),
-        todaysRevenue: await this.calculateTodaysRevenue(user.id, userPermissions.type_name, state),
-        totalOrders: await this.calculateTotalOrders(user.id, userPermissions.type_name, state),
-        newCustomers: await this.calculateNewCustomers(user.id, userPermissions.type_name, state),
-        totalYearSaleByMonth: await this.calculateTotalYearSaleByMonth(user.id, userPermissions.type_name, state),
+        totalShops: await this.calculateTotalShops(ownerId, userPermissions.type_name, state),
+        todaysRevenue: await this.calculateTodaysRevenue(ownerId, userPermissions.type_name, state),
+        totalOrders: await this.calculateTotalOrders(ownerId, userPermissions.type_name, state),
+        newCustomers: await this.calculateNewCustomers(ownerId, userPermissions.type_name, state),
+        totalYearSaleByMonth: await this.calculateTotalYearSaleByMonth(ownerId, userPermissions.type_name, state),
       };
 
       return analyticsResponse;
@@ -241,7 +263,7 @@ export class AnalyticsService {
       });
 
       if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
-        query = query.andWhere('shop.owner.id = :userId', { userId });
+        query = query.andWhere('shop.owner_id = :userId', { userId });
 
         if (state && state.trim() !== '') {
           query = query.andWhere('shop.shipping_address.state = :state', { state });

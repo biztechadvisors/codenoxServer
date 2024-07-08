@@ -68,7 +68,7 @@ export class ShopsService {
         throw new Error('User does not exist');
       }
 
-      if (userToUpdate.type.type_name !== UserType.Store_Owner) {
+      if (userToUpdate.type.type_name !== UserType.Company) {
         throw new Error('User is not a vendor');
       }
 

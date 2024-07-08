@@ -390,10 +390,10 @@ export class OrdersService {
 
       let customerId;
       let usr;
+
       if (search) {
         customerId = this.getValueFromSearch(search, 'customer_id');
 
-        console.log('customerId ', customerId)
         // Find the user by customerId
         usr = await this.userRepository.findOne({
           where: { id: parseInt(customerId) },
@@ -426,7 +426,7 @@ export class OrdersService {
         .leftJoinAndSelect('order.coupon', 'coupon');
 
       // If the user is not an admin or super_admin, restrict orders by customer_id
-      if (!(permsn && (permsn.type_name === UserType.Store_Owner || permsn.type_name === UserType.Super_Admin))) {
+      if (!(permsn && (permsn.type_name === UserType.Company || permsn.type_name === UserType.Super_Admin))) {
         const usrByIdUsers = await this.userRepository.find({
           where: { UsrBy: { id: usr.id } },
           relations: ['type'],
