@@ -52,7 +52,6 @@ export class OrdersController {
 
   @Get()
   async getOrders(@Query() query: GetOrdersDto): Promise<OrderPaginator> {
-    console.log('query ** 55', query)
     return this.ordersService.getOrders(query);
   }
 

@@ -545,8 +545,9 @@ export class ProductsService {
     }
 
     if (shop_id) {
-      productsQueryBuilder.andWhere('product.shop_id = :shop_id', { shop_id: shop_id });
+      productsQueryBuilder.andWhere('product.shop_id = :shop_id', { shop_id });
     }
+
 
     productsQueryBuilder
       .leftJoinAndSelect('product.shop', 'shop')

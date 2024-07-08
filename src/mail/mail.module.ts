@@ -11,26 +11,29 @@ import { join } from 'path'
       transport: {
         host: 'mail.codenoxx.tech',
         port: 587,
-        secure: false, // set this to true if you are using secure connection
+        secure: false, // set to true if you use SSL/TLS
         auth: {
           user: 'info@codenoxx.tech',
           pass: 'codenox@123',
         },
-        tls: { rejectUnauthorized: false }, // enable if server does not support TLS
+        tls: {
+          rejectUnauthorized: false, // only for testing purposes, remove this in production!
+        },
       },
       defaults: {
         from: '"No Reply" <info@codenoxx.tech>',
       },
       template: {
-        dir: join(__dirname, '..', 'templates'), // assuming your templates are in the 'templates' folder at the root level of your project
-        adapter: new HandlebarsAdapter(), // use Handlebars as the template engine
+        dir: join(__dirname, '..', 'templates'), // Adjust this path based on your project structure
+        adapter: new HandlebarsAdapter(),
         options: {
-          strict: true, // enable strict mode for Handlebars
+          strict: true,
         },
       },
+
     }),
   ],
   providers: [MailService],
-  exports: [MailService], // export MailService for dependency injection
+  exports: [MailService], // 👈 export for DI
 })
 export class MailModule { }

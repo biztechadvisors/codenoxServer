@@ -9,9 +9,10 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) { }
 
   @Post()
-  async getAnalytics(@Body() query: { customerId: number; state: string }): Promise<AnalyticsResponseDTO | { message: string }> {
+  async getAnalytics(@Body() query: { shop_id: number; customerId: number; state: string }): Promise<AnalyticsResponseDTO | { message: string }> {
     try {
-      const result = await this.analyticsService.findAll(query.customerId, query.state);
+      console.log('query 14***', query)
+      const result = await this.analyticsService.findAll(query.shop_id, query.customerId, query.state);
       return result;
     } catch (error) {
       console.error('Error fetching analytics:', error);

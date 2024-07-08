@@ -1,195 +1,170 @@
 /* eslint-disable prettier/prettier */
-import { MailerService } from '@nestjs-modules/mailer'
-import { Injectable } from '@nestjs/common'
-import { User } from '../users/entities/user.entity'
-import { error } from 'console'
-// import * as puppeteer from 'puppeteer';
+import { MailerService } from '@nestjs-modules/mailer';
+import { Injectable } from '@nestjs/common';
+import { User } from '../users/entities/user.entity';
 import path from 'path';
+import fs from 'fs';
+import Handlebars from 'handlebars';
 const { toWords } = require('number-to-words');
-const fs = require('fs');
-const Handlebars = require('handlebars');
-
 
 @Injectable()
 export class MailService {
   constructor(private mailerService: MailerService) { }
 
-  async renderTemplate(data) {
-
-    const templatePath = path.join(__dirname, 'templates', 'invoiceToCustomer.hbs'); // Construct absolute path
-    // console.log('Template path:', templatePath); // Log absolute path
+  async renderTemplate(data: any, templateName: string) {
+    const templatePath = path.join(__dirname, 'templates', `${templateName}.hbs`);
     try {
       const templateContent = fs.readFileSync(templatePath, 'utf8');
       const compiledTemplate = Handlebars.compile(templateContent);
       const renderedTemplate = compiledTemplate(data);
-
-      // const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
 
       await this.mailerService.sendMail({
         to: data.finalEmail,
         from: '"Codenox Purchase" <info@codenoxx.tech>',
         subject: 'Your Codenox Order Confirmation. Please share your feedback',
-        html: 'Please see the attached PDF for your order confirmation.',
-        template: '/invoiceToCustomer',
+        html: renderedTemplate,
         attachments: [
           {
             filename: 'invoice.pdf',
             // content: pdfBuffer,
             encoding: 'base64',
-            contentType: 'application/pdf', // Set the content type of the attachment
+            contentType: 'application/pdf',
           },
         ],
       });
       return templateContent;
     } catch (err) {
-      console.error('Error reading file:', err);
+      console.error('Error reading or sending email:', err);
       return null;
     }
   }
 
-  async dealer_renderTemplate(data) {
-
-    const templatePath = path.join(__dirname, 'templates', 'invoiceDealerToCustomer.hbs'); // Construct absolute path
-    // console.log('Template path:', templatePath); // Log absolute path
+  async dealer_renderTemplate(data: any, templateName: string) {
+    const templatePath = path.join(__dirname, 'templates', `${templateName}.hbs`);
     try {
       const templateContent = fs.readFileSync(templatePath, 'utf8');
       const compiledTemplate = Handlebars.compile(templateContent);
       const renderedTemplate = compiledTemplate(data);
 
-      // const pdfBuffer = await this.generatePdfFromHtml(renderedTemplate);
-
       await this.mailerService.sendMail({
         to: data.customer.email,
         from: '"Codenox Purchase" <info@codenoxx.tech>',
         subject: 'Your Codenox Order Confirmation. Please share your feedback',
-        html: 'Please see the attached PDF for your order confirmation.',
-        template: '/invoiceDealerToCustomer',
+        html: renderedTemplate,
         attachments: [
           {
             filename: 'invoice.pdf',
             // content: pdfBuffer,
             encoding: 'base64',
-            contentType: 'application/pdf', // Set the content type of the attachment
+            contentType: 'application/pdf',
           },
         ],
       });
       return templateContent;
     } catch (err) {
-      console.error('Error reading file:', err);
+      console.error('Error reading or sending email:', err);
       return null;
     }
   }
 
-  // OTP send for verify Registration Email
   async sendUserConfirmation(user: User, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`
-
-    await this.mailerService.sendMail({
-      to: user.email,
-      from: '"Support Team" <info@codenoxx.tech>', // override default from
-      subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
-      template: './confirmation', // `.hbs` extension is appended automatically
-      context: {
-        // ✏️ filling curly brackets with content
-        name: user.name,
-        otp: user.otp,
-        url,
-      },
-    })
+    const url = `example.com/auth/confirm?token=${token}`;
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        from: '"Support Team" <info@codenoxx.tech>',
+        subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
+        template: 'confirmation',
+        context: {
+          name: user.name,
+          otp: user.otp,
+          url,
+        },
+      });
+    } catch (error) {
+      console.error('Error sending confirmation email:', error);
+    }
   }
 
-  // Resend OTP for verify Registration 
   async resendUserConfirmation(user: User, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`
-
-    await this.mailerService.sendMail({
-      to: user.email,
-      from: '"Support Team" <info@codenoxx.tech>', // override default from
-      subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
-      template: './confirmation', // `.hbs` extension is appended automatically
-      context: {
-        // ✏️ filling curly brackets with content
-        name: user.name,
-        otp: user.otp,
-        url,
-      },
-    })
+    const url = `example.com/auth/confirm?token=${token}`;
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        from: '"Support Team" <info@codenoxx.tech>',
+        subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
+        template: 'confirmation',
+        context: {
+          name: user.name,
+          otp: user.otp,
+          url,
+        },
+      });
+    } catch (error) {
+      console.error('Error resending confirmation email:', error);
+    }
   }
 
-  // OTP for forgetPassword
   async forgetPasswordUserConfirmation(user: User, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`
-
-    await this.mailerService.sendMail({
-      to: user.email,
-      from: '"Support Team" <info@codenoxx.tech>', // override default from
-      subject: `Welcome to Codenox! Confirm your Forgot OTP: ${user.otp}`,
-      template: './forgetPassWord', // `.hbs` extension is appended automatically
-      context: {
-        // ✏️ filling curly brackets with content
-        name: user.name,
-        otp: user.otp,
-        url,
-      },
-    })
+    const url = `example.com/auth/confirm?token=${token}`;
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        from: '"Support Team" <info@codenoxx.tech>',
+        subject: `Welcome to Codenox! Confirm your Forgot OTP: ${user.otp}`,
+        template: 'forgetPassWord',
+        context: {
+          name: user.name,
+          otp: user.otp,
+          url,
+        },
+      });
+    } catch (error) {
+      console.error('Error sending forgot password email:', error);
+    }
   }
-  // Successfully Register 
+
   async successfullyRegister(user: User) {
-    await this.mailerService.sendMail({
-      to: user.email,
-      from: '"Support Team" <info@codenoxx.tech>',
-      subject: `Welcome to Our Platform! Confirm your registration.`,
-      template: './successfullyRegister',
-      context: {
-        name: user.name,
-        email: user.email, // Including the email in the context
-        password: user.password, // Including the password in the context, be cautious with this approach
-        otp: user.otp,
-        // url,
-      },
-    });
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        from: '"Support Team" <info@codenoxx.tech>',
+        subject: `Welcome to Our Platform! Confirm your registration.`,
+        template: 'successfullyRegister',
+        context: {
+          name: user.name,
+          email: user.email,
+          password: user.password,
+          otp: user.otp,
+        },
+      });
+    } catch (error) {
+      console.error('Error sending registration success email:', error);
+    }
   }
 
-  // send Invoice Email to Vendor
   async sendInvoiceToVendor(user: User, products: any) {
-
     try {
       const productDetails = products.map((items: any) => ({
         name: items.Name,
         price: items.netPrice,
-        imageUrl: items.image
+        imageUrl: items.image,
       }));
 
       await this.mailerService.sendMail({
         to: user.email,
         from: '"Support Team" <info@codenoxx.tech>',
         subject: 'New Order Placed',
-        template: './invoiceToVendor',
+        template: 'invoiceToVendor',
         context: {
           email: user.email,
-          products: productDetails
+          products: productDetails,
         },
       });
     } catch (error) {
-      console.error("Email sending Failed", error)
+      console.error('Error sending invoice to vendor:', error);
     }
-
   }
-
-  //   async generatePdfFromHtml(htmlString) {
-  //     try {
-  //         const browser = await puppeteer.launch();
-  //         const page = await browser.newPage();
-  //         await page.setContent(htmlString);
-  //         const pdfBuffer = await page.pdf({ format: 'A4' });
-  //         await browser.close();
-
-  //         return pdfBuffer;
-  //     } catch (err) {
-  //         console.error('Error generating PDF:', err);
-  //         return null;
-  //     }
-  // }
 
   async sendInvoiceToCustomerORDealer(taxType: any) {
     try {
@@ -217,22 +192,22 @@ export class MailService {
         invoice_date,
       } = taxType;
 
-      const totalSubtotal = products.reduce((accumulator, currentValue) => {
+      const totalSubtotal = products.reduce((accumulator: number, currentValue: any) => {
         return accumulator + currentValue.pivot.subtotal;
       }, 0);
 
-      // Convert subtotal to words
       const totalSubtotalInWords = toWords(totalSubtotal);
 
-      const updatedProducts = products.map(product => {
+      const updatedProducts = products.map((product: any) => {
         const unit_price = Number(product.pivot?.unit_price || 0);
         const quantity = Number(product.pivot?.order_quantity || 0);
         const tax_rate = Number(product.taxes?.rate || 0) / 100;
         const subtotal = unit_price * quantity;
         const taxAmount = Math.round(subtotal * tax_rate);
         const total = subtotal + taxAmount;
-        return { ...product, subtotal, taxAmount, total }; // Return the original product data with the new calculated values
+        return { ...product, subtotal, taxAmount, total };
       });
+
       const finalEmail = taxType.dealer.email ? taxType.dealer.email : taxType.customer.email;
 
       const orderDetails = {
@@ -254,116 +229,20 @@ export class MailService {
         finalEmail,
         finalTotal: totalSubtotal,
         amountinWord: totalSubtotalInWords,
-        products: updatedProducts, // Use the updated products
+        products: updatedProducts,
         created_at,
         order_no,
         invoice_date,
       };
 
-
-      const htmlContent = await this.renderTemplate(orderDetails);
-
-      // Generate PDF from HTML content
-      // const pdfBuffer = await this.generatePdfFromHtml(htmlContent);
-
-      // console.log("orderDetails***184", orderDetails);
+      const htmlContent = await this.renderTemplate(orderDetails, 'invoiceToCustomer');
 
     } catch (error) {
-      console.error("Invoice sending failed to Customer", error);
+      console.error('Invoice sending failed to Customer or Dealer:', error);
     }
   }
 
-  // send Email invoice Dealer to Customer
-  // async sendInvoiceDealerToCustomer( taxType: any) {
-  //   try {
-  //     // Destructure taxType directly
-  //     const {
-  //       CGST,
-  //       IGST,
-  //       SGST,
-  //       net_amount,
-  //       total_amount,
-  //       shop,
-  //       sales_tax_total,
-  //       total_amount_in_words,
-  //       payment_Mode,
-  //       paymentInfo,
-  //       billing_address,
-  //       shipping_address,
-  //       total_tax_amount,
-  //       shop_address,
-  //       customer,
-  //       dealer,
-  //       saleBy,
-  //       products,
-  //       created_at,
-  //       order_no,
-  //       invoice_date,
-  //     } = taxType;
-
-  //     console.log('prodcuts-mail-135', total_tax_amount);
-
-  //     const totalSubtotal = products.reduce((accumulator, currentValue) => {
-  //       return accumulator + currentValue.pivot.subtotal;
-  //     }, 0);
-  //     // Convert subtotal to words
-  //     const totalSubtotalInWords = toWords(totalSubtotal);
-
-  //     const updatedProducts = products.map(product => {
-  //       const unit_price = Number(product.pivot?.unit_price || 0);
-  //       const quantity = Number(product.pivot?.order_quantity || 0);
-  //       const tax_rate = Number(product.taxes?.rate || 0) / 100;
-  //       const subtotal = unit_price * quantity;
-  //       const taxAmount = Math.round(subtotal * tax_rate);
-  //       const total = subtotal + taxAmount;
-  //       return { ...product, subtotal, taxAmount, total }; 
-  //     });
-
-  //     const orderDetails = {
-  //       IGST,
-  //       CGST,
-  //       SGST,
-  //       net_amount,
-  //       total_amount,
-  //       shop,
-  //       sales_tax_total,
-  //       total_amount_in_words,
-  //       payment_Mode,
-  //       paymentInfo,
-  //       billing_address,
-  //       shipping_address,
-  //       total_tax_amount,
-  //       shop_address,
-  //       customer,
-  //       dealer,
-  //       saleBy,
-  //       finalTotal:totalSubtotal,
-  //       amountinWord:totalSubtotalInWords,
-  //       products: updatedProducts, // Use the updated products
-  //       created_at,
-  //       order_no,
-  //       invoice_date,
-  //     };
-
-  //     console.log("orderDetails***184", orderDetails)
-
-  //     await this.mailerService.sendMail({
-  //       to: customer.email,
-  //       from: '"Codenox Purchase" <info@codenoxx.tech>',
-  //       subject: 'Your Codenox Order Confirmation. Please share your feedback',
-  //       template: './invoiceDealerToCustomer',
-  //       context: {
-  //         email: customer.email,
-  //         invoice: orderDetails,
-  //       },
-  //     });
-  //   } catch (error) {
-  //     console.error("Invoice sending failed to Customer", error);
-  //   }
-  // }
-
   async sendInvoiceDealerToCustomer(Invoice: any) {
-
     try {
       const {
         CGST,
@@ -390,23 +269,23 @@ export class MailService {
         invoice_date,
       } = Invoice;
 
-      const totalSubtotal = products.reduce((accumulator, currentValue) => {
+      const totalSubtotal = products.reduce((accumulator: number, currentValue: any) => {
         return accumulator + currentValue.pivot.subtotal;
       }, 0);
 
-      // Convert subtotal to words
       const totalSubtotalInWords = toWords(totalSubtotal);
 
-      const updatedProducts = products.map(product => {
+      const updatedProducts = products.map((product: any) => {
         const unit_price = Number(product.pivot?.unit_price || 0);
         const quantity = Number(product.pivot?.order_quantity || 0);
         const tax_rate = Number(product.taxes?.rate || 0) / 100;
         const subtotal = unit_price * quantity;
         const taxAmount = Math.round(subtotal * tax_rate);
         const total = subtotal + taxAmount;
-        return { ...product, subtotal, taxAmount, total }; // Return the original product data with the new calculated values
+        return { ...product, subtotal, taxAmount, total };
       });
-      const finalEmail = Invoice.dealer.email ? Invoice.dealer.email : Invoice.customer.email;
+
+      const dealerEmail = Invoice.dealer.email ? Invoice.dealer.email : Invoice.customer.email;
 
       const orderDetails = {
         IGST,
@@ -425,20 +304,18 @@ export class MailService {
         sales_tax,
         total_tax_amount,
         shop_address,
-        customer,
-        dealer,
+        dealerEmail,
         finalTotal: totalSubtotal,
         amountinWord: totalSubtotalInWords,
-        products: updatedProducts, // Use the updated products
+        products: updatedProducts,
         created_at,
         order_no,
         invoice_date,
       };
 
-      const htmlContented = await this.dealer_renderTemplate(orderDetails);
-
+      const htmlContent = await this.dealer_renderTemplate(orderDetails, 'invoiceToCustomer');
     } catch (error) {
-      console.error("Invoice sending failed to Customer", error);
+      console.error('Dealer Invoice sending failed:', error);
     }
   }
 
@@ -455,7 +332,7 @@ export class MailService {
         to: user.email,
         from: '"Dealer" <info@codenoxx.tech>',
         subject: 'Your Refund amount. Please share your feedback',
-        template: './refund',
+        template: '/refund',
         context: {
           email: user.email,
           products: productDetails,
@@ -479,7 +356,7 @@ export class MailService {
         to: user.email,
         from: '"Dealer" <info@codenoxx.tech>',
         subject: 'Your Codenox Order Confirmation. Please share your feedback',
-        template: './cancelOrder',
+        template: '/cancelOrder',
         context: {
           email: user.email,
           products: productDetails,
@@ -503,7 +380,7 @@ export class MailService {
         to: user.email,
         from: '"Dealer" <info@codenoxx.tech>',
         subject: 'Your Codenox Order Confirmation. Please share your feedback',
-        template: './transactionDeclined',
+        template: '/transactionDeclined',
         context: {
           email: user.email,
           products: productDetails,
@@ -520,29 +397,27 @@ export class MailService {
     // Check if products is an array and has elements
     if (!Array.isArray(products) || products.length === 0) {
       console.error("Invalid or empty products array");
-      return; // Exit the function if products is not a valid array
+      return;
     }
 
     try {
       // Correctly map product details, ensuring property names match
       const productDetails = products.map(item => ({
-        name: item.name, // Assuming the correct property is 'name', not 'Name'
-        price: item.price, // Ensure 'netPrice' is the correct property name
-        imageUrl: item.image,// Check if 'image' is the correct property for the image URL
+        name: item.name,
+        price: item.price,
+        imageUrl: item.image,
         slug: item.slug
       }));
 
       const CartUrl = "https://www.Codenox.in/shop-cart";
 
       await this.mailerService.sendMail({
-        // to: "radhikaji.varfa@outlook.com",
         to: email,
         from: '"Support Team" <info@codenoxx.tech>',
         subject: "Don't forget your items! ️ Your cart reminder from Codenox",
-        template: './abandonmentCartReminder',
+        template: '/abandonmentCartReminder',
         context: {
           email: email,
-          // email:"radhikaji.varfa@outlook.com",
           products: productDetails,
           cartUrl: CartUrl,
         },
@@ -553,21 +428,26 @@ export class MailService {
   }
 
   async sendPermissionUserConfirmation(password: any, user: User, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`
-
-    await this.mailerService.sendMail({
-      to: user.email,
-      from: '"Support Team" <info@codenoxx.tech>',
-      subject: `Welcome to Codenox! `,
-      template: './userbyowner',
-      context: {
-        email: user.email,
-        password: password,
-        name: user.name,
-        otp: user.otp,
-        type: user.type.type_name,
-        url,
-      },
-    })
+    const url = `example.com/auth/confirm?token=${token}`;
+    const templatePath = path.join(__dirname, 'templates', 'userbyowner.hbs');
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        from: '"Support Team" <info@codenoxx.tech>',
+        subject: `Welcome to Codenox!`,
+        template: templatePath,
+        context: {
+          email: user.email,
+          password: password,
+          name: user.name,
+          otp: user.otp,
+          type: user.type.type_name,
+          url,
+        },
+      });
+      console.log('Mail sent successfully');
+    } catch (error) {
+      console.error('Error sending email:', error);
+    }
   }
 }

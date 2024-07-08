@@ -1,8 +1,5 @@
 /* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
-import { UsersService } from 'src/users/users.service';
-import { StoreNoticesController } from './store-notices.controller';
-import { StoreNoticesService } from './store-notices.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DealerRepository, UserRepository } from 'src/users/users.repository';
 import { AddressesModule } from 'src/addresses/addresses.module';

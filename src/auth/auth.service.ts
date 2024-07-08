@@ -199,7 +199,7 @@ export class AuthService {
           where: { id: createUserInput.UsrBy.id },
           relations: ['type'],
         });
-        if (parentUsr?.type.type_name === UserType.Store_Owner) {
+        if (parentUsr?.type.type_name === UserType.Company) {
           const existingDealerCount = await this.userRepository.createQueryBuilder('user')
             .innerJoin('user.type', 'permission')
             .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
@@ -213,8 +213,8 @@ export class AuthService {
 
       if (permission) {
         userData.type = permission;
-        // Set dealerCount only if the user is of type store_owner
-        if (permission.type_name === UserType.Store_Owner) {
+        // Set dealerCount only if the user is of type Company
+        if (permission.type_name === UserType.Company) {
           userData.dealerCount = createUserInput.numberOfDealers || 0;
         }
         const token = Math.floor(100 + Math.random() * 900).toString();
@@ -742,11 +742,11 @@ export class AuthService {
         relations: ['type'],
       });
 
-      if (parentUsr?.type?.type_name === 'Store_Owner') {
+      if (parentUsr?.type?.type_name === UserType.Company) {
         const existingDealerCount = await this.userRepository.createQueryBuilder('user')
           .innerJoin('user.type', 'permission')
           .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
-          .andWhere('permission.type_name = :type_name', { type_name: 'Dealer' })
+          .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
           .getCount();
 
         if (existingDealerCount >= (parentUsr.dealerCount || 0)) {
@@ -766,8 +766,8 @@ export class AuthService {
       if (permission) {
         user.type = permission;
 
-        // Set dealerCount only if the user is of type store_owner
-        if (permission.type_name === 'Store_Owner') {
+        // Set dealerCount only if the user is of type Company
+        if (permission.type_name === UserType.Company) {
           user.dealerCount = updateUserInput.dealerCount || 0;
         } else {
           user.dealerCount = null; // Reset dealerCount if type changes to something else
