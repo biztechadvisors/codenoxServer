@@ -31,7 +31,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
-import { Equal, FindManyOptions, FindOptionsWhere, In, Like, Repository } from 'typeorm';
+import { Brackets, Equal, FindManyOptions, FindOptionsWhere, In, Like, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -135,85 +135,115 @@ export class UsersService {
     search,
     type,
   }: GetUsersDto): Promise<UserPaginator> {
-
     const limitNum = limit;
     const pageNum = page;
     const startIndex = (pageNum - 1) * limitNum;
-
-    const findOptions: any = {
-      relations: [
-        'profile',
-        'dealer',
-        'shops',
-        'inventoryStocks',
-        'stocks',
-        'managed_shop',
-        'address',
-        'orders',
-        'stocksSellOrd',
-        'type',
-      ],
-      skip: startIndex,
-      take: limitNum,
-      order: {},
-      where: {},
-    };
-
-    if (orderBy && sortedBy) {
-      findOptions.order[orderBy] = sortedBy.toUpperCase();
-    }
-
     let user;
 
     if (usrById) {
       // Fetch user by ID and apply type-based filtering if provided
       user = await this.userRepository.findOne({
         where: { id: Number(usrById) },
-        relations: ['type', 'shops'],
+        relations: [
+          'profile',
+          'dealer',
+          'shops',
+          'inventoryStocks',
+          'stocks',
+          'managed_shop',
+          'address',
+          'orders',
+          'stocksSellOrd',
+          'type',
+        ],
       });
 
       if (!user) {
         throw new NotFoundException(`User with ID ${usrById} not found`);
       }
+    }
 
-      findOptions.where.UsrBy = { id: user.id };
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+    // Adding relations
+    queryBuilder
+      .leftJoinAndSelect('user.profile', 'profile')
+      .leftJoinAndSelect('user.dealer', 'dealer')
+      .leftJoinAndSelect('user.shops', 'shops')
+      .leftJoinAndSelect('user.inventoryStocks', 'inventoryStocks')
+      .leftJoinAndSelect('user.stocks', 'stocks')
+      .leftJoinAndSelect('user.managed_shop', 'managed_shop')
+      .leftJoinAndSelect('user.address', 'address')
+      .leftJoinAndSelect('user.orders', 'orders')
+      .leftJoinAndSelect('user.stocksSellOrd', 'stocksSellOrd')
+      .leftJoinAndSelect('user.type', 'type');
+
+    // Pagination
+    queryBuilder.skip(startIndex).take(limitNum);
+
+    // Ordering
+    if (orderBy && sortedBy) {
+      queryBuilder.addOrderBy(`user.${orderBy}`, sortedBy.toUpperCase() as 'ASC' | 'DESC');
+    }
+
+    // Filtering by usrById
+    if (usrById) {
+      queryBuilder.andWhere('user.UsrBy = :usrById', { usrById });
 
       if (type) {
         const permission = await this.permissionRepository.findOne({ where: { type_name: type } });
         if (!permission) {
           throw new NotFoundException(`Permission for type "${type}" not found.`);
         }
-        findOptions.where.type = permission;
+        queryBuilder.andWhere('user.type = :type', { type: permission.id });
       }
     }
 
+    // Filtering by name
     if (name) {
-      findOptions.where.name = Like(`%${name}%`);
+      queryBuilder.andWhere('user.name LIKE :name', { name: `%${name}%` });
     }
 
+    // Search filter query
     if (search) {
-      const [searchKey, searchValue] = search.split(':');
-      if (this.userRepository.metadata.columns.find(column => column.propertyName === searchKey)) {
-        findOptions.where[searchKey] = Like(`%${searchValue}%`);
+      const searchConditions = [];
+      const searchParams = {};
+
+      const filterTerms = search.split(' ');
+      filterTerms.forEach((term, index) => {
+        const searchTermKey = `searchTerm${index}`;
+        const searchTermValue = `%${term}%`;
+        searchConditions.push(
+          `(user.name LIKE :${searchTermKey} OR user.email LIKE :${searchTermKey} OR user.contact LIKE :${searchTermKey})`
+        );
+        searchParams[searchTermKey] = searchTermValue;
+      });
+
+      if (searchJoin.toLowerCase() === 'or') {
+        queryBuilder.andWhere(new Brackets(qb => {
+          qb.where(searchConditions.join(' OR '), searchParams);
+        }));
       } else {
-        throw new Error(`Invalid search key: ${searchKey}. Make sure it is a valid property of the User entity.`);
+        searchConditions.forEach((condition, index) => {
+          queryBuilder.andWhere(condition, searchParams);
+        });
       }
     }
 
-    // Use findAndCount to get paginated results
-    const [users, total] = await this.userRepository.findAndCount(findOptions);
+    // Execute the query and get results
+    const [users, total] = await queryBuilder.getManyAndCount();
 
+    // Prepare paginated response
+    if (user.type.type_name === UserType.Company || UserType.Staff) {
+      return {
+        data: [...users],
+        ...paginate(total, pageNum, limitNum, total, `/users?type=${type || 'customer'}&limit=${limitNum}`),
+      };
+    }
     return {
       data: [user, ...users],
       ...paginate(total, pageNum, limitNum, total, `/users?type=${type || 'customer'}&limit=${limitNum}`),
     };
-  }
-
-  async getUsersNotify({ limit }: GetUsersDto): Promise<User[]> {
-    const data = await this.userRepository.find({
-      take: limit
-    });
-    return data;
   }
 
   async findOne(id: number): Promise<User> {
