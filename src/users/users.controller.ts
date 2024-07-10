@@ -30,7 +30,6 @@ export class UsersController {
 
   @Get()
   getAllUsers(@Query() query: GetUsersDto) {
-    console.log('GetUsersDto **33', query)
     return this.usersService.getUsers(query);
   }
 

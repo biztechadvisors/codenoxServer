@@ -23,11 +23,10 @@ export class AiService {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" })
 
     const result = await model.generateContent(createAiDto.prompt)
-    console.log("result",  result)
+
     const response = await result.response
     const text = response.text()
 
-    console.log("text", text)
     newPrompt.result = text
     newPrompt.status = 'success'
 
@@ -38,7 +37,7 @@ export class AiService {
 
   // @Interval(60000)
   async remove() {
-     console.log("working fine")
+
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const aiData = await this.aiRepository.find({
       where: {
@@ -48,9 +47,9 @@ export class AiService {
     });
 
     for (const data of aiData) {
-    console.log("data?????????", data)
+
     const removed = await this.aiRepository.delete(data.id)
-    console.log("removed", removed)
+
   }
 }
 }

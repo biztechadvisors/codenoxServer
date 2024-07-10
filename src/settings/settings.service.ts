@@ -102,7 +102,7 @@ export class SettingsService {
 
   async create(shopId: number, createSettingDto: CreateSettingDto): Promise<Setting | { message: string }> {
     try {
-      console.log('shopId ****105', shopId)
+
       if (!shopId) {
         throw new BadRequestException('shopId is compulsory');
       }
@@ -220,7 +220,6 @@ export class SettingsService {
         contactDetails.location = await this.locationRepository.save(location);
 
         // Log contactDetails before saving socials
-        console.log('contactDetails before saving socials:', JSON.stringify(contactDetails, null, 2));
 
         if (optionsData.contactDetails.socials) {
           const savedSocials = await Promise.all(optionsData.contactDetails.socials.map(async social => {
@@ -228,7 +227,7 @@ export class SettingsService {
             shopSocial.icon = social.icon;
             shopSocial.url = social.url;
             const savedSocial = await this.shopSocialRepository.save(shopSocial);
-            console.log('Saved social:', JSON.stringify(savedSocial, null, 2));
+
             return savedSocial;
           }));
 
@@ -237,12 +236,8 @@ export class SettingsService {
           contactDetails.socials = [];
         }
 
-        // Log contactDetails before final save
-        console.log('contactDetails before final save:', JSON.stringify(contactDetails, null, 2));
-
         // Save contact details
         const savedContactDetails = await this.contactDetailRepository.save(contactDetails);
-        console.log('Saved contactDetails:', JSON.stringify(savedContactDetails, null, 2));
         newOptions.contactDetails = savedContactDetails;
       }
 

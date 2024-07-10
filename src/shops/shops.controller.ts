@@ -38,7 +38,6 @@ export class ShopsController {
 
   @Put(':id')
   update(@Param('id') id: number, @Body() updateShopDto: UpdateShopDto) {
-    console.log('updateShopDto **44', updateShopDto)
     return this.shopsService.update(+id, updateShopDto)
   }
 
