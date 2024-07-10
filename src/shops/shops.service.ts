@@ -22,7 +22,7 @@ import { AddressesService } from 'src/addresses/addresses.service'
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto'
 import { UserAddressRepository } from 'src/addresses/addresses.repository'
 import { Permission } from 'src/permission/entities/permission.entity'
-import { Repository } from 'typeorm'
+import { FindOperator, ILike, Repository } from 'typeorm'
 
 @Injectable()
 export class ShopsService {
@@ -168,6 +168,25 @@ export class ShopsService {
           await this.userRepository.save(userToUpdate);
         }
       }
+
+      if (createShopDto.permission || createShopDto.additionalPermissions) {
+        const permission = await this.permissionRepository.findOne({
+          where: { permission_name: ILike(createShopDto.permission) as unknown as FindOperator<string> },
+        });
+
+        const additionalPermissions = await this.permissionRepository.find({
+          where: { permission_name: ILike(createShopDto.additionalPermissions) as unknown as FindOperator<string> },
+        });
+
+        if (permission) {
+          newShop.permission = permission;
+        }
+
+        if (additionalPermissions) {
+          newShop.additionalPermissions = additionalPermissions;
+        }
+      }
+
       await this.shopRepository.save(newShop);
       const createdShop = await this.shopRepository.findOne({ where: { id: shop.id }, relations: ['balance'] });
       return createdShop;
