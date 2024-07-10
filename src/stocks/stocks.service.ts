@@ -233,6 +233,10 @@ export class StocksService {
 
             if (inventoryStockRep) {
                 inventoryStockRep.quantity += receivedQuantity;
+                if (inventoryStockRep.quantity > 1) {
+                    inventoryStockRep.status = true;
+                    inventoryStockRep.inStock = true;
+                }
                 await this.inventoryStocksRepository.save(inventoryStockRep);
             } else {
                 const newInventoryStock = new InventoryStocks();
@@ -240,7 +244,10 @@ export class StocksService {
                 newInventoryStock.product = await this.productRepository.findOne(product_id);
                 newInventoryStock.user = dealer;
                 newInventoryStock.variation_options = [await this.variationRepository.findOne(variation_option_id)];
-
+                if (newInventoryStock.quantity > 1) {
+                    newInventoryStock.status = true;
+                    newInventoryStock.inStock = true;
+                }
                 await this.inventoryStocksRepository.save(newInventoryStock);
             }
 

@@ -21,6 +21,7 @@ import { Category, SubCategory } from 'src/categories/entities/category.entity'
 import { Product } from 'src/products/entities/product.entity'
 import { Order } from 'src/orders/entities/order.entity'
 import { Setting } from 'src/settings/entities/setting.entity'
+import { Permission } from 'src/permission/entities/permission.entity'
 
 @Entity()
 export class Shop extends CoreEntity {
@@ -90,6 +91,13 @@ export class Shop extends CoreEntity {
   @JoinTable({ name: "shop_order" })
   order: Order[];
 
+  @ManyToOne(() => Permission, permission => permission.user)
+  @JoinColumn({ name: 'permission_id' })
+  permission: Permission;
+
+  @ManyToMany(() => Permission, (permission) => permission.shops, { cascade: true, nullable: true })
+  @JoinTable({ name: 'shop_permission' })
+  additionalPermissions: Permission[];
 }
 
 @Entity()
