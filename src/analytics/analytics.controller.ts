@@ -11,7 +11,7 @@ export class AnalyticsController {
   @Post()
   async getAnalytics(@Body() query: { shop_id: number; customerId: number; state: string }): Promise<AnalyticsResponseDTO | { message: string }> {
     try {
-      console.log('query 14***', query)
+
       const result = await this.analyticsService.findAll(query.shop_id, query.customerId, query.state);
       return result;
     } catch (error) {

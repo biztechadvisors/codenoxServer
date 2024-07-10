@@ -20,7 +20,6 @@ export class TagsController {
 
   @Post()
   create(@Body() createTagDto: CreateTagDto) {
-    console.log('createTagDto 23', createTagDto)
     return this.tagsService.create(createTagDto)
   }
 

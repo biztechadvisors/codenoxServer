@@ -352,7 +352,16 @@ export class ProductsService {
         const filterTerms = search.split(' ');
         filterTerms.forEach(term => {
           const searchTerm = `%${term}%`;
-          searchConditions.push(`(product.name LIKE :filterSearchTerm OR categories.name LIKE :filterSearchTerm OR subCategories.name LIKE :filterSearchTerm OR type.name LIKE :filterSearchTerm OR tags.name LIKE :filterSearchTerm OR variation_options.title LIKE :filterSearchTerm)`);
+          searchConditions.push
+            (
+              `(product.name LIKE :filterSearchTerm OR 
+              product.sku LIKE :filterSearchTerm OR 
+              categories.name LIKE :filterSearchTerm OR 
+              subCategories.name LIKE :filterSearchTerm OR 
+              type.name LIKE :filterSearchTerm OR 
+              tags.name LIKE :filterSearchTerm OR 
+              variation_options.title LIKE :filterSearchTerm)`
+            );
           searchParams.filterSearchTerm = searchTerm;
         });
       }

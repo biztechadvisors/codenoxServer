@@ -31,9 +31,6 @@ export class AnalyticsService {
 
   async findAll(shop_id: number | null, customerId: number, state: string): Promise<AnalyticsResponseDTO | { message: string }> {
     try {
-      console.log('analytics 34 shop_id ***', shop_id);
-      console.log('analytics 35 customerId ***', customerId);
-
       if (!customerId && !shop_id) {
         return { message: 'Customer ID or Shop ID is required' };
       }
@@ -51,7 +48,7 @@ export class AnalyticsService {
           where: { id: shop_id },
           relations: ['owner', 'owner.type']
         });
-        console.log('shop ***53', shop);
+
       }
 
       if (!user && !shop) {
@@ -73,7 +70,6 @@ export class AnalyticsService {
         return { message: `User with ID ${customerId} does not have any permissions` };
       }
 
-      console.log('first', user?.id ? user.id : shop.owner_id);
       const allowedPermissions = ['Admin', 'Super_Admin', 'Dealer', 'Company'];
       if (!allowedPermissions.includes(userPermissions.type_name)) {
         return { message: `User with ID ${customerId} does not have permission to access analytics` };
