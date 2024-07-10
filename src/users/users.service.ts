@@ -369,7 +369,7 @@ export class UsersService {
       throw new NotFoundException(`User with id ${user_id} not found`);
     }
 
-    const usr_type = await this.permissionRepository.findOneBy(user)
+    const usr_type = await this.permissionRepository.findOne({ where: { user: user.id } })
 
     usr_type.type_name = UserType.Admin;
 

@@ -177,7 +177,6 @@ export class ShopsService {
     }
   }
 
-
   async getShops({ search, limit, page }: GetShopsDto): Promise<ShopPaginator> {
 
     page = page ? page : 1;
@@ -199,6 +198,8 @@ export class ShopsService {
         'cover_image',
         'logo',
         'staffs',
+        'additionalPermissions',
+        'permission'
       ],
     });
 
@@ -282,7 +283,9 @@ export class ShopsService {
         thumbnail: shop.logo?.thumbnail || "",
         original: shop.logo?.original || "",
       },
-      staffs: shop.staffs, // Update with actual staffs data if available
+      staffs: shop.staffs,
+      additionalPermissions: shop.additionalPermissions,
+      permission: shop.permission
     }));
 
     return {
@@ -328,7 +331,9 @@ export class ShopsService {
           'logo',
           'staffs',
           'category',
-          'order'
+          'order',
+          'additionalPermissions',
+          'permission'
         ],
       });
       if (!existShop) {
@@ -391,7 +396,9 @@ export class ShopsService {
         gst_number: existShop.gst_number, // Include the missing property
         category: existShop.category,
         subCategories: existShop.subCategories,
-        order: existShop.order
+        order: existShop.order,
+        additionalPermissions: existShop.additionalPermissions,
+        permission: existShop.permission
       };
 
       return mappedShop;

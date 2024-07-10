@@ -378,7 +378,6 @@ export class ProductsService {
           .leftJoinAndSelect('product.variation_options', 'variation_options1')
           .where(combinedConditions, searchParams);
       }
-
     }
 
     try {

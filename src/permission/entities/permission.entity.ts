@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
+import { Shop } from "src/shops/entities/shop.entity";
 import { User } from "src/users/entities/user.entity";
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Permission {
@@ -18,6 +19,13 @@ export class Permission {
 
   @Column()
   user: number;
+
+  @Column()
+  shop: number;
+
+  @ManyToMany(() => Shop, (shop) => shop.additionalPermissions)
+  @JoinTable({ name: 'shop_permission' })
+  shops?: Shop[];
 }
 
 @Entity()
