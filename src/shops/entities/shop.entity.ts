@@ -91,7 +91,7 @@ export class Shop extends CoreEntity {
   @JoinTable({ name: "shop_order" })
   order: Order[];
 
-  @ManyToOne(() => Permission, permission => permission.user)
+  @ManyToOne(() => Permission, permission => permission.shop)
   @JoinColumn({ name: 'permission_id' })
   permission: Permission;
 
