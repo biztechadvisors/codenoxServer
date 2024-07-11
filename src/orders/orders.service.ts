@@ -399,14 +399,14 @@ export class OrdersService {
           where: { id: parseInt(customerId) },
           relations: ['type'],
         });
-      }
 
-      if (!usr) {
-        throw new Error('User not found');
+        if (!usr) {
+          throw new Error('User not found');
+        }
       }
 
       // Fetch permissions for the user
-      const permsn = await this.permissionRepository.findOneBy({ id: usr.type.id });
+      const permsn = usr ? await this.permissionRepository.findOneBy({ id: usr.type.id }) : null;
 
       // Create the initial query builder for orders
       let query = this.orderRepository.createQueryBuilder('order');
@@ -426,7 +426,7 @@ export class OrdersService {
         .leftJoinAndSelect('order.coupon', 'coupon');
 
       // If the user is not an admin or super_admin, restrict orders by customer_id
-      if (!(permsn && (permsn.type_name === UserType.Company || permsn.type_name === UserType.Super_Admin))) {
+      if (usr && permsn && !(permsn.type_name === UserType.Company || permsn.type_name === UserType.Super_Admin)) {
         const usrByIdUsers = await this.userRepository.find({
           where: { UsrBy: { id: usr.id } },
           relations: ['type'],
@@ -457,6 +457,7 @@ export class OrdersService {
       if (tracking_number) {
         query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
       }
+
       // Handle pagination
       if (!page) page = 1;
       if (!limit) limit = 15;
@@ -583,6 +584,7 @@ export class OrdersService {
       throw error; // rethrow the error for further analysis
     }
   }
+
 
   private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
     try {
