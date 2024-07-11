@@ -234,15 +234,12 @@ export class UsersService {
     const [users, total] = await queryBuilder.getManyAndCount();
 
     // Prepare paginated response
-    if (user.type.type_name === UserType.Company || UserType.Staff) {
-      return {
-        data: [...users],
-        ...paginate(total, pageNum, limitNum, total, `/users?type=${type || 'customer'}&limit=${limitNum}`),
-      };
-    }
+    const isCompanyOrStaff = user && (user.type.type_name === UserType.Company || user.type.type_name === UserType.Staff);
+    const url = `/users?type=${type || 'customer'}&limit=${limitNum}`;
+
     return {
-      data: [user, ...users],
-      ...paginate(total, pageNum, limitNum, total, `/users?type=${type || 'customer'}&limit=${limitNum}`),
+      data: isCompanyOrStaff ? [...users] : [user, ...users],
+      ...paginate(total, pageNum, limitNum, total, url),
     };
   }
 

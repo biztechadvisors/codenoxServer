@@ -347,11 +347,14 @@ export class SettingsService {
     }
   }
 
-  async findOne(shop_slug: string): Promise<Setting | null> {
+  async findOne(shop_slug: string): Promise<any> {
     // Fetch the shop details using the shop slug
-    const shop = await this.shopRepository.findOne({
-      where: { slug: shop_slug }, relations: ['additionalPermissions', 'additionalPermissions.permissions', 'permission', 'permission.permissions']
-    });
+    let shop;
+    if (shop_slug) {
+      shop = await this.shopRepository.findOne({
+        where: { slug: shop_slug }, relations: ['additionalPermissions', 'additionalPermissions.permissions', 'permission', 'permission.permissions']
+      });
+    }
 
     // If the shop is not found, return null
     if (!shop) {
@@ -383,8 +386,8 @@ export class SettingsService {
       ],
     });
 
-    if (!settingData) {
-      return null;
+    if (!settingData && shop) {
+      return shop;
     }
 
     const mergedData = {
