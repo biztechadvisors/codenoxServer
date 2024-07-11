@@ -68,8 +68,7 @@ export class Product extends CoreEntity {
   @JoinTable({ name: "product_order" })
   orders: Order[];
 
-  @ManyToMany(() => StocksSellOrd, StocksSellOrd => StocksSellOrd.products)
-  @JoinTable({ name: "product_StocksSellOrd" })
+  @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
   StocksSellOrd: StocksSellOrd[];
 
   @ManyToOne(() => Shop, (shop) => shop.product, { eager: true, cascade: true })

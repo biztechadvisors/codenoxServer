@@ -96,6 +96,6 @@ export class StocksSellOrd extends CoreEntity {
     @Column()
     wallet_point: number;
 
-    @ManyToOne(() => User, user => user.stocksSellOrd, { eager: true, })
+    @ManyToOne(() => User, user => user.stocksSellOrd, { eager: true })
     customer: User;
 }

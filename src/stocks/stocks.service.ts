@@ -403,9 +403,10 @@ export class StocksService {
 
     async OrdfromStocks(createOrderInput: CreateOrderDto): Promise<StocksSellOrd> {
         try {
+            // Transform input to StocksSellOrd entity
+            const order = plainToClass(StocksSellOrd, createOrderInput);
 
-            // throw error
-            const order = plainToClass(StocksSellOrd, createOrderInput)
+            // Set default order status
             const newOrderStatus = new OrderStatus();
             newOrderStatus.name = 'Order Processing';
             newOrderStatus.color = '#d87b64';
@@ -413,9 +414,13 @@ export class StocksService {
                 ? createOrderInput.payment_gateway
                 : PaymentGatewayType.CASH_ON_DELIVERY;
             order.payment_gateway = paymentGatewayType;
+
+            // Set customer information
             order.customerId = order.customerId ? order.customerId : order.customer_id;
             order.customer_id = order.customer_id;
             order.customer = createOrderInput.dealerId ? createOrderInput.dealerId : null;
+
+            // Set order status based on payment gateway type
             switch (paymentGatewayType) {
                 case PaymentGatewayType.CASH_ON_DELIVERY:
                     order.order_status = OrderStatusType.PROCESSING;
@@ -438,27 +443,31 @@ export class StocksService {
                     newOrderStatus.slug = OrderStatusType.PENDING;
                     break;
             }
+
+            // Verify customer existence
             if (order.customer_id && order.customer) {
                 const customer = await this.userRepository.findOne({
                     where: { id: order.customer_id, email: order.customer.email }, relations: ['type']
                 });
-
                 if (!customer) {
                     throw new NotFoundException('Customer not found');
                 }
                 order.customer = customer;
             }
 
+            // Generate invoice number if not provided
             const Invoice = "OD" + Math.floor(Math.random() * Date.now());
+            order.tracking_number = order.tracking_number || Invoice;
 
+            // Validate products in the order
             if (!order.products || order.products.some(product => product.product_id === undefined)) {
                 throw new Error('Invalid order.products');
             }
 
-            order.tracking_number = order.tracking_number || Invoice;
+            // Save the order
+            const savedOrder = await this.StocksSellOrdRepository.save(order);
 
-            await this.StocksSellOrdRepository.save(order);
-
+            // Process products in the order
             if (order.products) {
                 const productEntities = await this.productRepository.find({
                     where: { id: In(order.products.map(product => product.product_id)) },
@@ -471,21 +480,27 @@ export class StocksService {
                             newPivot.unit_price = product.unit_price;
                             newPivot.subtotal = product.subtotal;
                             newPivot.variation_option_id = product.variation_option_id;
-                            newPivot.Ord_Id = order.id;
+                            newPivot.Ord_Id = savedOrder.id;  // Use the saved order ID
                             const productEntity = productEntities.find(entity => entity.id === product.product_id);
                             newPivot.product = productEntity;
+                            newPivot.StocksSellOrd = savedOrder
                             await this.orderProductPivotRepository.save(newPivot);
                         }
                     }
                     order.products = productEntities;
+
+                    return await this.StocksSellOrdRepository.save(order);
+
                 } else {
                     throw new NotFoundException('Product not found');
                 }
             }
 
+            // Save order status
             const createdOrderStatus = await this.orderStatusRepository.save(newOrderStatus);
             order.status = createdOrderStatus;
 
+            // Associate shop with the order
             if (createOrderInput.shop_id) {
                 const getShop = await this.shopRepository.findOne({ where: { id: createOrderInput.shop_id.id } });
                 if (getShop) {
@@ -495,6 +510,7 @@ export class StocksService {
                 }
             }
 
+            // Associate saleBy with the order
             if (createOrderInput.saleBy?.id) {
                 const getSale = await this.userAddressRepository.findOne({ where: { id: createOrderInput.saleBy.id } });
                 if (getSale) {
@@ -504,18 +520,16 @@ export class StocksService {
                 }
             }
 
-            const savedOrder = await this.StocksSellOrdRepository.save(order);
+            // Save the final order with all associations
+            const finalSavedOrder = await this.StocksSellOrdRepository.save(order);
 
-            // if (savedOrder?.id) {
-            //     await this.downloadInvoiceUrl((savedOrder.id).toString())
-            // }
-
-            return savedOrder;
+            return finalSavedOrder;
         } catch (error) {
             console.error('Error creating order:', error);
             throw error;
         }
     }
+
 
     async getOrders({
         limit,
