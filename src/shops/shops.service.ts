@@ -218,7 +218,9 @@ export class ShopsService {
         'logo',
         'staffs',
         'additionalPermissions',
-        'permission'
+        'additionalPermissions.permissions',
+        'permission',
+        'permission.permissions'
       ],
     });
 
@@ -352,7 +354,9 @@ export class ShopsService {
           'category',
           'order',
           'additionalPermissions',
-          'permission'
+          'additionalPermissions.permissions',
+          'permission',
+          'permission.permissions'
         ],
       });
       if (!existShop) {
