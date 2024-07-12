@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { DeepPartial, In, Repository } from 'typeorm';
 import { InventoryStocks, Stocks } from './entities/stocks.entity';
 import { CreateStocksDto, GetStocksDto, UpdateStkQuantityDto } from './dto/create-stock.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/users/entities/user.entity';
+import { User, UserType } from 'src/users/entities/user.entity';
 import { Dealer } from 'src/users/entities/dealer.entity';
 import { error } from 'console';
 import { throwError } from 'rxjs';
@@ -530,7 +530,6 @@ export class StocksService {
         }
     }
 
-
     async getOrders({
         limit,
         page,
@@ -540,19 +539,18 @@ export class StocksService {
         shop_id,
     }: GetOrdersDto): Promise<OrderPaginator> {
         try {
-
-            const usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type', 'permission'] });
-
-            if (!usr) {
-                throw new Error('User not found');
+            let usr;
+            if (customer_id) {
+                usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type', 'type.permissions'] });
+                if (!usr) {
+                    throw new NotFoundException('User not found');
+                }
+            } else {
+                throw new BadRequestException('Customer ID is required');
             }
-
-            // Fetch permissions for the user
-            const permsn = await this.permissionRepository.findOne({ where: { id: usr.type.id } });
 
             let query = this.StocksSellOrdRepository.createQueryBuilder('StocksSellOrd');
             query = query.leftJoinAndSelect('StocksSellOrd.status', 'status');
-            query = query.leftJoinAndSelect('StocksSellOrd.dealer', 'dealer');
             query = query.leftJoinAndSelect('StocksSellOrd.billing_address', 'billing_address');
             query = query.leftJoinAndSelect('StocksSellOrd.shipping_address', 'shipping_address');
             query = query.leftJoinAndSelect('StocksSellOrd.customer', 'customer');
@@ -560,19 +558,16 @@ export class StocksService {
                 .leftJoinAndSelect('products.pivot', 'pivot')
                 .leftJoinAndSelect('products.taxes', 'taxes')
                 .leftJoinAndSelect('products.variation_options', 'variation_options');
-            // query = query.leftJoinAndSelect('StocksSellOrd.payment_intent', 'payment_intent')
-            //     .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info');
             query = query.leftJoinAndSelect('StocksSellOrd.shop_id', 'shop');
-            query = query.leftJoinAndSelect('StocksSellOrd.coupon', 'coupon');
 
-            if (!(permsn && (permsn.type_name === 'Admin' || permsn.type_name === 'super_admin'))) {
+            if (!(usr && (usr?.type.type_name === UserType.Dealer || usr?.type.type_name === UserType.Staff))) {
                 // If the user has other permissions, filter orders by customer_id
                 const usrByIdUsers = await this.userRepository.find({
                     where: { UsrBy: { id: usr.id } }, relations: ['type']
                 });
 
                 const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
-                query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
+                query = query.andWhere('StocksSellOrd.customerId IN (:...userIds)', { userIds });
             }
 
             // Handle additional filtering conditions
@@ -581,13 +576,13 @@ export class StocksService {
             }
 
             if (search) {
-                query = query.andWhere('(status.name ILIKE :searchValue OR order.fieldName ILIKE :searchValue)', {
+                query = query.andWhere('(status.name ILIKE :searchValue OR StocksSellOrd.tracking_number ILIKE :searchValue)', {
                     searchValue: `%${search}%`,
                 });
             }
 
             if (tracking_number) {
-                query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
+                query = query.andWhere('StocksSellOrd.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
             }
 
             // Handle pagination
@@ -607,13 +602,12 @@ export class StocksService {
                         const pivot = await this.orderProductPivotRepository.findOne({
                             where: {
                                 product: { id: product.id },
-                                Ord_Id: order.id, // Use Ord_Id instead of order.id
+                                Ord_Id: order.id,
                             },
                         });
 
-                        // If pivot is undefined, return null or handle appropriately
                         if (!pivot) {
-                            return null; // Or handle this case appropriately
+                            return null;
                         }
 
                         return {
@@ -659,7 +653,7 @@ export class StocksService {
                             blocked_dates: [],
                             translated_languages: product.translated_languages,
                             taxes: product.taxes,
-                            pivot: pivot, // Use the found pivot
+                            pivot: pivot,
                             variation_options: product.variation_options,
                         };
                     }));
@@ -680,26 +674,8 @@ export class StocksService {
                         payment_gateway: order.payment_gateway,
                         shipping_address: order.shipping_address,
                         billing_address: order.billing_address,
-                        logistics_provider: order.logistics_provider,
-                        delivery_fee: order.delivery_fee,
-                        delivery_time: order.delivery_time,
-                        order_status: order.order_status,
-                        payment_status: order.payment_status,
-                        created_at: order.created_at,
-                        customer: {
-                            id: order.customer.id,
-                            name: order.customer.name,
-                            email: order.customer.email,
-                            email_verified_at: order.customer.email_verified_at,
-                            created_at: order.customer.created_at,
-                            updated_at: order.customer.updated_at,
-                            is_active: order.customer.is_active,
-                            shop_id: null
-                        },
-                        dealer: order.customer ? order.customer : null,
-                        products: products.filter(product => product !== null), // Exclude products for which pivot data could not be fetched
-                        // children: order.children,
-                        wallet_point: order?.wallet_point
+                        status: order.status,
+                        products: products,
                     };
                 })
             );
@@ -707,11 +683,14 @@ export class StocksService {
             const url = `/orders?search=${search}&limit=${limit}`;
             return {
                 data: results,
-                ...paginate(totalCount, page, limit, results.length, url),
+                ...paginate(totalCount, page, limit, results.length, url)
             };
         } catch (error) {
             console.error('Error in getOrders:', error);
-            throw error; // rethrow the error for further analysis
+            if (error instanceof NotFoundException || error instanceof BadRequestException) {
+                throw error;
+            }
+            throw new InternalServerErrorException(`Error in getOrders: ${error.message}`);
         }
     }
 
