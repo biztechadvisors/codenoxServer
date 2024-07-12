@@ -441,7 +441,7 @@ export class MailService {
           password: password,
           name: user.name,
           otp: user.otp,
-          type: user.type.type_name,
+          permission: user.permission.type_name,
           url,
         },
       });

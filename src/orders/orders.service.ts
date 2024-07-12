@@ -208,7 +208,7 @@ export class OrdersService {
       }
       if (order.customer_id && order.customer) {
         const customer = await this.userRepository.findOne({
-          where: { id: order.customer_id, email: order.customer.email }, relations: ['type']
+          where: { id: order.customer_id, email: order.customer.email }, relations: ['permission']
         });
         if (!customer) {
           throw new NotFoundException('Customer not found');
@@ -397,7 +397,7 @@ export class OrdersService {
         // Find the user by customerId
         usr = await this.userRepository.findOne({
           where: { id: parseInt(customerId) },
-          relations: ['type'],
+          relations: ['permission'],
         });
 
         if (!usr) {
@@ -406,7 +406,7 @@ export class OrdersService {
       }
 
       // Fetch permissions for the user
-      const permsn = usr ? await this.permissionRepository.findOneBy({ id: usr.type.id }) : null;
+      const permsn = usr ? await this.permissionRepository.findOneBy({ id: usr.permission.id }) : null;
 
       // Create the initial query builder for orders
       let query = this.orderRepository.createQueryBuilder('order');
@@ -428,8 +428,8 @@ export class OrdersService {
       // If the user is not an admin or super_admin, restrict orders by customer_id
       if (usr && permsn && !(permsn.type_name === UserType.Company || permsn.type_name === UserType.Super_Admin)) {
         const usrByIdUsers = await this.userRepository.find({
-          where: { UsrBy: { id: usr.id } },
-          relations: ['type'],
+          where: { createdBy: { id: usr.id } },
+          relations: ['permission'],
         });
 
         const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
@@ -1139,7 +1139,7 @@ export class OrdersService {
    * @param _paymentGateway
    */
   async savePaymentIntent(order: Order, _paymentGateway?: string): Promise<any> {
-    const usr = await this.userRepository.findOne({ where: { id: order.customer.id }, relations: ['type'] });
+    const usr = await this.userRepository.findOne({ where: { id: order.customer.id }, relations: ['permission'] });
     const me = this.authService.me(usr.email, usr.id);
     switch (order.payment_gateway) {
       case PaymentGatewayType.STRIPE:

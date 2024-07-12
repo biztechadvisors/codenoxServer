@@ -31,7 +31,7 @@ export class Shop extends CoreEntity {
   @Column()
   owner_id: number;
 
-  @ManyToOne(() => User, (user) => user.shops)
+  @ManyToOne(() => User, (user) => user.owned_shops)
   owner: User;
 
   @OneToMany(() => User, (user) => user.managed_shop)
@@ -98,6 +98,9 @@ export class Shop extends CoreEntity {
   @ManyToMany(() => Permission, (permission) => permission.shops, { cascade: true, nullable: true })
   @JoinTable({ name: 'shop_permission' })
   additionalPermissions: Permission[];
+
+  @Column({ nullable: true })
+  dealerCount: number;
 }
 
 @Entity()

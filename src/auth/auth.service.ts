@@ -82,7 +82,7 @@ export class AuthService {
 
   async verifyOtp(otp: number): Promise<boolean> {
     try {
-      const user = await this.userRepository.findOne({ where: { otp }, relations: ['type'] });
+      const user = await this.userRepository.findOne({ where: { otp }, relations: ['permission'] });
 
       if (!user) {
         return false;
@@ -155,7 +155,7 @@ export class AuthService {
     try {
       const existingUser = await this.userRepository.findOne({
         where: { email: createUserInput.email },
-        relations: ['type'],
+        relations: ['permission'],
       });
 
       if (existingUser) {
@@ -166,7 +166,7 @@ export class AuthService {
         existingUser.otp = otp;
         existingUser.created_at = new Date();
         await this.userRepository.save(existingUser);
-        if (existingUser.type?.type_name === UserType.Customer) {
+        if (existingUser.permission?.type_name === UserType.Customer) {
           // Send confirmation email for customers
           await this.mailService.sendUserConfirmation(existingUser, token);
         }
@@ -175,10 +175,10 @@ export class AuthService {
 
       let permission: Permission | null = null;
 
-      if (createUserInput.type) {
+      if (createUserInput.permission) {
         // Check if user type has a permission name
         permission = await this.permissionRepository.findOne({
-          where: { permission_name: ILike(createUserInput.type) as unknown as FindOperator<string> },
+          where: { permission_name: ILike(createUserInput.permission) as unknown as FindOperator<string> },
         });
       }
 
@@ -190,40 +190,40 @@ export class AuthService {
       userData.contact = createUserInput.contact;
       userData.password = hashPass;
       userData.created_at = new Date();
-      userData.UsrBy = createUserInput.UsrBy ? createUserInput.UsrBy : null;
-      userData.isVerified = createUserInput.UsrBy ? true : false; // Assuming isVerified depends on UsrBy
+      userData.createdBy = createUserInput.createdBy ? createUserInput.createdBy : null;
+      userData.isVerified = createUserInput.createdBy ? true : false; // Assuming isVerified depends on createdBy
 
-      if (createUserInput.UsrBy) {
+      if (createUserInput.createdBy) {
 
         const parentUsr = await this.userRepository.findOne({
-          where: { id: createUserInput.UsrBy.id },
-          relations: ['type'],
+          where: { id: createUserInput.createdBy.id },
+          relations: ['permission'],
         });
-        if (parentUsr?.type.type_name === UserType.Company) {
+        if (parentUsr?.permission.type_name === UserType.Company) {
+
           const existingDealerCount = await this.userRepository.createQueryBuilder('user')
-            .innerJoin('user.type', 'permission')
-            .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
+            .innerJoin('user.permission', 'permission')
+            .where('user.createdBy = :createdBy', { createdBy: parentUsr.id })
             .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
             .getCount();
-          if (existingDealerCount >= (parentUsr.dealerCount)) {
+
+          console.log('first 210 ', parentUsr)
+          if (existingDealerCount >= (parentUsr.managed_shop.dealerCount)) {
             throw new BadRequestException('Cannot add more users, dealerCount limit reached.');
           }
+
         }
       }
 
       if (permission) {
-        userData.type = permission;
-        // Set dealerCount only if the user is of type Company
-        if (permission.type_name === UserType.Company) {
-          userData.dealerCount = createUserInput.numberOfDealers || 0;
-        }
+        userData.permission = permission;
         const token = Math.floor(100 + Math.random() * 900).toString();
         // Send confirmation email for users with permission
         await this.mailService.sendPermissionUserConfirmation(createUserInput.password, userData, token);
       } else {
         // Customer registration
         const token = Math.floor(100 + Math.random() * 9999).toString();
-        if (!createUserInput.UsrBy) {
+        if (!createUserInput.createdBy) {
           userData.otp = Number(token);
           // Send confirmation email for customers
           await this.mailService.sendUserConfirmation(userData, token);
@@ -268,7 +268,7 @@ export class AuthService {
     try {
       const user = await this.userRepository.findOne({
         where: { email: loginInput.email },
-        relations: ['type', 'dealer'],
+        relations: ['permission', 'dealer'],
       });
 
       if (!user || !user.isVerified) {
@@ -283,8 +283,8 @@ export class AuthService {
       const { access_token } = await this.signIn(loginInput.email);
 
       let formattedPermissions: any[] = [];
-      if (user.type && user.type.type_name) {
-        const permissions = await this.getPermissions(user.type.type_name);
+      if (user.permission && user.permission.type_name) {
+        const permissions = await this.getPermissions(user.permission.type_name);
         formattedPermissions = permissions.map((permission) => ({
           id: permission.id,
           type_name: permission.type_name,
@@ -343,7 +343,7 @@ export class AuthService {
   // async login(loginInput: LoginDto) {
   //   try {
 
-  //     const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['type', 'dealer'] });
+  //     const user = await this.userRepository.findOne({ where: { email: loginInput.email }, relations: ['permission', 'dealer'] });
 
   //     if (!user || !user.isVerified) {
   //       throw new UnauthorizedException('User Is Not Registered!');
@@ -356,7 +356,7 @@ export class AuthService {
 
   //     const { access_token } = await this.signIn(loginInput.email);
 
-  //     const permission = user.type ? await this.permissionRepository.findOne({ where: { id: user.type.id } }) : null;
+  //     const permission = user.permission ? await this.permissionRepository.findOne({ where: { id: user.permission.id } }) : null;
 
   //     if (!permission || permission.id === null) {
   //       return {
@@ -417,7 +417,7 @@ export class AuthService {
   async changePassword(
     changePasswordInput: ChangePasswordDto,
   ): Promise<{ message: string } | CoreResponse> {
-    const user = await this.userRepository.findOne({ where: { email: changePasswordInput.email }, relations: ['type'] })
+    const user = await this.userRepository.findOne({ where: { email: changePasswordInput.email }, relations: ['permission'] })
 
     if (!user) {
       return {
@@ -446,7 +446,7 @@ export class AuthService {
   }
 
   async forgetPassword(forgetPasswordInput: ForgetPasswordDto): Promise<CoreResponse> {
-    const user = await this.userRepository.findOne({ where: { email: forgetPasswordInput.email }, relations: ['type'] });
+    const user = await this.userRepository.findOne({ where: { email: forgetPasswordInput.email }, relations: ['permission'] });
 
     if (!user) {
       return {
@@ -490,7 +490,7 @@ export class AuthService {
 
   async verifyForgetPasswordToken(verifyForgetPasswordTokenInput: VerifyForgetPasswordDto): Promise<CoreResponse> {
 
-    const existEmail = await this.userRepository.findOne({ where: { email: verifyForgetPasswordTokenInput.email }, relations: ['type'] });
+    const existEmail = await this.userRepository.findOne({ where: { email: verifyForgetPasswordTokenInput.email }, relations: ['permission'] });
 
     if (!existEmail) {
       return {
@@ -516,7 +516,7 @@ export class AuthService {
 
   async resetPassword(resetPasswordInput: ResetPasswordDto): Promise<CoreResponse> {
 
-    const user = await this.userRepository.findOne({ where: { email: resetPasswordInput.email }, relations: ['type'] });
+    const user = await this.userRepository.findOne({ where: { email: resetPasswordInput.email }, relations: ['permission'] });
 
     if (!user) {
       return {
@@ -715,16 +715,16 @@ export class AuthService {
 
     let relations: string[];
     if (userWithDealer) {
-      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "dealer", "managed_shop", "UsrBy", "UsrBy.managed_shop"];
+      relations = ["profile", "address", "owned_shops", "orders", "profile.socials", "address.address", "permission", "dealer", "managed_shop", "createdBy", "createdBy.managed_shop"];
     } else {
-      relations = ["profile", "address", "shops", "orders", "profile.socials", "address.address", "type", "managed_shop", "UsrBy", "UsrBy.managed_shop"];
+      relations = ["profile", "address", "owned_shops", "orders", "profile.socials", "address.address", "permission", "managed_shop", "createdBy", "createdBy.managed_shop"];
     }
 
     return relations;
   }
 
   async updateUser(id: number, updateUserInput: any): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id }, relations: ['type', 'UsrBy'] });
+    const user = await this.userRepository.findOne({ where: { id }, relations: ['permission', 'createdBy'] });
 
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -735,42 +735,43 @@ export class AuthService {
       updateUserInput.password = await bcrypt.hash(updateUserInput.password, 12);
     }
 
-    // Handle UsrBy validation if present
-    if (updateUserInput.UsrBy) {
+    // Handle createdBy validation if present
+    if (updateUserInput.createdBy) {
       const parentUsr = await this.userRepository.findOne({
-        where: { id: updateUserInput.UsrBy },
-        relations: ['type'],
+        where: { id: updateUserInput.createdBy },
+        relations: ['permission'],
       });
 
-      if (parentUsr?.type?.type_name === UserType.Company) {
+      if (parentUsr?.permission?.type_name === UserType.Company) {
         const existingDealerCount = await this.userRepository.createQueryBuilder('user')
-          .innerJoin('user.type', 'permission')
-          .where('user.UsrBy = :UsrBy', { UsrBy: parentUsr.id })
+          .innerJoin('user.permission', 'permission')
+          .where('user.createdBy = :createdBy', { createdBy: parentUsr.id })
           .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
           .getCount();
 
-        if (existingDealerCount >= (parentUsr.dealerCount || 0)) {
+        console.log("first 752 ", parentUsr)
+        if (existingDealerCount >= (parentUsr.managed_shop.dealerCount || 0)) {
           throw new BadRequestException('Cannot add more users, dealerCount limit reached.');
         }
       }
 
-      user.UsrBy = parentUsr;
+      user.createdBy = parentUsr;
     }
 
     // Handle type change if present
-    if (updateUserInput.type) {
+    if (updateUserInput.permission) {
       const permission = await this.permissionRepository.findOne({
-        where: { permission_name: ILike(updateUserInput.type) as unknown as FindOperator<string> },
+        where: { permission_name: ILike(updateUserInput.permission) as unknown as FindOperator<string> },
       });
 
       if (permission) {
-        user.type = permission;
+        user.permission = permission;
 
         // Set dealerCount only if the user is of type Company
         if (permission.type_name === UserType.Company) {
-          user.dealerCount = updateUserInput.dealerCount || 0;
+          user.managed_shop.dealerCount = updateUserInput.dealerCount || 0;
         } else {
-          user.dealerCount = null; // Reset dealerCount if type changes to something else
+          user.managed_shop.dealerCount = null; // Reset dealerCount if type changes to something else
         }
       }
     }

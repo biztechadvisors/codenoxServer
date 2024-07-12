@@ -6,7 +6,7 @@ import { Analytics, TotalYearSaleByMonth } from './entities/analytics.entity';
 import { AnalyticsResponseDTO, TotalYearSaleByMonthDTO } from './dto/analytics.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { UserAddress } from 'src/addresses/entities/address.entity';
-import { User } from 'src/users/entities/user.entity';
+import { User, UserType } from 'src/users/entities/user.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { UserAddressRepository } from 'src/addresses/addresses.repository';
 
@@ -40,13 +40,13 @@ export class AnalyticsService {
       if (customerId) {
         user = await this.userRepository.findOne({
           where: { id: customerId },
-          relations: ['type'],
+          relations: ['permission'],
         });
       }
       if (shop_id) {
         shop = await this.shopRepository.findOne({
           where: { id: shop_id },
-          relations: ['owner', 'owner.type']
+          relations: ['owner', 'owner.permission']
         });
 
       }
@@ -55,8 +55,8 @@ export class AnalyticsService {
         return { message: `User with ID ${customerId} and Shop with ID ${shop_id} not found` };
       }
 
-      const userTypePermissionName = user?.type?.permission_name;
-      const shopOwnerTypePermissionName = shop?.owner?.type?.permission_name;
+      const userTypePermissionName = user?.permission?.permission_name;
+      const shopOwnerTypePermissionName = shop?.owner?.permission?.permission_name;
 
       if (!userTypePermissionName && !shopOwnerTypePermissionName) {
         return { message: 'Permission type not found for user or shop owner' };
@@ -97,7 +97,7 @@ export class AnalyticsService {
   private async calculateTotalRevenue(userId: number, state: string): Promise<number> {
     try {
       const usrByIdUsers = await this.userRepository.find({
-        where: { UsrBy: { id: userId } },
+        where: { createdBy: { id: userId } },
       });
 
       const userIds = [userId, ...usrByIdUsers.map(u => u.id)];
@@ -128,7 +128,7 @@ export class AnalyticsService {
       let query = this.refundRepository.createQueryBuilder('refund');
 
       if (state && state.trim() !== '') {
-        if (permissionName === 'super_admin' || permissionName === 'Admin') {
+        if (permissionName === UserType.Company || permissionName === UserType.Staff) {
           // Handle cases where permissionName is super_admin or Admin
         } else {
           query = query
@@ -152,14 +152,14 @@ export class AnalyticsService {
 
   private async calculateTotalShops(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-      if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
+      if (permissionName !== UserType.Company && permissionName !== UserType.Staff) {
         return 0;
       }
 
       const queryBuilder: SelectQueryBuilder<Shop> = this.shopRepository.createQueryBuilder('shop')
         .innerJoin('shop.owner', 'owner')
         .innerJoin('shop.address', 'address')
-        .andWhere('(owner.UsrBy.id = :userId OR shop.owner_id = :userId)', { userId });
+        .andWhere('(owner.createdBy.id = :userId OR shop.owner_id = :userId)', { userId });
 
       if (state && state.trim() !== '') {
         queryBuilder.andWhere('address.state = :state', { state });
@@ -176,7 +176,7 @@ export class AnalyticsService {
 
   private async calculateTodaysRevenue(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-      const users = await this.userRepository.find({ where: { UsrBy: { id: userId } } });
+      const users = await this.userRepository.find({ where: { createdBy: { id: userId } } });
 
       const userIds = [userId, ...users.map((u) => u.id)];
 
@@ -192,7 +192,7 @@ export class AnalyticsService {
         .where('created_at BETWEEN :todayStart AND :todayEnd', { todayStart, todayEnd });
 
       if (state && state.trim() !== '') {
-        if (permissionName === 'super_admin' || permissionName === 'Admin') {
+        if (permissionName === UserType.Company || permissionName === UserType.Staff) {
           queryBuilder.andWhere('shipping_address.state = :state', { state });
         } else {
           queryBuilder.andWhere('shipping_address.state = :state AND order.customer_id IN (:userIds)', {
@@ -217,7 +217,7 @@ export class AnalyticsService {
   private async calculateTotalOrders(userId: number, permissionName: string, state: string): Promise<number> {
     try {
       const usrByIdUsers = await this.userRepository.find({
-        where: { UsrBy: { id: userId } },
+        where: { createdBy: { id: userId } },
       });
 
       const userIds = [userId, ...usrByIdUsers.map((usr) => usr.id)];
@@ -229,12 +229,12 @@ export class AnalyticsService {
           (qb) => {
             qb.where('shipping_address.state = :state', { state });
 
-            if (!(permissionName === 'super_admin' || permissionName === 'Admin')) {
+            if (!(permissionName === UserType.Company || permissionName === UserType.Staff)) {
               qb.andWhere('order.customer_id IN (:...userIds)', { userIds });
             }
           }
         );
-      } else if (!(permissionName === 'super_admin' || permissionName === 'Admin')) {
+      } else if (!(permissionName === UserType.Company || permissionName === UserType.Staff)) {
         query = query.innerJoin('order.shipping_address', 'shipping_address').where(
           'order.customer_id IN (:...userIds)',
           { userIds }
@@ -258,7 +258,7 @@ export class AnalyticsService {
         created_at: MoreThanOrEqual(thirtyDaysAgo),
       });
 
-      if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
+      if (permissionName !== UserType.Company && permissionName !== UserType.Staff) {
         query = query.andWhere('shop.owner_id = :userId', { userId });
 
         if (state && state.trim() !== '') {
@@ -304,16 +304,16 @@ export class AnalyticsService {
           lastDay: lastDayOfMonth,
         });
 
-      const usrByIdUsers = await this.userRepository.find({ where: { UsrBy: { id: userId } } });
+      const usrByIdUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
       const userIds = [userId, ...usrByIdUsers.map((usr) => usr.id)];
 
       if (state && state.trim() !== '') {
-        if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
+        if (permissionName !== UserType.Company && permissionName !== UserType.Staff) {
           query.andWhere('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
         } else {
           query.andWhere('shipping_address.state = :state', { state });
         }
-      } else if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
+      } else if (permissionName !== UserType.Company && permissionName !== UserType.Staff) {
         query.andWhere('order.customer_id IN (:...userIds)', { userIds });
       }
 
@@ -328,30 +328,29 @@ export class AnalyticsService {
     }
   }
 
-
   async getTopUsersWithMaxOrders(userId: number): Promise<any[]> {
     try {
       const orderQueryBuilder = this.orderRepository.createQueryBuilder('order')
         .select(['customer', 'COUNT(order.id) AS orderCount'])
         .leftJoin('order.customer', 'customer')
-        .groupBy('customer.UsrBy.id')
+        .groupBy('customer.createdBy.id')
         .having('orderCount > 0') // Exclude users with no orders
         .orderBy('orderCount', 'DESC')
         .take(10); // Change this value to get the desired number of top users
 
       if (userId) {
         const usrByIdUsers = await this.userRepository.find({
-          where: { UsrBy: { id: userId } },
+          where: { createdBy: { id: userId } },
         });
 
         const userIds = [userId, ...usrByIdUsers.map(u => u.id)];
 
         if (userIds.length > 0) {
           const result = await orderQueryBuilder
-            .andWhere('customer.UsrBy.id IN (:...userIds)', { userIds })
+            .andWhere('customer.createdBy.id IN (:...userIds)', { userIds })
             .getRawMany();
 
-          return result.flatMap((m) => ({ userId: m.customer_id, UsrBy: m.customer_usrById, name: m.customer_name, email: m.customer_email, phone: m.customer_contact }));
+          return result.flatMap((m) => ({ userId: m.customer_id, createdBy: m.customer_usrById, name: m.customer_name, email: m.customer_email, phone: m.customer_contact }));
         }
       }
 
@@ -367,15 +366,15 @@ export class AnalyticsService {
       // Step 1: Get all users with dealer role
       let dealerUsersQuery;
       dealerUsersQuery = (await this.userRepository.find({
-        where: { UsrBy: { id: Number(userId) } },
+        where: { createdBy: { id: Number(userId) } },
         relations: ['dealer'],
       })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id);
 
-      // Step 2: Get all users by matching UsrBy field to dealers' user ids
+      // Step 2: Get all users by matching createdBy field to dealers' user ids
       const usrByDealer = (await this.orderRepository.find({
-        relations: ['customer', 'customer.UsrBy'],
+        relations: ['customer', 'customer.createdBy'],
       }))
-        .filter((ordUsr) => dealerUsersQuery.includes(ordUsr.customer.UsrBy.id));
+        .filter((ordUsr) => dealerUsersQuery.includes(ordUsr.customer.createdBy.id));
 
       // Step 3: Count orders for each customer and order them by count
       const ordersByDealers = await this.orderRepository
@@ -383,7 +382,7 @@ export class AnalyticsService {
         .select('customer.id', 'customerId')
         .addSelect('COUNT(order.id)', 'orderCount')
         .leftJoin('order.customer', 'customer')
-        .where('customer.UsrBy IN (:...dealerUserIds)', { dealerUserIds: dealerUsersQuery })
+        .where('customer.createdBy IN (:...dealerUserIds)', { dealerUserIds: dealerUsersQuery })
         .groupBy('customer.id')
         .orderBy('orderCount', 'DESC')
         .getRawMany();
@@ -395,11 +394,11 @@ export class AnalyticsService {
         .createQueryBuilder('users')
         .select('users', 'users')
         .where('users.id IN (:...customerIds)', { customerIds })
-        .groupBy('users.UsrBy')
+        .groupBy('users.createdBy')
         .limit(5)
         .getRawMany();
 
-      return topDealers.map((m) => ({ userId: m.users_id, UsrBy: m.users_usrById, name: m.users_name, email: m.users_email, phone: m.users_contact, dealerId: m.users_dealerId }));
+      return topDealers.map((m) => ({ userId: m.users_id, createdBy: m.users_usrById, name: m.users_name, email: m.users_email, phone: m.users_contact, dealerId: m.users_dealerId }));
     } catch (error) {
       console.error('Error getting top dealers with max orders:', error.message);
       return [];

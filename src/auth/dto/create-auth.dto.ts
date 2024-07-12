@@ -4,10 +4,9 @@ import { CoreMutationOutput } from 'src/common/dto/core-mutation-output.dto';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { User } from 'src/users/entities/user.entity';
 
-export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'type', 'UsrBy', 'contact', 'dealerCount']) {
+export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'permission', 'createdBy', 'contact']) {
   permission: Permission
   isVerified: boolean;
-  numberOfDealers?: any;
 }
 
 export class LoginDto extends PartialType(
