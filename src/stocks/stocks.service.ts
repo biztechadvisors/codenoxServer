@@ -563,7 +563,7 @@ export class StocksService {
             if (!(usr && (usr?.type.type_name === UserType.Dealer || usr?.type.type_name === UserType.Staff))) {
                 // If the user has other permissions, filter orders by customer_id
                 const usrByIdUsers = await this.userRepository.find({
-                    where: { UsrBy: { id: usr.id } }, relations: ['type']
+                    where: { UsrBy: { id: usr.id } }, relations: ['type', 'type.permissions']
                 });
 
                 const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
