@@ -289,7 +289,7 @@ export class StocksService {
 
             // Fetch all dealers associated with the given user
             const dealerList = await this.userRepository.find({
-                where: { UsrBy: { id: user_id } },
+                where: { createdBy: { id: user_id } },
                 select: ['id']
             });
 
@@ -447,7 +447,7 @@ export class StocksService {
             // Verify customer existence
             if (order.customer_id && order.customer) {
                 const customer = await this.userRepository.findOne({
-                    where: { id: order.customer_id, email: order.customer.email }, relations: ['type']
+                    where: { id: order.customer_id, email: order.customer.email }, relations: ['permission']
                 });
                 if (!customer) {
                     throw new NotFoundException('Customer not found');
@@ -541,7 +541,7 @@ export class StocksService {
         try {
             let usr;
             if (customer_id) {
-                usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['type', 'type.permissions'] });
+                usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['permission', 'permission.permissions'] });
                 if (!usr) {
                     throw new NotFoundException('User not found');
                 }
@@ -560,10 +560,10 @@ export class StocksService {
                 .leftJoinAndSelect('products.variation_options', 'variation_options');
             query = query.leftJoinAndSelect('StocksSellOrd.shop_id', 'shop');
 
-            if (!(usr && (usr?.type.type_name === UserType.Dealer || usr?.type.type_name === UserType.Staff))) {
+            if (!(usr && (usr?.permission.type_name === UserType.Dealer || usr?.permission.type_name === UserType.Staff))) {
                 // If the user has other permissions, filter orders by customer_id
                 const usrByIdUsers = await this.userRepository.find({
-                    where: { UsrBy: { id: usr.id } }, relations: ['type', 'type.permissions']
+                    where: { createdBy: { id: usr.id } }, relations: ['permission', 'permission.permissions']
                 });
 
                 const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];

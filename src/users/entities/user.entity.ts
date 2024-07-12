@@ -52,23 +52,23 @@ export class User extends CoreEntity {
   @JoinColumn()
   dealer?: Dealer;
 
-  @Column({ nullable: true })
-  dealerCount?: number;
+  @ManyToOne(() => User, user => user.createdUsers)
+  createdBy?: User;
 
-  @ManyToOne(() => User, user => user)
-  UsrBy?: User;
+  @OneToMany(() => User, user => user.createdBy)
+  createdUsers?: User[];
 
   @OneToMany(() => Shop, shop => shop.owner)
-  shops?: Shop[];
+  owned_shops?: Shop[];
+
+  @ManyToOne(() => Shop, shop => shop.staffs)
+  managed_shop?: Shop;
 
   @OneToMany(() => InventoryStocks, inventoryStocks => inventoryStocks.user)
   inventoryStocks?: InventoryStocks[];
 
   @OneToMany(() => Stocks, stocks => stocks.user)
   stocks?: Stocks[];
-
-  @ManyToOne(() => Shop, shop => shop.staffs)
-  managed_shop?: Shop;
 
   @Column({ default: true })
   is_active?: boolean;
@@ -84,7 +84,7 @@ export class User extends CoreEntity {
 
   @ManyToOne(() => Permission, permission => permission.user)
   @JoinColumn({ name: 'permission_id' })
-  type: Permission;
+  permission: Permission;
 
   @Column()
   walletPoints: number;

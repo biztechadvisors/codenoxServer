@@ -68,7 +68,7 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
 
-    const user = await this.userRepository.findOne({ where: { email: createUserDto.email }, relations: ['type'] })
+    const user = await this.userRepository.findOne({ where: { email: createUserDto.email }, relations: ['permission'] })
     if (user) {
       throw new NotFoundException(`User with email ${createUserDto.email} already exists`);
     }
@@ -78,7 +78,7 @@ export class UsersService {
     registerDto.email = createUserDto.email;
     registerDto.password = createUserDto.password;
     registerDto.isVerified = createUserDto.isVerified;
-    registerDto.type = createUserDto.type;
+    registerDto.permission = createUserDto.permission;
 
     await this.authService.register(registerDto);
 
@@ -88,7 +88,7 @@ export class UsersService {
       usr.shop_id = createUserDto.managed_shop?.id;
     }
     usr.is_active = createUserDto.is_active;
-    usr.type = createUserDto.type;
+    usr.permission = createUserDto.permission;
     usr.created_at = new Date();
 
     await this.userRepository.save(usr);
@@ -147,14 +147,14 @@ export class UsersService {
         relations: [
           'profile',
           'dealer',
-          'shops',
+          'owned_shops',
           'inventoryStocks',
           'stocks',
           'managed_shop',
           'address',
           'orders',
           'stocksSellOrd',
-          'type',
+          'permission',
         ],
       });
 
@@ -169,14 +169,14 @@ export class UsersService {
     queryBuilder
       .leftJoinAndSelect('user.profile', 'profile')
       .leftJoinAndSelect('user.dealer', 'dealer')
-      .leftJoinAndSelect('user.shops', 'shops')
+      .leftJoinAndSelect('user.owned_shops', 'owned_shops')
       .leftJoinAndSelect('user.inventoryStocks', 'inventoryStocks')
       .leftJoinAndSelect('user.stocks', 'stocks')
       .leftJoinAndSelect('user.managed_shop', 'managed_shop')
       .leftJoinAndSelect('user.address', 'address')
       .leftJoinAndSelect('user.orders', 'orders')
       .leftJoinAndSelect('user.stocksSellOrd', 'stocksSellOrd')
-      .leftJoinAndSelect('user.type', 'type');
+      .leftJoinAndSelect('user.permission', 'permission');
 
     // Pagination
     queryBuilder.skip(startIndex).take(limitNum);
@@ -188,14 +188,14 @@ export class UsersService {
 
     // Filtering by usrById
     if (usrById) {
-      queryBuilder.andWhere('user.UsrBy = :usrById', { usrById });
+      queryBuilder.andWhere('user.createdBy = :usrById', { usrById });
 
       if (type) {
         const permission = await this.permissionRepository.findOne({ where: { type_name: type } });
         if (!permission) {
-          throw new NotFoundException(`Permission for type "${type}" not found.`);
+          throw new NotFoundException(`Permission for type "${permission}" not found.`);
         }
-        queryBuilder.andWhere('user.type = :type', { type: permission.id });
+        queryBuilder.andWhere('user.permission = :permission', { permission: permission.id });
       }
     }
 
@@ -234,7 +234,7 @@ export class UsersService {
     const [users, total] = await queryBuilder.getManyAndCount();
 
     // Prepare paginated response
-    const isCompanyOrStaff = user && (user.type.type_name === UserType.Company || user.type.type_name === UserType.Staff);
+    const isCompanyOrStaff = user && (user.permission.type_name === UserType.Company || user.permission.type_name === UserType.Staff);
     const url = `/users?type=${type || 'customer'}&limit=${limitNum}`;
 
     return {
@@ -244,7 +244,7 @@ export class UsersService {
   }
 
   async findOne(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id: id }, relations: ["profile", "address", "shops", "orders", "address.address", "type"] });
+    const user = await this.userRepository.findOne({ where: { id: id }, relations: ["profile", "address", "owned_shops", "orders", "address.address", "permission"] });
 
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
@@ -255,7 +255,7 @@ export class UsersService {
 
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.userRepository.findOne({
-      where: { id: id }, relations: ["profile", "address", "address.address", "shops", "orders", "profile.socials", "type"]
+      where: { id: id }, relations: ["profile", "address", "address.address", "owned_shops", "orders", "profile.socials", "permission"]
     });
 
     if (!user) {
@@ -268,7 +268,7 @@ export class UsersService {
     user.password = updateUserDto.password || user.password;
     user.isVerified = updateUserDto.isVerified !== undefined ? updateUserDto.isVerified : user.isVerified;
     user.is_active = updateUserDto.is_active !== undefined ? updateUserDto.is_active : user.is_active;
-    user.type = updateUserDto.type || user.type;
+    user.permission = updateUserDto.permission || user.permission;
 
     // Check if the shop exists in the ShopRepository
     const shop = await this.shopRepository.findOne({ where: { id: updateUserDto.managed_shop?.id } });
@@ -339,7 +339,7 @@ export class UsersService {
 
   async removeUser(id: number) {
     const user = await this.userRepository.findOne({
-      where: { id: id }, relations: ["profile", "address", "shops", "orders", "type"]
+      where: { id: id }, relations: ["profile", "address", "owned_shops", "orders", "permission"]
     });
 
     if (!user) {
@@ -349,7 +349,7 @@ export class UsersService {
     // First, remove the related entities
     await Promise.all(user.address.map(address => this.addressesService.remove(address.id)));
     await this.profileRepository.remove(user.profile);
-    await this.shopRepository.remove(user.shops);
+    await this.shopRepository.remove(user.owned_shops);
     // await this.ordersRepository.remove(user.orders);
 
     // Then, remove the user
@@ -360,7 +360,7 @@ export class UsersService {
 
 
   async makeAdmin(user_id: number) {
-    const user = await this.userRepository.findOne({ where: { id: user_id }, relations: ['type'] });
+    const user = await this.userRepository.findOne({ where: { id: user_id }, relations: ['permission'] });
 
     if (!user) {
       throw new NotFoundException(`User with id ${user_id} not found`);
@@ -368,7 +368,7 @@ export class UsersService {
 
     const usr_type = await this.permissionRepository.findOne({ where: { user: user.id } })
 
-    usr_type.type_name = UserType.Admin;
+    usr_type.type_name = UserType.Staff;
 
     await this.userRepository.save(user);
 
@@ -409,9 +409,9 @@ export class UsersService {
   // -------------------------------Dealer Services----------------------
   async createDealer(dealerData: DealerDto) {
     // Check if the user exists and is of type 'Dealer'
-    const user = await this.userRepository.findOne({ where: { id: dealerData.user.id }, relations: ['type'] });
+    const user = await this.userRepository.findOne({ where: { id: dealerData.user.id }, relations: ['permission'] });
 
-    if (!user || user.type.type_name !== UserType.Dealer) {
+    if (!user || user.permission.type_name !== UserType.Dealer) {
       throw new NotFoundException(`User with ID ${dealerData.user.id} not found or is not a Dealer`);
     }
 

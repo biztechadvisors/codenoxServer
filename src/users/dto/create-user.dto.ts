@@ -18,5 +18,4 @@ export class CreateUserDto extends PickType(User, [
   profile: CreateProfileDto;
   managed_shop: Shop;
   permission: Permission;
-  type: Permission;
 }

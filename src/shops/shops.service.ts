@@ -62,13 +62,13 @@ export class ShopsService {
     const newBalance = new Balance();
     const newSetting = new ShopSettings();
     try {
-      const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id }, relations: ['type'] });
+      const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id }, relations: ['permission'] });
 
       if (!userToUpdate) {
         throw new Error('User does not exist');
       }
 
-      if (userToUpdate.type.type_name !== UserType.Company) {
+      if (userToUpdate.permission.type_name !== UserType.Company) {
         throw new Error('User is not a vendor');
       }
 
@@ -154,13 +154,12 @@ export class ShopsService {
         newShop.balance = balanceId;
       }
 
-
       if (createShopDto.user) {
         const shp = new User();
         shp.shop_id = shop.id;
         shp.managed_shop = shop;
 
-        const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id }, relations: ['type'] });
+        const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id }, relations: ['permission'] });
 
         if (userToUpdate) {
           userToUpdate.shop_id = shp.shop_id;
@@ -169,18 +168,26 @@ export class ShopsService {
         }
       }
 
-      if (createShopDto.permission || createShopDto.additionalPermissions) {
+      if (createShopDto.permission) {
         const permission = await this.permissionRepository.findOne({
           where: { permission_name: ILike(createShopDto.permission) as unknown as FindOperator<string> },
-        });
-
-        const additionalPermissions = await this.permissionRepository.find({
-          where: { permission_name: ILike(createShopDto.additionalPermissions) as unknown as FindOperator<string> },
         });
 
         if (permission) {
           newShop.permission = permission;
         }
+
+        // Set dealerCount only if the user is of type Company
+        if (permission.type_name === UserType.Company) {
+          createShopDto.dealerCount = createShopDto.numberOfDealers || 0;
+        }
+
+      }
+
+      if (createShopDto.additionalPermissions) {
+        const additionalPermissions = await this.permissionRepository.find({
+          where: { permission_name: ILike(createShopDto.additionalPermissions) as unknown as FindOperator<string> },
+        });
 
         if (additionalPermissions) {
           newShop.additionalPermissions = additionalPermissions;
@@ -288,7 +295,7 @@ export class ShopsService {
         otp: shop.owner.otp,
         isVerified: shop.owner.isVerified,
         shop_id: shop.owner.shop_id,
-        type: shop.owner.type,
+        permission: shop.owner.permission,
         walletPoints: shop.owner.walletPoints,
         contact: shop.owner.contact,
         email_verified_at: shop.owner.email_verified_at,
@@ -421,7 +428,8 @@ export class ShopsService {
         subCategories: existShop.subCategories,
         order: existShop.order,
         additionalPermissions: existShop.additionalPermissions,
-        permission: existShop.permission
+        permission: existShop.permission,
+        dealerCount: existShop.dealerCount
       };
 
       return mappedShop;
