@@ -17,7 +17,8 @@ export enum UserType {
   Vendor = 'Vendor',
   Store_Owner = 'Store_Owner',
   Customer = 'Customer',
-  Owner = 'Owner'
+  Owner = 'Owner',
+  Staff = 'Staff'
 }
 
 @Entity()

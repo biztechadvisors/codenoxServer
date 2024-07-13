@@ -5,7 +5,7 @@ import {
   ApproveShopController,
   DisapproveShopController,
   ShopsController,
-  StaffsController,
+  // StaffsController,
 } from './shops.controller'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { PaymentInfo, Shop } from './entities/shop.entity'
@@ -38,7 +38,7 @@ import { Permission } from 'src/permission/entities/permission.entity'
   ]), TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Address, Location, ShopSocials, User, ShopSettings, Attachment, UserAddress, Permission])],
   controllers: [
     ShopsController,
-    StaffsController,
+    // StaffsController,
     DisapproveShopController,
     ApproveShopController,
   ],

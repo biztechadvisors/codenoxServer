@@ -14,8 +14,6 @@ import { ShopsService } from './shops.service'
 import { ApproveShopDto, CreateShopDto } from './dto/create-shop.dto'
 import { UpdateShopDto } from './dto/update-shop.dto'
 import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto'
-import { GetStaffsDto } from './dto/get-staffs.dto'
-import { UserPaginator } from 'src/users/dto/get-users.dto'
 import { Shop } from './entities/shop.entity'
 // import { AddStaffDto } from 'src/users/dto/add-staff.dto'
 
@@ -60,35 +58,35 @@ export class ShopsController {
   }
 }
 
-@Controller('staffs')
-export class StaffsController {
-  constructor(private readonly shopsService: ShopsService) { }
+// @Controller('staffs')
+// export class StaffsController {
+//   constructor(private readonly shopsService: ShopsService) { }
 
-  @Post()
-  create(@Body() createShopDto: CreateShopDto) {
-    return this.shopsService.create(createShopDto)
-  }
+//   @Post()
+//   create(@Body() createShopDto: CreateShopDto) {
+//     return this.shopsService.create(createShopDto)
+//   }
 
-  @Get()
-  async getStaffs(@Query() query: GetStaffsDto): Promise<UserPaginator> {
-    return this.shopsService.getStaffs(query)
-  }
+//   @Get()
+//   async getStaffs(@Query() query: GetStaffsDto): Promise<UserPaginator> {
+//     return this.shopsService.getStaffs(query)
+//   }
 
-  @Get(':slug')
-  async getShop(@Param('slug') slug: string) {
-    return this.shopsService.getShop(slug)
-  }
+//   @Get(':slug')
+//   async getShop(@Param('slug') slug: string) {
+//     return this.shopsService.getShop(slug)
+//   }
 
-  @Put(':id')
-  update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
-    return this.shopsService.update(+id, updateShopDto)
-  }
+//   @Put(':id')
+//   update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
+//     return this.shopsService.update(+id, updateShopDto)
+//   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.shopsService.remove(+id)
-  }
-}
+//   @Delete(':id')
+//   remove(@Param('id') id: string) {
+//     return this.shopsService.remove(+id)
+//   }
+// }
 
 @Controller('disapprove-shop')
 export class DisapproveShopController {
