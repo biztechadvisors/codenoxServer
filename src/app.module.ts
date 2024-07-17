@@ -1,62 +1,65 @@
 /* eslint-disable prettier/prettier */
-import { MessagesModule } from './messages/messages.module';
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { StripeModule } from 'nestjs-stripe';
-import { AddressesModule } from './addresses/addresses.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
+import { MulterModule } from '@nestjs/platform-express';
+
+import { UsersModule } from './users/users.module';
+import { MailModule } from './mail/mail.module';
+import { CommonModule } from './common/common.module';
+import { ProductsModule } from './products/products.module';
+import { OrdersModule } from './orders/orders.module';
+import { CategoriesModule } from './categories/categories.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AttributesModule } from './attributes/attributes.module';
-import { AuthModule } from './auth/auth.module';
-import { AuthorsModule } from './authors/authors.module';
-import { CategoriesModule } from './categories/categories.module';
-import { CommonModule } from './common/common.module';
+import { ShippingsModule } from './shippings/shippings.module';
+import { TaxesModule } from './taxes/taxes.module';
+import { TagsModule } from './tags/tags.module';
+import { ShopsModule } from './shops/shops.module';
+import { TypesModule } from './types/types.module';
+import { WithdrawsModule } from './withdraws/withdraws.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { SettingsModule } from './settings/settings.module';
 import { CouponsModule } from './coupons/coupons.module';
-import { FeedbackModule } from './feedbacks/feedbacks.module';
+import { AddressesModule } from './addresses/addresses.module';
 import { ImportsModule } from './imports/imports.module';
+import { AuthModule } from './auth/auth.module';
+import { RefundsModule } from './refunds/refunds.module';
+import { AuthorsModule } from './authors/authors.module';
 import { ManufacturersModule } from './manufacturers/manufacturers.module';
 import { NewslettersModule } from './newsletters/newsletters.module';
-import { OrdersModule } from './orders/orders.module';
-import { PaymentIntentModule } from './payment-intent/payment-intent.module';
-import { PaymentMethodModule } from './payment-method/payment-method.module';
-import { PaymentModule } from './payment/payment.module';
-import { ProductsModule } from './products/products.module';
-import { QuestionModule } from './questions/questions.module';
-import { RefundsModule } from './refunds/refunds.module';
-import { ReportsModule } from './reports/reports.module';
 import { ReviewModule } from './reviews/reviews.module';
-import { SettingsModule } from './settings/settings.module';
-import { ShippingsModule } from './shippings/shippings.module';
-import { ShopsModule } from './shops/shops.module';
-import { TagsModule } from './tags/tags.module';
-import { TaxesModule } from './taxes/taxes.module';
-import { TypesModule } from './types/types.module';
-import { UploadsModule } from './uploads/uploads.module';
-import { UsersModule } from './users/users.module';
-import { WebHookModule } from './web-hook/web-hook.module';
+import { QuestionModule } from './questions/questions.module';
 import { WishlistsModule } from './wishlists/wishlists.module';
-import { WithdrawsModule } from './withdraws/withdraws.module';
+import { ReportsModule } from './reports/reports.module';
+import { FeedbackModule } from './feedbacks/feedbacks.module';
+import { PaymentMethodModule } from './payment-method/payment-method.module';
+import { PaymentIntentModule } from './payment-intent/payment-intent.module';
+import { WebHookModule } from './web-hook/web-hook.module';
+import { PaymentModule } from './payment/payment.module';
 import { StoreNoticesModule } from './store-notices/store-notices.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { MessagesModule } from './messages/messages.module';
 import { AiModule } from './ai/ai.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { MulterModule } from '@nestjs/platform-express';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MailModule } from './mail/mail.module';
 import { PermissionModule } from './permission/permission.module';
-import { ScheduleModule } from '@nestjs/schedule';
 import { CartsModule } from './carts/carts.module';
 import { StocksModule } from './stocks/stocks.module';
+
 import { ShiprocketServiceEnv } from './updateEnv';
+import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule.forRoot({
-        isGlobal: true,
-        envFilePath: ".env"
-      })],
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          envFilePath: ".env",
+        }),
+      ],
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
         host: configService.get('DB_HOST'),
@@ -71,9 +74,6 @@ import { ShiprocketServiceEnv } from './updateEnv';
         autoLoadEntities: true,
       }),
       inject: [ConfigService],
-    }),
-    ConfigModule.forRoot({
-      isGlobal: true,
     }),
     StripeModule.forRoot({
       apiKey: process.env.STRIPE_API_KEY,
@@ -124,4 +124,12 @@ import { ShiprocketServiceEnv } from './updateEnv';
   controllers: [],
   providers: [ShiprocketServiceEnv],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(NotificationsMiddleware)
+      .forRoutes(
+        { path: 'register', method: RequestMethod.ALL },
+      );
+  }
+}
