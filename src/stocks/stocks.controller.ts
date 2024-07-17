@@ -8,11 +8,13 @@ import {
     Param,
     Query,
     ParseIntPipe,
-    NotFoundException
+    NotFoundException,
+    Patch
 } from '@nestjs/common';
 import { StocksService } from './stocks.service';
 import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
 import { Stocks } from './entities/stocks.entity';
+import { UpdateOrderStatusDto } from 'src/orders/dto/create-order-status.dto';
 
 @Controller('stocks')
 export class StocksController {
@@ -95,5 +97,22 @@ export class StocksController {
     @Get('order/:id')
     getOrderById(@Param('id') id: number) {
         return this.stocksService.getOrderById(Number(id));
+    }
+
+
+    @Patch(':id/status')
+    updateOrderStatus(
+        @Param('id') id: number,
+        @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+    ) {
+        return this.stocksService.updateOrderStatus(id, updateOrderStatusDto);
+    }
+
+    @Patch(':id/payment-status')
+    updatePaymentStatus(
+        @Param('id') id: number,
+        @Body() updatePaymentStatusDto: any,
+    ) {
+        return this.stocksService.updatePaymentStatus(id, updatePaymentStatusDto);
     }
 }

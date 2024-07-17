@@ -21,6 +21,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { paginate } from 'src/common/pagination/paginate';
+import { UpdateOrderStatusDto } from 'src/orders/dto/create-order-status.dto';
 
 @Injectable()
 export class StocksService {
@@ -826,6 +827,26 @@ export class StocksService {
             console.error('Error in getOrderByIdOrTrackingNumber:', error);
             throw error;
         }
+    }
+
+    async updateOrderStatus(id: number, updateOrderStatusDto: any): Promise<StocksSellOrd> {
+        const order = await this.StocksSellOrdRepository.findOne({ where: { id: id } });
+        if (!order) {
+            throw new NotFoundException(`Order with ID ${id} not found`);
+        }
+
+        order.order_status = updateOrderStatusDto.order_status;
+        return this.StocksSellOrdRepository.save(order);
+    }
+
+    async updatePaymentStatus(id: number, updatePaymentStatusDto: any): Promise<StocksSellOrd> {
+        const order = await this.StocksSellOrdRepository.findOne({ where: { id: id } });
+        if (!order) {
+            throw new NotFoundException(`Order with ID ${id} not found`);
+        }
+
+        order.payment_status = updatePaymentStatusDto.payment_status;
+        return this.StocksSellOrdRepository.save(order);
     }
 
 }
