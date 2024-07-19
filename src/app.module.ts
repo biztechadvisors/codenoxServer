@@ -46,9 +46,9 @@ import { AiModule } from './ai/ai.module';
 import { PermissionModule } from './permission/permission.module';
 import { CartsModule } from './carts/carts.module';
 import { StocksModule } from './stocks/stocks.module';
-
 import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
+import { NotificationsGateway } from './notifications/gateways/notifications.gateway';
 
 @Module({
   imports: [
@@ -119,11 +119,13 @@ import { NotificationsMiddleware } from './common/middleware/notifications.middl
     PermissionModule,
     CartsModule,
     StocksModule,
+    NotificationsGateway,
     MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],
   providers: [ShiprocketServiceEnv],
 })
+
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
