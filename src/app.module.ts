@@ -49,6 +49,7 @@ import { StocksModule } from './stocks/stocks.module';
 import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
 import { NotificationsGateway } from './notifications/gateways/notifications.gateway';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -119,19 +120,16 @@ import { NotificationsGateway } from './notifications/gateways/notifications.gat
     PermissionModule,
     CartsModule,
     StocksModule,
-    NotificationsGateway,
+    NotificationsModule, // Added NotificationsModule here
     MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],
   providers: [ShiprocketServiceEnv],
 })
-
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(NotificationsMiddleware)
-      .forRoutes(
-        { path: 'register', method: RequestMethod.ALL },
-      );
+      .forRoutes({ path: 'notify/send', method: RequestMethod.POST }); // Apply to the correct route
   }
 }
