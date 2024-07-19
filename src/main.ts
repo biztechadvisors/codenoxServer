@@ -20,20 +20,20 @@ async function bootstrap() {
       name: 'sessionName',
       secret: "notagoodsecretnoreallydontusethisone",
       resave: false,
-      saveUninitialized: false, // typically set to false to avoid storing empty sessions
+      saveUninitialized: false,
       cookie: {
-        httpOnly: true,  // Don't let browser JavaScript access cookie ever
-        secure: process.env.NODE_ENV === 'production', // Only use cookie over HTTPS in production
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours for example
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000,
       }
     })
   );
 
   app.use(cors({
     origin: (origin, callback) => {
-      callback(null, true); // Accept requests from any origin
+      callback(null, true);
     },
-    credentials: true, // allow credentials (cookies, authorization headers, TLS client certificates)
+    credentials: true,
   }));
 
   app.setGlobalPrefix('api');
@@ -49,7 +49,6 @@ async function bootstrap() {
   SwaggerModule.setup('docs', app, document);
 
   const PORT = process.env.PORT || 5000;
-  app.enableCors();
   await app.listen(PORT);
   console.log(`Application is running on: ${await app.getUrl()}/api`);
 }
