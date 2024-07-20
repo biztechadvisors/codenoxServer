@@ -28,6 +28,9 @@ export class StocksSellOrd extends CoreEntity {
     @JoinColumn()
     status: OrderStatus;
 
+    @ManyToOne(() => Coupon, coupon => coupon.stockOrders, { cascade: true, nullable: true })
+    coupon?: Coupon;
+
     @Column()
     order_status: OrderStatusType;
 

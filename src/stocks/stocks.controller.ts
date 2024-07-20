@@ -9,7 +9,8 @@ import {
     Query,
     ParseIntPipe,
     NotFoundException,
-    Patch
+    Patch,
+    BadRequestException
 } from '@nestjs/common';
 import { StocksService } from './stocks.service';
 import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
@@ -95,10 +96,13 @@ export class StocksController {
 
     // Get order by ID
     @Get('order/:id')
-    getOrderById(@Param('id') id: number) {
-        return this.stocksService.getOrderById(Number(id));
+    getOrderById(@Param('id') id: string) {
+        const parsedId = Number(id);
+        if (isNaN(parsedId)) {
+            throw new BadRequestException('Invalid ID');
+        }
+        return this.stocksService.getOrderById(parsedId);
     }
-
 
     @Patch(':id/status')
     updateOrderStatus(

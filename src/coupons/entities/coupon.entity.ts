@@ -2,6 +2,7 @@
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Order } from 'src/orders/entities/order.entity';
+import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum CouponType {
@@ -23,6 +24,10 @@ export class Coupon extends CoreEntity {
   minimum_cart_amount: number;
   @OneToMany(() => Order, order => order.coupon)
   orders?: Order[];
+
+  @OneToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.coupon)
+  stockOrders?: StocksSellOrd[];
+
   @Column()
   type: CouponType;
   @OneToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
