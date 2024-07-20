@@ -697,10 +697,8 @@ export class StocksService {
 
     async getOrderById(id: number): Promise<any> {
         try {
-
             const order = await this.StocksSellOrdRepository.createQueryBuilder('order')
                 .leftJoinAndSelect('order.status', 'status')
-                .leftJoinAndSelect('order.dealer', 'dealer')
                 .leftJoinAndSelect('order.customer', 'customer')
                 .leftJoinAndSelect('order.products', 'products')
                 .leftJoinAndSelect('order.saleBy', 'saleBy')
@@ -711,8 +709,6 @@ export class StocksService {
                 .leftJoinAndSelect('order.shop_id', 'order_shop')
                 .leftJoinAndSelect('order.billing_address', 'billing_address')
                 .leftJoinAndSelect('order.shipping_address', 'shipping_address')
-                // .leftJoinAndSelect('order.parentOrder', 'parentOrder')
-                // .leftJoinAndSelect('order.children', 'children')
                 .leftJoinAndSelect('order.coupon', 'coupon')
                 .where('order.id = :id', { id })
                 .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
@@ -818,7 +814,6 @@ export class StocksService {
                         variation_options: product.variation_options,
                     };
                 })),
-                // children: order.children,
                 wallet_point: order.wallet_point
             };
 
