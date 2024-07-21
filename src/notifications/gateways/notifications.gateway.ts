@@ -44,6 +44,7 @@ export class NotificationsGateway {
     }
 
     sendNotification(userId: string, message: string) {
+        console.log(`Sending notification to ${userId}: ${message}`);
         this.server.to(userId).emit('notification', message); // Broadcast to the specific user
     }
 }

@@ -22,7 +22,8 @@ import { AddressesService } from 'src/addresses/addresses.service'
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto'
 import { UserAddressRepository } from 'src/addresses/addresses.repository'
 import { Permission } from 'src/permission/entities/permission.entity'
-import { FindOperator, ILike, Repository } from 'typeorm'
+import { Brackets, FindOperator, ILike, Repository } from 'typeorm'
+import { UserPaginator } from 'src/users/dto/get-users.dto'
 
 @Injectable()
 export class ShopsService {
@@ -323,22 +324,76 @@ export class ShopsService {
   }
 
 
-  getStaffs({ shop_id, limit, page }: GetStaffsDto) {
+  async getStaffs({ shop_id, limit, page, orderBy, sortedBy, createdBy }: GetStaffsDto): Promise<any> {
+    const limitNum = limit || 10;
+    const pageNum = page || 1;
+    const startIndex = (pageNum - 1) * limitNum;
 
-    const startIndex = (page - 1) * limit
-    const endIndex = page * limit
-    let staffs: Shop['staffs'] = []
+    // Validate createdBy
+    if (createdBy) {
+      const creator = await this.userRepository.findOne({ where: { createdBy: { id: createdBy } } });
+      if (!creator) {
+        return {
+          data: [],
+          message: 'Invalid createdBy parameter'
+        };
+      }
+    } else {
+      return {
+        data: [],
+        message: 'createdBy parameter is required'
+      };
+    }
+
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+    // Adding relations
+    queryBuilder
+      .leftJoinAndSelect('user.profile', 'profile')
+      .leftJoinAndSelect('user.dealer', 'dealer')
+      .leftJoinAndSelect('user.owned_shops', 'owned_shops')
+      .leftJoinAndSelect('user.inventoryStocks', 'inventoryStocks')
+      .leftJoinAndSelect('user.stocks', 'stocks')
+      .leftJoinAndSelect('user.managed_shop', 'managed_shop')
+      .leftJoinAndSelect('user.address', 'address')
+      .leftJoinAndSelect('user.orders', 'orders')
+      .leftJoinAndSelect('user.stocksSellOrd', 'stocksSellOrd')
+      .leftJoinAndSelect('user.permission', 'permission');
+
+    // Pagination
+    queryBuilder.skip(startIndex).take(limitNum);
+
+    // Ordering
+    if (orderBy && sortedBy) {
+      queryBuilder.addOrderBy(`user.${orderBy}`, sortedBy.toUpperCase() as 'ASC' | 'DESC');
+    }
+
+    // Filtering by shop_id
     if (shop_id) {
-      staffs = this.shops.find((p) => p.id === Number(shop_id))?.staffs ?? []
+      queryBuilder.andWhere('user.shop_id = :shop_id', { shop_id });
     }
-    const results = staffs?.slice(startIndex, endIndex)
-    const url = `/staffs?limit=${limit}`
 
-    return {
-      data: results,
-      ...paginate(staffs?.length, page, limit, results?.length, url),
+    // Filtering by user type
+    const permission = await this.permissionRepository.findOne({ where: { type_name: 'Staff' } });
+    if (!permission) {
+      throw new NotFoundException(`Permission for type "Staff" not found.`);
     }
+    queryBuilder.andWhere('user.permission = :permission', { permission: permission.id });
+
+    // Filtering by createdBy
+    queryBuilder.andWhere('user.createdBy = :createdBy', { createdBy });
+
+    // Execute the query and get results
+    const [users, total] = await queryBuilder.getManyAndCount();
+
+    // Prepare paginated response
+    const url = `/users?type=staff&limit=${limitNum}`;
+    return {
+      data: users,
+      ...paginate(total, pageNum, limitNum, total, url),
+    };
   }
+
 
   async getShop(slug: string): Promise<Shop | null> {
     try {
