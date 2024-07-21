@@ -825,7 +825,24 @@ export class StocksService {
     }
 
     async updateOrderStatus(id: number, updateOrderStatusDto: any): Promise<StocksSellOrd> {
-        const order = await this.StocksSellOrdRepository.findOne({ where: { id: id } });
+        const order = await this.StocksSellOrdRepository.createQueryBuilder('order')
+            .leftJoinAndSelect('order.status', 'status')
+            .leftJoinAndSelect('order.customer', 'customer')
+            .leftJoinAndSelect('order.products', 'products')
+            .leftJoinAndSelect('order.saleBy', 'saleBy')
+            .leftJoinAndSelect('products.pivot', 'pivot')
+            .leftJoinAndSelect('products.taxes', 'product_taxes')
+            .leftJoinAndSelect('products.shop', 'product_shop')
+            .leftJoinAndSelect('product_shop.address', 'shop_address')
+            .leftJoinAndSelect('order.shop_id', 'order_shop')
+            .leftJoinAndSelect('order.billing_address', 'billing_address')
+            .leftJoinAndSelect('order.shipping_address', 'shipping_address')
+            .leftJoinAndSelect('order.coupon', 'coupon')
+            .where('order.id = :id', { id })
+            .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
+            .getOne();
+
+
         if (!order) {
             throw new NotFoundException(`Order with ID ${id} not found`);
         }
@@ -835,7 +852,24 @@ export class StocksService {
     }
 
     async updatePaymentStatus(id: number, updatePaymentStatusDto: any): Promise<StocksSellOrd> {
-        const order = await this.StocksSellOrdRepository.findOne({ where: { id: id } });
+        const order = await this.StocksSellOrdRepository.createQueryBuilder('order')
+            .leftJoinAndSelect('order.status', 'status')
+            .leftJoinAndSelect('order.customer', 'customer')
+            .leftJoinAndSelect('order.products', 'products')
+            .leftJoinAndSelect('order.saleBy', 'saleBy')
+            .leftJoinAndSelect('products.pivot', 'pivot')
+            .leftJoinAndSelect('products.taxes', 'product_taxes')
+            .leftJoinAndSelect('products.shop', 'product_shop')
+            .leftJoinAndSelect('product_shop.address', 'shop_address')
+            .leftJoinAndSelect('order.shop_id', 'order_shop')
+            .leftJoinAndSelect('order.billing_address', 'billing_address')
+            .leftJoinAndSelect('order.shipping_address', 'shipping_address')
+            .leftJoinAndSelect('order.coupon', 'coupon')
+            .where('order.id = :id', { id })
+            .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
+            .getOne();
+
+
         if (!order) {
             throw new NotFoundException(`Order with ID ${id} not found`);
         }

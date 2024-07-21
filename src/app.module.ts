@@ -48,7 +48,6 @@ import { CartsModule } from './carts/carts.module';
 import { StocksModule } from './stocks/stocks.module';
 import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
-import { NotificationsGateway } from './notifications/gateways/notifications.gateway';
 import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({

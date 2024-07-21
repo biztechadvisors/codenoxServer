@@ -5,4 +5,5 @@ export class GetStaffsDto extends PaginationArgs {
   orderBy?: string
   sortedBy?: string
   shop_id?: number
+  createdBy?: number
 }
