@@ -27,6 +27,7 @@ import { Permission } from 'src/permission/entities/permission.entity';
 import Twilio from 'twilio';
 import * as AWS from 'aws-sdk';
 import { jwtConstants } from './constants';
+import { NotificationService } from 'src/notifications/services/notifications.service';
 
 @Injectable()
 export class AuthService {
@@ -40,7 +41,8 @@ export class AuthService {
     @InjectRepository(UserRepository) private userRepository: UserRepository,
     @InjectRepository(Permission) private permissionRepository: Repository<Permission>,
     private jwtService: JwtService,
-    private mailService: MailService
+    private mailService: MailService,
+    private notificationService: NotificationService, // Ensure this is correctly injected
   ) {
     this.sns = new AWS.SNS({
       region: 'ap-south-1', // e.g., 'us-east-1'
@@ -172,6 +174,13 @@ export class AuthService {
         }
         return { message: 'OTP sent to your email.' };
       }
+
+      // Create a notification for the new user
+      const notification = await this.notificationService.createNotification(
+        1, // assuming user ID is available after creation
+        'Welcome!',
+        'Your account has been successfully created.',
+      );
 
       let permission: Permission | null = null;
 

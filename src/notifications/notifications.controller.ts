@@ -1,16 +1,18 @@
-import { Controller, Post, Req, Body } from '@nestjs/common';
-import { NotificationsService } from './services/notifications.service';
+import { Controller, Post, Body } from '@nestjs/common';
+import { NotificationService } from './services/notifications.service';
+import { NotificationGateway } from './notifications.gateway';
 
-@Controller('notify')
-export class NotificationsController {
-    constructor(private readonly notificationsService: NotificationsService) { }
+@Controller('notifications')
+export class NotificationController {
+    constructor(
+        private notificationService: NotificationService,
+        private notificationGateway: NotificationGateway
+    ) { }
 
-    @Post('send')
-    sendNotification(@Req() req, @Body() createNotificationDto: { message: string }): string {
-        const userId = req['userId'];
-        const { message } = createNotificationDto;
-        console.log(`Sending notification to ${userId} with message: ${message}`);
-        this.notificationsService.notifyUser(userId, message);
-        return 'Notification sent';
+    @Post()
+    async createNotification(@Body() createNotificationDto: { userId: number; title: string; message: string }) {
+        const notification = await this.notificationService.createNotification(createNotificationDto.userId, createNotificationDto.title, createNotificationDto.message);
+        this.notificationGateway.notifyUser(createNotificationDto.userId, createNotificationDto.title, createNotificationDto.message);
+        return notification;
     }
 }

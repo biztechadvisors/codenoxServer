@@ -22,16 +22,25 @@ import { AddressesService } from 'src/addresses/addresses.service';
 import { Address, UserAddress } from 'src/addresses/entities/address.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { JwtStrategy } from 'src/auth/jwt.strategy';
-import { JwtModule } from '@nestjs/jwt'; // Import JwtModule
+import { JwtModule } from '@nestjs/jwt';
+import { NotificationModule } from 'src/notifications/notifications.module'; // Ensure this is imported
 
 @Module({
   imports: [
-    TypeOrmExModule.forCustomRepository([UserRepository, UserAddressRepository, ProfileRepository, AttachmentRepository, DealerRepository, CategoryRepository, DealerProductMarginRepository, SocialRepository, DealerCategoryMarginRepository, ShopRepository, AddressRepository]),
-    TypeOrmModule.forFeature([User, Address, UserAddress, Profile, Dealer, Social, Product, Category, Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission]),
-    JwtModule.register({}), // Import JwtModule and register it
+    TypeOrmExModule.forCustomRepository([
+      UserRepository, UserAddressRepository, ProfileRepository, AttachmentRepository,
+      DealerRepository, CategoryRepository, DealerProductMarginRepository,
+      SocialRepository, DealerCategoryMarginRepository, ShopRepository, AddressRepository
+    ]),
+    TypeOrmModule.forFeature([
+      User, Address, UserAddress, Profile, Dealer, Social, Product, Category,
+      Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission
+    ]),
+    JwtModule.register({}), // Register JwtModule with default settings or specific configuration
+    NotificationModule // Import NotificationModule to provide NotificationService
   ],
   controllers: [UsersController, ProfilesController, DealerController],
-  providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy], // Add JwtStrategy as a provider
-  exports: [UsersService],
+  providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy],
+  exports: [UsersService], // Export UsersService if needed by other modules
 })
 export class UsersModule { }
