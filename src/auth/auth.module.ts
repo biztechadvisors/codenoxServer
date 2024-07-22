@@ -1,5 +1,4 @@
-/* eslint-disable prettier/prettier */
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserRepository } from 'src/users/users.repository';
@@ -12,13 +11,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { User } from 'src/users/entities/user.entity';
 import { JwtStrategy } from './jwt.strategy';
+import { NotificationModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmExModule.forCustomRepository([UserRepository]),
-    TypeOrmModule.forFeature([Permission, User, JwtStrategy]),
+    TypeOrmModule.forFeature([Permission, User]),
     UsersModule,
     MailModule,
+    NotificationModule, // Import NotificationModule to provide NotificationService
     JwtModule.register({
       global: true,
       secret: jwtConstants.access_secret,
@@ -26,7 +27,7 @@ import { JwtStrategy } from './jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
   exports: [AuthService],
 })
 export class AuthModule { }

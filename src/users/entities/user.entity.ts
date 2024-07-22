@@ -9,6 +9,7 @@ import { Dealer } from './dealer.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { InventoryStocks, Stocks } from 'src/stocks/entities/stocks.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
+import { Notification } from 'src/notifications/entities/notifications.entity';
 
 export enum UserType {
   Super_Admin = 'Super_Admin',
@@ -60,6 +61,9 @@ export class User extends CoreEntity {
 
   @OneToMany(() => Shop, shop => shop.owner)
   owned_shops?: Shop[];
+
+  @OneToMany(() => Notification, notifications => notifications.user)
+  notifications?: Notification[];
 
   @ManyToOne(() => Shop, shop => shop.staffs)
   managed_shop?: Shop;

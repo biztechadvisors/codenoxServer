@@ -1,11 +1,9 @@
-/* eslint-disable prettier/prettier */
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { StripeModule } from 'nestjs-stripe';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MulterModule } from '@nestjs/platform-express';
-
 import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
 import { CommonModule } from './common/common.module';
@@ -27,7 +25,6 @@ import { AddressesModule } from './addresses/addresses.module';
 import { ImportsModule } from './imports/imports.module';
 import { AuthModule } from './auth/auth.module';
 import { RefundsModule } from './refunds/refunds.module';
-import { AuthorsModule } from './authors/authors.module';
 import { ManufacturersModule } from './manufacturers/manufacturers.module';
 import { NewslettersModule } from './newsletters/newsletters.module';
 import { ReviewModule } from './reviews/reviews.module';
@@ -48,7 +45,8 @@ import { CartsModule } from './carts/carts.module';
 import { StocksModule } from './stocks/stocks.module';
 import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
-import { NotificationsModule } from './notifications/notifications.module';
+import { NotificationModule } from './notifications/notifications.module';
+import { AuthorsModule } from './authors/authors.module';
 
 @Module({
   imports: [
@@ -119,7 +117,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     PermissionModule,
     CartsModule,
     StocksModule,
-    NotificationsModule, // Added NotificationsModule here
+    NotificationModule,
     MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],
