@@ -55,6 +55,7 @@ import { Dealer } from 'src/users/entities/dealer.entity';
 import { UserAddress } from 'src/addresses/entities/address.entity';
 import { StocksService } from 'src/stocks/stocks.service';
 import { CreateStocksDto } from 'src/stocks/dto/create-stock.dto';
+import { NotificationService } from 'src/notifications/services/notifications.service';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
 
@@ -71,7 +72,7 @@ export class OrdersService {
     private readonly shiprocketService: ShiprocketService,
     private readonly MailService: MailService,
     private readonly StocksService: StocksService,
-
+    private readonly notificationService: NotificationService,
 
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -370,6 +371,18 @@ export class OrdersService {
 
         await this.StocksService.create(createStocksDto);
       }
+
+      // Dynamically create notification
+      let notificationTitle: string = 'Order Created';
+      let notificationMessage: string = `New order with ID ${savedOrder.id} has been successfully created.`;
+      if (savedOrder.customer) {
+        await this.notificationService.createNotification(
+          savedOrder.customer.id,
+          notificationTitle,
+          notificationMessage,
+        );
+      }
+
       return savedOrder;
     } catch (error) {
       console.error('Error creating order:', error);

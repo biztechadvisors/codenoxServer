@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification } from '../entities/notifications.entity';
 import { User } from 'src/users/entities/user.entity';
+import { Notification } from '../entities/notifications.entity';
 
 @Injectable()
 export class NotificationService {
@@ -14,7 +14,7 @@ export class NotificationService {
     ) { }
 
     async createNotification(userId: number, title: string, message: string): Promise<Notification> {
-        const notification = this.notificationRepository.create({ message, user: { id: userId } });
+        const notification = this.notificationRepository.create({ title, message, user: { id: userId } as User });
         await this.notificationRepository.save(notification);
 
         // Update cache
@@ -30,5 +30,13 @@ export class NotificationService {
 
     getNotifications(userId: number): Notification[] {
         return this.cache.get(userId) || [];
+    }
+
+    async getUserNotifications(userId: number): Promise<Notification[]> {
+        return await this.notificationRepository.find({
+            where: { user: { id: userId } },
+            order: { createdAt: 'DESC' },
+            take: 15,
+        });
     }
 }

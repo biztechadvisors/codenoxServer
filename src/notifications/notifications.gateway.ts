@@ -1,21 +1,33 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { NotificationService } from './services/notifications.service';
+import { Logger } from '@nestjs/common';
+import { Notification } from './entities/notifications.entity';
 
-@WebSocketGateway({ namespace: 'notifications', cors: { origin: '*' } })  // Add CORS configuration here
+@WebSocketGateway({ namespace: 'notifications', cors: { origin: '*' } })
 export class NotificationGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
 
     private connectedClients: Map<number, string> = new Map();
+    private readonly logger = new Logger(NotificationGateway.name);
 
     constructor(private notificationService: NotificationService) { }
 
-    handleConnection(client: Socket) {
+    async handleConnection(client: Socket) {
         const userId = +client.handshake.query.userId;
         if (userId) {
             this.connectedClients.set(userId, client.id);
             client.join(`user_${userId}`);
+            this.logger.log(`User ${userId} connected with client ID ${client.id}`);
+
+            // Fetch existing notifications for the user
+            const notifications = await this.notificationService.getUserNotifications(userId);
+            notifications.forEach(notification => {
+                this.notifyUser(userId, notification.title, notification.message, notification.createdAt);
+            });
+        } else {
+            this.logger.warn('User ID is missing in connection query');
         }
     }
 
@@ -24,13 +36,18 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
         if (userId) {
             this.connectedClients.delete(userId);
             client.leave(`user_${userId}`);
+            this.logger.log(`User ${userId} disconnected`);
         }
     }
 
-    notifyUser(userId: number, title: string, message: string) {
+    notifyUser(userId: number, title: string, message: string, timestamp: Date = new Date()) {
         const socketId = this.connectedClients.get(userId);
+        this.logger.log(`Notifying user ${userId}, socket ID: ${socketId}`);
         if (socketId) {
-            this.server.to(socketId).emit('notification', { title, message });
+            this.server.to(`user_${userId}`).emit('notification', { title, message, timestamp });
+            this.logger.log(`Notification sent to user ${userId}: ${title}`);
+        } else {
+            this.logger.warn(`User ${userId} not connected, could not send notification`);
         }
     }
 }

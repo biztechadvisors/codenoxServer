@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { AuthModule } from 'src/auth/auth.module';
 import { PaymentModule } from 'src/payment/payment.module';
@@ -30,15 +29,19 @@ import { UserAddress } from 'src/addresses/entities/address.entity';
 import { StocksService } from 'src/stocks/stocks.service';
 import { InventoryStocks, Stocks } from 'src/stocks/entities/stocks.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
+import { NotificationService } from 'src/notifications/services/notifications.service';  // Import NotificationService
+import { NotificationModule } from 'src/notifications/notifications.module';
+import { Notification } from 'src/notifications/entities/notifications.entity';
 
 @Module({
   imports: [
     AuthModule,
     PaymentModule,
+    NotificationModule,  // Import NotificationModule here
     TypeOrmExModule.forCustomRepository([
       OrderProductPivotRepository
     ]),
-    TypeOrmModule.forFeature([Order, UserAddress, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks, Variation]), // Include Order and OrderStatus here
+    TypeOrmModule.forFeature([Order, UserAddress, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks, Variation, Notification]), // Include Order and OrderStatus here
     HttpModule,
   ],
   controllers: [
@@ -49,7 +52,7 @@ import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
     DownloadInvoiceController,
     ShiprocketController,
   ],
-  providers: [OrdersService, ShiprocketService, MailService, StocksService],
+  providers: [OrdersService, ShiprocketService, MailService, StocksService, NotificationService],  // Ensure NotificationService is listed as a provider
   exports: [OrdersService],
 })
 export class OrdersModule { }

@@ -22,12 +22,14 @@ import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { paginate } from 'src/common/pagination/paginate';
 import { UpdateOrderStatusDto } from 'src/orders/dto/create-order-status.dto';
+import { NotificationService } from 'src/notifications/services/notifications.service';
 
 @Injectable()
 export class StocksService {
     constructor(
         private readonly shiprocketService: ShiprocketService,
         private readonly MailService: MailService,
+        private readonly notificationService: NotificationService,
 
         @InjectRepository(Stocks)
         private readonly stocksRepository: Repository<Stocks>,
@@ -523,6 +525,17 @@ export class StocksService {
 
             // Save the final order with all associations
             const finalSavedOrder = await this.StocksSellOrdRepository.save(order);
+
+            // Dynamically create notification
+            let notificationTitle: string = 'Order Created';
+            let notificationMessage: string = `New order with ID ${savedOrder.id} has been successfully created.`;
+            if (savedOrder.customer) {
+                await this.notificationService.createNotification(
+                    finalSavedOrder.customer.id,
+                    notificationTitle,
+                    notificationMessage,
+                );
+            }
 
             return finalSavedOrder;
         } catch (error) {
