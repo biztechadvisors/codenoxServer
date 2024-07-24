@@ -38,7 +38,7 @@ export class AddressesService {
     address.default = createAddressDto.default;
     address.address = savedUserAddress;  // Use the saved UserAddress
 
-    const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id }, relations: ['type'] });  // Find the user
+    const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id }, relations: ['permission'] });  // Find the user
     if (!user) {
       throw new Error('User does not exist');
     }

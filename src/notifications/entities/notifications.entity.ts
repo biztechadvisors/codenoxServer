@@ -9,6 +9,9 @@ export class Notification {
     @Column()
     message: string;
 
+    @Column()
+    title: string;
+
     @ManyToOne(() => User, user => user.notifications)
     user: User;
 

@@ -17,12 +17,14 @@ import { MailService } from 'src/mail/mail.service'
 import { StocksSellOrd } from './entities/stocksOrd.entity'
 import { Permission } from 'src/permission/entities/permission.entity'
 import { Order } from 'src/orders/entities/order.entity'
+import { NotificationService } from 'src/notifications/services/notifications.service'
+import { Notification } from 'src/notifications/entities/notifications.entity'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Attachment, Permission, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAddress, Shop, InventoryStocks, Variation, Order])],
+    imports: [TypeOrmModule.forFeature([Attachment, Permission, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAddress, Shop, InventoryStocks, Variation, Order, Notification])],
     controllers: [
         StocksController,
     ],
-    providers: [StocksService, ShiprocketService, MailService],
+    providers: [StocksService, ShiprocketService, MailService, NotificationService],
 })
 export class StocksModule { }

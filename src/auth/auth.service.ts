@@ -175,13 +175,6 @@ export class AuthService {
         return { message: 'OTP sent to your email.' };
       }
 
-      // Create a notification for the new user
-      const notification = await this.notificationService.createNotification(
-        1, // assuming user ID is available after creation
-        'Welcome!',
-        'Your account has been successfully created.',
-      );
-
       let permission: Permission | null = null;
 
       if (createUserInput.permission) {
@@ -203,24 +196,20 @@ export class AuthService {
       userData.isVerified = createUserInput.createdBy ? true : false; // Assuming isVerified depends on createdBy
 
       if (createUserInput.createdBy) {
-
         const parentUsr = await this.userRepository.findOne({
           where: { id: createUserInput.createdBy.id },
           relations: ['permission'],
         });
         if (parentUsr?.permission.type_name === UserType.Company) {
-
           const existingDealerCount = await this.userRepository.createQueryBuilder('user')
             .innerJoin('user.permission', 'permission')
             .where('user.createdBy = :createdBy', { createdBy: parentUsr.id })
             .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
             .getCount();
 
-          console.log('first 210 ', parentUsr)
           if (existingDealerCount >= (parentUsr.managed_shop.dealerCount)) {
             throw new BadRequestException('Cannot add more users, dealerCount limit reached.');
           }
-
         }
       }
 
@@ -238,7 +227,30 @@ export class AuthService {
           await this.mailService.sendUserConfirmation(userData, token);
         }
       }
+
       await this.userRepository.save(userData);
+
+      // Dynamically create notification
+      let notificationTitle: string;
+      let notificationMessage: string;
+
+      if (userData.permission && userData.permission.type_name === UserType.Dealer) {
+        notificationTitle = 'Welcome Dealer!';
+        notificationMessage = 'You have been successfully registered as a dealer.';
+      } else if (userData.permission && userData.permission.type_name === UserType.Staff) {
+        notificationTitle = 'Welcome Staff!';
+        notificationMessage = 'You have been successfully registered as a staff member.';
+      } else {
+        notificationTitle = 'Welcome!';
+        notificationMessage = 'Your account has been successfully created.';
+      }
+
+      await this.notificationService.createNotification(
+        userData.id,
+        notificationTitle,
+        notificationMessage,
+      );
+
       return { message: 'Registered successfully. OTP sent to your email.' };
     } catch (error) {
       console.error('Registration error:', error);
