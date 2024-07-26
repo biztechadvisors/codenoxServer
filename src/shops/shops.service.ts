@@ -129,7 +129,11 @@ export class ShopsService {
       newShop.description = createShopDto.description;
       newShop.owner = createShopDto.user;
       newShop.owner_id = createShopDto.user.id;
-      newShop.cover_image = createShopDto.cover_image;
+      // Handle cover_image relationship
+      if (createShopDto.cover_image && createShopDto.cover_image.length > 0) {
+        const attachments = await this.attachmentRepository.findByIds(createShopDto.cover_image);
+        newShop.cover_image = attachments;
+      }
       newShop.logo = createShopDto.logo;
       newShop.address = addressId;
       newShop.settings = settingId;
@@ -302,11 +306,7 @@ export class ShopsService {
         email_verified_at: shop.owner.email_verified_at,
         profile: shop.owner.profile, // Update with actual profile data if available
       },
-      cover_image: {
-        id: shop.cover_image?.id || "",
-        thumbnail: shop.cover_image?.thumbnail || "",
-        original: shop.cover_image?.original || "",
-      },
+      cover_image: shop.cover_image || [],
       logo: {
         id: shop.logo?.id || "",
         thumbnail: shop.logo?.thumbnail || "",
@@ -449,11 +449,7 @@ export class ShopsService {
             bank: existShop?.balance?.payment_info.bank,
           },
         },
-        cover_image: {
-          id: existShop?.cover_image?.id,
-          original: existShop.cover_image?.original,
-          thumbnail: existShop.cover_image?.thumbnail,
-        },
+        cover_image: existShop?.cover_image || [],
         logo: {
           id: existShop?.logo?.id,
           original: existShop.logo?.original,
@@ -509,13 +505,16 @@ export class ShopsService {
     const existingLogoId = existingShop.logo;
 
     // Set the cover_image and logo fields in the shopRepository to null
-    existingShop.cover_image = null;
+    existingShop.cover_image = [];
     existingShop.logo = null;
     await this.shopRepository.save(existingShop);
 
     // Remove existing cover_image and logo attachments
     if (existingCoverImageId) {
-      await this.attachmentRepository.delete(existingCoverImageId);
+      // Remove existing cover_image attachments
+      if (existingCoverImageId.length > 0) {
+        await this.attachmentRepository.remove(existingCoverImageId);
+      }
     }
 
     if (existingLogoId) {

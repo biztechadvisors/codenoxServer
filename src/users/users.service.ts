@@ -135,6 +135,7 @@ export class UsersService {
     search,
     type,
   }: GetUsersDto): Promise<UserPaginator> {
+
     const limitNum = limit;
     const pageNum = page;
     const startIndex = (pageNum - 1) * limitNum;
@@ -186,16 +187,21 @@ export class UsersService {
       queryBuilder.addOrderBy(`user.${orderBy}`, sortedBy.toUpperCase() as 'ASC' | 'DESC');
     }
 
-    // Filtering by usrById
+    // Filtering by usrById and type
     if (usrById) {
-      queryBuilder.andWhere('user.createdBy = :usrById', { usrById });
+      queryBuilder.andWhere('user.createdById = :usrById', { usrById });
 
       if (type) {
-        const permission = await this.permissionRepository.findOne({ where: { type_name: type } });
-        if (!permission) {
-          throw new NotFoundException(`Permission for type "${permission}" not found.`);
+
+        const permissions = await this.permissionRepository.find({
+          where: { type_name: type, user: Number(usrById) },
+        });
+        if (permissions.length === 0) {
+          throw new NotFoundException(`Permission for type "${type}" not found.`);
         }
-        queryBuilder.andWhere('user.permission = :permission', { permission: permission.id });
+
+        const permissionIds = permissions.map((p) => p.id);
+        queryBuilder.andWhere('user.permission_id IN (:...permissionIds)', { permissionIds });
       }
     }
 
@@ -242,6 +248,7 @@ export class UsersService {
       ...paginate(total, pageNum, limitNum, total, url),
     };
   }
+
 
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id: id }, relations: ["profile", "address", "owned_shops", "orders", "address.address", "permission"] });

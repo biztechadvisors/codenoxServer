@@ -65,7 +65,8 @@ export class User extends CoreEntity {
   @OneToMany(() => Notification, notifications => notifications.user)
   notifications?: Notification[];
 
-  @ManyToOne(() => Shop, shop => shop.staffs)
+  @ManyToOne(() => Shop, shop => shop.staffs, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'shop_id' })
   managed_shop?: Shop;
 
   @OneToMany(() => InventoryStocks, inventoryStocks => inventoryStocks.user)
