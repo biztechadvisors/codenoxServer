@@ -9,6 +9,7 @@ import { UserAddress } from 'src/addresses/entities/address.entity';
 import { User, UserType } from 'src/users/entities/user.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { UserAddressRepository } from 'src/addresses/addresses.repository';
+import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 
 @Injectable()
 export class AnalyticsService {
@@ -27,6 +28,9 @@ export class AnalyticsService {
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
     @InjectRepository(UserAddress) private readonly: UserAddressRepository,
+    @InjectRepository(StocksSellOrd)
+    private readonly stocksSellOrdRepository: Repository<StocksSellOrd>,
+
   ) { }
 
   async findAll(shop_id: number | null, customerId: number, state: string): Promise<AnalyticsResponseDTO | { message: string }> {
@@ -76,17 +80,36 @@ export class AnalyticsService {
       }
 
       const ownerId = user?.id ? user.id : shop.owner_id;
-      const analyticsResponse: AnalyticsResponseDTO = {
-        totalRevenue: await this.calculateTotalRevenue(ownerId, state),
-        totalRefunds: await this.calculateTotalRefunds(userPermissions.type_name, state),
-        totalShops: await this.calculateTotalShops(ownerId, userPermissions.type_name, state),
-        todaysRevenue: await this.calculateTodaysRevenue(ownerId, userPermissions.type_name, state),
-        totalOrders: await this.calculateTotalOrders(ownerId, userPermissions.type_name, state),
-        newCustomers: await this.calculateNewCustomers(ownerId, userPermissions.type_name, state),
-        totalYearSaleByMonth: await this.calculateTotalYearSaleByMonth(ownerId, userPermissions.type_name, state),
-      };
+
+      let analyticsResponse: AnalyticsResponseDTO;
+
+      if (userPermissions.type_name === UserType.Dealer) {
+        console.log('userPermissions.type_name === UserType.Dealer ', userPermissions.type_name === UserType.Dealer)
+        analyticsResponse = {
+          totalRevenue: await this.calculateTotalRevenue(ownerId, state),
+          totalRefunds: await this.calculateTotalRefunds(userPermissions.type_name, state),
+          totalShops: await this.calculateTotalShops(ownerId, userPermissions.type_name, state),
+          todaysRevenue: await this.calculateTodaysRevenue(ownerId, userPermissions.type_name, state),
+          totalOrders: await this.calculateTotalOrders(ownerId, userPermissions.type_name, state),
+          newCustomers: await this.calculateNewCustomers(ownerId, userPermissions.type_name, state),
+          totalYearSaleByMonth: await this.calculateTotalYearSaleByMonth(ownerId, userPermissions.type_name, state),
+          totalStockOrders: await this.calculateTotalStockOrders(ownerId, userPermissions.type_name, state)
+        };
+      } else {
+        analyticsResponse = {
+          totalRevenue: await this.calculateTotalRevenue(ownerId, state),
+          totalRefunds: await this.calculateTotalRefunds(userPermissions.type_name, state),
+          totalShops: await this.calculateTotalShops(ownerId, userPermissions.type_name, state),
+          todaysRevenue: await this.calculateTodaysRevenue(ownerId, userPermissions.type_name, state),
+          totalOrders: await this.calculateTotalOrders(ownerId, userPermissions.type_name, state),
+          newCustomers: await this.calculateNewCustomers(ownerId, userPermissions.type_name, state),
+          totalYearSaleByMonth: await this.calculateTotalYearSaleByMonth(ownerId, userPermissions.type_name, state),
+          totalStockOrders: 0
+        };
+      }
 
       return analyticsResponse;
+
     } catch (error) {
       console.error('Error fetching analytics:', error);
       return { message: `Error fetching analytics: ${error.message}` };
@@ -210,6 +233,45 @@ export class AnalyticsService {
       return todayRevenue;
     } catch (error) {
       console.error("Error calculating today's revenue:", error.message);
+      return 0;
+    }
+  }
+
+  private async calculateTotalStockOrders(userId: number, permissionName: string, state: string): Promise<number> {
+    try {
+      // Fetch the dealer's address based on the provided userId
+      const dealer = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['address', 'address.address', 'stocksSellOrd'],
+      });
+
+      console.log('dealer** ', dealer)
+
+      if (!dealer || !dealer.address || !dealer.address.length) {
+        return 0; // No address found for the dealer
+      }
+
+      const dealerAddressIds = dealer.address.map(addr => addr.address.id);
+
+      // Create initial query builder for StocksSellOrd
+      let query = this.stocksSellOrdRepository.createQueryBuilder('stocksSellOrd');
+
+      // Add condition for state if provided
+      if (state && state.trim() !== '') {
+        query = query.innerJoin('stocksSellOrd.shipping_address', 'shipping_address')
+          .where('shipping_address.state = :state', { state })
+          .innerJoin('stocksSellOrd.saleBy', 'saleByAddress')
+          .andWhere('saleByAddress.id IN (:...dealerAddressIds)', { dealerAddressIds });
+      } else {
+        query = query.innerJoin('stocksSellOrd.saleBy', 'saleByAddress')
+          .where('saleByAddress.id IN (:...dealerAddressIds)', { dealerAddressIds });
+      }
+
+      // Get the count of orders
+      const totalOrders = await query.getCount();
+      return totalOrders;
+    } catch (error) {
+      console.error('Error calculating total stock orders:', error.message);
       return 0;
     }
   }
