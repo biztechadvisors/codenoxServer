@@ -59,12 +59,20 @@ export class Shop extends CoreEntity {
   @Column()
   slug: string;
 
-  @Column()
+  @Column({ nullable: true })
   description?: string;
 
-  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn()
-  cover_image: Attachment;
+  // @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
+  // @JoinColumn()
+  // cover_image: Attachment;
+
+  @ManyToMany(() => Attachment, { cascade: true, eager: true, nullable: true })
+  @JoinTable({
+    name: 'shop_cover_image',
+    joinColumn: { name: 'shopId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'attachmentId', referencedColumnName: 'id' },
+  })
+  cover_image?: Attachment[];
 
   @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn()
@@ -95,7 +103,7 @@ export class Shop extends CoreEntity {
   @JoinColumn({ name: 'permission_id' })
   permission: Permission;
 
-  @ManyToMany(() => Permission, (permission) => permission.shops, { cascade: true, nullable: true })
+  @ManyToMany(() => Permission, (permission) => permission.shops, { cascade: true })
   @JoinTable({ name: 'shop_permission' })
   additionalPermissions: Permission[];
 
