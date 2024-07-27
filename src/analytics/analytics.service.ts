@@ -84,7 +84,6 @@ export class AnalyticsService {
       let analyticsResponse: AnalyticsResponseDTO;
 
       if (userPermissions.type_name === UserType.Dealer) {
-        console.log('userPermissions.type_name === UserType.Dealer ', userPermissions.type_name === UserType.Dealer)
         analyticsResponse = {
           totalRevenue: await this.calculateTotalRevenue(ownerId, state),
           totalRefunds: await this.calculateTotalRefunds(userPermissions.type_name, state),
@@ -115,7 +114,6 @@ export class AnalyticsService {
       return { message: `Error fetching analytics: ${error.message}` };
     }
   }
-
 
   private async calculateTotalRevenue(userId: number, state: string): Promise<number> {
     try {
@@ -239,19 +237,13 @@ export class AnalyticsService {
 
   private async calculateTotalStockOrders(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-      // Fetch the dealer's address based on the provided userId
-      const dealer = await this.userRepository.findOne({
-        where: { id: userId },
-        relations: ['address', 'address.address', 'stocksSellOrd'],
+      // Fetch users created by the provided userId
+      const usrByIdUsers = await this.userRepository.find({
+        where: { createdBy: { id: userId } },
       });
 
-      console.log('dealer** ', dealer)
-
-      if (!dealer || !dealer.address || !dealer.address.length) {
-        return 0; // No address found for the dealer
-      }
-
-      const dealerAddressIds = dealer.address.map(addr => addr.address.id);
+      // Collect user IDs
+      const userIds = [userId, ...usrByIdUsers.map((usr) => usr.id)];
 
       // Create initial query builder for StocksSellOrd
       let query = this.stocksSellOrdRepository.createQueryBuilder('stocksSellOrd');
@@ -259,12 +251,14 @@ export class AnalyticsService {
       // Add condition for state if provided
       if (state && state.trim() !== '') {
         query = query.innerJoin('stocksSellOrd.shipping_address', 'shipping_address')
-          .where('shipping_address.state = :state', { state })
-          .innerJoin('stocksSellOrd.saleBy', 'saleByAddress')
-          .andWhere('saleByAddress.id IN (:...dealerAddressIds)', { dealerAddressIds });
-      } else {
-        query = query.innerJoin('stocksSellOrd.saleBy', 'saleByAddress')
-          .where('saleByAddress.id IN (:...dealerAddressIds)', { dealerAddressIds });
+          .where('shipping_address.state = :state', { state });
+
+        // Additional condition for user IDs if Dealer
+        if (permissionName === UserType.Dealer) {
+          query.andWhere('stocksSellOrd.soldBy IN (:...userIds)', { userIds });
+        }
+      } else if (permissionName === UserType.Dealer) {
+        query = query.where('stocksSellOrd.soldBy IN (:...userIds)', { userIds });
       }
 
       // Get the count of orders
@@ -359,12 +353,25 @@ export class AnalyticsService {
       const firstDayOfMonth = new Date(new Date().getFullYear(), month - 1, 1);
       const lastDayOfMonth = new Date(new Date().getFullYear(), month, 0, 23, 59, 59, 999);
 
-      let query = this.orderRepository.createQueryBuilder('order')
-        .innerJoin('order.shipping_address', 'shipping_address')
-        .where('order.created_at BETWEEN :firstDay AND :lastDay', {
-          firstDay: firstDayOfMonth,
-          lastDay: lastDayOfMonth,
-        });
+      let query;
+
+      if (permissionName === UserType.Dealer) {
+        console.log('permissionName *** 360 ', permissionName);
+
+        query = this.stocksSellOrdRepository.createQueryBuilder('order')
+          .innerJoin('order.shipping_address', 'shipping_address')
+          .where('order.created_at BETWEEN :firstDay AND :lastDay', {
+            firstDay: firstDayOfMonth,
+            lastDay: lastDayOfMonth,
+          });
+      } else {
+        query = this.orderRepository.createQueryBuilder('order')
+          .innerJoin('order.shipping_address', 'shipping_address')
+          .where('order.created_at BETWEEN :firstDay AND :lastDay', {
+            firstDay: firstDayOfMonth,
+            lastDay: lastDayOfMonth,
+          });
+      }
 
       const usrByIdUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
       const userIds = [userId, ...usrByIdUsers.map((usr) => usr.id)];
@@ -377,6 +384,8 @@ export class AnalyticsService {
         }
       } else if (permissionName !== UserType.Company && permissionName !== UserType.Staff) {
         query.andWhere('order.customer_id IN (:...userIds)', { userIds });
+      } else if (permissionName.includes(UserType.Dealer)) {
+        query.andWhere('order.soldBy IN (:...userIds)', { userIds });
       }
 
       const result = await query
@@ -389,6 +398,7 @@ export class AnalyticsService {
       return 0;
     }
   }
+
 
   async getTopUsersWithMaxOrders(userId: number): Promise<any[]> {
     try {
