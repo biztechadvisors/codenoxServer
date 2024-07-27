@@ -69,7 +69,7 @@ export class Product extends CoreEntity {
   orders: Order[];
 
   @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
-  StocksSellOrd: StocksSellOrd[];
+  stocksSellOrders: StocksSellOrd[];
 
   @ManyToOne(() => Shop, (shop) => shop.product, { eager: true, cascade: true })
   shop: Shop;
