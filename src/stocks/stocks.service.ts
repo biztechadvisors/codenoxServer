@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { DeepPartial, In, Repository } from 'typeorm';
 import { InventoryStocks, Stocks } from './entities/stocks.entity';
-import { CreateStocksDto, GetStocksDto, UpdateStkQuantityDto } from './dto/create-stock.dto';
+import { CreatestockOrderDto, CreateStocksDto, GetStocksDto, UpdateStkQuantityDto } from './dto/create-stock.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User, UserType } from 'src/users/entities/user.entity';
 import { Dealer } from 'src/users/entities/dealer.entity';
@@ -404,7 +404,7 @@ export class StocksService {
         }
     }
 
-    async OrdfromStocks(createOrderInput: CreateOrderDto): Promise<StocksSellOrd> {
+    async OrdfromStocks(createOrderInput: CreatestockOrderDto): Promise<StocksSellOrd> {
         try {
             // Transform input to StocksSellOrd entity
             const order = plainToClass(StocksSellOrd, createOrderInput);
@@ -504,10 +504,10 @@ export class StocksService {
             order.status = createdOrderStatus;
 
             // Associate shop with the order
-            if (createOrderInput.shop_id) {
-                const getShop = await this.shopRepository.findOne({ where: { id: createOrderInput.shop_id.id } });
-                if (getShop) {
-                    order.shop_id = getShop;
+            if (createOrderInput.soldBy) {
+                const getSoldBy = await this.userRepository.findOne({ where: { id: createOrderInput.soldBy.id } });
+                if (getSoldBy) {
+                    order.soldBy = getSoldBy;
                 } else {
                     throw new NotFoundException('Shop not found');
                 }
@@ -572,7 +572,7 @@ export class StocksService {
                 .leftJoinAndSelect('products.pivot', 'pivot')
                 .leftJoinAndSelect('products.taxes', 'taxes')
                 .leftJoinAndSelect('products.variation_options', 'variation_options');
-            query = query.leftJoinAndSelect('StocksSellOrd.shop_id', 'shop');
+            query = query.leftJoinAndSelect('StocksSellOrd.soldBy', 'soldBy');
 
             if (!(usr && (usr?.permission.type_name === UserType.Dealer || usr?.permission.type_name === UserType.Staff))) {
                 // If the user has other permissions, filter orders by customer_id
@@ -719,7 +719,7 @@ export class StocksService {
                 .leftJoinAndSelect('products.taxes', 'product_taxes')
                 .leftJoinAndSelect('products.shop', 'product_shop')
                 .leftJoinAndSelect('product_shop.address', 'shop_address')
-                .leftJoinAndSelect('order.shop_id', 'order_shop')
+                .leftJoinAndSelect('order.soldBy', 'soldBy_order')
                 .leftJoinAndSelect('order.billing_address', 'billing_address')
                 .leftJoinAndSelect('order.shipping_address', 'shipping_address')
                 .leftJoinAndSelect('order.coupon', 'coupon')
@@ -743,7 +743,7 @@ export class StocksService {
                 cancelled_amount: order.cancelled_amount,
                 language: order.language,
                 saleBy: order.saleBy,
-                shop: order.shop_id,
+                soldBy: order.soldBy,
                 discount: order.discount,
                 payment_gateway: order.payment_gateway,
                 shipping_address: order.shipping_address,
@@ -847,7 +847,7 @@ export class StocksService {
             .leftJoinAndSelect('products.taxes', 'product_taxes')
             .leftJoinAndSelect('products.shop', 'product_shop')
             .leftJoinAndSelect('product_shop.address', 'shop_address')
-            .leftJoinAndSelect('order.shop_id', 'order_shop')
+            .leftJoinAndSelect('order.soldBy', 'soldBy_order')
             .leftJoinAndSelect('order.billing_address', 'billing_address')
             .leftJoinAndSelect('order.shipping_address', 'shipping_address')
             .leftJoinAndSelect('order.coupon', 'coupon')
