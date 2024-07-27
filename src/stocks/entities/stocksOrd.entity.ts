@@ -8,7 +8,6 @@ import { User } from 'src/users/entities/user.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { OrderStatusType, PaymentGatewayType, PaymentStatusType } from 'src/orders/entities/order.entity';
 import { OrderStatus } from 'src/orders/entities/order-status.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
 
 @Entity()
 export class StocksSellOrd extends CoreEntity {
@@ -68,9 +67,8 @@ export class StocksSellOrd extends CoreEntity {
     @JoinTable({ name: "product_StocksSellOrd" })
     products: Product[];
 
-    @ManyToMany(() => Shop, { nullable: true })
-    @JoinTable()
-    shop_id: Shop;
+    @ManyToOne(() => User, (user) => user.stockOrd)
+    soldBy: User;
 
     @ManyToOne(() => UserAddress)
     billing_address: UserAddress;

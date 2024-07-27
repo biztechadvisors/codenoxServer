@@ -84,6 +84,9 @@ export class User extends CoreEntity {
   @OneToMany(() => Order, order => order.customer)
   orders: Order[];
 
+  @ManyToOne(() => StocksSellOrd, (stocksSellOrd) => stocksSellOrd.soldBy)
+  stockOrd: User;
+
   @OneToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.customer)
   stocksSellOrd: StocksSellOrd[];
 
