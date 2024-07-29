@@ -15,5 +15,4 @@ export class AnalyticsResponseDTO {
     totalOrders: number;
     newCustomers: number;
     totalYearSaleByMonth: TotalYearSaleByMonthDTO[];
-    totalStockOrders: number;
 }

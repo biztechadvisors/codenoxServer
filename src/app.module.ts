@@ -47,6 +47,10 @@ import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
 import { NotificationModule } from './notifications/notifications.module';
 import { AuthorsModule } from './authors/authors.module';
+import { FAQModule } from './faq/faq.module';
+import { BlogModule } from './blog/blog.module';
+import { EventModule } from './events/event.module';
+import { GetInspiredModule } from './get-inspired/get-inspired.module';
 
 @Module({
   imports: [
@@ -118,6 +122,10 @@ import { AuthorsModule } from './authors/authors.module';
     CartsModule,
     StocksModule,
     NotificationModule,
+    FAQModule,
+    BlogModule,
+    EventModule,
+    GetInspiredModule,
     MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],
