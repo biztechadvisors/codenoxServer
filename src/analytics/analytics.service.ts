@@ -39,21 +39,10 @@ export class AnalyticsService {
         return { message: 'Customer ID or Shop ID is required' };
       }
 
-      let user = null;
-      let shop = null;
-      if (customerId) {
-        user = await this.userRepository.findOne({
-          where: { id: customerId },
-          relations: ['permission'],
-        });
-      }
-      if (shop_id) {
-        shop = await this.shopRepository.findOne({
-          where: { id: shop_id },
-          relations: ['owner', 'owner.permission']
-        });
-
-      }
+      const [user, shop] = await Promise.all([
+        customerId ? this.userRepository.findOne({ where: { id: customerId }, relations: ['permission'] }) : null,
+        shop_id ? this.shopRepository.findOne({ where: { id: shop_id }, relations: ['owner', 'owner.permission'] }) : null
+      ]);
 
       if (!user && !shop) {
         return { message: `User with ID ${customerId} and Shop with ID ${shop_id} not found` };
@@ -66,9 +55,8 @@ export class AnalyticsService {
         return { message: 'Permission type not found for user or shop owner' };
       }
 
-      const userPermissions = await this.permissionRepository.findOne({
-        where: { permission_name: userTypePermissionName || shopOwnerTypePermissionName },
-      });
+      const permissionName = userTypePermissionName || shopOwnerTypePermissionName;
+      const userPermissions = await this.permissionRepository.findOne({ where: { permission_name: permissionName } });
 
       if (!userPermissions) {
         return { message: `User with ID ${customerId} does not have any permissions` };
@@ -79,33 +67,25 @@ export class AnalyticsService {
         return { message: `User with ID ${customerId} does not have permission to access analytics` };
       }
 
-      const ownerId = user?.id ? user.id : shop.owner_id;
+      const ownerId = user?.id || shop?.owner_id;
 
-      let analyticsResponse: AnalyticsResponseDTO;
-
-      if (userPermissions.type_name === UserType.Dealer) {
-        analyticsResponse = {
-          totalRevenue: await this.calculateTotalRevenue(ownerId, state),
-          totalRefunds: await this.calculateTotalRefunds(userPermissions.type_name, state),
-          totalShops: await this.calculateTotalShops(ownerId, userPermissions.type_name, state),
-          todaysRevenue: await this.calculateTodaysRevenue(ownerId, userPermissions.type_name, state),
-          totalOrders: await this.calculateTotalOrders(ownerId, userPermissions.type_name, state),
-          newCustomers: await this.calculateNewCustomers(ownerId, userPermissions.type_name, state),
-          totalYearSaleByMonth: await this.calculateTotalYearSaleByMonth(ownerId, userPermissions.type_name, state),
-          totalStockOrders: await this.calculateTotalStockOrders(ownerId, userPermissions.type_name, state)
-        };
-      } else {
-        analyticsResponse = {
-          totalRevenue: await this.calculateTotalRevenue(ownerId, state),
-          totalRefunds: await this.calculateTotalRefunds(userPermissions.type_name, state),
-          totalShops: await this.calculateTotalShops(ownerId, userPermissions.type_name, state),
-          todaysRevenue: await this.calculateTodaysRevenue(ownerId, userPermissions.type_name, state),
-          totalOrders: await this.calculateTotalOrders(ownerId, userPermissions.type_name, state),
-          newCustomers: await this.calculateNewCustomers(ownerId, userPermissions.type_name, state),
-          totalYearSaleByMonth: await this.calculateTotalYearSaleByMonth(ownerId, userPermissions.type_name, state),
-          totalStockOrders: 0
-        };
-      }
+      const analyticsResponse = await Promise.all([
+        this.calculateTotalRevenue(ownerId, userPermissions.type_name, state),
+        this.calculateTotalRefunds(userPermissions.type_name, state),
+        this.calculateTotalShops(ownerId, userPermissions.type_name, state),
+        this.calculateTodaysRevenue(ownerId, userPermissions.type_name, state),
+        this.calculateTotalOrders(ownerId, userPermissions.type_name, state),
+        this.calculateNewCustomers(ownerId, userPermissions.type_name, state),
+        this.calculateTotalYearSaleByMonth(ownerId, userPermissions.type_name, state)
+      ]).then(([totalRevenue, totalRefunds, totalShops, todaysRevenue, totalOrders, newCustomers, totalYearSaleByMonth]) => ({
+        totalRevenue,
+        totalRefunds,
+        totalShops,
+        todaysRevenue,
+        totalOrders,
+        newCustomers,
+        totalYearSaleByMonth
+      }));
 
       return analyticsResponse;
 
@@ -115,27 +95,39 @@ export class AnalyticsService {
     }
   }
 
-  private async calculateTotalRevenue(userId: number, state: string): Promise<number> {
+  private async calculateTotalRevenue(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-      const usrByIdUsers = await this.userRepository.find({
+      const createdByUsers = await this.userRepository.find({
         where: { createdBy: { id: userId } },
       });
 
-      const userIds = [userId, ...usrByIdUsers.map(u => u.id)];
+      const userIds = [userId, ...createdByUsers.map(u => u.id)];
 
-      let queryBuilder = this.orderRepository.createQueryBuilder('order');
-
-      if (state && state.trim() !== '') {
-        queryBuilder = queryBuilder
-          .innerJoin('order.shipping_address', 'shipping_address')
-          .andWhere('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
+      let queryBuilder: SelectQueryBuilder<Order> | SelectQueryBuilder<StocksSellOrd>;
+      if (permissionName === UserType.Dealer) {
+        queryBuilder = this.stocksSellOrdRepository.createQueryBuilder('order');
       } else {
+        queryBuilder = this.orderRepository.createQueryBuilder('order');
+      }
+
+      queryBuilder = queryBuilder.innerJoin('order.shipping_address', 'shipping_address');
+
+      if (state?.trim()) {
         queryBuilder = queryBuilder
+          .andWhere('shipping_address.state = :state', { state })
           .andWhere('order.customer_id IN (:...userIds)', { userIds });
+      } else {
+        if (permissionName === UserType.Dealer) {
+          queryBuilder = queryBuilder
+            .andWhere('order.soldBy IN (:...userIds)', { userIds });
+        } else {
+          queryBuilder = queryBuilder
+            .andWhere('order.customer_id IN (:...userIds)', { userIds });
+        }
       }
 
       const orders = await queryBuilder.getMany();
-      const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+      const totalRevenue = (orders as any[]).reduce((sum, order) => sum + (order.total || 0), 0);
 
       return totalRevenue;
     } catch (error) {
@@ -148,47 +140,34 @@ export class AnalyticsService {
     try {
       let query = this.refundRepository.createQueryBuilder('refund');
 
-      if (state && state.trim() !== '') {
-        if (permissionName === UserType.Company || permissionName === UserType.Staff) {
-          // Handle cases where permissionName is super_admin or Admin
-        } else {
-          query = query
-            .innerJoin('refund.order', 'order')
-            .innerJoin('order.shipping_address', 'shipping_address')
-            .where('shipping_address.state = :state', { state });
-        }
+      if (state?.trim() && !['Company', 'Staff'].includes(permissionName)) {
+        query = query.innerJoin('refund.order', 'order').innerJoin('order.shipping_address', 'shipping_address').where('shipping_address.state = :state', { state });
       }
 
-      const totalRefunds = await query
-        .select('COUNT(DISTINCT refund.id)', 'totalRefunds')
-        .getRawOne()
-        .then(result => result?.totalRefunds || 0); // Ensure accessing totalRefunds safely
+      const result = await query.select('COUNT(DISTINCT refund.id)', 'totalRefunds').getRawOne();
+      return result?.totalRefunds || 0;
 
-      return totalRefunds;
     } catch (error) {
       console.error('Error calculating total refunds:', error.message);
-      return 0; // Return 0 if there's an error
+      return 0;
     }
   }
 
   private async calculateTotalShops(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-      if (permissionName !== UserType.Company && permissionName !== UserType.Staff) {
-        return 0;
-      }
+      if (!['Company', 'Staff'].includes(permissionName)) return 0;
 
-      const queryBuilder: SelectQueryBuilder<Shop> = this.shopRepository.createQueryBuilder('shop')
+      const queryBuilder = this.shopRepository.createQueryBuilder('shop')
         .innerJoin('shop.owner', 'owner')
         .innerJoin('shop.address', 'address')
         .andWhere('(owner.createdBy.id = :userId OR shop.owner_id = :userId)', { userId });
 
-      if (state && state.trim() !== '') {
+      if (state?.trim()) {
         queryBuilder.andWhere('address.state = :state', { state });
       }
 
-      const totalShops = await queryBuilder.getCount();
+      return await queryBuilder.getCount();
 
-      return totalShops;
     } catch (error) {
       console.error('Error calculating total shops:', error.message);
       return 0;
@@ -198,109 +177,61 @@ export class AnalyticsService {
   private async calculateTodaysRevenue(userId: number, permissionName: string, state: string): Promise<number> {
     try {
       const users = await this.userRepository.find({ where: { createdBy: { id: userId } } });
-
       const userIds = [userId, ...users.map((u) => u.id)];
 
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
 
-      const todayEnd = new Date();
-      todayEnd.setHours(23, 59, 59, 999);
-
-      let queryBuilder: SelectQueryBuilder<Order> = this.orderRepository
-        .createQueryBuilder('order')
+      let queryBuilder = this.orderRepository.createQueryBuilder('order')
         .innerJoin('order.shipping_address', 'shipping_address')
         .where('created_at BETWEEN :todayStart AND :todayEnd', { todayStart, todayEnd });
 
-      if (state && state.trim() !== '') {
-        if (permissionName === UserType.Company || permissionName === UserType.Staff) {
+      if (state?.trim()) {
+        if (['Company', 'Staff'].includes(permissionName)) {
           queryBuilder.andWhere('shipping_address.state = :state', { state });
         } else {
-          queryBuilder.andWhere('shipping_address.state = :state AND order.customer_id IN (:userIds)', {
-            state,
-            userIds,
-          });
+          queryBuilder.andWhere('shipping_address.state = :state AND order.customer_id IN (:userIds)', { state, userIds });
         }
-      } else if (permissionName !== 'super_admin' && permissionName !== 'Admin') {
+      } else if (!['super_admin', 'Admin'].includes(permissionName)) {
         queryBuilder.andWhere('order.customer_id IN (:userIds)', { userIds });
       }
 
       const todayOrders = await queryBuilder.getMany();
-      const todayRevenue = todayOrders.reduce((total, order) => total + order.total, 0);
+      return todayOrders.reduce((total, order) => total + order.total, 0);
 
-      return todayRevenue;
     } catch (error) {
       console.error("Error calculating today's revenue:", error.message);
       return 0;
     }
   }
 
-  private async calculateTotalStockOrders(userId: number, permissionName: string, state: string): Promise<number> {
-    try {
-      // Fetch users created by the provided userId
-      const usrByIdUsers = await this.userRepository.find({
-        where: { createdBy: { id: userId } },
-      });
-
-      // Collect user IDs
-      const userIds = [userId, ...usrByIdUsers.map((usr) => usr.id)];
-
-      // Create initial query builder for StocksSellOrd
-      let query = this.stocksSellOrdRepository.createQueryBuilder('stocksSellOrd');
-
-      // Add condition for state if provided
-      if (state && state.trim() !== '') {
-        query = query.innerJoin('stocksSellOrd.shipping_address', 'shipping_address')
-          .where('shipping_address.state = :state', { state });
-
-        // Additional condition for user IDs if Dealer
-        if (permissionName === UserType.Dealer) {
-          query.andWhere('stocksSellOrd.soldBy IN (:...userIds)', { userIds });
-        }
-      } else if (permissionName === UserType.Dealer) {
-        query = query.where('stocksSellOrd.soldBy IN (:...userIds)', { userIds });
-      }
-
-      // Get the count of orders
-      const totalOrders = await query.getCount();
-      return totalOrders;
-    } catch (error) {
-      console.error('Error calculating total stock orders:', error.message);
-      return 0;
-    }
-  }
-
   private async calculateTotalOrders(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-      const usrByIdUsers = await this.userRepository.find({
-        where: { createdBy: { id: userId } },
-      });
+      const createdByUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
+      const userIds = [userId, ...createdByUsers.map((usr) => usr.id)];
 
-      const userIds = [userId, ...usrByIdUsers.map((usr) => usr.id)];
+      let query = permissionName === UserType.Dealer
+        ? this.stocksSellOrdRepository.createQueryBuilder('order')
+        : this.orderRepository.createQueryBuilder('order');
 
-      let query = this.orderRepository.createQueryBuilder('order');
+      query = query.innerJoin('order.shipping_address', 'shipping_address');
 
-      if (state && state.trim() !== '') {
-        query = query.innerJoin('order.shipping_address', 'shipping_address').where(
-          (qb) => {
-            qb.where('shipping_address.state = :state', { state });
+      if (state?.trim()) {
+        query = query.where('shipping_address.state = :state', { state });
 
-            if (!(permissionName === UserType.Company || permissionName === UserType.Staff)) {
-              qb.andWhere('order.customer_id IN (:...userIds)', { userIds });
-            }
-          }
-        );
-      } else if (!(permissionName === UserType.Company || permissionName === UserType.Staff)) {
-        query = query.innerJoin('order.shipping_address', 'shipping_address').where(
-          'order.customer_id IN (:...userIds)',
-          { userIds }
-        );
+        if (!['Company', 'Staff'].includes(permissionName)) {
+          query = query.andWhere('order.customer_id IN (:...userIds)', { userIds });
+        }
+      } else if (!['Company', 'Staff'].includes(permissionName)) {
+        query = permissionName === UserType.Dealer
+          ? query.where('order.soldBy IN (:...userIds)', { userIds })
+          : query.where('order.customer_id IN (:...userIds)', { userIds });
       }
 
-      const totalOrders = await query.getCount();
-      return totalOrders;
+      return await query.getCount();
+
     } catch (error) {
-      console.error('Error calculating total orders:', error.message);
+      console.error(`Error calculating total orders: ${error.message}`);
       return 0;
     }
   }
@@ -314,20 +245,20 @@ export class AnalyticsService {
         created_at: MoreThanOrEqual(thirtyDaysAgo),
       });
 
-      if (permissionName !== UserType.Company && permissionName !== UserType.Staff) {
-        query = query.andWhere('shop.owner_id = :userId', { userId });
-
-        if (state && state.trim() !== '') {
+      if (['Company', 'Staff'].includes(permissionName)) {
+        if (state?.trim()) {
           query = query.andWhere('shop.shipping_address.state = :state', { state });
         }
-      } else if (state && state.trim() !== '') {
-        query = query.andWhere('shop.shipping_address.state = :state', { state });
+      } else {
+        query = query.andWhere('shop.owner_id = :userId', { userId });
+        if (state?.trim()) {
+          query = query.andWhere('shop.shipping_address.state = :state', { state });
+        }
       }
 
       const newShops = await query.getMany();
-      const numberOfNewCustomers = newShops.length;
+      return newShops.length;
 
-      return numberOfNewCustomers;
     } catch (error) {
       console.error('Error calculating new customers:', error.message);
       return 0;
@@ -353,39 +284,30 @@ export class AnalyticsService {
       const firstDayOfMonth = new Date(new Date().getFullYear(), month - 1, 1);
       const lastDayOfMonth = new Date(new Date().getFullYear(), month, 0, 23, 59, 59, 999);
 
-      let query;
+      let query = permissionName === UserType.Dealer
+        ? this.stocksSellOrdRepository.createQueryBuilder('order').innerJoin('order.shipping_address', 'shipping_address')
+        : this.orderRepository.createQueryBuilder('order').innerJoin('order.shipping_address', 'shipping_address');
 
-      if (permissionName === UserType.Dealer) {
-        console.log('permissionName *** 360 ', permissionName);
+      query = query.where('order.created_at BETWEEN :firstDay AND :lastDay', {
+        firstDay: firstDayOfMonth,
+        lastDay: lastDayOfMonth,
+      });
 
-        query = this.stocksSellOrdRepository.createQueryBuilder('order')
-          .innerJoin('order.shipping_address', 'shipping_address')
-          .where('order.created_at BETWEEN :firstDay AND :lastDay', {
-            firstDay: firstDayOfMonth,
-            lastDay: lastDayOfMonth,
-          });
-      } else {
-        query = this.orderRepository.createQueryBuilder('order')
-          .innerJoin('order.shipping_address', 'shipping_address')
-          .where('order.created_at BETWEEN :firstDay AND :lastDay', {
-            firstDay: firstDayOfMonth,
-            lastDay: lastDayOfMonth,
-          });
-      }
+      const createdByUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
+      const userIds = [userId, ...createdByUsers.map(user => user.id)];
 
-      const usrByIdUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
-      const userIds = [userId, ...usrByIdUsers.map((usr) => usr.id)];
-
-      if (state && state.trim() !== '') {
-        if (permissionName !== UserType.Company && permissionName !== UserType.Staff) {
-          query.andWhere('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
+      if (state?.trim()) {
+        if (!['Company', 'Staff'].includes(permissionName)) {
+          query = query.andWhere('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
         } else {
-          query.andWhere('shipping_address.state = :state', { state });
+          query = query.andWhere('shipping_address.state = :state', { state });
         }
-      } else if (permissionName !== UserType.Company && permissionName !== UserType.Staff) {
-        query.andWhere('order.customer_id IN (:...userIds)', { userIds });
-      } else if (permissionName.includes(UserType.Dealer)) {
-        query.andWhere('order.soldBy IN (:...userIds)', { userIds });
+      } else if (!['Company', 'Staff'].includes(permissionName)) {
+        if (permissionName.includes(UserType.Dealer)) {
+          query = query.andWhere('order.soldBy IN (:...userIds)', { userIds });
+        } else {
+          query = query.andWhere('order.customer_id IN (:...userIds)', { userIds });
+        }
       }
 
       const result = await query
@@ -393,12 +315,12 @@ export class AnalyticsService {
         .getRawOne();
 
       return parseInt(result.total, 10) || 0;
+
     } catch (error) {
       console.error(`Error calculating total sales for month ${month}: ${error.message}`);
       return 0;
     }
   }
-
 
   async getTopUsersWithMaxOrders(userId: number): Promise<any[]> {
     try {
