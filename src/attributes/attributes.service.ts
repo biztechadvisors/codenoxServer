@@ -95,22 +95,24 @@ export class AttributesService {
       language?: string;
     }[];
   }[]> {
-    const { search, orderBy, sortedBy, language } = params;
-    const shop_id = this.getValueFromSearch(search, "shop_id");
+    const { search, orderBy, sortedBy, language, shopSlug, shop_id } = params;
 
     const query = this.attributeRepository.createQueryBuilder('attribute')
-      .leftJoinAndSelect('attribute.values', 'value');
+      .leftJoinAndSelect('attribute.values', 'value')
+      .leftJoinAndSelect('attribute.shop', 'shop');
 
     if (shop_id) {
       query.where('attribute.shop_id = :shop_id', { shop_id });
+    } else if (shopSlug) {
+      query.where('shop.slug = :shopSlug', { shopSlug });
     }
 
     if (language) {
-      if (shop_id) {
-        query.andWhere('attribute.language = :language', { language });
-      } else {
-        query.where('attribute.language = :language', { language });
-      }
+      query.andWhere('attribute.language = :language', { language });
+    }
+
+    if (search) {
+      query.andWhere('attribute.name LIKE :search', { search: `%${search}%` });
     }
 
     if (orderBy && sortedBy) {
@@ -128,7 +130,6 @@ export class AttributesService {
           id: value.id,
           value: value.value,
           meta: value.meta,
-          // language: value.language,
         })),
       };
     });

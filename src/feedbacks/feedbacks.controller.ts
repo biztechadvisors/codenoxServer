@@ -15,7 +15,7 @@ import { UpdateQuestionDto } from 'src/questions/dto/update-question.dto';
 
 @Controller('feedbacks')
 export class FeedbackController {
-  constructor(private feedbackService: FeedbackService) {}
+  constructor(private feedbackService: FeedbackService) { }
 
   @Get()
   async findAll() {
