@@ -15,22 +15,22 @@ export class FeedbackService {
 
   constructor(
     @InjectRepository(Feedback)
-    private feedbackRepository:Repository<Feedback>,
+    private feedbackRepository: Repository<Feedback>,
     @InjectRepository(Question)
-    private questionRepository:Repository<Question>,
-  ){}
+    private questionRepository: Repository<Question>,
+  ) { }
 
   async findAllFeedBacks() {
-   return await this.feedbackRepository.find({
-    relations:['user']
-   })
+    return await this.feedbackRepository.find({
+      relations: ['user']
+    })
   }
 
   async findFeedBack(id: number) {
     return await this.feedbackRepository.findOne({
-      where:{id},
-      relations:['user']
-     })
+      where: { id },
+      relations: ['user']
+    })
   }
 
   async create(
@@ -43,34 +43,34 @@ export class FeedbackService {
     feedback.negative = createFeedBackDto.negative;
     feedback.positive = createFeedBackDto.positive;
     feedback.user = createFeedBackDto.user;
-  
+
     if (feedback.positive || feedback.negative) {
       const question = await this.questionRepository.findOne({
         where: { id: createFeedBackDto.model_id },
       });
-  
+
       if (question) {
         if (feedback.positive) {
-          question.positive_feedbacks_count+=1;
+          question.positive_feedbacks_count += 1;
         } else if (feedback.negative) {
-          question.negative_feedbacks_count+=1;
+          question.negative_feedbacks_count += 1;
         }
         await this.questionRepository.save(question);
       }
     }
     await this.feedbackRepository.save(feedback);
-     return {
+    return {
       message: 'Feedback created successfully',
       feedback,
     };
   }
-  
+
 
   async update(id: number, updateFeedbackDto: UpdateFeedBackDto) {
     const existingFeedback = await this.feedbackRepository.findOne({
-      where:{id}
+      where: { id }
     })
-    if(existingFeedback){
+    if (existingFeedback) {
       existingFeedback.model_id = updateFeedbackDto.model_id
       existingFeedback.model_type = updateFeedbackDto.model_type
       existingFeedback.negative = updateFeedbackDto.negative
@@ -83,7 +83,7 @@ export class FeedbackService {
   }
 
   async delete(id: number) {
-    const existingFeedback = await this.feedbackRepository.findOne({where :{id}});
+    const existingFeedback = await this.feedbackRepository.findOne({ where: { id } });
 
     if (!existingFeedback) {
       throw new NotFoundException('Feedback not found');

@@ -9,5 +9,5 @@ export class CreateFeedBackDto extends PickType(Feedback, [
   'positive',
   'negative',
 ]) {
-  user:User
+  user: User
 }

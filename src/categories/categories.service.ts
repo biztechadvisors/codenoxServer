@@ -14,7 +14,7 @@ import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { convertToSlug } from 'src/helpers';
 import { TypeRepository } from 'src/types/types.repository';
-import { ILike, IsNull, Repository } from 'typeorm';
+import { ILike, IsNull, Like, Repository } from 'typeorm';
 import { Shop } from 'src/shops/entities/shop.entity';
 
 const categories = plainToClass(Category, categoriesJson)
@@ -78,7 +78,8 @@ export class CategoriesService {
   }
 
   async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
-    let { limit = '10', page = '1', search, parent, shop } = query;
+    let { limit = '10', page = '1', search, parent, shopSlug, shopId, language, orderBy, sortedBy } = query;
+
     // Convert to numbers
     const numericPage = Number(page);
     const numericLimit = Number(limit);
@@ -89,29 +90,43 @@ export class CategoriesService {
     }
 
     const skip = (numericPage - 1) * numericLimit;
-    const where: { [key: string]: any } = {};
+    const where: any = {};
 
     if (search) {
-      const type = await this.typeRepository.findOne({ where: { slug: search.split(':')[1] } });
-      if (type) {
-        where['type'] = { id: type.id };
+      where['name'] = Like(`%${search}%`);
+    }
+
+    if (shopSlug) {
+      const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+      if (shop) {
+        where['shop'] = { id: shop.id };
+      } else {
+        throw new NotFoundException('Shop not found');
       }
     }
 
-    if (shop) {
-      where['shop'] = typeof shop === "string" ? { id: Number(shop) } : { id: shop }; // This line is likely causing the error
+    if (shopId) {
+      where['shop'] = { id: shopId };
     }
 
-
-    if (parent) {
+    if (parent && parent !== 'null') {
       where['parent'] = { id: parent };
+    } else if (parent === 'null') {
+      where['parent'] = IsNull();
     }
+
+    if (language) {
+      where['language'] = language;
+    }
+
+    const order = orderBy && sortedBy ? { [orderBy]: sortedBy.toUpperCase() } : {};
 
     const [data, total] = await this.categoryRepository.findAndCount({
       where,
       take: numericLimit,
       skip,
       relations: ['type', 'image', 'subCategories', 'shop'],
+      order,
     });
 
     const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}`;

@@ -21,7 +21,6 @@ export class AttributesController {
 
   @Post()
   create(@Body() createAttributeDto: CreateAttributeDto) {
-
     return this.attributesService.create(createAttributeDto);
   }
 
@@ -41,7 +40,6 @@ export class AttributesController {
     @Param('id') id: string,
     @Body() updateAttributeDto: UpdateAttributeDto,
   ) {
-
     return this.attributesService.update(+id, updateAttributeDto);
   }
 
