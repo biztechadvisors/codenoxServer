@@ -1,6 +1,5 @@
 /* eslint-disable prettier/prettier */
 import { Shop } from "src/shops/entities/shop.entity";
-import { User } from "src/users/entities/user.entity";
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()

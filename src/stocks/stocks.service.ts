@@ -195,6 +195,79 @@ export class StocksService {
         }
     }
 
+    // async updateInventoryStocksByDealer(user_id: number, updateStkQuantityDto: any) {
+    //     try {
+    //         const { receivedQuantity, order_id, product_id, variation_option_id } = updateStkQuantityDto;
+
+    //         // Validate presence of required parameters
+    //         if (!user_id || !product_id || !order_id || !variation_option_id) {
+    //             throw new NotFoundException('User id, Product id, Order id, and Variation option id must be defined');
+    //         }
+
+    //         const dealer = await this.userRepository.findOne({
+    //             where: { id: user_id },
+    //             relations: ['dealer'],
+    //         });
+
+    //         if (!dealer?.dealer) {
+    //             throw new NotFoundException(`Dealer not found by ID ${user_id}`);
+    //         }
+
+    //         const existingStock = await this.stocksRepository.findOne({
+    //             where: {
+    //                 user: { id: dealer.id },
+    //                 product: { id: product_id },
+    //                 order: { id: order_id },
+    //                 variation_options: { id: variation_option_id }
+    //             }
+    //         });
+
+    //         if (!existingStock) {
+    //             throw new NotFoundException(`Stock not found for user ID ${user_id}, product ID ${product_id}, order ID ${order_id}, and variation option ID ${variation_option_id}`);
+    //         }
+
+    //         if (existingStock.dispatchedQuantity < receivedQuantity) {
+    //             throw new Error(`Received quantity is greater than the dispatched quantity for user ID ${user_id}`);
+    //         }
+
+    //         const inventoryStockRep = await this.inventoryStocksRepository.findOne({
+    //             where: {
+    //                 user: { id: dealer.id },
+    //                 product: { id: product_id },
+    //                 variation_options: { id: variation_option_id }
+    //             }
+    //         });
+
+    //         if (inventoryStockRep) {
+    //             inventoryStockRep.quantity += receivedQuantity;
+    //             if (inventoryStockRep.quantity > 1) {
+    //                 inventoryStockRep.status = true;
+    //                 inventoryStockRep.inStock = true;
+    //             }
+    //             await this.inventoryStocksRepository.save(inventoryStockRep);
+    //         } else {
+    //             const newInventoryStock = new InventoryStocks();
+    //             newInventoryStock.quantity = receivedQuantity;
+    //             newInventoryStock.product = await this.productRepository.findOne({ where: { id: product_id } });
+    //             newInventoryStock.user = dealer;
+    //             newInventoryStock.variation_options = [await this.variationRepository.findOne({ where: { id: variation_option_id } })];
+    //             if (newInventoryStock.quantity > 1) {
+    //                 newInventoryStock.status = true;
+    //                 newInventoryStock.inStock = true;
+    //             }
+    //             await this.inventoryStocksRepository.save(newInventoryStock);
+    //         }
+
+    //         existingStock.receivedQuantity = existingStock.receivedQuantity + receivedQuantity;
+    //         existingStock.dispatchedQuantity = existingStock.dispatchedQuantity - receivedQuantity;
+
+    //         await this.stocksRepository.save(existingStock);
+
+    //     } catch (error) {
+    //         throw new Error(`Error updating stock: ${error.message}`);
+    //     }
+    // }
+
     async updateInventoryStocksByDealer(user_id: number, updateStkQuantityDto: any) {
         try {
             const { receivedQuantity, order_id, product_id, variation_option_id } = updateStkQuantityDto;
