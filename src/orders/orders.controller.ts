@@ -38,11 +38,8 @@ export class OrdersController {
     try {
       // Attempt to create the order
       const OrdSuccess = await this.ordersService.create(createOrderDto);
-
       // Attempt to update product quantities
       await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
-
-      // If everything is successful, return the order success response
       return OrdSuccess;
     } catch (error) {
       // Log the error for debugging purposes

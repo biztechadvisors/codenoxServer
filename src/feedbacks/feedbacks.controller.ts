@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { CreateFeedBackDto } from './dto/create-feedback.dto';
 import { UpdateFeedBackDto } from './dto/update-feedback.dto';
@@ -18,8 +19,8 @@ export class FeedbackController {
   constructor(private feedbackService: FeedbackService) { }
 
   @Get()
-  async findAll() {
-    return this.feedbackService.findAllFeedBacks();
+  async findAll(@Query('shopSlug') shopSlug?: string, @Query('search') search?: string) {
+    return this.feedbackService.findAllFeedBacks(shopSlug, search);
   }
 
   @Get(':id')
@@ -32,12 +33,8 @@ export class FeedbackController {
     return this.feedbackService.create(createFeedBackDto);
   }
 
-  // update a feedback
   @Put(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateFeedBackDto: UpdateFeedBackDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateFeedBackDto: UpdateFeedBackDto) {
     return this.feedbackService.update(+id, updateFeedBackDto);
   }
 

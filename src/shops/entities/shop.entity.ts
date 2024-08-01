@@ -95,7 +95,7 @@ export class Shop extends CoreEntity {
   @OneToMany(() => SubCategory, subCategory => subCategory.shop)
   subCategories: SubCategory[];
 
-  @ManyToMany(() => Order, (order) => order.shop_id, { cascade: true, nullable: true })
+  @ManyToMany(() => Order, (order) => order.shop, { cascade: true, nullable: true })
   @JoinTable({ name: "shop_order" })
   order: Order[];
 

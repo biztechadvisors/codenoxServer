@@ -281,10 +281,10 @@ export class OrdersService {
         weight: 1
       };
 
-      // const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
+      const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
 
-      order.tracking_number = "438234234";
-      // shiprocketResponse.shipment_id || shiprocketResponse.order_id;
+      // order.tracking_number = "438234234";
+      shiprocketResponse.shipment_id || shiprocketResponse.order_id;
 
       await this.orderRepository.save(order);
 
@@ -334,7 +334,7 @@ export class OrdersService {
       if (createOrderInput.shop_id) {
         const getShop = await this.shopRepository.findOne({ where: { id: createOrderInput.shop_id.id } });
         if (getShop) {
-          order.shop_id = getShop;
+          order.shop = getShop;
         } else {
           throw new NotFoundException('Shop not found');
         }
@@ -390,6 +390,144 @@ export class OrdersService {
     }
   }
 
+  // async getOrders(getOrdersDto: GetOrdersDto): Promise<OrderPaginator> {
+  //   try {
+  //     let {
+  //       limit,
+  //       page,
+  //       customer_id,
+  //       tracking_number,
+  //       search,
+  //       shop_id,
+  //       shopSlug,
+  //       saleBy,
+  //       type,
+  //       startDate,
+  //       endDate,
+  //     } = getOrdersDto;
+
+  //     if (!page) page = 1;
+  //     if (!limit) limit = 15;
+  //     const startIndex = (page - 1) * limit;
+
+  //     let usr;
+  //     if (customer_id) {
+  //       usr = await this.userRepository.findOne({
+  //         where: { id: Number(customer_id) },
+  //         relations: ['permission'],
+  //       });
+
+  //       if (!usr) {
+  //         throw new NotFoundException('User not found');
+  //       }
+  //     }
+
+  //     const permsn = usr ? await this.permissionRepository.findOneBy({ id: usr.permission.id }) : null;
+
+  //     // Create the initial query builder for orders
+  //     let query = this.orderRepository.createQueryBuilder('order')
+  //       .leftJoinAndSelect('order.status', 'status')
+  //       .leftJoinAndSelect('order.dealer', 'dealer')
+  //       .leftJoinAndSelect('order.billing_address', 'billing_address')
+  //       .leftJoinAndSelect('order.shipping_address', 'shipping_address')
+  //       .leftJoinAndSelect('order.customer', 'customer')
+  //       .leftJoinAndSelect('order.products', 'products')
+  //       .leftJoinAndSelect('products.pivot', 'pivot')
+  //       .leftJoinAndSelect('products.taxes', 'taxes')
+  //       .leftJoinAndSelect('products.variation_options', 'variation_options')
+  //       .leftJoinAndSelect('order.payment_intent', 'payment_intent')
+  //       .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
+  //       .leftJoinAndSelect('order.shop', 'shop')
+  //       .leftJoinAndSelect('order.coupon', 'coupon');
+
+  //   if(usr && permsn && Object.values(UserType).includes(permsn.type_name as UserType)) {
+  //   if ([UserType.Company, UserType.Super_Admin, UserType.Dealer, UserType.Staff].includes(permsn.type_name as UserType)) {
+  //     const usrByIdUsers = await this.userRepository.find({
+  //       where: { createdBy: { id: usr.id } },
+  //       relations: ['permission'],
+  //     });
+  //     const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
+  //     query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
+  //   }
+  // } else if (customer_id) {
+  //   query = query.andWhere('order.customer.id = :customerId', { customerId: Number(customer_id) });
+  // } else if (type) {
+  //   query = query.andWhere('order.type = :type', { type });
+  // }
+
+  //     if (shop_id && shop_id !== 'undefined') {
+  //       query = query.andWhere('shop.id = :shopId', { shopId: Number(shop_id) });
+  //     } else if (shopSlug) {
+  //       const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+  //       if (!shop) {
+  //         throw new NotFoundException('Shop not found');
+  //       }
+  //       query = query.andWhere('shop.id = :shopId', { shopId: shop.id });
+  //     }
+
+  //     if (search) {
+  //       query = query.andWhere('(status.name LIKE :searchValue OR order.tracking_number LIKE :searchValue)', {
+  //         searchValue: `%${search}%`,
+  //       });
+  //     }
+
+  //     if (tracking_number) {
+  //       query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
+  //     }
+
+  //     if (saleBy) {
+  //       query = query.andWhere('order.saleBy = :saleBy', { saleBy });
+  //     }
+
+  //     if (startDate && endDate) {
+  //       query = query.andWhere('order.created_at BETWEEN :startDate AND :endDate', { startDate, endDate });
+  //     }
+
+  //     const [data, totalCount] = await query
+  //       .skip(startIndex)
+  //       .take(limit)
+  //       .getManyAndCount();
+
+  //     console.log('totalCount **497 ', totalCount);
+
+  //     const results = await Promise.all(
+  //       data.map(async (order) => {
+  //         const products = await Promise.all(order.products.map(async (product) => {
+  //           const pivot = await this.orderProductPivotRepository.findOne({
+  //             where: {
+  //               product: { id: product.id },
+  //               Ord_Id: order.id,
+  //             },
+  //           });
+
+  //           if (!pivot) {
+  //             return null;
+  //           }
+
+  //           return {
+  //             ...product,
+  //             pivot,
+  //           };
+  //         }));
+
+  //         return {
+  //           ...order,
+  //           products: products.filter(product => product !== null),
+  //         };
+  //       })
+  //     );
+
+  //     const url = `/orders?search=${search}&limit=${limit}`;
+  //     return {
+  //       data: results,
+  //       ...paginate(totalCount, page, limit, results.length, url),
+  //     };
+  //   } catch (error) {
+  //     console.error('Error in getOrders:', error);
+  //     throw error;
+  //   }
+  // }
+
   async getOrders(getOrdersDto: GetOrdersDto): Promise<OrderPaginator> {
     try {
       let {
@@ -399,31 +537,36 @@ export class OrdersService {
         tracking_number,
         search,
         shop_id,
+        shopSlug,
+        saleBy,
+        type,
+        startDate,
+        endDate,
       } = getOrdersDto;
 
-      let customerId;
-      let usr;
+      if (!page) page = 1;
+      if (!limit) limit = 15;
+      const startIndex = (page - 1) * limit;
 
-      if (search) {
-        customerId = this.getValueFromSearch(search, 'customer_id');
-
-        // Find the user by customerId
+      let usr: User | undefined;
+      if (customer_id) {
         usr = await this.userRepository.findOne({
-          where: { id: parseInt(customerId) },
+          where: { id: Number(customer_id) },
           relations: ['permission'],
         });
 
         if (!usr) {
-          throw new Error('User not found');
+          throw new NotFoundException('User not found');
         }
       }
 
-      // Fetch permissions for the user
-      const permsn = usr ? await this.permissionRepository.findOneBy({ id: usr.permission.id }) : null;
+      let permsn: Permission | null = null;
+      if (usr) {
+        permsn = await this.permissionRepository.findOneBy({ id: usr.permission.id });
+      }
 
       // Create the initial query builder for orders
-      let query = this.orderRepository.createQueryBuilder('order');
-      query = query
+      let query = this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.status', 'status')
         .leftJoinAndSelect('order.dealer', 'dealer')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
@@ -435,154 +578,82 @@ export class OrdersService {
         .leftJoinAndSelect('products.variation_options', 'variation_options')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
         .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
-        .leftJoinAndSelect('order.shop_id', 'shop') // Adjusted relation to match shop entity
+        .leftJoinAndSelect('order.shop', 'shop')
         .leftJoinAndSelect('order.coupon', 'coupon');
 
-      // If the user is not an admin or super_admin, restrict orders by customer_id
-      if (usr && permsn && !(permsn.type_name === UserType.Company || permsn.type_name === UserType.Super_Admin)) {
-        const usrByIdUsers = await this.userRepository.find({
-          where: { createdBy: { id: usr.id } },
-          relations: ['permission'],
-        });
-
-        const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
-        query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
+      if (usr && permsn && Object.values(UserType).includes(permsn.type_name as UserType)) {
+        if ([UserType.Company, UserType.Super_Admin, UserType.Dealer, UserType.Staff].includes(permsn.type_name as UserType)) {
+          const usrByIdUsers = await this.userRepository.find({
+            where: { createdBy: { id: usr.id } },
+            relations: ['permission'],
+          });
+          const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
+          query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
+        }
+      } else if (customer_id) {
+        query = query.andWhere('order.customer.id = :customerId', { customerId: Number(customer_id) });
+      } else if (type) {
+        query = query.andWhere('order.type = :type', { type });
       }
 
-      // Filter by shop_id if provided
       if (shop_id && shop_id !== 'undefined') {
-        query = query.andWhere('products.shop_id = :shopId', { shopId: Number(shop_id) });
+        query = query.andWhere('shop.id = :shopId', { shopId: Number(shop_id) });
+      } else if (shopSlug) {
+        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        if (!shop) {
+          throw new NotFoundException('Shop not found');
+        }
+        query = query.andWhere('shop.id = :shopId', { shopId: shop.id });
       }
 
-      // Apply customer_id filter if it exists
-      if (customer_id) {
-        query = query.andWhere('order.customer_id = :customerId', { customerId });
-      }
-
-      // Search within status name and tracking number if no customer_id from search
-      if (search && !customerId) {
+      if (search) {
         query = query.andWhere('(status.name LIKE :searchValue OR order.tracking_number LIKE :searchValue)', {
           searchValue: `%${search}%`,
         });
       }
 
-      // Filter by tracking number if provided
       if (tracking_number) {
         query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
       }
 
-      // Handle pagination
-      if (!page) page = 1;
-      if (!limit) limit = 15;
-      const startIndex = (page - 1) * limit;
+      if (saleBy) {
+        query = query.andWhere('order.saleBy = :saleBy', { saleBy });
+      }
+
+      if (startDate && endDate) {
+        query = query.andWhere('order.created_at BETWEEN :startDate AND :endDate', { startDate, endDate });
+      }
 
       const [data, totalCount] = await query
         .skip(startIndex)
         .take(limit)
         .getManyAndCount();
 
+      console.log('totalCount **497 ', totalCount);
+
       const results = await Promise.all(
         data.map(async (order) => {
           const products = await Promise.all(order.products.map(async (product) => {
-            // Fetch pivot data for the current product based on the Ord_Id
             const pivot = await this.orderProductPivotRepository.findOne({
               where: {
                 product: { id: product.id },
-                Ord_Id: order.id, // Use Ord_Id instead of order.id
+                Ord_Id: order.id,
               },
             });
 
-            // If pivot is undefined, return null or handle appropriately
             if (!pivot) {
-              return null; // Or handle this case appropriately
+              return null;
             }
 
             return {
-              id: product.id,
-              name: product.name,
-              slug: product.slug,
-              description: product.description,
-              type_id: product.type_id,
-              price: product.price,
-              shop_id: product.shop_id,
-              sale_price: product.sale_price,
-              language: product.language,
-              min_price: product.min_price,
-              max_price: product.max_price,
-              sku: product.sku,
-              quantity: product.quantity,
-              in_stock: product.in_stock,
-              is_taxable: product.is_taxable,
-              shipping_class_id: null,
-              status: product.status,
-              product_type: product.product_type,
-              unit: product.unit,
-              height: product.height ? product.height : null,
-              width: product.width ? product.width : null,
-              length: product.length ? product.length : null,
-              image: product.image,
-              video: null,
-              gallery: product.gallery,
-              deleted_at: null,
-              created_at: product.created_at,
-              updated_at: product.updated_at,
-              author_id: null,
-              manufacturer_id: null,
-              is_digital: 0,
-              is_external: 0,
-              external_product_url: null,
-              external_product_button_text: null,
-              ratings: product.ratings,
-              total_reviews: product.my_review,
-              rating_count: product.ratings,
-              my_review: product.my_review,
-              in_wishlist: product.in_wishlist,
-              blocked_dates: [],
-              translated_languages: product.translated_languages,
-              taxes: product.taxes,
-              pivot: pivot, // Use the found pivot
-              variation_options: product.variation_options,
+              ...product,
+              pivot,
             };
           }));
 
           return {
-            id: order.id,
-            tracking_number: order.tracking_number,
-            customer_id: order.customer_id,
-            customer_contact: order.customer_contact,
-            amount: order.amount,
-            sales_tax: order.sales_tax,
-            paid_total: order.paid_total,
-            total: order.total,
-            cancelled_amount: order?.cancelled_amount,
-            language: order?.language,
-            coupon_id: order.coupon,
-            saleBy: order?.saleBy,
-            discount: order?.discount,
-            payment_gateway: order.payment_gateway,
-            shipping_address: order.shipping_address,
-            billing_address: order.billing_address,
-            logistics_provider: order.logistics_provider,
-            delivery_fee: order.delivery_fee,
-            delivery_time: order.delivery_time,
-            order_status: order.order_status,
-            payment_status: order.payment_status,
-            created_at: order.created_at,
-            payment_intent: order.payment_intent,
-            customer: {
-              id: order.customer.id,
-              name: order.customer.name,
-              email: order.customer.email,
-              email_verified_at: order.customer.email_verified_at,
-              created_at: order.customer.created_at,
-              updated_at: order.customer.updated_at,
-              is_active: order.customer.is_active,
-              shop_id: null
-            },
-            dealer: order.dealer ? order.dealer : null,
-            products: products.filter(product => product !== null), // Exclude products for which pivot data could not be fetched
-            children: order.children,
-            wallet_point: order?.wallet_point
+            ...order,
+            products: products.filter(product => product !== null),
           };
         })
       );
@@ -594,10 +665,9 @@ export class OrdersService {
       };
     } catch (error) {
       console.error('Error in getOrders:', error);
-      throw error; // rethrow the error for further analysis
+      throw error;
     }
   }
-
 
   private async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
     try {
@@ -609,7 +679,7 @@ export class OrdersService {
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
         .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info') // Add this line
-        .leftJoinAndSelect('order.shop_id', 'shop')
+        .leftJoinAndSelect('order.shop', 'shop')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
         .leftJoinAndSelect('order.shipping_address', 'shipping_address')
         .leftJoinAndSelect('order.parentOrder', 'parentOrder')
@@ -650,7 +720,7 @@ export class OrdersService {
         .leftJoinAndSelect('product_shop.address', 'shop_address')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
         .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
-        .leftJoinAndSelect('order.shop_id', 'order_shop')
+        .leftJoinAndSelect('order.shop', 'order_shop')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
         .leftJoinAndSelect('order.shipping_address', 'shipping_address')
         .leftJoinAndSelect('order.parentOrder', 'parentOrder')
@@ -678,7 +748,7 @@ export class OrdersService {
         coupon_id: order.coupon,
         parent_id: order.parentOrder,
         saleBy: order.saleBy,
-        shop: order.shop_id,
+        shop: order.shop,
         discount: order.discount,
         payment_gateway: order.payment_gateway,
         shipping_address: order.shipping_address,
@@ -770,7 +840,6 @@ export class OrdersService {
         children: order.children,
         wallet_point: order.wallet_point
       };
-      // console.log("transformedOrder****", transformedOrder)
       return transformedOrder;
     } catch (error) {
       console.error('Error in getOrderByIdOrTrackingNumber:', error);
@@ -861,7 +930,7 @@ export class OrdersService {
         .leftJoinAndSelect('order.products', 'products')
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('order.payment_intent', 'payment_intent')
-        .leftJoinAndSelect('order.shop_id', 'shop')
+        .leftJoinAndSelect('order.shop', 'shop')
         .leftJoinAndSelect('order.billing_address', 'billing_address')
         .leftJoinAndSelect('order.shipping_address', 'shipping_address')
         .leftJoinAndSelect('order.parentOrder', 'parentOrder')
@@ -879,7 +948,7 @@ export class OrdersService {
       orderToDelete.customer = null;
       orderToDelete.products = null;
       orderToDelete.payment_intent = null;
-      orderToDelete.shop_id = null;
+      orderToDelete.shop = null;
       orderToDelete.saleBy = null;
       orderToDelete.billing_address = null;
       orderToDelete.shipping_address = null;
@@ -907,7 +976,7 @@ export class OrdersService {
       .leftJoinAndSelect('order.products', 'products')
       .leftJoinAndSelect('products.pivot', 'pivot')
       .leftJoinAndSelect('order.payment_intent', 'payment_intent')
-      .leftJoinAndSelect('order.shop_id', 'shop')
+      .leftJoinAndSelect('order.shop', 'shop')
       .leftJoinAndSelect('order.billing_address', 'billing_address')
       .leftJoinAndSelect('order.shipping_address', 'shipping_address')
       .leftJoinAndSelect('order.parentOrder', 'parentOrder')

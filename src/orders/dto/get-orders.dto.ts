@@ -9,12 +9,15 @@ export class OrderPaginator extends Paginator<Order> {
 }
 
 export class GetOrdersDto extends PaginationArgs {
-  tracking_number?: string
-  orderBy?: string
-  sortedBy?: string
-  customer_id?: number
-  shop_id?: string
-  saleBy?: string
-  search?: string
-  type?: any
+  tracking_number?: string;
+  orderBy?: string;
+  sortedBy?: string;
+  customer_id?: number;
+  shop_id?: string;
+  shopSlug?: string;
+  saleBy?: string;
+  search?: string;
+  type?: any;
+  startDate?: string; // Start date for filtering
+  endDate?: string;   // End date for filtering
 }

@@ -103,7 +103,7 @@ export class Order extends CoreEntity {
 
   @ManyToMany(() => Shop, (shop) => shop.order)
   @JoinTable({ name: "shop_order" })
-  shop_id: Shop;
+  shop: Shop;
 
   @Column({ nullable: true })
   discount?: number;
