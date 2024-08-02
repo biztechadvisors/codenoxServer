@@ -586,11 +586,11 @@ export class StocksService {
                 }
             }
 
-            // Associate saleBy with the order
-            if (createOrderInput.saleBy?.id) {
-                const getSale = await this.userAddressRepository.findOne({ where: { id: createOrderInput.saleBy.id } });
+            // Associate soldByUserAddress with the order
+            if (createOrderInput.soldByUserAddress?.id) {
+                const getSale = await this.userAddressRepository.findOne({ where: { id: createOrderInput.soldByUserAddress.id } });
                 if (getSale) {
-                    order.saleBy = getSale;
+                    order.soldByUserAddress = getSale;
                 } else {
                     throw new NotFoundException('Dealer shop not found');
                 }
@@ -756,7 +756,7 @@ export class StocksService {
                         total: order.total,
                         cancelled_amount: order?.cancelled_amount,
                         language: order?.language,
-                        saleBy: order?.saleBy,
+                        soldByUserAddress: order?.soldByUserAddress,
                         discount: order?.discount,
                         payment_gateway: order.payment_gateway,
                         shipping_address: order.shipping_address,
@@ -787,7 +787,7 @@ export class StocksService {
                 .leftJoinAndSelect('order.status', 'status')
                 .leftJoinAndSelect('order.customer', 'customer')
                 .leftJoinAndSelect('order.products', 'products')
-                .leftJoinAndSelect('order.saleBy', 'saleBy')
+                .leftJoinAndSelect('order.soldByUserAddress', 'soldByUserAddress')
                 .leftJoinAndSelect('products.pivot', 'pivot')
                 .leftJoinAndSelect('products.taxes', 'product_taxes')
                 .leftJoinAndSelect('products.shop', 'product_shop')
@@ -815,7 +815,7 @@ export class StocksService {
                 total: order.total,
                 cancelled_amount: order.cancelled_amount,
                 language: order.language,
-                saleBy: order.saleBy,
+                soldByUserAddress: order.soldByUserAddress,
                 soldBy: order.soldBy,
                 discount: order.discount,
                 payment_gateway: order.payment_gateway,
@@ -915,7 +915,7 @@ export class StocksService {
             .leftJoinAndSelect('order.status', 'status')
             .leftJoinAndSelect('order.customer', 'customer')
             .leftJoinAndSelect('order.products', 'products')
-            .leftJoinAndSelect('order.saleBy', 'saleBy')
+            .leftJoinAndSelect('order.soldByUserAddress', 'soldByUserAddress')
             .leftJoinAndSelect('products.pivot', 'pivot')
             .leftJoinAndSelect('products.taxes', 'product_taxes')
             .leftJoinAndSelect('products.shop', 'product_shop')
@@ -942,7 +942,7 @@ export class StocksService {
             .leftJoinAndSelect('order.status', 'status')
             .leftJoinAndSelect('order.customer', 'customer')
             .leftJoinAndSelect('order.products', 'products')
-            .leftJoinAndSelect('order.saleBy', 'saleBy')
+            .leftJoinAndSelect('order.soldByUserAddress', 'soldByUserAddress')
             .leftJoinAndSelect('products.pivot', 'pivot')
             .leftJoinAndSelect('products.taxes', 'product_taxes')
             .leftJoinAndSelect('products.shop', 'product_shop')

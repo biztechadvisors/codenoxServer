@@ -19,9 +19,9 @@
             <div style="flex: 0 0 47%;text-align:left;">
                 <h4 style="text-align:left;">Sold By:</h4>
                 <p style="text-align: left;">{{dealer.name}}</p>
-                <p style="text-align:left;">{{saleBy.street_address}}</p>
+                <p style="text-align:left;">{{soldByUserAddress.street_address}}</p>
                 <p style="text-align:left;">
-                    {{saleBy.city}} {{saleBy.state}} {{saleBy.country}}
+                    {{soldByUserAddress.city}} {{soldByUserAddress.state}} {{soldByUserAddress.country}}
                 </p>
                 <br>
                 <p style="text-align:left;"><b>PAN No:</b>{{dealer.dealer.pan}}</p>
@@ -95,7 +95,8 @@
                 </tr>
                 <tr>
                     <td colspan="9" style="border: 2px solid black; text-align: left;"><b>Amount in Words:</b>
-                        <span>{{amountinWord}}</span></td>
+                        <span>{{amountinWord}}</span>
+                    </td>
                 </tr>
                 <tr>
                     {{!-- <td colspan="9" style="text-align: right;"><b>{{invoice.dealer.name}}</b><br></td> --}}

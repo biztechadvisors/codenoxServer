@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MulterModule } from '@nestjs/platform-express';
+
 import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
 import { CommonModule } from './common/common.module';
@@ -25,6 +26,7 @@ import { AddressesModule } from './addresses/addresses.module';
 import { ImportsModule } from './imports/imports.module';
 import { AuthModule } from './auth/auth.module';
 import { RefundsModule } from './refunds/refunds.module';
+import { AuthorsModule } from './authors/authors.module';
 import { ManufacturersModule } from './manufacturers/manufacturers.module';
 import { NewslettersModule } from './newsletters/newsletters.module';
 import { ReviewModule } from './reviews/reviews.module';
@@ -43,25 +45,24 @@ import { AiModule } from './ai/ai.module';
 import { PermissionModule } from './permission/permission.module';
 import { CartsModule } from './carts/carts.module';
 import { StocksModule } from './stocks/stocks.module';
-import { ShiprocketServiceEnv } from './updateEnv';
-import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
 import { NotificationModule } from './notifications/notifications.module';
-import { AuthorsModule } from './authors/authors.module';
 import { FAQModule } from './faq/faq.module';
 import { BlogModule } from './blog/blog.module';
 import { EventModule } from './events/event.module';
 import { GetInspiredModule } from './get-inspired/get-inspired.module';
 
+import { ShiprocketServiceEnv } from './updateEnv';
+import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
+
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ".env",
+    }),
     TypeOrmModule.forRootAsync({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: ".env",
-        }),
-      ],
+      imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
         host: configService.get('DB_HOST'),
@@ -69,10 +70,17 @@ import { GetInspiredModule } from './get-inspired/get-inspired.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        synchronize: configService.get<boolean>('DB_SYNC'),
+        synchronize: false, // should be false for production
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        logging: false,
-        timeout: 30,
+        logging: ['error'], // log only errors for production
+        extra: {
+          connectionLimit: 100, // set based on your server's capacity and expected load
+          waitForConnections: true,
+          queueLimit: 0,
+          connectTimeout: 10000, // 10 seconds
+          acquireTimeout: 30000, // 30 seconds
+        },
+        ssl: configService.get('DB_SSL') ? { rejectUnauthorized: false } : false,
         autoLoadEntities: true,
       }),
       inject: [ConfigService],
@@ -81,6 +89,7 @@ import { GetInspiredModule } from './get-inspired/get-inspired.module';
       apiKey: process.env.STRIPE_API_KEY,
       apiVersion: '2022-11-15',
     }),
+    MulterModule.register({ dest: './uploads' }),
     UsersModule,
     MailModule,
     CommonModule,
@@ -126,7 +135,6 @@ import { GetInspiredModule } from './get-inspired/get-inspired.module';
     BlogModule,
     EventModule,
     GetInspiredModule,
-    MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [],
   providers: [ShiprocketServiceEnv],

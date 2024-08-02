@@ -264,8 +264,8 @@ export class ShopsService {
         total_earnings: shop.balance?.total_earnings,
         withdrawn_amount: shop.balance?.withdrawn_amount,
         current_balance: shop.balance?.current_balance,
-        shop: shop.balance?.shop, // Adjust accordingly
-        dealer: null, // Update with actual dealer data if available
+        shop: shop.balance?.shop,
+        dealer: null,
         payment_info: {
           id: shop.balance?.payment_info.id,
           account: shop.balance?.payment_info.account,

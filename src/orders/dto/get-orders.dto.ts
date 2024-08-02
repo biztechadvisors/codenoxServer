@@ -15,7 +15,7 @@ export class GetOrdersDto extends PaginationArgs {
   customer_id?: number;
   shop_id?: string;
   shopSlug?: string;
-  saleBy?: string;
+  soldByUserAddress?: string;
   search?: string;
   type?: any;
   startDate?: string; // Start date for filtering

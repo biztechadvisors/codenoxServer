@@ -52,14 +52,26 @@ export class TypesService {
   }
 
   async findAll(query: GetTypesDto) {
-    let { text, search, shop } = query;
+    const { text, search, shop_id, shopSlug } = query;
+    let data: Type[];
 
-    let data: Type[] = await this.typeRepository.find({ where: { shop: { id: shop } }, relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'] });
+    if (shop_id || shopSlug) {
+      const shopCondition = shop_id ? { id: shop_id } : { slug: shopSlug };
+
+      data = await this.typeRepository.find({
+        where: { shop: shopCondition },
+        relations: ['settings', 'promotional_sliders', 'banners', 'banners.image']
+      });
+    } else {
+      data = await this.typeRepository.find({
+        relations: ['settings', 'promotional_sliders', 'banners', 'banners.image']
+      });
+    }
 
     const fuse = new Fuse(data, { keys: ['name', 'slug'] });
 
     if (text?.replace(/%/g, '')) {
-      data = fuse.search(text)?.map(({ item }) => item);
+      data = fuse.search(text).map(({ item }) => item);
     }
 
     if (search) {
@@ -67,20 +79,16 @@ export class TypesService {
       const searchText: any = [];
       for (const searchParam of parseSearchParams) {
         const [key, value] = searchParam.split(':');
-        // TODO: Temp Solution
         if (key !== 'slug') {
-          searchText.push({
-            [key]: value,
-          });
+          searchText.push({ [key]: value });
         }
       }
-      data = fuse.search({
-        $and: searchText,
-      })?.map(({ item }) => item);
+      data = fuse.search({ $and: searchText }).map(({ item }) => item);
     }
 
     return data;
   }
+
 
   async getTypeBySlug(slug: string): Promise<Type> {
     const type = await this.typeRepository.findOne({

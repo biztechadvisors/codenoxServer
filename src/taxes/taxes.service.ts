@@ -79,12 +79,21 @@ export class TaxesService {
     }
   }
 
-  async findAllByShopId(shopId: number): Promise<Tax[]> {
+  async findAllByShopIdentifier(shopId: number, shopSlug: string): Promise<Tax[]> {
     try {
-      const existingData = await this.taxRepository.find({
-        where: { shop: { id: shopId } },
-        relations: ['shop']
-      });
+      let existingData;
+
+      if (shopId) {
+        existingData = await this.taxRepository.find({
+          where: { shop: { id: shopId } },
+          relations: ['shop']
+        });
+      } else if (shopSlug) {
+        existingData = await this.taxRepository.find({
+          where: { shop: { slug: shopSlug } },
+          relations: ['shop']
+        });
+      }
 
       return existingData ? existingData : [];
     } catch (error) {

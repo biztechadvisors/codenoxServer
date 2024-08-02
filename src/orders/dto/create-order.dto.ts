@@ -5,7 +5,7 @@ import { User } from 'src/users/entities/user.entity'
 import { Shop } from 'src/shops/entities/shop.entity'
 
 export class CreateOrderDto {
-  saleBy?: UserAddressInput
+  soldByUserAddress?: UserAddressInput
   shop_id?: Shop
   coupon_id?: number
   status: string

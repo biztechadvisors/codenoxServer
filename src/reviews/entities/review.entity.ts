@@ -28,26 +28,16 @@ export class Review extends CoreEntity {
   @JoinColumn()
   order: Order;
 
-  // @OneToOne(() => User)
-  // @JoinColumn()
-  // customer: User;
-
   @ManyToMany(() => Attachment, { cascade: true, eager: true })
   @JoinTable()
   photos: Attachment[];
-
-  // @OneToOne(() => User)
-  // @JoinColumn()
-  // user: User;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 
-
   @ManyToOne(() => Product, product => product.my_review)
   product: Product;
-
 
   @ManyToMany(() => Feedback)
   @JoinTable()

@@ -30,11 +30,11 @@ export class TaxesController {
   }
 
   @Get()
-  async findAll(@Query('shopId') shopId: number) {
-    if (!shopId) {
-      throw new NotFoundException('Shop ID is required');
+  async findAll(@Query('shopId') shopId: number, @Query('shopSlug') shopSlug: string) {
+    if (!shopId && !shopSlug) {
+      throw new NotFoundException('Shop ID or Shop Slug is required');
     }
-    return await this.taxesService.findAllByShopId(shopId);
+    return await this.taxesService.findAllByShopIdentifier(shopId, shopSlug);
   }
 
   @Get(':id')

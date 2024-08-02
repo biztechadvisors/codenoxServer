@@ -1,14 +1,7 @@
 /* eslint-disable prettier/prettier */
-import { Attachment } from 'src/common/entities/attachment.entity';
-import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
 import { Paginator } from 'src/common/dto/paginator.dto';
-import { Category } from 'src/categories/entities/category.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
-import { Tag } from 'src/tags/entities/tag.entity';
-import { Type } from 'src/types/entities/type.entity';
 import { Product } from '../entities/product.entity';
-import { User } from 'src/users/entities/user.entity';
 
 export enum ProductStatus {
   PUBLISH = 'publish',

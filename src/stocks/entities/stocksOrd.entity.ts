@@ -89,7 +89,7 @@ export class StocksSellOrd extends CoreEntity {
     logistics_provider: object;
 
     @ManyToOne(() => UserAddress)
-    saleBy: UserAddress;
+    soldByUserAddress: UserAddress;
 
     @Column('decimal', { precision: 5, scale: 2, nullable: true })
     cancelled_amount: number;
