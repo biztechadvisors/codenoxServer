@@ -2,17 +2,14 @@
 /* eslint-disable prettier/prettier */
 import exportOrderJson from '@db/order-export.json';
 import orderFilesJson from '@db/order-files.json';
-import orderInvoiceJson from '@db/order-invoice.json';
-import setting from '@db/settings.json';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { AuthService } from 'src/auth/auth.service';
 import { paginate } from 'src/common/pagination/paginate';
 import { PaymentIntent, PaymentIntentInfo } from 'src/payment-intent/entries/payment-intent.entity';
-import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.entity';
 import { PaypalPaymentService } from 'src/payment/paypal-payment.service';
 import { StripePaymentService } from 'src/payment/stripe-payment.service';
-import { Setting } from 'src/settings/entities/setting.entity';
+
 import {
   CreateOrderStatusDto,
   UpdateOrderStatusDto,
@@ -47,14 +44,10 @@ import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { stateCode } from 'src/taxes/state_code.tax';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
-import { throwError } from 'rxjs';
-import { rejects, throws } from 'assert';
-import { error } from 'console';
 import { MailService } from 'src/mail/mail.service';
 import { Dealer } from 'src/users/entities/dealer.entity';
 import { UserAddress } from 'src/addresses/entities/address.entity';
 import { StocksService } from 'src/stocks/stocks.service';
-import { CreateStocksDto } from 'src/stocks/dto/create-stock.dto';
 import { NotificationService } from 'src/notifications/services/notifications.service';
 
 const orderFiles = plainToClass(OrderFiles, orderFilesJson);
@@ -80,12 +73,8 @@ export class OrdersService {
     private readonly orderStatusRepository: Repository<OrderStatus>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Dealer)
-    private readonly dealerRepository: Repository<Dealer>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-    @InjectRepository(Variation)
-    private readonly variationRepository: Repository<Variation>,
     @InjectRepository(OrderFiles)
     private readonly orderFilesRepository: Repository<Order>,
     @InjectRepository(Coupon)
@@ -340,10 +329,10 @@ export class OrdersService {
         }
       }
 
-      if (createOrderInput.saleBy?.id) {
-        const getSale = await this.userAddressRepository.findOne({ where: { id: createOrderInput.saleBy.id } });
+      if (createOrderInput.soldByUserAddress?.id) {
+        const getSale = await this.userAddressRepository.findOne({ where: { id: createOrderInput.soldByUserAddress.id } });
         if (getSale) {
-          order.saleBy = getSale;
+          order.soldByUserAddress = getSale;
         } else {
           throw new NotFoundException('Dealer shop not found');
         }
@@ -400,7 +389,7 @@ export class OrdersService {
   //       search,
   //       shop_id,
   //       shopSlug,
-  //       saleBy,
+  //       soldByUserAddress,
   //       type,
   //       startDate,
   //       endDate,
@@ -475,8 +464,8 @@ export class OrdersService {
   //       query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
   //     }
 
-  //     if (saleBy) {
-  //       query = query.andWhere('order.saleBy = :saleBy', { saleBy });
+  //     if (soldByUserAddress) {
+  //       query = query.andWhere('order.soldByUserAddress = :soldByUserAddress', { soldByUserAddress });
   //     }
 
   //     if (startDate && endDate) {
@@ -487,8 +476,6 @@ export class OrdersService {
   //       .skip(startIndex)
   //       .take(limit)
   //       .getManyAndCount();
-
-  //     console.log('totalCount **497 ', totalCount);
 
   //     const results = await Promise.all(
   //       data.map(async (order) => {
@@ -538,7 +525,7 @@ export class OrdersService {
         search,
         shop_id,
         shopSlug,
-        saleBy,
+        soldByUserAddress,
         type,
         startDate,
         endDate,
@@ -594,9 +581,13 @@ export class OrdersService {
         query = query.andWhere('order.customer.id = :customerId', { customerId: Number(customer_id) });
       } else if (type) {
         query = query.andWhere('order.type = :type', { type });
+      } else if (tracking_number) {
+        query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
+      } else if (soldByUserAddress) {
+        query = query.andWhere('order.soldByUserAddress = :soldByUserAddress', { soldByUserAddress });
       }
 
-      if (shop_id && shop_id !== 'undefined') {
+      if (shop_id) {
         query = query.andWhere('shop.id = :shopId', { shopId: Number(shop_id) });
       } else if (shopSlug) {
         const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
@@ -612,14 +603,6 @@ export class OrdersService {
         });
       }
 
-      if (tracking_number) {
-        query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
-      }
-
-      if (saleBy) {
-        query = query.andWhere('order.saleBy = :saleBy', { saleBy });
-      }
-
       if (startDate && endDate) {
         query = query.andWhere('order.created_at BETWEEN :startDate AND :endDate', { startDate, endDate });
       }
@@ -628,8 +611,6 @@ export class OrdersService {
         .skip(startIndex)
         .take(limit)
         .getManyAndCount();
-
-      console.log('totalCount **497 ', totalCount);
 
       const results = await Promise.all(
         data.map(async (order) => {
@@ -713,7 +694,7 @@ export class OrdersService {
         .leftJoinAndSelect('dealer.dealer', 'dealerData')
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.products', 'products')
-        .leftJoinAndSelect('order.saleBy', 'saleBy')
+        .leftJoinAndSelect('order.soldByUserAddress', 'soldByUserAddress')
         .leftJoinAndSelect('products.pivot', 'pivot')
         .leftJoinAndSelect('products.taxes', 'product_taxes')
         .leftJoinAndSelect('products.shop', 'product_shop')
@@ -747,7 +728,7 @@ export class OrdersService {
         language: order.language,
         coupon_id: order.coupon,
         parent_id: order.parentOrder,
-        saleBy: order.saleBy,
+        soldByUserAddress: order.soldByUserAddress,
         shop: order.shop,
         discount: order.discount,
         payment_gateway: order.payment_gateway,
@@ -949,7 +930,7 @@ export class OrdersService {
       orderToDelete.products = null;
       orderToDelete.payment_intent = null;
       orderToDelete.shop = null;
-      orderToDelete.saleBy = null;
+      orderToDelete.soldByUserAddress = null;
       orderToDelete.billing_address = null;
       orderToDelete.shipping_address = null;
       orderToDelete.parentOrder = null;
@@ -1130,7 +1111,7 @@ export class OrdersService {
           total_tax_amount: Invoice.sales_tax,
           customer: Invoice.customer,
           dealer: Invoice.dealer,
-          saleBy: Invoice.saleBy,
+          soldByUserAddress: Invoice.soldByUserAddress,
           payment_Mode: Invoice.payment_gateway,
           created_at: Invoice.created_at,
           order_no: Invoice.id,
@@ -1155,7 +1136,7 @@ export class OrdersService {
 
       }
     }
-    if (Invoice.customer_id !== Invoice.dealer.id && Invoice.saleBy && Invoice.dealer) {
+    if (Invoice.customer_id !== Invoice.dealer.id && Invoice.soldByUserAddress && Invoice.dealer) {
       await this.MailService.sendInvoiceDealerToCustomer(Invoice);
     }
   }

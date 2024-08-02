@@ -292,16 +292,15 @@ export class ProductsService {
       .leftJoinAndSelect('attributeValues.attribute', 'attribute');
 
     // Adding conditions dynamically
-    if (dealerId) {
-      productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
-    }
-
     if (shop_id) {
       productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
-    }
-
-    if (shopName) {
-      productQueryBuilder.andWhere('shop.name = :shopName', { shopName });
+    } else if (shopName) {
+      productQueryBuilder.andWhere(
+        '(shop.name = :shopName OR shop.slug = :shopName)',
+        { shopName }
+      );
+    } else if (dealerId) {
+      productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
     }
 
     if (search || filter) {
@@ -459,7 +458,7 @@ export class ProductsService {
 
       // Fetch the product using the slug and shop_id
       const product = await this.productRepository.findOne({
-        where: { slug, shop_id: shop_id },
+        where: { slug: slug, shop_id: shop_id },
         relations: [
           'type',
           'shop',

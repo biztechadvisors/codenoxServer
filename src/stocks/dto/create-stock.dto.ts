@@ -38,8 +38,9 @@ export class UpdateInvStkQuantityDto {
     product_id: number;
     updateReceivedQuantity: number;
 }
+
 export class CreatestockOrderDto {
-    saleBy?: UserAddressInput
+    soldByUserAddress?: UserAddressInput
     soldBy?: User
     coupon_id?: number
     status: string

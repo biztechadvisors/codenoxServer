@@ -16,7 +16,7 @@ export class PermissionController {
   }
 
   @Get()
-  getPermission(@Query('UsrBy') userId: string) {
+  getPermission(@Query('userId') userId: string) {
     return this.permissionService.getPermission(userId);
   }
 
