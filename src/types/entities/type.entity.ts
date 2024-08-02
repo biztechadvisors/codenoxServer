@@ -83,7 +83,6 @@ export class Type extends CoreEntity {
   translated_languages: string[];
 }
 
-
 // Banner entity
 @Entity()
 export class Banner {
