@@ -184,8 +184,6 @@ export class MailService {
         shipping_address,
         total_tax_amount,
         shop_address,
-        customer,
-        dealer,
         products,
         created_at,
         order_no,

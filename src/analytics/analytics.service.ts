@@ -1,14 +1,11 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
 import { Order } from 'src/orders/entities/order.entity';
-import { Analytics, TotalYearSaleByMonth } from './entities/analytics.entity';
 import { AnalyticsResponseDTO, TotalYearSaleByMonthDTO } from './dto/analytics.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
-import { UserAddress } from 'src/addresses/entities/address.entity';
 import { User, UserType } from 'src/users/entities/user.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
-import { UserAddressRepository } from 'src/addresses/addresses.repository';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 
 @Injectable()
@@ -19,15 +16,10 @@ export class AnalyticsService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
-    @InjectRepository(Analytics)
-    private readonly analyticsRepository: Repository<Analytics>,
-    @InjectRepository(TotalYearSaleByMonth)
-    private readonly totalYearSaleByMonthRepository: Repository<TotalYearSaleByMonth>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
-    @InjectRepository(UserAddress) private readonly: UserAddressRepository,
     @InjectRepository(StocksSellOrd)
     private readonly stocksSellOrdRepository: Repository<StocksSellOrd>,
 
