@@ -70,7 +70,7 @@ import { NotificationsMiddleware } from './common/middleware/notifications.middl
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        synchronize: false, // should be false for production
+        synchronize: configService.get('DB_SYNC'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: ['error'], // log only errors for production
         extra: {
