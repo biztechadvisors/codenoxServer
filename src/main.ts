@@ -13,7 +13,7 @@ import compression from 'compression';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: false });
 
-  app.useStaticAssets(join(__dirname, "..", "public"));
+  app.useStaticAssets(join(__dirname, '..', 'public'));
   app.use(cookieParser());
 
   // Use helmet for security
@@ -26,15 +26,15 @@ async function bootstrap() {
   app.use(
     session({
       name: process.env.SESSION_NAME || 'sessionName',
-      secret: process.env.SESSION_SECRET || "notagoodsecretnoreallydontusethisone",
+      secret: process.env.SESSION_SECRET || 'notagoodsecretnoreallydontusethisone',
       resave: false,
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // Ensures cookie is only used over HTTPS
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      }
-    })
+      },
+    }),
   );
 
   // CORS configuration
