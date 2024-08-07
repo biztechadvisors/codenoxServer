@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto, UpdateQuantityDto } from './dto/update-product.dto';
 import { File, OrderProductPivot, Product, ProductType, Variation, VariationOption } from './entities/product.entity';
@@ -25,6 +25,8 @@ import { User } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { Cron } from '@nestjs/schedule';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class ProductsService {
@@ -48,6 +50,7 @@ export class ProductsService {
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
     @InjectRepository(User) private readonly userRepository: UserRepository,
     @InjectRepository(Tax) private readonly taxRepository: Repository<Tax>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) { }
 
   // Run this method when the application starts
@@ -268,9 +271,21 @@ export class ProductsService {
     }
   }
 
-  async getProducts({ limit = 20, page = 1, search, filter, dealerId, shop_id, shopName }: GetProductsDto): Promise<ProductPaginator> {
+  async getProducts(query: GetProductsDto): Promise<ProductPaginator> {
+    const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName } = query;
     const startIndex = (page - 1) * limit;
 
+    const cacheKey = `products:${limit}:${page}:${search || 'all'}:${filter || 'none'}:${dealerId || 'none'}:${shop_id || 'none'}:${shopName || 'none'}`;
+
+    this.logger.log(`Generated cache key: ${cacheKey}`);
+
+    const cachedResult: ProductPaginator | undefined = await this.cacheManager.get(cacheKey);
+    if (cachedResult) {
+      this.logger.log(`Cache hit for key: ${cacheKey}`);
+      return cachedResult;
+    } else {
+      this.logger.log(`Cache miss for key: ${cacheKey}`);
+    }
     const productQueryBuilder = this.productRepository.createQueryBuilder('product');
 
     // Perform the necessary joins
@@ -295,10 +310,7 @@ export class ProductsService {
     if (shop_id) {
       productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
     } else if (shopName) {
-      productQueryBuilder.andWhere(
-        '(shop.name = :shopName OR shop.slug = :shopName)',
-        { shopName }
-      );
+      productQueryBuilder.andWhere('(shop.name = :shopName OR shop.slug = :shopName)', { shopName });
     } else if (dealerId) {
       productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
     }
@@ -334,8 +346,7 @@ export class ProductsService {
             searchParams.tagSearchTerm = searchTerm;
             break;
           case 'variations':
-            // Handle key-value pairs for variations
-            const variationParams = value.split(','); // Assuming key-value pairs are comma-separated
+            const variationParams = value.split(',');
             const variationSearchTerm = variationParams.map(param => param.split('=')[1]).join('/');
             const paramName = `variation_title`;
             searchConditions.push(`(variation_options.title LIKE :${paramName})`);
@@ -346,7 +357,6 @@ export class ProductsService {
         }
       });
 
-      // Search filter query
       if (search) {
         const filterTerms = search.split(' ');
         filterTerms.forEach(term => {
@@ -366,7 +376,6 @@ export class ProductsService {
       }
 
       if (searchConditions.length > 0) {
-        // Combine conditions using AND
         const combinedConditions = searchConditions.join(' AND ');
 
         productQueryBuilder
@@ -424,7 +433,6 @@ export class ProductsService {
           }
         }
 
-        // Remove duplicate products based on their IDs
         products = products.filter(
           (product, index, self) => index === self.findIndex(p => p.id === product.id)
         );
@@ -439,15 +447,20 @@ export class ProductsService {
       const url = `/products?search=${search}&limit=${limit}&page=${page}`;
       const paginator = paginate(total, page, limit, products.length, url);
 
-      return {
+      const result = {
         data: products,
         ...paginator,
       };
+
+      await this.cacheManager.set(cacheKey, result, 300);
+      console.log('cacheKey ** 456', cacheKey)
+      this.logger.log(`Data cached with key: ${cacheKey}`);
+
+      return result;
     } catch (error) {
       throw new NotFoundException(error.message);
     }
   }
-
 
   async getProductBySlug(slug: string, shop_id: number, dealerId?: number): Promise<Product | undefined> {
     try {

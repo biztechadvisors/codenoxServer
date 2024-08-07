@@ -4,6 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MulterModule } from '@nestjs/platform-express';
+import { CacheInterceptor, CacheModule, CacheStore } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-redis-store';
 
 import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
@@ -53,13 +55,15 @@ import { GetInspiredModule } from './get-inspired/get-inspired.module';
 
 import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { RedisConfigService } from 'utility/redis.config';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ".env",
+      envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -70,7 +74,7 @@ import { NotificationsMiddleware } from './common/middleware/notifications.middl
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        synchronize: configService.get('DB_SYNC'),
+        synchronize: configService.get('DB_SYNC') === 'true',
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: ['error'], // log only errors for production
         extra: {
@@ -90,6 +94,9 @@ import { NotificationsMiddleware } from './common/middleware/notifications.middl
       apiVersion: '2022-11-15',
     }),
     MulterModule.register({ dest: './uploads' }),
+    CacheModule.registerAsync({
+      useClass: RedisConfigService,
+    }),
     UsersModule,
     MailModule,
     CommonModule,
@@ -137,12 +144,15 @@ import { NotificationsMiddleware } from './common/middleware/notifications.middl
     GetInspiredModule,
   ],
   controllers: [],
-  providers: [ShiprocketServiceEnv],
+  providers: [ShiprocketServiceEnv, {
+    provide: APP_INTERCEPTOR,
+    useClass: CacheInterceptor,
+  }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(NotificationsMiddleware)
-      .forRoutes({ path: 'notify/send', method: RequestMethod.POST }); // Apply to the correct route
+      .forRoutes({ path: 'notify/send', method: RequestMethod.POST });
   }
 }
