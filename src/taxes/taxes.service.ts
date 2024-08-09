@@ -1,30 +1,26 @@
 /* eslint-disable prettier/prettier */
-import { All, Injectable, NotFoundException } from '@nestjs/common';
+import { All, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateTaxDto } from './dto/create-tax.dto';
 import { UpdateTaxDto } from './dto/update-tax.dto';
 import { Tax } from './entities/tax.entity';
-import taxesJson from '@db/taxes.json';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from 'src/products/entities/product.entity';
 import { ProductRepository } from 'src/products/products.repository';
 import { Category } from 'src/categories/entities/category.entity';
 import { CategoryRepository } from 'src/categories/categories.repository';
-// import {gstinValidator } from 'gstin-validator';
-import { stateCode } from './state_code.tax';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 export enum GST_NAME {
   GOODS = 'goods',
   SERVICES = 'service'
 }
 
-const taxes = plainToClass(Tax, taxesJson);
-
 @Injectable()
 export class TaxesService {
-  private taxes: Tax[] = taxes;
   constructor(
     @InjectRepository(Tax)
     private readonly taxRepository: Repository<Tax>,
@@ -33,7 +29,9 @@ export class TaxesService {
     @InjectRepository(Category)
     private readonly categoryRepository: CategoryRepository,
     @InjectRepository(Shop)
-    private readonly shopRepository: Repository<Shop>
+    private readonly shopRepository: Repository<Shop>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache
   ) { }
 
   async create(createTaxDto: CreateTaxDto) {
@@ -81,21 +79,29 @@ export class TaxesService {
 
   async findAllByShopIdentifier(shopId: number, shopSlug: string): Promise<Tax[]> {
     try {
-      let existingData;
+      const cacheKey = `taxes_${shopId || shopSlug}`;
+      let existingData = await this.cacheManager.get<Tax[]>(cacheKey);
 
-      if (shopId) {
-        existingData = await this.taxRepository.find({
-          where: { shop: { id: shopId } },
-          relations: ['shop']
-        });
-      } else if (shopSlug) {
-        existingData = await this.taxRepository.find({
-          where: { shop: { slug: shopSlug } },
-          relations: ['shop']
-        });
+      if (!existingData) {
+        if (shopId) {
+          existingData = await this.taxRepository.find({
+            where: { shop: { id: shopId } },
+            relations: ['shop'],
+          });
+        } else if (shopSlug) {
+          existingData = await this.taxRepository.find({
+            where: { shop: { slug: shopSlug } },
+            relations: ['shop'],
+          });
+        } else {
+          existingData = [];
+        }
+
+        // Cache the result
+        await this.cacheManager.set(cacheKey, existingData, 3600); // Adjust TTL as needed
       }
 
-      return existingData ? existingData : [];
+      return existingData;
     } catch (error) {
       console.error("Error retrieving tax data:", error);
       throw new NotFoundException("Failed to retrieve tax data");
@@ -104,14 +110,24 @@ export class TaxesService {
 
   async findOne(id: number) {
     try {
-      const existingTax = await this.taxRepository.findOne({ where: { id: id } });
-      if (existingTax) {
-        return existingTax
-      } else {
-        return { message: 'Cannot find TaxRate' }
+      const cacheKey = `tax_${id}`;
+      let existingTax = await this.cacheManager.get<Tax>(cacheKey);
+
+      if (!existingTax) {
+        existingTax = await this.taxRepository.findOne({ where: { id: id } });
+
+        if (!existingTax) {
+          throw new NotFoundException("Cannot find TaxRate");
+        }
+
+        // Cache the result
+        await this.cacheManager.set(cacheKey, existingTax, 3600); // Adjust TTL as needed
       }
-    } catch {
-      return 'Cannot Find Data Here'
+
+      return existingTax;
+    } catch (error) {
+      console.error("Error retrieving tax data:", error);
+      throw new NotFoundException("Cannot find TaxRate");
     }
   }
 

@@ -73,7 +73,7 @@ export class OrdersController {
   }
 
   @Post('checkout/verify')
-  verifyCheckout(@Body() body: CheckoutVerificationDto) { // Changed from @Query() to @Body()
+  verifyCheckout(@Body() body: CheckoutVerificationDto) {
     return this.ordersService.verifyCheckout(body);
   }
 

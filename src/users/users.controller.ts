@@ -94,8 +94,8 @@ export class DealerController {
   }
 
   @Get()
-  async getAllDealers(): Promise<Dealer[]> {
-    return this.usersService.getAllDealers();
+  async getAllDealers(@Query('createdBy') createdBy: number): Promise<Dealer[]> {
+    return this.usersService.getAllDealers(createdBy);
   }
 
   @Get(':id')

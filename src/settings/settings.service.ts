@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { CreateSettingDto } from './dto/create-setting.dto'
 import { UpdateSettingDto } from './dto/update-setting.dto'
 import {
@@ -48,8 +48,8 @@ import { AttachmentRepository } from 'src/common/common.repository'
 import { Shop } from 'src/shops/entities/shop.entity'
 import { EntityNotFoundError, Repository, UpdateValuesMissingError } from 'typeorm'
 import { Attachment } from 'src/common/entities/attachment.entity'
-
-
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Cache } from 'cache-manager'
 
 @Injectable()
 export class SettingsService {
@@ -98,6 +98,8 @@ export class SettingsService {
     private shopRepository: Repository<Shop>,
     @InjectRepository(ServerInfo)
     private ServerInfoRepository: Repository<ServerInfo>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) { }
 
   async create(shopId: number, createSettingDto: CreateSettingDto): Promise<Setting | { message: string }> {
@@ -348,55 +350,65 @@ export class SettingsService {
   }
 
   async findOne(shop_slug: string): Promise<any> {
-    // Fetch the shop details using the shop slug
-    let shop;
-    if (shop_slug) {
-      shop = await this.shopRepository.findOne({
-        where: { slug: shop_slug }, relations: ['additionalPermissions', 'additionalPermissions.permissions', 'permission', 'permission.permissions']
+    const cacheKey = `shop_${shop_slug}`;
+
+    // Try to retrieve the shop data from the cache
+    let mergedData = await this.cacheManager.get<any>(cacheKey);
+
+    if (!mergedData) {
+      // Fetch the shop details using the shop slug
+      let shop;
+      if (shop_slug) {
+        shop = await this.shopRepository.findOne({
+          where: { slug: shop_slug },
+          relations: ['additionalPermissions', 'additionalPermissions.permissions', 'permission', 'permission.permissions'],
+        });
+      }
+
+      // If the shop is not found, return null
+      if (!shop) {
+        return null;
+      }
+
+      // Fetch the settings using the shop ID
+      const settingData = await this.settingRepository.findOne({
+        where: { shop: { id: shop.id } },
+        relations: [
+          'options.contactDetails',
+          'options.contactDetails.socials',
+          'options.contactDetails.location',
+          'options.currencyOptions',
+          'options.emailEvent',
+          'options.emailEvent.admin',
+          'options.emailEvent.vendor',
+          'options.emailEvent.customer',
+          'options.smsEvent',
+          'options.smsEvent.admin',
+          'options.smsEvent.vendor',
+          'options.smsEvent.customer',
+          'options.seo',
+          'options.seo.ogImage',
+          'options.deliveryTime',
+          'options.paymentGateway',
+          'options.logo',
+          'options.server_info',
+        ],
       });
+
+      if (!settingData && shop) {
+        mergedData = shop;
+      } else {
+        mergedData = {
+          ...settingData,
+          shop,
+        };
+      }
+
+      // Store the merged data in the cache with a TTL of 5 minutes
+      await this.cacheManager.set(cacheKey, mergedData, 3600);
     }
-
-    // If the shop is not found, return null
-    if (!shop) {
-      return null;
-    }
-
-    // Fetch the settings using the shop ID
-    const settingData = await this.settingRepository.findOne({
-      where: { shop: { id: shop.id } }, // Use shop.id here
-      relations: [
-        'options.contactDetails',
-        'options.contactDetails.socials',
-        'options.contactDetails.location',
-        'options.currencyOptions',
-        'options.emailEvent',
-        'options.emailEvent.admin',
-        'options.emailEvent.vendor',
-        'options.emailEvent.customer',
-        'options.smsEvent',
-        'options.smsEvent.admin',
-        'options.smsEvent.vendor',
-        'options.smsEvent.customer',
-        'options.seo',
-        'options.seo.ogImage',
-        'options.deliveryTime',
-        'options.paymentGateway',
-        'options.logo',
-        'options.server_info',
-      ],
-    });
-
-    if (!settingData && shop) {
-      return shop;
-    }
-
-    const mergedData = {
-      ...settingData,
-      shop,
-    };
 
     return mergedData;
-
   }
 
   //update setting

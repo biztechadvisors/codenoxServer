@@ -24,6 +24,7 @@ import { Permission } from 'src/permission/entities/permission.entity';
 import { JwtStrategy } from 'src/auth/jwt.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { NotificationModule } from 'src/notifications/notifications.module'; // Ensure this is imported
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -37,7 +38,8 @@ import { NotificationModule } from 'src/notifications/notifications.module'; // 
       Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission
     ]),
     JwtModule.register({}), // Register JwtModule with default settings or specific configuration
-    NotificationModule // Import NotificationModule to provide NotificationService
+    NotificationModule, // Import NotificationModule to provide NotificationService
+    CacheModule.register(),
   ],
   controllers: [UsersController, ProfilesController, DealerController],
   providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy],

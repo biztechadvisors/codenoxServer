@@ -4,9 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MulterModule } from '@nestjs/platform-express';
-import { CacheInterceptor, CacheModule, CacheStore } from '@nestjs/cache-manager';
-import * as redisStore from 'cache-manager-redis-store';
-
+import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import * as redistStore from 'cache-manager-redis-store';
 import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
 import { CommonModule } from './common/common.module';
@@ -56,7 +55,6 @@ import { GetInspiredModule } from './get-inspired/get-inspired.module';
 import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { RedisConfigService } from 'utility/redis.config';
 
 @Module({
   imports: [
@@ -74,7 +72,7 @@ import { RedisConfigService } from 'utility/redis.config';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        synchronize: configService.get('DB_SYNC') === 'true',
+        synchronize: configService.get('DB_SYNC'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: ['error'], // log only errors for production
         extra: {
@@ -95,7 +93,16 @@ import { RedisConfigService } from 'utility/redis.config';
     }),
     MulterModule.register({ dest: './uploads' }),
     CacheModule.registerAsync({
-      useClass: RedisConfigService,
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        max: 100,
+        isGlobal: true,
+        ttl: configService.get<number>('CACHE_TTL'),
+        store: redistStore,
+        host: configService.get<string>('REDIS_HOST'),
+        port: configService.get<number>('REDIS_PORT'),
+      }),
+      inject: [ConfigService],
     }),
     UsersModule,
     MailModule,
@@ -144,15 +151,18 @@ import { RedisConfigService } from 'utility/redis.config';
     GetInspiredModule,
   ],
   controllers: [],
-  providers: [ShiprocketServiceEnv, {
-    provide: APP_INTERCEPTOR,
-    useClass: CacheInterceptor,
-  }],
+  providers: [
+    ShiprocketServiceEnv,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor
+    }
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(NotificationsMiddleware)
-      .forRoutes({ path: 'notify/send', method: RequestMethod.POST });
+      .forRoutes({ path: 'notify/send', method: RequestMethod.POST }); // Apply to the correct route
   }
 }

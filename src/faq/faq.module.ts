@@ -5,9 +5,11 @@ import { QnA } from './entities/qna.entity';
 import { FAQ } from './entities/faq.entity';
 import { FAQService } from './faq.service';
 import { FAQController } from './faq.controller';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([FAQ, QnA, Attachment])],
+    imports: [TypeOrmModule.forFeature([FAQ, QnA, Attachment]),
+    CacheModule.register()],
     providers: [FAQService],
     controllers: [FAQController],
 })

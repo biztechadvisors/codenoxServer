@@ -1,11 +1,10 @@
 /* eslint-disable prettier/prettier */
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { paginate } from 'src/common/pagination/paginate';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { GetTagsDto } from './dto/get-tags.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { Tag } from './entities/tag.entity';
-import tagsJson from '@db/tags.json';
 import { plainToClass } from 'class-transformer';
 import Fuse from 'fuse.js';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,14 +15,8 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 import { AttachmentRepository } from 'src/common/common.repository';
 import { TagRepository } from './tags.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
-
-const tags = plainToClass(Tag, tagsJson)
-
-const options = {
-  keys: ['name'],
-  threshold: 0.3,
-}
-const fuse = new Fuse(tags, options)
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class TagsService {
@@ -31,7 +24,9 @@ export class TagsService {
     @InjectRepository(Tag) private tagRepository: TagRepository,
     @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
     @InjectRepository(Type) private typeRepository: TypeRepository,
-    @InjectRepository(Shop) private shopRepository: Repository<Shop>
+    @InjectRepository(Shop) private shopRepository: Repository<Shop>,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
+
   ) { }
 
   async create(createTagDto: CreateTagDto): Promise<Tag> {
@@ -93,6 +88,15 @@ export class TagsService {
 
     const skip = (numericPage - 1) * numericLimit;
 
+    // Generate a unique cache key based on the query parameters
+    const cacheKey = `tags_${numericPage}_${numericLimit}_${search || 'none'}_${shopSlug || 'none'}`;
+
+    // Check if the data is cached
+    const cachedData = await this.cacheManager.get<any>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
     let shopId: number | undefined;
 
     // Find shop by slug if provided
@@ -133,14 +137,27 @@ export class TagsService {
     });
 
     const url = `/tags?search=${search}&limit=${numericLimit}&shopSlug=${shopSlug}`;
-
-    return {
+    const response = {
       data: formattedData,
       ...paginate(total, numericPage, numericLimit, formattedData.length, url),
     };
+
+    // Cache the result
+    await this.cacheManager.set(cacheKey, response, 3600); // Cache for 5 minutes
+
+    return response;
   }
 
   async findOne(param: string, language: string): Promise<Tag> {
+    // Generate a unique cache key based on the tag identifier and language
+    const cacheKey = `tag_${param}_${language}`;
+
+    // Check if the data is cached
+    const cachedTag = await this.cacheManager.get<Tag>(cacheKey);
+    if (cachedTag) {
+      return cachedTag;
+    }
+
     const isNumeric = !isNaN(parseFloat(param)) && isFinite(Number(param));
     const whereCondition = isNumeric ? { id: Number(param) } : { slug: param };
 
@@ -152,6 +169,9 @@ export class TagsService {
     if (!tag) {
       throw new Error(`Tag with ID or slug ${param} not found`);
     }
+
+    // Cache the result
+    await this.cacheManager.set(cacheKey, tag, 3600); // Cache for 5 minutes
 
     return tag;
   }

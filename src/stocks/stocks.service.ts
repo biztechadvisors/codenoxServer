@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { DeepPartial, In, Repository } from 'typeorm';
 import { InventoryStocks, Stocks } from './entities/stocks.entity';
 import { CreatestockOrderDto, CreateStocksDto, GetStocksDto, UpdateStkQuantityDto } from './dto/create-stock.dto';
@@ -23,6 +23,8 @@ import { Permission } from 'src/permission/entities/permission.entity';
 import { paginate } from 'src/common/pagination/paginate';
 import { UpdateOrderStatusDto } from 'src/orders/dto/create-order-status.dto';
 import { NotificationService } from 'src/notifications/services/notifications.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from '@nestjs/cache-manager';
 
 @Injectable()
 export class StocksService {
@@ -59,6 +61,8 @@ export class StocksService {
         private readonly variationRepository: Repository<Variation>,
         @InjectRepository(Order)
         private readonly orderRepository: Repository<Order>,
+        @Inject(CACHE_MANAGER)
+        private readonly cacheManager: Cache,
     ) { }
 
     async create(createStocksDto: any): Promise<Stocks[]> {
@@ -343,8 +347,17 @@ export class StocksService {
                 throw new NotFoundException(`User ID or Order ID is not defined`);
             }
 
+            // Generate a unique cache key based on user_id and order_id
+            const cacheKey = `stocks_${user_id}_${order_id}`;
+
+            // Check if the data is already cached
+            const cachedResult = await this.cacheManager.get<Stocks[]>(cacheKey);
+            if (cachedResult) {
+                return cachedResult;
+            }
+
             // Fetch all stocks for the given user and order
-            return await this.stocksRepository.find({
+            const stocks = await this.stocksRepository.find({
                 where: {
                     user: { id: user_id },
                     order: { id: order_id }
@@ -352,15 +365,30 @@ export class StocksService {
                 relations: ['product', 'order', 'user', 'variation_options']
             });
 
+            // Cache the result for future requests
+            await this.cacheManager.set(cacheKey, stocks, 3600); // Cache for 5 minutes
+
+            return stocks;
+
         } catch (error) {
             throw new NotFoundException(`Error fetching stocks: ${error.message}`);
         }
     }
 
+
     async getAllStocks(user_id: number) {
         try {
             if (!user_id) {
                 throw new NotFoundException(`User id is not defined`);
+            }
+
+            // Generate a unique cache key based on the user_id
+            const cacheKey = `stocks_${user_id}`;
+
+            // Check if the data is already cached
+            const cachedResult = await this.cacheManager.get(cacheKey);
+            if (cachedResult) {
+                return cachedResult;
             }
 
             // Fetch all dealers associated with the given user
@@ -401,6 +429,9 @@ export class StocksService {
                 }
             }
 
+            // Cache the result for future requests
+            await this.cacheManager.set(cacheKey, allStocks, 3600); // Cache for 5 minutes
+
             return allStocks;
 
         } catch (error) {
@@ -414,6 +445,15 @@ export class StocksService {
         try {
             if (!userId) {
                 throw new NotFoundException(`User ID is not defined`);
+            }
+
+            // Generate a unique cache key based on userId
+            const cacheKey = `inventory_stocks_${userId}`;
+
+            // Check if the data is already cached
+            const cachedResult = await this.cacheManager.get<any[]>(cacheKey);
+            if (cachedResult) {
+                return cachedResult;
             }
 
             // Fetch all inventory stocks for the given dealer (user)
@@ -435,6 +475,9 @@ export class StocksService {
                 product: stock.product,
                 variation_options: stock.variation_options,
             }));
+
+            // Cache the result for future requests
+            await this.cacheManager.set(cacheKey, result, 3600); // Cache for 5 minutes
 
             return result;
 
@@ -626,14 +669,22 @@ export class StocksService {
         shop_id,
     }: GetOrdersDto): Promise<OrderPaginator> {
         try {
-            let usr;
-            if (customer_id) {
-                usr = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['permission', 'permission.permissions'] });
-                if (!usr) {
-                    throw new NotFoundException('User not found');
-                }
-            } else {
+            if (!customer_id) {
                 throw new BadRequestException('Customer ID is required');
+            }
+
+            const user = await this.userRepository.findOne({ where: { id: customer_id }, relations: ['permission', 'permission.permissions'] });
+            if (!user) {
+                throw new NotFoundException('User not found');
+            }
+
+            // Generate a unique cache key based on query parameters
+            const cacheKey = `orders_${customer_id}_${tracking_number || ''}_${search || ''}_${shop_id || ''}_${limit || 15}_${page || 1}`;
+
+            // Check if the data is cached
+            const cachedResult = await this.cacheManager.get<OrderPaginator>(cacheKey);
+            if (cachedResult) {
+                return cachedResult;
             }
 
             let query = this.StocksSellOrdRepository.createQueryBuilder('StocksSellOrd');
@@ -647,17 +698,14 @@ export class StocksService {
                 .leftJoinAndSelect('products.variation_options', 'variation_options');
             query = query.leftJoinAndSelect('StocksSellOrd.soldBy', 'soldBy');
 
-            if (!(usr && (usr?.permission.type_name === UserType.Dealer || usr?.permission.type_name === UserType.Staff))) {
-                // If the user has other permissions, filter orders by customer_id
-                const usrByIdUsers = await this.userRepository.find({
-                    where: { createdBy: { id: usr.id } }, relations: ['permission', 'permission.permissions']
+            if (!(user.permission.type_name === UserType.Dealer || user.permission.type_name === UserType.Staff)) {
+                const users = await this.userRepository.find({
+                    where: { createdBy: { id: user.id } }, relations: ['permission', 'permission.permissions']
                 });
-
-                const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
+                const userIds = [user.id, ...users.map(u => u.id)];
                 query = query.andWhere('StocksSellOrd.customerId IN (:...userIds)', { userIds });
             }
 
-            // Handle additional filtering conditions
             if (shop_id && shop_id !== 'undefined') {
                 query = query.andWhere('products.shop_id = :shopId', { shopId: Number(shop_id) });
             }
@@ -672,30 +720,21 @@ export class StocksService {
                 query = query.andWhere('StocksSellOrd.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
             }
 
-            // Handle pagination
-            if (!page) page = 1;
-            if (!limit) limit = 15;
-            const startIndex = (page - 1) * limit;
-
+            const startIndex = (page || 1 - 1) * (limit || 15);
             const [data, totalCount] = await query
                 .skip(startIndex)
-                .take(limit)
+                .take(limit || 15)
                 .getManyAndCount();
 
             const results = await Promise.all(
                 data.map(async (order) => {
                     const products = await Promise.all(order.products.map(async (product) => {
-                        // Fetch pivot data for the current product based on the Ord_Id
                         const pivot = await this.orderProductPivotRepository.findOne({
                             where: {
                                 product: { id: product.id },
                                 Ord_Id: order.id,
                             },
                         });
-
-                        if (!pivot) {
-                            return null;
-                        }
 
                         return {
                             id: product.id,
@@ -717,9 +756,9 @@ export class StocksService {
                             status: product.status,
                             product_type: product.product_type,
                             unit: product.unit,
-                            height: product.height ? product.height : null,
-                            width: product.width ? product.width : null,
-                            length: product.length ? product.length : null,
+                            height: product.height || null,
+                            width: product.width || null,
+                            length: product.length || null,
                             image: product.image,
                             video: null,
                             gallery: product.gallery,
@@ -754,10 +793,10 @@ export class StocksService {
                         sales_tax: order.sales_tax,
                         paid_total: order.paid_total,
                         total: order.total,
-                        cancelled_amount: order?.cancelled_amount,
-                        language: order?.language,
-                        soldByUserAddress: order?.soldByUserAddress,
-                        discount: order?.discount,
+                        cancelled_amount: order.cancelled_amount,
+                        language: order.language,
+                        soldByUserAddress: order.soldByUserAddress,
+                        discount: order.discount,
                         payment_gateway: order.payment_gateway,
                         shipping_address: order.shipping_address,
                         billing_address: order.billing_address,
@@ -768,10 +807,16 @@ export class StocksService {
             );
 
             const url = `/orders?search=${search}&limit=${limit}`;
-            return {
+            const paginatedResult = {
                 data: results,
-                ...paginate(totalCount, page, limit, results.length, url)
+                ...paginate(totalCount, page, limit, results.length, url),
             };
+
+            // Cache the result
+            await this.cacheManager.set(cacheKey, paginatedResult, 3600); // Cache for 5 minutes
+
+            return paginatedResult;
+
         } catch (error) {
             console.error('Error in getOrders:', error);
             if (error instanceof NotFoundException || error instanceof BadRequestException) {
@@ -783,6 +828,15 @@ export class StocksService {
 
     async getOrderById(id: number): Promise<any> {
         try {
+            // Generate a unique cache key based on the order ID or tracking number
+            const cacheKey = `order_${id}`;
+
+            // Check if the data is cached
+            const cachedOrder = await this.cacheManager.get<any>(cacheKey);
+            if (cachedOrder) {
+                return cachedOrder;
+            }
+
             const order = await this.StocksSellOrdRepository.createQueryBuilder('order')
                 .leftJoinAndSelect('order.status', 'status')
                 .leftJoinAndSelect('order.customer', 'customer')
@@ -863,9 +917,9 @@ export class StocksService {
                         status: product.status,
                         product_type: product.product_type,
                         unit: product.unit,
-                        height: product.height ? product.height : null,
-                        width: product.width ? product.width : null,
-                        length: product.length ? product.length : null,
+                        height: product.height || null,
+                        width: product.width || null,
+                        length: product.length || null,
                         image: product.image,
                         video: null,
                         gallery: product.gallery,
@@ -902,6 +956,9 @@ export class StocksService {
                 })),
                 wallet_point: order.wallet_point
             };
+
+            // Cache the result
+            await this.cacheManager.set(cacheKey, transformedOrder, 3600); // Cache for 5 minutes
 
             return transformedOrder;
         } catch (error) {

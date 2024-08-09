@@ -1,7 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
-import ConversationsJson from '@db/conversations.json';
 import Fuse from 'fuse.js';
 import { paginate } from 'src/common/pagination/paginate';
 import { CreateConversationDto } from './dto/create-conversation.dto';
@@ -11,17 +10,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from 'src/messages/entities/message.entity';
 
-// For conversations
-const conversations = plainToClass(Conversation, ConversationsJson);
 const options = {
   keys: ['shop.name'],
   threshold: 0.3,
 };
-const fuse = new Fuse(conversations, options);
 
 @Injectable()
 export class ConversationsService {
-  private conversations: Conversation[] = conversations;
   constructor(
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
@@ -64,7 +59,7 @@ export class ConversationsService {
       message.conversation_id = conversationCheck.id
       message.user_id = createConversationDto.latest_message.user_id
       await this.messageRepository.save(message)
-   
+
     } else {
 
       const conversation = new Conversation();

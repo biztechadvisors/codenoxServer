@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Blog } from './entities/blog.entity';
@@ -6,6 +6,8 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class BlogService {
@@ -16,6 +18,7 @@ export class BlogService {
         private readonly attachmentRepository: Repository<Attachment>,
         @InjectRepository(Shop)
         private readonly shopRepository: Repository<Shop>,
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     ) { }
 
     async createBlog(createBlogDto: CreateBlogDto): Promise<Blog> {
@@ -39,28 +42,48 @@ export class BlogService {
     }
 
     async getBlogById(id: number): Promise<Blog> {
-        const blog = await this.blogRepository.findOne({
-            where: { id },
-            relations: ['shop', 'attachments'],
-        });
+        const cacheKey = `blog-${id}`;
+        let blog = await this.cacheManager.get<Blog>(cacheKey);
 
         if (!blog) {
-            throw new NotFoundException(`Blog with ID ${id} not found`);
+            blog = await this.blogRepository.findOne({
+                where: { id },
+                relations: ['shop', 'attachments'],
+            });
+
+            if (!blog) {
+                throw new NotFoundException(`Blog with ID ${id} not found`);
+            }
+
+            await this.cacheManager.set(cacheKey, blog, 3600); // Cache for 1 hour
         }
 
         return blog;
     }
 
     async getAllBlogs(shopSlug: string): Promise<Blog[]> {
-        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug }, relations: ['blogs'] });
-        if (!shop) {
-            throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
+        const cacheKey = `blogs-${shopSlug}`;
+        let blogs = await this.cacheManager.get<Blog[]>(cacheKey);
+
+        if (!blogs) {
+            const shop = await this.shopRepository.findOne({
+                where: { slug: shopSlug },
+                relations: ['blogs'],
+            });
+
+            if (!shop) {
+                throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
+            }
+
+            blogs = await this.blogRepository.find({
+                where: { shop: { id: shop.id } },
+                relations: ['shop', 'attachments'],
+            });
+
+            await this.cacheManager.set(cacheKey, blogs, 3600); // Cache for 1 hour
         }
 
-        return this.blogRepository.find({
-            where: { shop: { id: shop.id } },
-            relations: ['shop', 'attachments'],
-        });
+        return blogs;
     }
 
     async updateBlog(id: number, updateBlogDto: UpdateBlogDto): Promise<Blog> {

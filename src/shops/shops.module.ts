@@ -23,6 +23,7 @@ import { Attachment } from 'src/common/entities/attachment.entity'
 import { AddressesService } from 'src/addresses/addresses.service'
 import { UserAddressRepository } from 'src/addresses/addresses.repository'
 import { Permission } from 'src/permission/entities/permission.entity'
+import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
   imports: [TypeOrmExModule.forCustomRepository([
@@ -36,7 +37,10 @@ import { Permission } from 'src/permission/entities/permission.entity'
     UserRepository,
     AttachmentRepository,
     UserAddressRepository,
-  ]), TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Address, Location, ShopSocials, User, ShopSettings, Attachment, UserAddress, Permission])],
+  ]),
+  TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Address, Location, ShopSocials, User, ShopSettings, Attachment, UserAddress, Permission]),
+  CacheModule.register(),
+  ],
   controllers: [
     ShopsController,
     StaffsController,

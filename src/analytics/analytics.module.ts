@@ -12,10 +12,14 @@ import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
 import { UserAddress } from 'src/addresses/entities/address.entity'
 import { JwtModule } from '@nestjs/jwt'
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity'
+import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
-  imports: [TypeOrmExModule.forCustomRepository([UserAddressRepository]), TypeOrmModule.forFeature([Analytics, TotalYearSaleByMonth, Order, Shop, User, Permission, UserAddress, StocksSellOrd]),
-  JwtModule.register({}),],
+  imports: [TypeOrmExModule.forCustomRepository([UserAddressRepository]),
+  TypeOrmModule.forFeature([Analytics, TotalYearSaleByMonth, Order, Shop, User, Permission, UserAddress, StocksSellOrd]),
+  JwtModule.register({}),
+  CacheModule.register()
+  ],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
 })

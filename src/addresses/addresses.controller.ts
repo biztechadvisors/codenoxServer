@@ -6,6 +6,7 @@ import {
   Put,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { AddressesService } from './addresses.service';
 import { CreateAddressDto } from './dto/create-address.dto';
@@ -21,14 +22,16 @@ export class AddressesController {
   }
 
   @Get()
-  addresses() {
-    return this.addressesService.findAll();
+  addresses(@Query('userId') userId: number) {
+    return this.addressesService.findAll(userId);
   }
 
+
   @Get(':id')
-  address(@Param('id') id: string) {
+  async address(@Param('id') id: string) {
     return this.addressesService.findOne(+id);
   }
+
 
   @Put(':id')
   updateAddress(

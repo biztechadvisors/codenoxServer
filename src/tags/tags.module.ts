@@ -10,9 +10,11 @@ import { TypeRepository } from 'src/types/types.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Type } from 'src/types/entities/type.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tag, Attachment, Type, Shop])],
+  imports: [TypeOrmModule.forFeature([Tag, Attachment, Type, Shop]),
+  CacheModule.register()],
   controllers: [TagsController],
   providers: [TagsService, TagRepository, AttachmentRepository, TypeRepository],
 })

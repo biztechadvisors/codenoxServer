@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,6 +8,8 @@ import { UserRepository } from 'src/users/users.repository';
 import { AddressRepository, UserAddressRepository } from './addresses.repository';
 import { ShopRepository } from 'src/shops/shops.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class AddressesService {
@@ -16,6 +18,7 @@ export class AddressesService {
     @InjectRepository(Address) private readonly addressRepository: AddressRepository,
     @InjectRepository(User) private readonly userRepository: UserRepository,
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 
   async create(createAddressDto: CreateAddressDto): Promise<Address> {
@@ -51,15 +54,42 @@ export class AddressesService {
   }
 
 
-  async findAll() {
-    // This action returns all addresses
-    const addresses = await this.addressRepository.find({ relations: ["address"] });
+  async findAll(userId: number): Promise<Address[]> {
+    const cacheKey = `addresses:userId:${userId}`;
+    let addresses = await this.cacheManager.get<Address[]>(cacheKey);
+
+    if (addresses) {
+      return addresses; // Return the cached data
+    }
+
+    // Fetch data from the database if not cached
+    addresses = await this.addressRepository.find({
+      where: { customer: { id: userId } },
+      relations: ['address'],
+    });
+
+    // Store the data in the cache with an expiration time (e.g., 30 minutes)
+    await this.cacheManager.set(cacheKey, addresses, 1800);
+
     return addresses;
   }
 
-  async findOne(id: number) {
-    // This action returns a #${id} address
-    const address = await this.addressRepository.findOne({ where: { id: id }, relations: ["address"] });
+  async findOne(id: number): Promise<Address | undefined> {
+    const cacheKey = `address:id:${id}`;
+    let address = await this.cacheManager.get<Address>(cacheKey);
+
+    if (address) {
+      return address; // Return the cached address
+    }
+
+    // Fetch the address from the database if not cached
+    address = await this.addressRepository.findOne({ where: { id: id }, relations: ['address'] });
+
+    // Store the address in the cache with an expiration time (e.g., 30 minutes)
+    if (address) {
+      await this.cacheManager.set(cacheKey, address, 1800);
+    }
+
     return address;
   }
 

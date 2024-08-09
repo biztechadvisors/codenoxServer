@@ -12,9 +12,12 @@ import { User } from 'src/users/entities/user.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 import { Order } from 'src/orders/entities/order.entity';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Review, Report, Product, User, Shop, Feedback, Order])],
+  imports: [TypeOrmModule.forFeature([Review, Report, Product, User, Shop, Feedback, Order]),
+  CacheModule.register()
+  ],
   controllers: [ReviewController, AbusiveReportsController],
   providers: [ReviewService, AbusiveReportService],
 })

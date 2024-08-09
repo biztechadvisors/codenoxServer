@@ -3,25 +3,15 @@ import { Injectable } from '@nestjs/common'
 import { plainToClass } from 'class-transformer'
 import { GetStoreNoticesDto } from './dto/get-store-notices.dto'
 import { StoreNotice } from './entities/store-notices.entity'
-import storeNoticesJson from '@db/store-notices.json'
 import Fuse from 'fuse.js'
 import { paginate } from 'src/common/pagination/paginate'
 import { CreateStoreNoticeDto } from './dto/create-store-notice.dto'
 import { UpdateStoreNoticeDto } from './dto/update-store-notice.dto'
 
-const storeNotices = plainToClass(StoreNotice, storeNoticesJson)
-const options = {
-  keys: ['notice'],
-  threshold: 0.3,
-}
-const fuse = new Fuse(storeNotices, options)
-
 @Injectable()
 export class StoreNoticesService {
-  private storeNotices: StoreNotice[] = storeNotices
-
   create(createStoreNoticeDto: CreateStoreNoticeDto) {
-    return this.storeNotices[0]
+    return []
   }
 
   getStoreNotices({ search, limit, page }: GetStoreNoticesDto) {
@@ -29,7 +19,7 @@ export class StoreNoticesService {
     if (!limit) limit = 12
     const startIndex = (page - 1) * limit
     const endIndex = page * limit
-    let data: StoreNotice[] = this.storeNotices
+    let data: StoreNotice[] = []
 
     if (search) {
       const parseSearchParams = search.split(';')
@@ -44,11 +34,7 @@ export class StoreNoticesService {
         }
       }
 
-      data = fuse
-        .search({
-          $and: searchText,
-        })
-        ?.map(({ item }) => item)
+      data = []
     }
 
     const results = data.slice(startIndex, endIndex)
@@ -60,11 +46,11 @@ export class StoreNoticesService {
   }
 
   getStoreNotice(param: string, language: string) {
-    return this.storeNotices.find((p) => p.id === Number(param))
+    return []
   }
 
   update(id: number, updateStoreNoticeDto: UpdateStoreNoticeDto) {
-    return this.storeNotices[0]
+    return []
   }
 
   remove(id: number) {

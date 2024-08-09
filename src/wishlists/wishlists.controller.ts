@@ -16,13 +16,13 @@ import { WishlistsService } from './wishlists.service';
 
 @Controller('wishlists')
 export class WishlistsController {
-  constructor(private wishlistService: WishlistsService) {}
+  constructor(private wishlistService: WishlistsService) { }
 
-  // Get All
   @Get()
-  findAll(@Query() query: GetWishlistDto) {
-    return this.wishlistService.findAllWishlists(query);
+  findAll(@Query() query: GetWishlistDto, @Query('userId') userId?: number) {
+    return this.wishlistService.findAllWishlists(query, userId);
   }
+
   // Get single
   @Get(':id')
   find(@Param('id') id: string) {

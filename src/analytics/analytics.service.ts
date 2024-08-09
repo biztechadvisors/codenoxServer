@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
 import { Order } from 'src/orders/entities/order.entity';
@@ -7,9 +7,12 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { User, UserType } from 'src/users/entities/user.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class AnalyticsService {
+  private readonly logger = new Logger(AnalyticsService.name);
   refundRepository: any;
   constructor(
     @InjectRepository(Order)
@@ -22,11 +25,20 @@ export class AnalyticsService {
     private readonly permissionRepository: Repository<Permission>,
     @InjectRepository(StocksSellOrd)
     private readonly stocksSellOrdRepository: Repository<StocksSellOrd>,
-
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 
   async findAll(shop_id: number | null, customerId: number, state: string): Promise<AnalyticsResponseDTO | { message: string }> {
     try {
+      // Create a unique cache key
+      const cacheKey = `analytics:${shop_id}:${customerId}:${state}`;
+      const cachedResult = await this.cacheManager.get<AnalyticsResponseDTO>(cacheKey);
+
+      if (cachedResult) {
+        this.logger.log(`Cache hit for key: ${cacheKey}`);
+        return cachedResult;
+      }
+
       if (!customerId && !shop_id) {
         return { message: 'Customer ID or Shop ID is required' };
       }
@@ -79,6 +91,10 @@ export class AnalyticsService {
         totalYearSaleByMonth
       }));
 
+      // Cache the result for future requests
+      await this.cacheManager.set(cacheKey, analyticsResponse, 1800); // Cache for 30 minutes
+      this.logger.log(`Data cached with key: ${cacheKey}`);
+
       return analyticsResponse;
 
     } catch (error) {
@@ -86,6 +102,7 @@ export class AnalyticsService {
       return { message: `Error fetching analytics: ${error.message}` };
     }
   }
+
 
   private async calculateTotalRevenue(userId: number, permissionName: string, state: string): Promise<number> {
     try {
@@ -316,6 +333,15 @@ export class AnalyticsService {
 
   async getTopUsersWithMaxOrders(userId: number): Promise<any[]> {
     try {
+      // Create a cache key based on userId
+      const cacheKey = `top-users-with-max-orders:${userId}`;
+      const cachedResult = await this.cacheManager.get<any[]>(cacheKey);
+
+      if (cachedResult) {
+        this.logger.log(`Cache hit for key: ${cacheKey}`);
+        return cachedResult;
+      }
+
       const orderQueryBuilder = this.orderRepository.createQueryBuilder('order')
         .select(['customer', 'COUNT(order.id) AS orderCount'])
         .leftJoin('order.customer', 'customer')
@@ -336,7 +362,19 @@ export class AnalyticsService {
             .andWhere('customer.createdBy.id IN (:...userIds)', { userIds })
             .getRawMany();
 
-          return result.flatMap((m) => ({ userId: m.customer_id, createdBy: m.customer_usrById, name: m.customer_name, email: m.customer_email, phone: m.customer_contact }));
+          const formattedResult = result.flatMap((m) => ({
+            userId: m.customer_id,
+            createdBy: m.customer_usrById,
+            name: m.customer_name,
+            email: m.customer_email,
+            phone: m.customer_contact,
+          }));
+
+          // Cache the result for future requests
+          await this.cacheManager.set(cacheKey, formattedResult, 1800); // Cache for 30 minutes
+          this.logger.log(`Data cached with key: ${cacheKey}`);
+
+          return formattedResult;
         }
       }
 
@@ -349,9 +387,17 @@ export class AnalyticsService {
 
   async getTopDealer(userId?: number): Promise<any[]> {
     try {
+      // Create a cache key based on userId
+      const cacheKey = `top-dealers:${userId}`;
+      const cachedResult = await this.cacheManager.get<any[]>(cacheKey);
+
+      if (cachedResult) {
+        this.logger.log(`Cache hit for key: ${cacheKey}`);
+        return cachedResult;
+      }
+
       // Step 1: Get all users with dealer role
-      let dealerUsersQuery;
-      dealerUsersQuery = (await this.userRepository.find({
+      const dealerUsersQuery = (await this.userRepository.find({
         where: { createdBy: { id: Number(userId) } },
         relations: ['dealer'],
       })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id);
@@ -359,8 +405,7 @@ export class AnalyticsService {
       // Step 2: Get all users by matching createdBy field to dealers' user ids
       const usrByDealer = (await this.orderRepository.find({
         relations: ['customer', 'customer.createdBy'],
-      }))
-        .filter((ordUsr) => dealerUsersQuery.includes(ordUsr.customer.createdBy.id));
+      })).filter((ordUsr) => dealerUsersQuery.includes(ordUsr.customer.createdBy.id));
 
       // Step 3: Count orders for each customer and order them by count
       const ordersByDealers = await this.orderRepository
@@ -384,12 +429,26 @@ export class AnalyticsService {
         .limit(5)
         .getRawMany();
 
-      return topDealers.map((m) => ({ userId: m.users_id, createdBy: m.users_usrById, name: m.users_name, email: m.users_email, phone: m.users_contact, dealerId: m.users_dealerId }));
+      const formattedResult = topDealers.map((m) => ({
+        userId: m.users_id,
+        createdBy: m.users_usrById,
+        name: m.users_name,
+        email: m.users_email,
+        phone: m.users_contact,
+        dealerId: m.users_dealerId,
+      }));
+
+      // Cache the result for future requests
+      await this.cacheManager.set(cacheKey, formattedResult, 1800); // Cache for 30 minutes
+      this.logger.log(`Data cached with key: ${cacheKey}`);
+
+      return formattedResult;
     } catch (error) {
       console.error('Error getting top dealers with max orders:', error.message);
       return [];
     }
   }
+
 
   // async calculateOrderByODSC(filters: Record<string, any>): Promise<{ month: string; orderCount: number }[]> {
   //   try {

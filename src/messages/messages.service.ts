@@ -1,7 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
-import MessagesJson from '@db/messages.json';
 import { Message } from './entities/message.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { GetConversationsDto } from 'src/conversations/dto/get-conversations.dto';
@@ -10,11 +9,8 @@ import { Repository } from 'typeorm';
 import { Conversation, LatestMessage } from 'src/conversations/entities/conversation.entity';
 import { paginate } from 'src/common/pagination/paginate';
 
-const messages = plainToClass(Message, MessagesJson);
-
 @Injectable()
 export class MessagesService {
-  private message: Message[] = messages;
   constructor(
     @InjectRepository(Message)
     private readonly messageRepository: Repository<Message>,

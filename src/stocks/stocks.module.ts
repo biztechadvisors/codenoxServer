@@ -19,9 +19,12 @@ import { Permission } from 'src/permission/entities/permission.entity'
 import { Order } from 'src/orders/entities/order.entity'
 import { NotificationService } from 'src/notifications/services/notifications.service'
 import { Notification } from 'src/notifications/entities/notifications.entity'
+import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Attachment, Permission, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAddress, Shop, InventoryStocks, Variation, Order, Notification])],
+    imports: [TypeOrmModule.forFeature([Attachment, Permission, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAddress, Shop, InventoryStocks, Variation, Order, Notification]),
+    CacheModule.register()
+    ],
     controllers: [
         StocksController,
     ],

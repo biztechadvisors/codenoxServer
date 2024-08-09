@@ -9,9 +9,12 @@ import { Address, UserAddress } from './entities/address.entity';
 import { User } from 'src/users/entities/user.entity';
 import { ShopRepository } from 'src/shops/shops.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-  imports: [TypeOrmExModule.forCustomRepository([AddressRepository, ShopRepository, UserAddressRepository, UserRepository]), TypeOrmModule.forFeature([Address, UserAddress, User, Shop]),],
+  imports: [TypeOrmExModule.forCustomRepository([AddressRepository, ShopRepository, UserAddressRepository, UserRepository]),
+  TypeOrmModule.forFeature([Address, UserAddress, User, Shop]),
+  CacheModule.register(),],
   controllers: [AddressesController],
   providers: [AddressesService],
   exports: [AddressesService]

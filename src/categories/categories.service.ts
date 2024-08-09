@@ -1,12 +1,11 @@
 /* eslint-disable prettier/prettier */
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateCategoryDto, CreateSubCategoryDto } from './dto/create-category.dto';
 import { CategoryPaginator, GetCategoriesDto, GetSubCategoriesDto } from './dto/get-categories.dto';
 import { UpdateCategoryDto, UpdateSubCategoryDto } from './dto/update-category.dto';
 import { Category, SubCategory } from './entities/category.entity';
 import Fuse from 'fuse.js';
-import categoriesJson from '@db/categories.json';
 import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CategoryRepository } from './categories.repository';
@@ -16,13 +15,13 @@ import { convertToSlug } from 'src/helpers';
 import { TypeRepository } from 'src/types/types.repository';
 import { ILike, IsNull, Like, Repository } from 'typeorm';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
-const categories = plainToClass(Category, categoriesJson)
 const options = {
   keys: ['name', 'type.slug'],
   threshold: 0.3,
 }
-const fuse = new Fuse(categories, options)
 
 @Injectable()
 export class CategoriesService {
@@ -33,8 +32,8 @@ export class CategoriesService {
     private attachmentRepository: AttachmentRepository,
     @InjectRepository(TypeRepository) private typeRepository: TypeRepository,
     @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
-    @InjectRepository(SubCategory) private readonly subCategoryRepository: Repository<SubCategory>
-
+    @InjectRepository(SubCategory) private readonly subCategoryRepository: Repository<SubCategory>,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 
   async convertToSlug(text) {
@@ -90,72 +89,99 @@ export class CategoriesService {
     }
 
     const skip = (numericPage - 1) * numericLimit;
-    const where: any = {};
 
-    if (search) {
-      where['name'] = Like(`%${search}%`);
-    }
+    const cacheKey = `categories-${numericPage}-${numericLimit}-${search || 'all'}-${parent || 'all'}-${shopSlug || 'all'}-${shopId || 'all'}-${language || 'all'}-${orderBy || 'none'}-${sortedBy || 'none'}`;
 
-    if (shopSlug) {
-      const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
-      if (shop) {
-        where['shop'] = { id: shop.id };
-      } else {
-        throw new NotFoundException('Shop not found');
+    let categories = await this.cacheManager.get<CategoryPaginator>(cacheKey);
+
+    if (!categories) {
+      const where: any = {};
+
+      if (search) {
+        where['name'] = Like(`%${search}%`);
       }
+
+      if (shopSlug) {
+        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        if (shop) {
+          where['shop'] = { id: shop.id };
+        } else {
+          throw new NotFoundException('Shop not found');
+        }
+      }
+
+      if (shopId) {
+        where['shop'] = { id: shopId };
+      }
+
+      if (parent && parent !== 'null') {
+        where['parent'] = { id: parent };
+      } else if (parent === 'null') {
+        where['parent'] = IsNull();
+      }
+
+      if (language) {
+        where['language'] = language;
+      }
+
+      const order = orderBy && sortedBy ? { [orderBy]: sortedBy.toUpperCase() } : {};
+
+      const [data, total] = await this.categoryRepository.findAndCount({
+        where,
+        take: numericLimit,
+        skip,
+        relations: ['type', 'image', 'subCategories', 'shop'],
+        order,
+      });
+
+      const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}`;
+
+      categories = {
+        data,
+        ...paginate(total, numericPage, numericLimit, data.length, url),
+      };
+
+      await this.cacheManager.set(cacheKey, categories, 3600); // Cache for 1 hour
     }
 
-    if (shopId) {
-      where['shop'] = { id: shopId };
-    }
-
-    if (parent && parent !== 'null') {
-      where['parent'] = { id: parent };
-    } else if (parent === 'null') {
-      where['parent'] = IsNull();
-    }
-
-    if (language) {
-      where['language'] = language;
-    }
-
-    const order = orderBy && sortedBy ? { [orderBy]: sortedBy.toUpperCase() } : {};
-
-    const [data, total] = await this.categoryRepository.findAndCount({
-      where,
-      take: numericLimit,
-      skip,
-      relations: ['type', 'image', 'subCategories', 'shop'],
-      order,
-    });
-
-    const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}`;
-
-    return {
-      data,
-      ...paginate(total, numericPage, numericLimit, data.length, url),
-    };
+    return categories;
   }
-
 
   async getCategory(param: string, language: string, shopId: number): Promise<Category> {
-    // Try to parse the param as a number to see if it's an id
-    const id = Number(param);
-    if (!isNaN(id)) {
-      // If it's an id, find the category by id
-      return this.categoryRepository.findOne({
-        where: { id: id, language: language, shop: { id: shopId } },
-        relations: ['type', 'image', 'shop'],
-      });
-    } else {
-      // If it's not an id, find the category by slug
-      return this.categoryRepository.findOne({
-        where: { slug: param, language: language, shop: { id: shopId } },
-        relations: ['type', 'image', 'shop'],
-      });
-    }
-  }
+    // Generate a unique cache key based on the parameters
+    const cacheKey = `category-${param}-${language}-${shopId}`;
 
+    // Try to get the category from cache
+    let category = await this.cacheManager.get<Category>(cacheKey);
+
+    if (!category) {
+      // If not in cache, determine if param is an ID or slug
+      const id = Number(param);
+
+      if (!isNaN(id)) {
+        // If param is an ID, find category by ID
+        category = await this.categoryRepository.findOne({
+          where: { id: id, language: language, shop: { id: shopId } },
+          relations: ['type', 'image', 'shop'],
+        });
+      } else {
+        // If param is a slug, find category by slug
+        category = await this.categoryRepository.findOne({
+          where: { slug: param, language: language, shop: { id: shopId } },
+          relations: ['type', 'image', 'shop'],
+        });
+      }
+
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
+
+      // Cache the result
+      await this.cacheManager.set(cacheKey, category, 3600); // Cache for 1 hour
+    }
+
+    return category;
+  }
   async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
     const category = await this.categoryRepository.findOne({
       where: { id },
