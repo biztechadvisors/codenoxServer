@@ -12,6 +12,7 @@ import { Permission } from 'src/permission/entities/permission.entity';
 import { User } from 'src/users/entities/user.entity';
 import { JwtStrategy } from './jwt.strategy';
 import { NotificationModule } from 'src/notifications/notifications.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { NotificationModule } from 'src/notifications/notifications.module';
       secret: jwtConstants.access_secret,
       signOptions: { expiresIn: '60s' },
     }),
+    CacheModule.register()
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

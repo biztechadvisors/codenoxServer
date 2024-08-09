@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import {
   AuthResponse,
   ChangePasswordDto,
@@ -28,6 +28,8 @@ import Twilio from 'twilio';
 import * as AWS from 'aws-sdk';
 import { jwtConstants } from './constants';
 import { NotificationService } from 'src/notifications/services/notifications.service';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class AuthService {
@@ -36,6 +38,7 @@ export class AuthService {
     throw new Error('Method not implemented.');
   }
   private sns: AWS.SNS;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     @InjectRepository(UserRepository) private userRepository: UserRepository,
@@ -43,6 +46,7 @@ export class AuthService {
     private jwtService: JwtService,
     private mailService: MailService,
     private notificationService: NotificationService, // Ensure this is correctly injected
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {
     this.sns = new AWS.SNS({
       region: 'ap-south-1', // e.g., 'us-east-1'
@@ -714,6 +718,15 @@ export class AuthService {
   }
 
   async me(email: string, id: number): Promise<User> {
+    // Generate a cache key based on the email or id
+    const cacheKey = `user:${email || id}`;
+    const cachedUser = await this.cacheManager.get<User>(cacheKey);
+
+    if (cachedUser) {
+      this.logger.log(`Cache hit for key: ${cacheKey}`);
+      return cachedUser;
+    }
+
     const relations = await this.getRelations(email);
 
     const user = await this.userRepository.findOne({
@@ -725,8 +738,13 @@ export class AuthService {
       throw new NotFoundException(`User with email ${email} and id ${id} not found`);
     }
 
+    // Cache the user data
+    await this.cacheManager.set(cacheKey, user, 1800); // Cache for 30 minutes
+    this.logger.log(`Data cached with key: ${cacheKey}`);
+
     return user;
   }
+
 
   private async getRelations(email: string): Promise<string[]> {
 

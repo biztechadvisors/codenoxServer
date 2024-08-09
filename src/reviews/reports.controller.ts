@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
@@ -17,9 +18,10 @@ export class AbusiveReportsController {
   constructor(private reportService: AbusiveReportService) { }
 
   @Get()
-  async findAll() {
-    return this.reportService.findAllReports();
+  async findAll(@Query('shopSlug') shopSlug?: string, @Query('userId') userId?: number) {
+    return this.reportService.findAllReports(shopSlug, userId);
   }
+
 
   // get single feedback
   @Get(':id')

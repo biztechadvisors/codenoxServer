@@ -13,6 +13,10 @@ export class GetReviewsDto extends PaginationArgs {
   sortedBy?: SortOrder;
   search?: string;
   product_id?: string;
+  limit: number;
+  page: number;
+  shopSlug?: string;
+  userId?: number;
 }
 
 export enum QueryReviewsOrderByColumn {

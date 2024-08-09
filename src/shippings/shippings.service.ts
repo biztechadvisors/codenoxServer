@@ -5,16 +5,12 @@ import { CreateShippingDto } from './dto/create-shipping.dto';
 import { GetShippingsDto } from './dto/get-shippings.dto';
 import { UpdateShippingDto } from './dto/update-shipping.dto';
 import { Shipping } from './entities/shipping.entity';
-import shippingsJson from '@db/shippings.json';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Fuse from 'fuse.js';
 
-const shippings = plainToClass(Shipping, shippingsJson);
-
 @Injectable()
 export class ShippingsService {
-  private shippings: Shipping[] = shippings;
   constructor(
     @InjectRepository(Shipping)
     private readonly shippingRepository: Repository<Shipping>

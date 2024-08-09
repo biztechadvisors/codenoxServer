@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { FAQ } from './entities/faq.entity';
 import { QnA, QnAType } from './entities/qna.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager'
 
 @Injectable()
 export class FAQService {
@@ -14,6 +16,7 @@ export class FAQService {
         private readonly qnaRepository: Repository<QnA>,
         @InjectRepository(Attachment)
         private readonly attachmentRepository: Repository<Attachment>,
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
     ) { }
 
     async createFAQ(createFAQDto: any): Promise<FAQ> {
@@ -31,23 +34,41 @@ export class FAQService {
     }
 
     async getFAQById(id: number): Promise<FAQ> {
-        const faq = await this.faqRepository.findOne({
-            where: { id },
-            relations: ['shop', 'images', 'qnas'],
-        });
+        const cacheKey = `faq-${id}`;
+        let faq = await this.cacheManager.get<FAQ>(cacheKey);
+
         if (!faq) {
-            throw new NotFoundException(`FAQ with ID ${id} not found`);
+            faq = await this.faqRepository.findOne({
+                where: { id },
+                relations: ['shop', 'images', 'qnas'],
+            });
+
+            if (!faq) {
+                throw new NotFoundException(`FAQ with ID ${id} not found`);
+            }
+
+            await this.cacheManager.set(cacheKey, faq, 3600); // Cache for 1 hour
         }
+
         return faq;
     }
 
     async getFAQsByShopSlug(shopSlug: string): Promise<FAQ[]> {
-        return this.faqRepository
-            .createQueryBuilder('faq')
-            .innerJoinAndSelect('faq.shop', 'shop', 'shop.slug = :slug', { slug: shopSlug })
-            .leftJoinAndSelect('faq.images', 'images')
-            .leftJoinAndSelect('faq.qnas', 'qnas')
-            .getMany();
+        const cacheKey = `faqs-${shopSlug}`;
+        let faqs = await this.cacheManager.get<FAQ[]>(cacheKey);
+
+        if (!faqs) {
+            faqs = await this.faqRepository
+                .createQueryBuilder('faq')
+                .innerJoinAndSelect('faq.shop', 'shop', 'shop.slug = :slug', { slug: shopSlug })
+                .leftJoinAndSelect('faq.images', 'images')
+                .leftJoinAndSelect('faq.qnas', 'qnas')
+                .getMany();
+
+            await this.cacheManager.set(cacheKey, faqs, 3600); // Cache for 1 hour
+        }
+
+        return faqs;
     }
 
     async updateFAQ(id: number, updateFAQDto: any): Promise<FAQ> {
@@ -100,15 +121,33 @@ export class FAQService {
             throw new NotFoundException(`QnA with ID ${id} not found`);
         }
     }
-
     async getQnAsByFAQId(faqId: number): Promise<QnA[]> {
-        const faq = await this.getFAQById(faqId);
-        return this.qnaRepository.find({ where: { faq: { id: faq.id } } });
+        const cacheKey = `qnas-${faqId}`;
+        let qnas = await this.cacheManager.get<QnA[]>(cacheKey);
+
+        if (!qnas) {
+            const faq = await this.getFAQById(faqId);
+            qnas = await this.qnaRepository.find({ where: { faq: { id: faq.id } } });
+
+            await this.cacheManager.set(cacheKey, qnas, 3600); // Cache for 1 hour
+        }
+
+        return qnas;
     }
 
     async getQnAsByShopId(shopSlug: string): Promise<QnA[]> {
-        const faqs = await this.getFAQsByShopSlug(shopSlug);
-        const faqIds = faqs.map(faq => faq.id);
-        return this.qnaRepository.find({ where: { faq: { id: In(faqIds) } } });
+        const cacheKey = `qnas-shop-${shopSlug}`;
+        let qnas = await this.cacheManager.get<QnA[]>(cacheKey);
+
+        if (!qnas) {
+            const faqs = await this.getFAQsByShopSlug(shopSlug);
+            const faqIds = faqs.map(faq => faq.id);
+            qnas = await this.qnaRepository.find({ where: { faq: { id: In(faqIds) } } });
+
+            await this.cacheManager.set(cacheKey, qnas, 3600); // Cache for 1 hour
+        }
+
+        return qnas;
     }
+
 }

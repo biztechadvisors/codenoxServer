@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import Fuse from 'fuse.js';
 import { paginate } from 'src/common/pagination/paginate';
@@ -7,19 +7,11 @@ import { Wishlist } from './entities/wishlist.entity';
 import { GetWishlistDto } from './dto/get-wishlists.dto';
 import { CreateWishlistDto } from './dto/create-wishlists.dto';
 import { UpdateWishlistDto } from './dto/update-wishlists.dto';
-import wishlistsJSON from '@db/wishlists.json';
-import productsJson from '@db/products.json';
 import { Product } from '../products/entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindManyOptions } from 'typeorm';
-
-const wishlists = plainToClass(Wishlist, wishlistsJSON);
-const products = plainToClass(Product, productsJson);
-const options = {
-  keys: ['answer'],
-  threshold: 0.3,
-};
-const fuse = new Fuse(wishlists, options);
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class WishlistsService {
@@ -28,54 +20,73 @@ export class WishlistsService {
     private readonly wishlistRepository: Repository<Wishlist>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache
   ) { }
-  // private wishlist: Wishlist[] = wishlists;
-  // private products: any = products;
 
-  async findAllWishlists({ limit, page, search }: GetWishlistDto) {
-    if (!page) page = 1;
-    if (!limit) limit = 30;
+  async findAllWishlists({ limit = 30, page = 1, search }: GetWishlistDto, userId?: number) {
+    const cacheKey = `wishlists_${userId || 'all'}_${page}_${limit}_${search || 'all'}`;
+
+    // Try to get cached data
+    const cachedData = await this.cacheManager.get(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
     const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-
-    // Define options for this.wishlistRepository.find
     const findOptions: FindManyOptions<Wishlist> = {
       skip: startIndex,
       take: limit,
       relations: ['product'], // Include the 'product' relation
+      where: userId ? { user: { id: userId } } : {},
     };
 
-    // Await the result of this.wishlistRepository.find
+    // Fetch the data
     let data = await this.wishlistRepository.find(findOptions);
 
+    // Apply search filter if necessary
     if (search) {
-      const parseSearchParams = search.split(';');
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-
-        // Assuming fuse.search is asynchronous, you need to await it
-        const searchResults = await fuse.search(value);
-
-        // Assuming searchResults is an array of items, you can map it
-        const searchItems = searchResults?.map(({ item }) => item);
-
-        // Concatenate the search results with the existing data
-        data = data.concat(searchItems);
-      }
+      data = data.filter(item =>
+        item.product.name.toLowerCase().includes(search.toLowerCase())
+      );
     }
 
-    const results = data.slice(startIndex, endIndex);
+    const results = data.slice(startIndex, startIndex + limit);
     const url = `/wishlists?with=shop&orderBy=created_at&sortedBy=desc`;
-    return {
+    const paginatedData = {
       data: results,
       ...paginate(data.length, page, limit, results.length, url),
     };
+
+    // Cache the data
+    await this.cacheManager.set(cacheKey, paginatedData, 3600); // Cache for 1 hour
+
+    return paginatedData;
   }
 
+  async findWishlist(id: number): Promise<Wishlist> {
+    const cacheKey = `wishlist_${id}`;
 
-  findWishlist(id: number) {
-    return this.wishlistRepository.findOne({ where: { id: id }, relations: ['product'] });
+    // Try to get cached data
+    const cachedWishlist = await this.cacheManager.get<Wishlist>(cacheKey);
+    if (cachedWishlist) {
+      return cachedWishlist;
+    }
+
+    // Fetch from database if not in cache
+    const wishlist = await this.wishlistRepository.findOne({
+      where: { id: id },
+      relations: ['product'],
+    });
+
+    if (!wishlist) {
+      throw new NotFoundException(`Wishlist with ID ${id} not found`);
+    }
+
+    // Cache the result
+    await this.cacheManager.set(cacheKey, wishlist, 3600); // Cache for 1 hour
+
+    return wishlist;
   }
 
   async create(createWishlistDto: CreateWishlistDto) {

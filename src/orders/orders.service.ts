@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
-import exportOrderJson from '@db/order-export.json';
-import orderFilesJson from '@db/order-files.json';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { AuthService } from 'src/auth/auth.service';
 import { paginate } from 'src/common/pagination/paginate';
@@ -49,8 +47,8 @@ import { Dealer } from 'src/users/entities/dealer.entity';
 import { UserAddress } from 'src/addresses/entities/address.entity';
 import { StocksService } from 'src/stocks/stocks.service';
 import { NotificationService } from 'src/notifications/services/notifications.service';
-
-const orderFiles = plainToClass(OrderFiles, orderFilesJson);
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class OrdersService {
@@ -90,7 +88,9 @@ export class OrdersService {
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
     @InjectRepository(Permission)
-    private readonly permissionRepository: Repository<Permission>
+    private readonly permissionRepository: Repository<Permission>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache
   ) { }
 
   private formatDate(dateInput: Date | string): string {
@@ -518,8 +518,8 @@ export class OrdersService {
   async getOrders(getOrdersDto: GetOrdersDto): Promise<OrderPaginator> {
     try {
       let {
-        limit,
-        page,
+        limit = 15,
+        page = 1,
         customer_id,
         tracking_number,
         search,
@@ -531,119 +531,126 @@ export class OrdersService {
         endDate,
       } = getOrdersDto;
 
-      if (!page) page = 1;
-      if (!limit) limit = 15;
       const startIndex = (page - 1) * limit;
 
-      let usr: User | undefined;
-      if (customer_id) {
-        usr = await this.userRepository.findOne({
-          where: { id: Number(customer_id) },
-          relations: ['permission'],
-        });
+      const cacheKey = `orders-${page}-${limit}-${customer_id}-${tracking_number}-${search}-${shop_id}-${shopSlug}-${soldByUserAddress}-${type}-${startDate}-${endDate}`;
+      let ordersCache = await this.cacheManager.get<OrderPaginator>(cacheKey);
 
-        if (!usr) {
-          throw new NotFoundException('User not found');
-        }
-      }
-
-      let permsn: Permission | null = null;
-      if (usr) {
-        permsn = await this.permissionRepository.findOneBy({ id: usr.permission.id });
-      }
-
-      // Create the initial query builder for orders
-      let query = this.orderRepository.createQueryBuilder('order')
-        .leftJoinAndSelect('order.status', 'status')
-        .leftJoinAndSelect('order.dealer', 'dealer')
-        .leftJoinAndSelect('order.billing_address', 'billing_address')
-        .leftJoinAndSelect('order.shipping_address', 'shipping_address')
-        .leftJoinAndSelect('order.customer', 'customer')
-        .leftJoinAndSelect('order.products', 'products')
-        .leftJoinAndSelect('products.pivot', 'pivot')
-        .leftJoinAndSelect('products.taxes', 'taxes')
-        .leftJoinAndSelect('products.variation_options', 'variation_options')
-        .leftJoinAndSelect('order.payment_intent', 'payment_intent')
-        .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
-        .leftJoinAndSelect('order.shop', 'shop')
-        .leftJoinAndSelect('order.coupon', 'coupon');
-
-      if (usr && permsn && Object.values(UserType).includes(permsn.type_name as UserType)) {
-        if ([UserType.Company, UserType.Super_Admin, UserType.Dealer, UserType.Staff].includes(permsn.type_name as UserType)) {
-          const usrByIdUsers = await this.userRepository.find({
-            where: { createdBy: { id: usr.id } },
+      if (!ordersCache) {
+        let usr: User | undefined;
+        if (customer_id) {
+          usr = await this.userRepository.findOne({
+            where: { id: Number(customer_id) },
             relations: ['permission'],
           });
-          const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
-          query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
+
+          if (!usr) {
+            throw new NotFoundException('User not found');
+          }
         }
-      } else if (customer_id) {
-        query = query.andWhere('order.customer.id = :customerId', { customerId: Number(customer_id) });
-      } else if (type) {
-        query = query.andWhere('order.type = :type', { type });
-      } else if (tracking_number) {
-        query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
-      } else if (soldByUserAddress) {
-        query = query.andWhere('order.soldByUserAddress = :soldByUserAddress', { soldByUserAddress });
-      }
 
-      if (shop_id) {
-        query = query.andWhere('shop.id = :shopId', { shopId: Number(shop_id) });
-      } else if (shopSlug) {
-        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
-        if (!shop) {
-          throw new NotFoundException('Shop not found');
+        let permsn: Permission | null = null;
+        if (usr) {
+          permsn = await this.permissionRepository.findOneBy({ id: usr.permission.id });
         }
-        query = query.andWhere('shop.id = :shopId', { shopId: shop.id });
-      }
 
-      if (search) {
-        query = query.andWhere('(status.name LIKE :searchValue OR order.tracking_number LIKE :searchValue)', {
-          searchValue: `%${search}%`,
-        });
-      }
+        // Create the initial query builder for orders
+        let query = this.orderRepository.createQueryBuilder('order')
+          .leftJoinAndSelect('order.status', 'status')
+          .leftJoinAndSelect('order.dealer', 'dealer')
+          .leftJoinAndSelect('order.billing_address', 'billing_address')
+          .leftJoinAndSelect('order.shipping_address', 'shipping_address')
+          .leftJoinAndSelect('order.customer', 'customer')
+          .leftJoinAndSelect('order.products', 'products')
+          .leftJoinAndSelect('products.pivot', 'pivot')
+          .leftJoinAndSelect('products.taxes', 'taxes')
+          .leftJoinAndSelect('products.variation_options', 'variation_options')
+          .leftJoinAndSelect('order.payment_intent', 'payment_intent')
+          .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
+          .leftJoinAndSelect('order.shop', 'shop')
+          .leftJoinAndSelect('order.coupon', 'coupon');
 
-      if (startDate && endDate) {
-        query = query.andWhere('order.created_at BETWEEN :startDate AND :endDate', { startDate, endDate });
-      }
-
-      const [data, totalCount] = await query
-        .skip(startIndex)
-        .take(limit)
-        .getManyAndCount();
-
-      const results = await Promise.all(
-        data.map(async (order) => {
-          const products = await Promise.all(order.products.map(async (product) => {
-            const pivot = await this.orderProductPivotRepository.findOne({
-              where: {
-                product: { id: product.id },
-                Ord_Id: order.id,
-              },
+        if (usr && permsn && Object.values(UserType).includes(permsn.type_name as UserType)) {
+          if ([UserType.Company, UserType.Super_Admin, UserType.Dealer, UserType.Staff].includes(permsn.type_name as UserType)) {
+            const usrByIdUsers = await this.userRepository.find({
+              where: { createdBy: { id: usr.id } },
+              relations: ['permission'],
             });
+            const userIds = [usr.id, ...usrByIdUsers.map(user => user.id)];
+            query = query.andWhere('order.customer.id IN (:...userIds)', { userIds });
+          }
+        } else if (customer_id) {
+          query = query.andWhere('order.customer.id = :customerId', { customerId: Number(customer_id) });
+        } else if (type) {
+          query = query.andWhere('order.type = :type', { type });
+        } else if (tracking_number) {
+          query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
+        } else if (soldByUserAddress) {
+          query = query.andWhere('order.soldByUserAddress = :soldByUserAddress', { soldByUserAddress });
+        }
 
-            if (!pivot) {
-              return null;
-            }
+        if (shop_id) {
+          query = query.andWhere('shop.id = :shopId', { shopId: Number(shop_id) });
+        } else if (shopSlug) {
+          const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+          if (!shop) {
+            throw new NotFoundException('Shop not found');
+          }
+          query = query.andWhere('shop.id = :shopId', { shopId: shop.id });
+        }
+
+        if (search) {
+          query = query.andWhere('(status.name LIKE :searchValue OR order.tracking_number LIKE :searchValue)', {
+            searchValue: `%${search}%`,
+          });
+        }
+
+        if (startDate && endDate) {
+          query = query.andWhere('order.created_at BETWEEN :startDate AND :endDate', { startDate, endDate });
+        }
+
+        const [data, totalCount] = await query
+          .skip(startIndex)
+          .take(limit)
+          .getManyAndCount();
+
+        const results = await Promise.all(
+          data.map(async (order) => {
+            const products = await Promise.all(order.products.map(async (product) => {
+              const pivot = await this.orderProductPivotRepository.findOne({
+                where: {
+                  product: { id: product.id },
+                  Ord_Id: order.id,
+                },
+              });
+
+              if (!pivot) {
+                return null;
+              }
+
+              return {
+                ...product,
+                pivot,
+              };
+            }));
 
             return {
-              ...product,
-              pivot,
+              ...order,
+              products: products.filter(product => product !== null),
             };
-          }));
+          })
+        );
 
-          return {
-            ...order,
-            products: products.filter(product => product !== null),
-          };
-        })
-      );
+        const url = `/orders?search=${search}&limit=${limit}`;
+        ordersCache = {
+          data: results,
+          ...paginate(totalCount, page, limit, results.length, url),
+        };
 
-      const url = `/orders?search=${search}&limit=${limit}`;
-      return {
-        data: results,
-        ...paginate(totalCount, page, limit, results.length, url),
-      };
+        await this.cacheManager.set(cacheKey, ordersCache, 3600); // Cache for 1 hour
+      }
+
+      return ordersCache;
     } catch (error) {
       console.error('Error in getOrders:', error);
       throw error;
@@ -687,147 +694,155 @@ export class OrdersService {
 
   async getOrderByIdOrTrackingNumber(id: number): Promise<any> {
     try {
-
-      const order = await this.orderRepository.createQueryBuilder('order')
-        .leftJoinAndSelect('order.status', 'status')
-        .leftJoinAndSelect('order.dealer', 'dealer')
-        .leftJoinAndSelect('dealer.dealer', 'dealerData')
-        .leftJoinAndSelect('order.customer', 'customer')
-        .leftJoinAndSelect('order.products', 'products')
-        .leftJoinAndSelect('order.soldByUserAddress', 'soldByUserAddress')
-        .leftJoinAndSelect('products.pivot', 'pivot')
-        .leftJoinAndSelect('products.taxes', 'product_taxes')
-        .leftJoinAndSelect('products.shop', 'product_shop')
-        .leftJoinAndSelect('product_shop.address', 'shop_address')
-        .leftJoinAndSelect('order.payment_intent', 'payment_intent')
-        .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
-        .leftJoinAndSelect('order.shop', 'order_shop')
-        .leftJoinAndSelect('order.billing_address', 'billing_address')
-        .leftJoinAndSelect('order.shipping_address', 'shipping_address')
-        .leftJoinAndSelect('order.parentOrder', 'parentOrder')
-        .leftJoinAndSelect('order.children', 'children')
-        .leftJoinAndSelect('order.coupon', 'coupon')
-        .where('order.id = :id', { id })
-        .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
-        .getOne();
+      const cacheKey = `order-${id}`;
+      let order = await this.cacheManager.get<any>(cacheKey);
 
       if (!order) {
-        throw new NotFoundException('Order not found');
+
+        const order = await this.orderRepository.createQueryBuilder('order')
+          .leftJoinAndSelect('order.status', 'status')
+          .leftJoinAndSelect('order.dealer', 'dealer')
+          .leftJoinAndSelect('dealer.dealer', 'dealerData')
+          .leftJoinAndSelect('order.customer', 'customer')
+          .leftJoinAndSelect('order.products', 'products')
+          .leftJoinAndSelect('order.soldByUserAddress', 'soldByUserAddress')
+          .leftJoinAndSelect('products.pivot', 'pivot')
+          .leftJoinAndSelect('products.taxes', 'product_taxes')
+          .leftJoinAndSelect('products.shop', 'product_shop')
+          .leftJoinAndSelect('product_shop.address', 'shop_address')
+          .leftJoinAndSelect('order.payment_intent', 'payment_intent')
+          .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
+          .leftJoinAndSelect('order.shop', 'order_shop')
+          .leftJoinAndSelect('order.billing_address', 'billing_address')
+          .leftJoinAndSelect('order.shipping_address', 'shipping_address')
+          .leftJoinAndSelect('order.parentOrder', 'parentOrder')
+          .leftJoinAndSelect('order.children', 'children')
+          .leftJoinAndSelect('order.coupon', 'coupon')
+          .where('order.id = :id', { id })
+          .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
+          .getOne();
+
+        if (!order) {
+          throw new NotFoundException('Order not found');
+        }
+
+        const transformedOrder = {
+          id: order.id,
+          tracking_number: order.tracking_number,
+          customer_id: order.customer_id,
+          customer_contact: order.customer_contact,
+          amount: order.amount,
+          sales_tax: order.sales_tax,
+          paid_total: order.paid_total,
+          total: order.total,
+          cancelled_amount: order.cancelled_amount,
+          language: order.language,
+          coupon_id: order.coupon,
+          parent_id: order.parentOrder,
+          soldByUserAddress: order.soldByUserAddress,
+          shop: order.shop,
+          discount: order.discount,
+          payment_gateway: order.payment_gateway,
+          shipping_address: order.shipping_address,
+          billing_address: order.billing_address,
+          logistics_provider: order.logistics_provider,
+          delivery_fee: order.delivery_fee,
+          delivery_time: order.delivery_time,
+          order_status: order.order_status,
+          payment_status: order.payment_status,
+          created_at: this.formatDate(order.created_at),
+          // created_at: this.formatDate(order.created_at),
+          payment_intent: order.payment_intent,
+          customer: {
+            id: order.customer.id,
+            name: order.customer.name,
+            email: order.customer.email,
+            email_verified_at: order.customer.email_verified_at,
+            // created_at: order.customer.created_at,
+            created_at: this.formatDate(order.customer.created_at),
+            updated_at: order.customer.updated_at,
+            is_active: order.customer.is_active,
+            shop_id: null
+          },
+          dealer: order.dealer ? order.dealer : null,
+          products: await Promise.all(order.products.map(async (product) => {
+            const pivot = product.pivot.find(p => p.Ord_Id === order.id);
+
+            if (!pivot || !product.id) {  // Ensure product.id is defined
+              return null;
+            }
+
+            return {
+              id: product.id,
+              name: product.name,
+              slug: product.slug,
+              description: product.description,
+              type_id: product.type_id,
+              price: product.price,
+              shop_id: product.shop_id,
+              sale_price: product.sale_price,
+              language: product.language,
+              min_price: product.min_price,
+              max_price: product.max_price,
+              sku: product.sku,
+              quantity: product.quantity,
+              in_stock: product.in_stock,
+              is_taxable: product.is_taxable,
+              shipping_class_id: null,
+              status: product.status,
+              product_type: product.product_type,
+              unit: product.unit,
+              height: product.height ? product.height : null,
+              width: product.width ? product.width : null,
+              length: product.length ? product.length : null,
+              image: product.image,
+              video: null,
+              gallery: product.gallery,
+              deleted_at: null,
+              created_at: product.created_at,
+              updated_at: product.updated_at,
+              author_id: null,
+              manufacturer_id: null,
+              is_digital: 0,
+              is_external: 0,
+              external_product_url: null,
+              external_product_button_text: null,
+              ratings: product.ratings,
+              total_reviews: product.my_review,
+              rating_count: product.ratings,
+              my_review: product.my_review,
+              in_wishlist: product.in_wishlist,
+              blocked_dates: [],
+              translated_languages: product.translated_languages,
+              taxes: product.taxes,
+              shop: product.shop,
+              pivot: {
+                order_id: pivot.Ord_Id,
+                product_id: product.id,
+                order_quantity: pivot.order_quantity,
+                unit_price: pivot.unit_price,
+                subtotal: pivot.subtotal,
+                variation_option_id: pivot.variation_option_id,
+                created_at: pivot.created_at,
+                updated_at: pivot.updated_at,
+              },
+              variation_options: product.variation_options,
+            };
+          })),
+          children: order.children,
+          wallet_point: order.wallet_point
+        };
+        // Cache the transformed order
+        await this.cacheManager.set(cacheKey, transformedOrder, 3600); // Cache for 1 hour
+
+        return transformedOrder;
       }
-
-      const transformedOrder = {
-        id: order.id,
-        tracking_number: order.tracking_number,
-        customer_id: order.customer_id,
-        customer_contact: order.customer_contact,
-        amount: order.amount,
-        sales_tax: order.sales_tax,
-        paid_total: order.paid_total,
-        total: order.total,
-        cancelled_amount: order.cancelled_amount,
-        language: order.language,
-        coupon_id: order.coupon,
-        parent_id: order.parentOrder,
-        soldByUserAddress: order.soldByUserAddress,
-        shop: order.shop,
-        discount: order.discount,
-        payment_gateway: order.payment_gateway,
-        shipping_address: order.shipping_address,
-        billing_address: order.billing_address,
-        logistics_provider: order.logistics_provider,
-        delivery_fee: order.delivery_fee,
-        delivery_time: order.delivery_time,
-        order_status: order.order_status,
-        payment_status: order.payment_status,
-        created_at: this.formatDate(order.created_at),
-        // created_at: this.formatDate(order.created_at),
-        payment_intent: order.payment_intent,
-        customer: {
-          id: order.customer.id,
-          name: order.customer.name,
-          email: order.customer.email,
-          email_verified_at: order.customer.email_verified_at,
-          // created_at: order.customer.created_at,
-          created_at: this.formatDate(order.customer.created_at),
-          updated_at: order.customer.updated_at,
-          is_active: order.customer.is_active,
-          shop_id: null
-        },
-        dealer: order.dealer ? order.dealer : null,
-        products: await Promise.all(order.products.map(async (product) => {
-          const pivot = product.pivot.find(p => p.Ord_Id === order.id);
-
-          if (!pivot || !product.id) {  // Ensure product.id is defined
-            return null;
-          }
-
-          return {
-            id: product.id,
-            name: product.name,
-            slug: product.slug,
-            description: product.description,
-            type_id: product.type_id,
-            price: product.price,
-            shop_id: product.shop_id,
-            sale_price: product.sale_price,
-            language: product.language,
-            min_price: product.min_price,
-            max_price: product.max_price,
-            sku: product.sku,
-            quantity: product.quantity,
-            in_stock: product.in_stock,
-            is_taxable: product.is_taxable,
-            shipping_class_id: null,
-            status: product.status,
-            product_type: product.product_type,
-            unit: product.unit,
-            height: product.height ? product.height : null,
-            width: product.width ? product.width : null,
-            length: product.length ? product.length : null,
-            image: product.image,
-            video: null,
-            gallery: product.gallery,
-            deleted_at: null,
-            created_at: product.created_at,
-            updated_at: product.updated_at,
-            author_id: null,
-            manufacturer_id: null,
-            is_digital: 0,
-            is_external: 0,
-            external_product_url: null,
-            external_product_button_text: null,
-            ratings: product.ratings,
-            total_reviews: product.my_review,
-            rating_count: product.ratings,
-            my_review: product.my_review,
-            in_wishlist: product.in_wishlist,
-            blocked_dates: [],
-            translated_languages: product.translated_languages,
-            taxes: product.taxes,
-            shop: product.shop,
-            pivot: {
-              order_id: pivot.Ord_Id,
-              product_id: product.id,
-              order_quantity: pivot.order_quantity,
-              unit_price: pivot.unit_price,
-              subtotal: pivot.subtotal,
-              variation_option_id: pivot.variation_option_id,
-              created_at: pivot.created_at,
-              updated_at: pivot.updated_at,
-            },
-            variation_options: product.variation_options,
-          };
-        })),
-        children: order.children,
-        wallet_point: order.wallet_point
-      };
-      return transformedOrder;
+      return order;
     } catch (error) {
       console.error('Error in getOrderByIdOrTrackingNumber:', error);
       throw error;
     }
   }
-
 
   async getOrderStatuses({
     limit = 30,
@@ -836,49 +851,62 @@ export class OrdersService {
     orderBy,
   }: GetOrderStatusesDto): Promise<OrderStatusPaginator> {
     const startIndex = (page - 1) * limit;
+    const cacheKey = `order-statuses-${page}-${limit}-${search || ''}-${orderBy || ''}`;
 
-    // Construct the query builder
-    let query = this.orderStatusRepository.createQueryBuilder('orderStatus');
+    let data = await this.cacheManager.get<OrderStatus[]>(cacheKey);
 
-    // Apply search filtering if search parameter is provided
-    if (search) {
-      const parseSearchParams = search.split(';');
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        // Update the query conditions based on your entity fields
-        query = query.andWhere(`orderStatus.${key} LIKE :value`, { value: `%${value}%` });
+    if (!data) {
+      let query = this.orderStatusRepository.createQueryBuilder('orderStatus');
+
+      if (search) {
+        const parseSearchParams = search.split(';');
+        for (const searchParam of parseSearchParams) {
+          const [key, value] = searchParam.split(':');
+          query = query.andWhere(`orderStatus.${key} LIKE :value`, { value: `%${value}%` });
+        }
       }
+
+      if (orderBy) {
+        const [key, order] = orderBy.split(':');
+        query = query.orderBy(`orderStatus.${key}`, order.toUpperCase() as ("ASC" | "DESC"));
+      }
+
+      [data] = await query
+        .skip(startIndex)
+        .take(limit)
+        .getManyAndCount();
+
+      // Cache the result
+      await this.cacheManager.set(cacheKey, data, 3600); // Cache for 1 hour
     }
 
-    // Apply ordering if orderBy parameter is provided
-    if (orderBy) {
-      const [key, order] = orderBy.split(':');
-      query = query.orderBy(`orderStatus.${key}`, order.toUpperCase() as ("ASC" | "DESC"));
-    }
-
-    const [data, totalCount] = await query
-      .skip(startIndex)
-      .take(limit)
-      .getManyAndCount();
-
-    const url = `/order-status?search=${search}&limit=${limit}&orderBy=${orderBy}`;
+    const totalCount = await this.orderStatusRepository.count();
+    const url = `/order-status?search=${search || ''}&limit=${limit}&orderBy=${orderBy || ''}`;
 
     return {
-      data: data,
+      data,
       ...paginate(totalCount, page, limit, data.length, url),
     };
   }
 
   async getOrderStatus(param: string, language: string): Promise<OrderStatus> {
-    const orderStatus = await this.orderStatusRepository.findOne({
-      where: {
-        slug: param,
-        language: language
-      }
-    });
+    const cacheKey = `order-status-${param}-${language}`;
+    let orderStatus = await this.cacheManager.get<OrderStatus>(cacheKey);
 
     if (!orderStatus) {
-      throw new NotFoundException('Order status not found');
+      orderStatus = await this.orderStatusRepository.findOne({
+        where: {
+          slug: param,
+          language: language
+        }
+      });
+
+      if (!orderStatus) {
+        throw new NotFoundException('Order status not found');
+      }
+
+      // Cache the result
+      await this.cacheManager.set(cacheKey, orderStatus, 3600); // Cache for 1 hour
     }
 
     return orderStatus;
@@ -1045,22 +1073,14 @@ export class OrdersService {
   }
 
 
-  async getOrderFileItems({ page, limit }: GetOrderFilesDto): Promise<OrderFilesPaginator> {
+  async getOrderFileItems({ page, limit }: GetOrderFilesDto): Promise<any> {
     if (!page) page = 1;
     if (!limit) limit = 30;
 
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const results = orderFiles.slice(startIndex, endIndex);
-
-    const url = `/downloads?&limit=${limit}`;
-
-    // Assuming your paginate function is properly implemented
-    return {
-      data: results,
-      ...paginate(orderFiles.length, page, limit, results.length, url),
-    };
+    return []
   }
 
   async getDigitalFileDownloadUrl(digitalFileId: number) {
@@ -1072,7 +1092,7 @@ export class OrdersService {
   }
 
   async exportOrder(shop_id: string) {
-    return exportOrderJson.url;
+    return [];
   }
 
   async downloadInvoiceUrl(Order_id: string) {

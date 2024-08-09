@@ -1,8 +1,7 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AttributeValueDto, CreateAttributeDto } from './dto/create-attribute.dto';
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
-import attributesJson from '@db/attributes.json';
 import { Attribute } from './entities/attribute.entity';
 import { plainToClass } from 'class-transformer';
 import { AttributeRepository, AttributeValueRepository } from './attribute.repository';
@@ -13,15 +12,17 @@ import { GetAttributeArgs } from './dto/get-attribute.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Repository } from 'typeorm';
 import { GetAttributesArgs } from './dto/get-attributes.dto';
-const attributes = plainToClass(Attribute, attributesJson);
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class AttributesService {
-  private attributes: Attribute[] = attributes;
+  private readonly logger = new Logger(AttributesService.name);
   constructor(
     @InjectRepository(AttributeRepository) private attributeRepository: AttributeRepository,
     @InjectRepository(AttributeValueRepository) private attributeValueRepository: AttributeValueRepository,
     @InjectRepository(Shop) private shopRepository: Repository<Shop>,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 
   async convertToSlug(text) {
@@ -97,6 +98,15 @@ export class AttributesService {
   }[]> {
     const { search, orderBy, sortedBy, language, shopSlug, shop_id } = params;
 
+    // Generate a cache key based on the parameters
+    const cacheKey = `attributes:${JSON.stringify(params)}`;
+    const cachedResult = await this.cacheManager.get<any[]>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.log(`Cache hit for key: ${cacheKey}`);
+      return cachedResult;
+    }
+
     const query = this.attributeRepository.createQueryBuilder('attribute')
       .leftJoinAndSelect('attribute.values', 'value')
       .leftJoinAndSelect('attribute.shop', 'shop');
@@ -121,7 +131,7 @@ export class AttributesService {
 
     const attributes = await query.getMany();
 
-    return attributes.map((attribute) => {
+    const formattedAttributes = attributes.map((attribute) => {
       return {
         id: attribute.id,
         name: attribute.name,
@@ -133,28 +143,47 @@ export class AttributesService {
         })),
       };
     });
+
+    // Cache the result for future requests
+    await this.cacheManager.set(cacheKey, formattedAttributes, 1800); // Cache for 30 minutes
+    this.logger.log(`Data cached with key: ${cacheKey}`);
+
+    return formattedAttributes;
   }
 
+
   async findOne(param: GetAttributeArgs): Promise<{ message: string } | Attribute | undefined> {
+    // Generate a cache key based on the parameters
+    const cacheKey = `attribute:${param.id || param.slug}`;
+    const cachedResult = await this.cacheManager.get<Attribute | { message: string }>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.log(`Cache hit for key: ${cacheKey}`);
+      return cachedResult;
+    }
 
     const result = await this.attributeRepository.findOne({
       where: [
         { id: param.id },
         { slug: param.slug },
       ],
-      relations: ['values',
-        // 'shop'
-      ]
+      relations: ['values'],
     });
 
     if (result) {
+      // Cache the found attribute
+      await this.cacheManager.set(cacheKey, result, 1800); // Cache for 30 minutes
+      this.logger.log(`Data cached with key: ${cacheKey}`);
       return result;
     } else {
-      return {
-        message: "Attribute Not Found"
-      }
+      const notFoundMessage = { message: "Attribute Not Found" };
+      // Cache the not found message to avoid repeated DB hits for the same query
+      await this.cacheManager.set(cacheKey, notFoundMessage, 1800);
+      this.logger.log(`Data cached with key: ${cacheKey}`);
+      return notFoundMessage;
     }
   }
+
 
   async update(id: number, updateAttributeDto: UpdateAttributeDto): Promise<{ message: string; status: boolean } | Attribute> {
     // Check if the attribute exists

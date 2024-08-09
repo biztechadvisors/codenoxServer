@@ -9,7 +9,6 @@ import { Question } from './entities/question.entity';
 import { GetQuestionDto } from './dto/get-questions.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import questionsJSON from '@db/questions.json';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductRepository } from 'src/products/products.repository';
 import { Product } from 'src/products/entities/product.entity';
@@ -18,16 +17,8 @@ import { UserRepository } from 'src/users/users.repository';
 import { Repository } from 'typeorm';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 
-const questions = plainToClass(Question, questionsJSON);
-const options = {
-  keys: [],
-  threshold: 0.3,
-};
-const fuse = new Fuse(questions, options);
-
 @Injectable()
 export class QuestionService {
-  private question: Question[] = questions;
 
   constructor(
     @InjectRepository(Question)

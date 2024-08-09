@@ -10,6 +10,7 @@ import { LocationRepository, ShopSocialsRepository } from 'src/shops/shops.repos
 import { AttachmentRepository } from 'src/common/common.repository'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { Shop } from 'src/shops/entities/shop.entity'
+import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
   imports: [TypeOrmExModule.forCustomRepository([
@@ -33,7 +34,9 @@ import { Shop } from 'src/shops/entities/shop.entity'
     LogoSettingsRepository,
     PaymentGateWayRepository,
     AttachmentRepository,
-  ]), TypeOrmModule.forFeature([Setting, Attachment, PaymentGateway, LogoSettings, DeliveryTime, ServerInfo, SeoSettings, SmsEvent, SmsAdmin, SmsVendor, SmsCustomer, EmailAdmin, EmailVendor, EmailCustomer, EmailEvent, CurrencyOptions, ShopSocials, SettingsOptions, ContactDetails, Location, Shop])],
+  ]), TypeOrmModule.forFeature([Setting, Attachment, PaymentGateway, LogoSettings, DeliveryTime, ServerInfo, SeoSettings, SmsEvent, SmsAdmin, SmsVendor, SmsCustomer, EmailAdmin, EmailVendor, EmailCustomer, EmailEvent, CurrencyOptions, ShopSocials, SettingsOptions, ContactDetails, Location, Shop]),
+  CacheModule.register()
+  ],
   controllers: [SettingsController],
   providers: [SettingsService],
   exports: [SettingsService],

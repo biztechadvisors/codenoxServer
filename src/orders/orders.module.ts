@@ -32,6 +32,7 @@ import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 import { NotificationService } from 'src/notifications/services/notifications.service';  // Import NotificationService
 import { NotificationModule } from 'src/notifications/notifications.module';
 import { Notification } from 'src/notifications/entities/notifications.entity';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { Notification } from 'src/notifications/entities/notifications.entity';
     ]),
     TypeOrmModule.forFeature([Order, UserAddress, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks, Variation, Notification]), // Include Order and OrderStatus here
     HttpModule,
+    CacheModule.register()
   ],
   controllers: [
     OrdersController,

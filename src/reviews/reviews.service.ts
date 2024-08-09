@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { Any, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,6 +15,8 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Report } from './entities/reports.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class ReviewService {
@@ -33,23 +35,21 @@ export class ReviewService {
     private readonly orderkRepository: Repository<Order>,
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) { }
 
   private async getReviewsFromDatabase(): Promise<Review[]> {
     return await this.reviewRepository.find();
   }
 
-
   private async findReviewInDatabase(id: number): Promise<Review> {
     const review = await this.reviewRepository.findOne({ where: { id: id } });
     if (!review) {
       throw new NotFoundException(`Review with ID ${id} not found`);
     }
-
     return review;
   }
-
-
 
   private async createReviewInDatabase(createReviewDto: CreateReviewDto): Promise<Review> {
     const review = plainToClass(Review, createReviewDto);
@@ -133,24 +133,52 @@ export class ReviewService {
     await this.reviewRepository.remove(review);
   }
 
-  async findAllReviews({ limit, page, search, product_id }: GetReviewsDto): Promise<ReviewPaginator> {
-    let reviews = await this.getReviewsFromDatabase();
+  async findAllReviews({
+    limit,
+    page,
+    search,
+    product_id,
+    shopSlug,
+    userId,
+  }: GetReviewsDto): Promise<ReviewPaginator> {
+    const cacheKey = `reviews_${shopSlug || 'all'}_${userId || 'all'}_${product_id || 'all'}_${search || 'all'}`;
 
-    if (search) {
-      const parseSearchParams = search.split(';');
-      for (const searchParam of parseSearchParams) {
-        const [key, value] = searchParam.split(':');
-        const options = {
-          keys: [key],
-          threshold: 0.3,
-        };
-        const fuse = new Fuse(reviews, options);
-        reviews = fuse.search(value)?.map(({ item }) => item) || [];
+    let reviews = await this.cacheManager.get<Review[]>(cacheKey);
+
+    if (!reviews) {
+      reviews = await this.getReviewsFromDatabase();
+
+      // Apply search filtering if search parameter is provided
+      if (search) {
+        const parseSearchParams = search.split(';');
+        for (const searchParam of parseSearchParams) {
+          const [key, value] = searchParam.split(':');
+          const options = {
+            keys: [key],
+            threshold: 0.3,
+          };
+          const fuse = new Fuse(reviews, options);
+          reviews = fuse.search(value)?.map(({ item }) => item) || [];
+        }
       }
-    }
 
-    if (product_id) {
-      reviews = reviews.filter((p) => p.product_id === Number(product_id));
+      // Filter by product ID if provided
+      if (product_id) {
+        reviews = reviews.filter((p) => p.product_id === Number(product_id));
+      }
+
+      // Filter by shopSlug if provided
+      if (shopSlug) {
+        reviews = reviews.filter((review) => review.shop.slug === shopSlug);
+      }
+
+      // Filter by userId if provided
+      if (userId) {
+        reviews = reviews.filter((review) => review.user.id === userId);
+      }
+
+      // Cache the results
+      await this.cacheManager.set(cacheKey, reviews, 300); // Cache for 5 minutes
     }
 
     const startIndex = (page - 1) * limit;
@@ -182,69 +210,3 @@ export class ReviewService {
 
 }
 
-
-
-// import { Injectable } from '@nestjs/common';
-// import { plainToClass } from 'class-transformer';
-// import Fuse from 'fuse.js';
-// import { paginate } from 'src/common/pagination/paginate';
-// import { CreateReviewDto } from './dto/create-review.dto';
-// import { UpdateReviewDto } from './dto/update-review.dto';
-// import { GetReviewsDto, ReviewPaginator } from './dto/get-reviews.dto';
-// import reviewJSON from '@db/reviews.json';
-// import { Review } from './entities/review.entity';
-
-// const reviews = plainToClass(Review, reviewJSON);
-// const options = {
-//   keys: ['product_id'],
-//   threshold: 0.3,
-// };
-// const fuse = new Fuse(reviews, options);
-
-// @Injectable()
-// export class ReviewService {
-//   private reviews: Review[] = reviews;
-
-//   findAllReviews({ limit, page, search, product_id }: GetReviewsDto) {
-//     if (!page) page = 1;
-//     if (!limit) limit = 30;
-//     const startIndex = (page - 1) * limit;
-//     const endIndex = page * limit;
-//     let data: Review[] = this.reviews;
-
-//     if (search) {
-//       const parseSearchParams = search.split(';');
-//       for (const searchParam of parseSearchParams) {
-//         const [key, value] = searchParam.split(':');
-//         data = fuse.search(value)?.map(({ item }) => item);
-//       }
-//     }
-
-//     if (product_id) {
-//       data = data.filter((p) => p.product_id === Number(product_id));
-//     }
-
-//     const results = data.slice(startIndex, endIndex);
-//     const url = `/reviews?search=${search}&limit=${limit}`;
-//     return {
-//       data: results,
-//       ...paginate(data.length, page, limit, results.length, url),
-//     };
-//   }
-
-//   findReview(id: number) {
-//     return this.reviews.find((p) => p.id === id);
-//   }
-
-//   create(createReviewDto: CreateReviewDto) {
-//     return this.reviews[0];
-//   }
-
-//   update(id: number, updateReviewDto: UpdateReviewDto) {
-//     return this.reviews[0];
-//   }
-
-//   delete(id: number) {
-//     return this.reviews[0];
-//   }
-// }

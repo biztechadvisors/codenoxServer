@@ -1,11 +1,9 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateTypeDto } from './dto/create-type.dto';
 import { UpdateTypeDto } from './dto/update-type.dto';
 import { Banner, Type, TypeSettings } from './entities/type.entity';
-
-import typesJson from '@db/types.json';
 import Fuse from 'fuse.js';
 import { GetTypesDto } from './dto/get-types.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,13 +18,8 @@ import { Repository } from 'typeorm';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { Product } from 'src/products/entities/product.entity';
-
-const types = plainToClass(Type, typesJson);
-const options = {
-  keys: ['name'],
-  threshold: 0.3,
-};
-const fuse = new Fuse(types, options);
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class TypesService {
@@ -40,12 +33,10 @@ export class TypesService {
     @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
     @InjectRepository(Tag) private readonly tagRepository: Repository<Tag>,
     @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
-    @InjectRepository(Product) private readonly productRepository: Repository<Product>
-
+    @InjectRepository(Product) private readonly productRepository: Repository<Product>,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
 
   ) { }
-
-  private types: Type[] = types;
 
   async convertToSlug(text) {
     return await convertToSlug(text);
@@ -55,6 +46,16 @@ export class TypesService {
     const { text, search, shop_id, shopSlug } = query;
     let data: Type[];
 
+    // Generate a unique cache key based on query parameters
+    const cacheKey = `types_${shop_id || 'none'}_${shopSlug || 'none'}_${text || 'none'}_${search || 'none'}`;
+
+    // Check if the data is cached
+    const cachedData = await this.cacheManager.get<Type[]>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    // Fetch data from the database
     if (shop_id || shopSlug) {
       const shopCondition = shop_id ? { id: shop_id } : { slug: shopSlug };
 
@@ -86,18 +87,38 @@ export class TypesService {
       data = fuse.search({ $and: searchText }).map(({ item }) => item);
     }
 
+    // Cache the result
+    await this.cacheManager.set(cacheKey, data, 3600); // Cache for 5 minutes
+
     return data;
   }
 
 
   async getTypeBySlug(slug: string): Promise<Type> {
+    // Generate a unique cache key based on the slug
+    const cacheKey = `type_${slug}`;
+
+    // Check if the data is cached
+    const cachedType = await this.cacheManager.get<Type>(cacheKey);
+    if (cachedType) {
+      return cachedType;
+    }
+
+    // Fetch data from the database
     const type = await this.typeRepository.findOne({
       where: { slug: slug },
       relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'products']
     });
+
+    if (!type) {
+      throw new NotFoundException(`Type with slug ${slug} not found`);
+    }
+
+    // Cache the result
+    await this.cacheManager.set(cacheKey, type, 3600); // Cache for 5 minutes
+
     return type;
   }
-
 
   async create(data: CreateTypeDto) {
 

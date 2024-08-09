@@ -28,6 +28,7 @@ import { Cron } from '@nestjs/schedule';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
+
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger(ProductsService.name);
@@ -50,7 +51,7 @@ export class ProductsService {
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
     @InjectRepository(User) private readonly userRepository: UserRepository,
     @InjectRepository(Tax) private readonly taxRepository: Repository<Tax>,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 
   // Run this method when the application starts
@@ -275,7 +276,7 @@ export class ProductsService {
     const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName } = query;
     const startIndex = (page - 1) * limit;
 
-    const cacheKey = `products:${limit}:${page}:${search || 'all'}:${filter || 'none'}:${dealerId || 'none'}:${shop_id || 'none'}:${shopName || 'none'}`;
+    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${page}:${limit}`;
 
     this.logger.log(`Generated cache key: ${cacheKey}`);
 
@@ -286,6 +287,7 @@ export class ProductsService {
     } else {
       this.logger.log(`Cache miss for key: ${cacheKey}`);
     }
+
     const productQueryBuilder = this.productRepository.createQueryBuilder('product');
 
     // Perform the necessary joins
@@ -361,16 +363,15 @@ export class ProductsService {
         const filterTerms = search.split(' ');
         filterTerms.forEach(term => {
           const searchTerm = `%${term}%`;
-          searchConditions.push
-            (
-              `(product.name LIKE :filterSearchTerm OR 
-              product.sku LIKE :filterSearchTerm OR 
-              categories.name LIKE :filterSearchTerm OR 
-              subCategories.name LIKE :filterSearchTerm OR 
-              type.name LIKE :filterSearchTerm OR 
-              tags.name LIKE :filterSearchTerm OR 
-              variation_options.title LIKE :filterSearchTerm)`
-            );
+          searchConditions.push(
+            `(product.name LIKE :filterSearchTerm OR 
+            product.sku LIKE :filterSearchTerm OR 
+            categories.name LIKE :filterSearchTerm OR 
+            subCategories.name LIKE :filterSearchTerm OR 
+            type.name LIKE :filterSearchTerm OR 
+            tags.name LIKE :filterSearchTerm OR 
+            variation_options.title LIKE :filterSearchTerm)`
+          );
           searchParams.filterSearchTerm = searchTerm;
         });
       }
@@ -452,8 +453,7 @@ export class ProductsService {
         ...paginator,
       };
 
-      await this.cacheManager.set(cacheKey, result, 300);
-      console.log('cacheKey ** 456', cacheKey)
+      await this.cacheManager.set(cacheKey, result, 1800);
       this.logger.log(`Data cached with key: ${cacheKey}`);
 
       return result;
@@ -464,6 +464,18 @@ export class ProductsService {
 
   async getProductBySlug(slug: string, shop_id: number, dealerId?: number): Promise<Product | undefined> {
     try {
+      const cacheKey = `productBySlug:${shop_id || ' '}:${slug || ' '}:${dealerId || ' '}`;
+
+      this.logger.log(`Generated cache key: ${cacheKey}`);
+
+      const cachedResult: Product | undefined = await this.cacheManager.get(cacheKey);
+      if (cachedResult) {
+        this.logger.log(`Cache hit for key: ${cacheKey}`);
+        return cachedResult;
+      } else {
+        this.logger.log(`Cache miss for key: ${cacheKey}`);
+      }
+
       const shop = await this.shopRepository.findOne({ where: { id: shop_id } });
       if (!shop) {
         throw new NotFoundException(`Shop not found with id: ${shop_id}`);
@@ -538,6 +550,8 @@ export class ProductsService {
         product.related_products = [];
       }
 
+      await this.cacheManager.set(cacheKey, product, 1800);
+      this.logger.log(`Data cached with key: ${cacheKey}`);
       // Return the product with updated margins and related products
       return product;
     } catch (error) {
@@ -551,13 +565,21 @@ export class ProductsService {
   }
 
   async getPopularProducts(query: GetPopularProductsDto): Promise<Product[]> {
-    const { limit = 10, type_slug, search } = query;
-    let { shop_id } = query;
+    const { limit = 10, type_slug, search, shopName, shop_id } = query;
 
-    if (!shop_id && search) {
-      shop_id = parseInt(this.getValueFromSearch(search, "shop_id"));
+    const cacheKey = `popularProducts:${shop_id || ''}:${shopName || ''}:${type_slug || ''}:${limit}`;
+    this.logger.log(`Generated cache key: ${cacheKey}`);
+
+    // Check if the data is already cached
+    const cachedResult: Product[] | undefined = await this.cacheManager.get(cacheKey);
+    if (cachedResult) {
+      this.logger.log(`Cache hit for key: ${cacheKey}`);
+      return cachedResult;
+    } else {
+      this.logger.log(`Cache miss for key: ${cacheKey}`);
     }
 
+    // Build the query for fetching products
     const productsQueryBuilder = this.productRepository.createQueryBuilder('product');
 
     if (type_slug) {
@@ -568,10 +590,16 @@ export class ProductsService {
       productsQueryBuilder.andWhere('product.shop_id = :shop_id', { shop_id });
     }
 
+    if (shopName) {
+      productsQueryBuilder.innerJoin(
+        'product.shop',
+        'shop',
+        '(shop.name = :shopName OR shop.slug = :shopName)',
+        { shopName }
+      );
+    }
 
     productsQueryBuilder
-      .leftJoinAndSelect('product.shop', 'shop')
-      .leftJoinAndSelect('product.type', 'type')
       .leftJoinAndSelect('product.image', 'image')
       .leftJoinAndSelect('product.categories', 'categories')
       .leftJoinAndSelect('product.tags', 'tags')
@@ -580,6 +608,11 @@ export class ProductsService {
       .leftJoinAndSelect('product.variation_options', 'variation_options');
 
     const products = await productsQueryBuilder.limit(limit).getMany();
+
+    // Cache the result for 30 minutes (1800 seconds)
+    await this.cacheManager.set(cacheKey, products, 1800);
+    this.logger.log(`Data cached with key: ${cacheKey}`);
+
     return products;
   }
 

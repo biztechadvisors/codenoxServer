@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Event } from './entities/event.entity';
@@ -6,6 +6,8 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class EventService {
@@ -16,6 +18,7 @@ export class EventService {
         private readonly shopRepository: Repository<Shop>,
         @InjectRepository(Attachment)
         private readonly attachmentRepository: Repository<Attachment>,
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
     ) { }
 
     async createEvent(createEventDto: CreateEventDto): Promise<Event> {
@@ -44,29 +47,46 @@ export class EventService {
     }
 
     async getEventById(id: number): Promise<Event> {
-        const event = await this.eventRepository.findOne({
-            where: { id },
-            relations: ['shop', 'images'],
-        });
+        const cacheKey = `event-${id}`;
+        let event = await this.cacheManager.get<Event>(cacheKey);
 
         if (!event) {
-            throw new NotFoundException(`Event with ID ${id} not found`);
+            event = await this.eventRepository.findOne({
+                where: { id },
+                relations: ['shop', 'images'],
+            });
+
+            if (!event) {
+                throw new NotFoundException(`Event with ID ${id} not found`);
+            }
+
+            await this.cacheManager.set(cacheKey, event, 3600); // Cache for 1 hour
         }
 
         return event;
     }
 
     async getAllEvents(shopSlug: string): Promise<Event[]> {
-        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug }, relations: ['events'] });
-        if (!shop) {
-            throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
+        const cacheKey = `events-${shopSlug}`;
+        let events = await this.cacheManager.get<Event[]>(cacheKey);
+
+        if (!events) {
+            const shop = await this.shopRepository.findOne({ where: { slug: shopSlug }, relations: ['events'] });
+            if (!shop) {
+                throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
+            }
+
+            events = await this.eventRepository.find({
+                where: { shop: { id: shop.id } },
+                relations: ['shop', 'images'],
+            });
+
+            await this.cacheManager.set(cacheKey, events, 3600); // Cache for 1 hour
         }
 
-        return this.eventRepository.find({
-            where: { shop: { id: shop.id } },
-            relations: ['shop', 'images'],
-        });
+        return events;
     }
+
 
     async updateEvent(id: number, updateEventDto: UpdateEventDto): Promise<Event> {
         const event = await this.getEventById(id);

@@ -1,12 +1,11 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, Inject } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto, UserPaginator } from './dto/get-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import Fuse from 'fuse.js';
 import { User, UserType } from './entities/user.entity';
-import usersJson from '@db/users.json';
 import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, SocialRepository, UserRepository } from './users.repository';
@@ -31,17 +30,16 @@ import { AuthService } from 'src/auth/auth.service';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
-import { Brackets, Equal, FindManyOptions, FindOptionsWhere, In, Like, Repository } from 'typeorm';
+import { Brackets, Equal, FindManyOptions, FindOptionsWhere, In, Like, Repository, SelectQueryBuilder } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-
-const users = plainToClass(User, usersJson);
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 const options = {
   keys: ['name', 'type.slug', 'categories.slug', 'status'],
   threshold: 0.3,
 };
-const fuse = new Fuse(users, options);
 
 @Injectable()
 export class UsersService {
@@ -58,6 +56,7 @@ export class UsersService {
     @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
     @InjectRepository(Social) private readonly socialRepository: SocialRepository,
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
 
     private readonly authService: AuthService,
     private readonly addressesService: AddressesService,
@@ -139,8 +138,28 @@ export class UsersService {
     const limitNum = limit;
     const pageNum = page;
     const startIndex = (pageNum - 1) * limitNum;
-    let user;
 
+    // Construct a cache key based on query parameters
+    const cacheKey = `users_${JSON.stringify({
+      searchJoin,
+      include,
+      limit,
+      page,
+      name,
+      orderBy,
+      sortedBy,
+      usrById,
+      search,
+      type,
+    })}`;
+
+    // Try to get cached data
+    const cachedData = await this.cacheManager.get<UserPaginator>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    let user;
     if (usrById) {
       // Fetch user by ID and apply type-based filtering if provided
       user = await this.userRepository.findOne({
@@ -164,7 +183,7 @@ export class UsersService {
       }
     }
 
-    const queryBuilder = this.userRepository.createQueryBuilder('user');
+    const queryBuilder: SelectQueryBuilder<User> = this.userRepository.createQueryBuilder('user');
 
     // Adding relations
     queryBuilder
@@ -192,7 +211,6 @@ export class UsersService {
       queryBuilder.andWhere('user.createdById = :usrById', { usrById });
 
       if (type) {
-
         const permissions = await this.permissionRepository.find({
           where: { type_name: type, user: Number(usrById) },
         });
@@ -243,19 +261,39 @@ export class UsersService {
     const isCompanyOrStaff = user && (user.permission.type_name === UserType.Company || user.permission.type_name === UserType.Staff);
     const url = `/users?type=${type || 'customer'}&limit=${limitNum}`;
 
-    return {
+    const result = {
       data: isCompanyOrStaff ? [...users] : [user, ...users],
       ...paginate(total, pageNum, limitNum, total, url),
     };
+
+    // Cache the result
+    await this.cacheManager.set(cacheKey, result, 3600); // Cache for 1 hour
+
+    return result;
   }
 
-
   async findOne(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id: id }, relations: ["profile", "address", "owned_shops", "orders", "address.address", "permission"] });
+    // Construct a cache key based on the user ID
+    const cacheKey = `user_${id}`;
+
+    // Try to get cached data
+    const cachedUser = await this.cacheManager.get<User>(cacheKey);
+    if (cachedUser) {
+      return cachedUser;
+    }
+
+    // Fetch user from the database if not cached
+    const user = await this.userRepository.findOne({
+      where: { id: id },
+      relations: ['profile', 'address', 'owned_shops', 'orders', 'address.address', 'permission'],
+    });
 
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
+
+    // Cache the result
+    await this.cacheManager.set(cacheKey, user, 3600); // Cache for 1 hour
 
     return user;
   }
@@ -481,15 +519,64 @@ export class UsersService {
     return savedDealer;
   }
 
-  async getAllDealers(): Promise<Dealer[]> {
-    return this.dealerRepository.find({ relations: ['user', 'dealerProductMargins', 'dealerProductMargins.product', 'dealerCategoryMargins', 'dealerCategoryMargins.category'] });
+  async getAllDealers(createdBy?: number): Promise<Dealer[]> {
+    const cacheKey = `dealers_${createdBy || 'all'}`;
+    let dealers = await this.cacheManager.get<Dealer[]>(cacheKey);
+
+    if (!dealers) {
+      const findOptions = {
+        relations: [
+          'user',
+          'dealerProductMargins',
+          'dealerProductMargins.product',
+          'dealerCategoryMargins',
+          'dealerCategoryMargins.category'
+        ],
+      };
+
+      if (createdBy) {
+        const user = await this.userRepository.findOne({ where: { id: createdBy } });
+        if (!user) {
+          throw new NotFoundException(`User with ID ${createdBy} not found`);
+        }
+
+        findOptions['where'] = { user: { createdBy: { id: createdBy } } };
+      }
+
+      dealers = await this.dealerRepository.find(findOptions);
+
+      // Cache the results
+      await this.cacheManager.set(cacheKey, dealers, 3600);
+    }
+
+    return dealers;
   }
 
   async getDealerById(id: number): Promise<Dealer> {
-    return this.dealerRepository.findOne({
-      where: { user: { id } },
-      relations: ['user', 'dealerProductMargins', 'dealerProductMargins.product', 'dealerCategoryMargins', 'dealerCategoryMargins.category']
-    });
+    const cacheKey = `dealer_${id}`;
+    let dealer = await this.cacheManager.get<Dealer>(cacheKey);
+
+    if (!dealer) {
+      dealer = await this.dealerRepository.findOne({
+        where: { user: { id } },
+        relations: [
+          'user',
+          'dealerProductMargins',
+          'dealerProductMargins.product',
+          'dealerCategoryMargins',
+          'dealerCategoryMargins.category',
+        ],
+      });
+
+      if (!dealer) {
+        throw new NotFoundException(`Dealer with user ID ${id} not found`);
+      }
+
+      // Cache the result
+      await this.cacheManager.set(cacheKey, dealer, 3600);
+    }
+
+    return dealer;
   }
 
   async updateDealer(id: number, dealerData: DealerDto): Promise<Dealer> {

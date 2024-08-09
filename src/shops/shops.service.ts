@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { ApproveShopDto, CreateShopDto } from './dto/create-shop.dto'
 import { UpdateShopDto } from './dto/update-shop.dto'
 import { PaymentInfo, Shop } from './entities/shop.entity'
@@ -24,6 +24,8 @@ import { UserAddressRepository } from 'src/addresses/addresses.repository'
 import { Permission } from 'src/permission/entities/permission.entity'
 import { Brackets, FindOperator, ILike, Repository } from 'typeorm'
 import { UserPaginator } from 'src/users/dto/get-users.dto'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Cache } from 'cache-manager'
 
 @Injectable()
 export class ShopsService {
@@ -50,6 +52,8 @@ export class ShopsService {
     private readonly attachmentRepository: AttachmentRepository,
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
     private readonly addressesService: AddressesService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) { }
 
   private shops: Shop[] = []
@@ -209,40 +213,52 @@ export class ShopsService {
   }
 
   async getShops({ search, limit, page }: GetShopsDto): Promise<ShopPaginator> {
-
     page = page ? page : 1;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    let data: Shop[] = await this.shopRepository.find({
-      relations: [
-        'balance',
-        'balance.shop',
-        'balance.dealer',
-        'balance.payment_info',
-        'settings',
-        'settings.socials',
-        'settings.location',
-        'address',
-        'owner',
-        'owner.profile',
-        'cover_image',
-        'logo',
-        'staffs',
-        'additionalPermissions',
-        'additionalPermissions.permissions',
-        'permission',
-        'permission.permissions'
-      ],
-    });
+    // Construct a cache key based on the search, page, and limit parameters
+    const cacheKey = `shops_${search || 'all'}_${page}_${limit}`;
 
-    if (search) {
-      const fuse = new Fuse(data, {
-        keys: ['name', 'id', 'slug', 'is_active', 'address.city', 'address.state', 'address.country'],
-        threshold: 0.7,
+    // Try to retrieve the data from the cache
+    let data: Shop[] = await this.cacheManager.get<Shop[]>(cacheKey);
+
+    if (!data) {
+      // If the data is not in the cache, fetch it from the database
+      data = await this.shopRepository.find({
+        relations: [
+          'balance',
+          'balance.shop',
+          'balance.dealer',
+          'balance.payment_info',
+          'settings',
+          'settings.socials',
+          'settings.location',
+          'address',
+          'owner',
+          'owner.profile',
+          'cover_image',
+          'logo',
+          'staffs',
+          'additionalPermissions',
+          'additionalPermissions.permissions',
+          'permission',
+          'permission.permissions',
+        ],
       });
-      const searchResults = fuse.search(search);
-      data = searchResults.map(({ item }) => item);
+
+      // Apply search filtering if the search parameter is provided
+      if (search) {
+        const fuse = new Fuse(data, {
+          keys: ['name', 'id', 'slug', 'is_active', 'address.city', 'address.state', 'address.country'],
+          threshold: 0.7,
+        });
+        const searchResults = fuse.search(search);
+        data = searchResults.map(({ item }) => item);
+      }
+
+      // Cache the results
+      await this.cacheManager.set(cacheKey, data, 3600); // Cache for 5 minutes
     }
 
     const results = search ? data.slice(startIndex, endIndex) : data;
@@ -314,7 +330,7 @@ export class ShopsService {
       },
       staffs: shop.staffs,
       additionalPermissions: shop.additionalPermissions,
-      permission: shop.permission
+      permission: shop.permission,
     }));
 
     return {
@@ -328,6 +344,15 @@ export class ShopsService {
     const limitNum = limit || 10;
     const pageNum = page || 1;
     const startIndex = (pageNum - 1) * limitNum;
+
+    // Generate a unique cache key based on the input parameters
+    const cacheKey = `staffs_${shop_id}_${limit}_${page}_${orderBy}_${sortedBy}_${createdBy}`;
+
+    // Check if the data is already cached
+    const cachedResult = await this.cacheManager.get(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
+    }
 
     // Validate createdBy
     if (createdBy) {
@@ -388,42 +413,61 @@ export class ShopsService {
 
     // Prepare paginated response
     const url = `/users?type=staff&limit=${limitNum}`;
-    return {
+    const result = {
       data: users,
       ...paginate(total, pageNum, limitNum, total, url),
     };
+
+    // Cache the result for future requests
+    await this.cacheManager.set(cacheKey, result, 3600); // Cache for 5 minutes
+
+    return result;
   }
 
 
   async getShop(slug: string): Promise<Shop | null> {
     try {
-      const existShop = await this.shopRepository.findOne({
-        where: { slug: slug },
-        relations: [
-          'balance',
-          'balance.shop',
-          'balance.dealer',
-          'balance.payment_info',
-          'settings',
-          'settings.socials',
-          'settings.location',
-          'address',
-          'owner',
-          'owner.profile',
-          'cover_image',
-          'logo',
-          'staffs',
-          'category',
-          'order',
-          'additionalPermissions',
-          'additionalPermissions.permissions',
-          'permission',
-          'permission.permissions'
-        ],
-      });
+      // Construct a unique cache key based on the shop slug
+      const cacheKey = `shop_${slug}`;
+
+      // Try to retrieve the shop data from the cache
+      let existShop = await this.cacheManager.get<Shop>(cacheKey);
+
       if (!existShop) {
-        console.error("Shop Not Found");
-        return null;
+        // If the data is not in the cache, fetch it from the database
+        existShop = await this.shopRepository.findOne({
+          where: { slug: slug },
+          relations: [
+            'balance',
+            'balance.shop',
+            'balance.dealer',
+            'balance.payment_info',
+            'settings',
+            'settings.socials',
+            'settings.location',
+            'address',
+            'owner',
+            'owner.profile',
+            'cover_image',
+            'logo',
+            'staffs',
+            'category',
+            'order',
+            'additionalPermissions',
+            'additionalPermissions.permissions',
+            'permission',
+            'permission.permissions'
+          ],
+        });
+
+        // If the shop is not found, return null
+        if (!existShop) {
+          console.error("Shop Not Found");
+          return null;
+        }
+
+        // Cache the fetched shop data
+        await this.cacheManager.set(cacheKey, existShop, 3600); // Cache for 5 minutes
       }
 
       // Map the retrieved shop data to the desired structure
@@ -489,6 +533,7 @@ export class ShopsService {
       return null;
     }
   }
+
 
   async update(id: number, updateShopDto: UpdateShopDto): Promise<Shop> {
     const existingShop = await this.shopRepository.findOne({

@@ -1,12 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common'
-import settingJson from '@db/settings.json'
-import { Setting } from 'src/settings/entities/setting.entity'
-import { plainToClass } from 'class-transformer'
 import { InjectStripe } from 'nestjs-stripe'
-import paymentGatewayJson from 'src/db/pickbazar/payment-gateway.json'
 import { Order } from 'src/orders/entities/order.entity'
-import { PaymentGateWay } from 'src/payment-method/entities/payment-gateway.entity'
 import { User } from 'src/users/entities/user.entity'
 import Stripe from 'stripe'
 import {
@@ -21,13 +16,10 @@ import {
   StripePaymentMethod,
 } from './entity/stripe.entity'
 
-const paymentGateways = plainToClass(PaymentGateWay, paymentGatewayJson)
-const setting = plainToClass(Setting, settingJson)
 @Injectable()
 export class StripePaymentService {
-  private paymentGateways: PaymentGateWay[] = paymentGateways
 
-  constructor(@InjectStripe() private readonly stripeClient: Stripe) {}
+  constructor(@InjectStripe() private readonly stripeClient: Stripe) { }
 
   /**
    * @param  {StripeCreateCustomerDto} createCustomerDto?
@@ -200,7 +192,7 @@ export class StripePaymentService {
     return {
       customer: currentCustomer.id,
       amount: Math.ceil(order.paid_total),
-      currency: process.env.DEFAULT_CURRENCY || setting.options.currency,
+      currency: process.env.DEFAULT_CURRENCY,
       payment_method_types: ['card'],
       metadata: {
         order_tracking_number: order.tracking_number,

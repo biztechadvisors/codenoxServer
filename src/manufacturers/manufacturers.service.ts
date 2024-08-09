@@ -1,7 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common'
 import { Manufacturer } from './entities/manufacturer.entity'
-import manufacturersJson from '@db/manufacturers.json'
 import { plainToClass } from 'class-transformer'
 import Fuse from 'fuse.js'
 import { GetTopManufacturersDto } from './dto/get-top-manufacturers.dto'
@@ -13,21 +12,16 @@ import { paginate } from '../common/pagination/paginate'
 import { CreateManufacturerDto } from './dto/create-manufacturer.dto'
 import { UpdateManufacturerDto } from './dto/update-manufacturer.dto'
 
-const manufacturers = plainToClass(Manufacturer, manufacturersJson)
-
 const options = {
   keys: ['name'],
   threshold: 0.3,
 }
 
-const fuse = new Fuse(manufacturers, options)
-
 @Injectable()
 export class ManufacturersService {
-  private manufacturers: Manufacturer[] = manufacturers
 
   create(createManufactureDto: CreateManufacturerDto) {
-    return this.manufacturers[0]
+    return []
   }
 
   async getManufactures({
@@ -39,12 +33,12 @@ export class ManufacturersService {
     if (!limit) limit = 30
     const startIndex = (page - 1) * limit
     const endIndex = page * limit
-    let data: Manufacturer[] = this.manufacturers
+    let data: Manufacturer[] = []
     if (search) {
       const parseSearchParams = search.split(';')
       for (const searchParam of parseSearchParams) {
         const [key, value] = searchParam.split(':')
-        data = fuse.search(value)?.map(({ item }) => item)
+        data = []
       }
     }
 
@@ -59,20 +53,15 @@ export class ManufacturersService {
   async getTopManufactures({
     limit = 10,
   }: GetTopManufacturersDto): Promise<Manufacturer[]> {
-    return manufacturers.slice(0, limit)
+    return []
   }
 
-  async getManufacturesBySlug(slug: string): Promise<Manufacturer> {
-    return this.manufacturers.find(
-      (singleManufacture) => singleManufacture.slug === slug,
-    )
+  async getManufacturesBySlug(slug: string): Promise<any> {
+    return []
   }
 
   update(id: number, updateManufacturesDto: UpdateManufacturerDto) {
-    const manufacturer = this.manufacturers.find((p) => p.id === Number(id))
-
-    // Update author
-    manufacturer.is_approved = updateManufacturesDto.is_approved ?? true
+    const manufacturer = {}
 
     return manufacturer
   }

@@ -12,10 +12,12 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { Product } from 'src/products/entities/product.entity';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Type, Product, TypeSettings, Banner, Attachment, Shop, Tag, Category]), // Make sure to include TypeSettings and Banner in forFeature
+    TypeOrmModule.forFeature([Type, Product, TypeSettings, Banner, Attachment, Shop, Tag, Category]),
+    CacheModule.register()
   ],
   controllers: [TypesController],
   providers: [TypesService, UploadsService, TypeRepository, TypeSettingsRepository, BannerRepository, AttachmentRepository],

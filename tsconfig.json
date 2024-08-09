@@ -14,31 +14,7 @@
     "baseUrl": "./",
     "paths": {
       "@db/*": [
-        "src/db/pickbazar/*"
-      ],
-      "@addresses/*": [
-        "src/addresses/*"
-      ],
-      "@common/*": [
-        "src/common/*"
-      ],
-      "@auth/*": [
-        "src/auth/*"
-      ],
-      "@categories/*": [
-        "src/categories/*"
-      ],
-      "@products/*": [
-        "src/products/*"
-      ],
-      "@shops/*": [
-        "src/shops/*"
-      ],
-      "@notifications/*": [
-        "src/notifications/*"
-      ],
-      "@permission/*": [
-        "src/permission/*"
+        "./src/../*"
       ]
     },
     "incremental": true,

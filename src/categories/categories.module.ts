@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { Category, SubCategory } from './entities/category.entity'
 import { TypeRepository } from 'src/types/types.repository'
 import { Shop } from 'src/shops/entities/shop.entity'
+import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { Shop } from 'src/shops/entities/shop.entity'
       TypeRepository,
     ]),
     TypeOrmModule.forFeature([Category, Shop, SubCategory]),
+    CacheModule.register()
   ],
   controllers: [CategoriesController, SubCategoriesController],
   providers: [CategoriesService],

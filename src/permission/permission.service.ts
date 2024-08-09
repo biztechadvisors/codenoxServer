@@ -1,11 +1,13 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { CreatePermissionDto, CreatePermissionTypeDto } from "./dto/create-permission.dto";
 import { Permission, PermissionType } from "./entities/permission.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { UpdatePermissionDto } from "./dto/update-permission.dto";
 import { User } from "src/users/entities/user.entity";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from "cache-manager";
 
 @Injectable()
 export class PermissionService {
@@ -13,7 +15,8 @@ export class PermissionService {
   constructor(
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
     @InjectRepository(PermissionType) private readonly permissionTypeRepository: Repository<PermissionType>,
-    @InjectRepository(User) private readonly userRepository: Repository<User>
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
 
   ) { }
 
@@ -55,86 +58,106 @@ export class PermissionService {
     }
   }
 
-
   async getPermission(userId: any) {
+    const cacheKey = `permissions-user-${userId}`;
+
     try {
-    
-      const permissions = await this.permissionRepository
-        .createQueryBuilder('permission')
-        .leftJoinAndSelect('permission.permissions', 'permissionTypes') // Use a different alias to avoid confusion
-        .select(['permission.id', 'permission.type_name', 'permission.permission_name'])
-        .addSelect(['permissionTypes.id', 'permissionTypes.type', 'permissionTypes.read', 'permissionTypes.write'])
-        .where("permission.user = :user", { user: Number(userId) })
-        .getMany();
+      let permissions: Permission[] = await this.cacheManager.get(cacheKey);
 
-      const groupedPermissions = permissions.reduce((acc, permission) => {
-        const typeName = permission.type_name;
-        const permissionName = permission.permission_name;
-        const user = permission.user;
+      if (!permissions) {
+        permissions = await this.permissionRepository
+          .createQueryBuilder('permission')
+          .leftJoinAndSelect('permission.permissions', 'permissionTypes')
+          .select(['permission.id', 'permission.type_name', 'permission.permission_name'])
+          .addSelect(['permissionTypes.id', 'permissionTypes.type', 'permissionTypes.read', 'permissionTypes.write'])
+          .where("permission.user = :user", { user: Number(userId) })
+          .getMany();
 
-        if (!acc[permissionName]) {
-          acc[permissionName] = {
-            id: permission.id,
-            type_name: typeName,
-            permission_name: permissionName,
-            user: user,
-            permissions: [],
-          };
-        }
+        const groupedPermissions = permissions.reduce((acc, permission) => {
+          const typeName = permission.type_name;
+          const permissionName = permission.permission_name;
 
-        // Access properties of individual PermissionType objects
-        for (const permissionType of permission.permissions) {
-          acc[permissionName].permissions.push({
-            id: permissionType.id,
-            type: permissionType.type,
-            read: permissionType.read,
-            write: permissionType.write,
-          });
-        }
+          if (!acc[permissionName]) {
+            acc[permissionName] = {
+              id: permission.id,
+              type_name: typeName,
+              permission_name: permissionName,
+              user: permission.user,
+              permissions: [],
+            };
+          }
 
-        return acc;
-      }, {});
+          for (const permissionType of permission.permissions) {
+            acc[permissionName].permissions.push({
+              id: permissionType.id,
+              type: permissionType.type,
+              read: permissionType.read,
+              write: permissionType.write,
+            });
+          }
 
-      return Object.values(groupedPermissions);
+          return acc;
+        }, {});
+
+        permissions = Object.values(groupedPermissions);
+
+        // Cache the result
+        await this.cacheManager.set(cacheKey, permissions, 3600); // Cache for 1 hour
+      }
+
+      return permissions;
     } catch (error) {
-      console.error(error);
+      console.error('Error in getPermission:', error);
       throw error;
     }
   }
 
-
   async getPermissionID(id: number) {
-  
-    const result = await this.permissionRepository
-      .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.permissions', 'permissions')
-      .where('permission.id = :id', { id })
-      .select([
-        'permission.id',
-        'permission.type_name',
-        'permission.permission_name',
-        'permissions.id',
-        'permissions.type',
-        'permissions.read',
-        'permissions.write',
-      ])
-      .getMany();
+    const cacheKey = `permission-id-${id}`;
 
-    const formattedResult = result.map(permission => ({
-      id: permission.id,
-      type_name: permission.type_name,
-      permissionName: permission.permission_name,
-      user: permission.user,
-      permission: permission.permissions.map(p => ({
-        id: p.id,
-        type: p.type,
-        read: p.read,
-        write: p.write,
-      })),
-    }));
+    try {
+      let formattedResult = await this.cacheManager.get(cacheKey);
 
-    return formattedResult[0];
+      if (!formattedResult) {
+        const result = await this.permissionRepository
+          .createQueryBuilder('permission')
+          .leftJoinAndSelect('permission.permissions', 'permissions')
+          .where('permission.id = :id', { id })
+          .select([
+            'permission.id',
+            'permission.type_name',
+            'permission.permission_name',
+            'permissions.id',
+            'permissions.type',
+            'permissions.read',
+            'permissions.write',
+          ])
+          .getMany();
+
+        formattedResult = result.map(permission => ({
+          id: permission.id,
+          type_name: permission.type_name,
+          permissionName: permission.permission_name,
+          user: permission.user,
+          permission: permission.permissions.map(p => ({
+            id: p.id,
+            type: p.type,
+            read: p.read,
+            write: p.write,
+          })),
+        }));
+
+        // Cache the result
+        await this.cacheManager.set(cacheKey, formattedResult[0], 3600); // Cache for 1 hour
+      }
+
+      return formattedResult;
+    } catch (error) {
+      console.error('Error in getPermissionID:', error);
+      throw error;
+    }
   }
+
 
 
   async updatePermission(id: number, updatePermissionDto: UpdatePermissionDto) {
