@@ -1,10 +1,12 @@
 /* eslint-disable prettier/prettier */
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Post,
   Query,
 } from '@nestjs/common';
@@ -23,6 +25,8 @@ import {
   VerifyForgetPasswordDto,
   VerifyOtpDto,
 } from './dto/create-auth.dto';
+import { User } from 'aws-sdk/clients/budgets';
+import { AddPointsDto } from './dto/addWalletPoints.dto';
 
 @Controller()
 export class AuthController {
@@ -105,23 +109,27 @@ export class AuthController {
   }
 
   @Post('add-points')
-  async addWalletPoints(@Body() addPointsDto: any) {
-    // Extract the user's email and points from the request body
+  async addWalletPoints(@Body() addPointsDto: AddPointsDto): Promise<any> {
     const { email, id, points } = addPointsDto;
 
-    // Get the user
-    const user = await this.authService.me(email, id);
+    if (!email && !id) {
+      throw new BadRequestException('Email or ID must be provided.');
+    }
 
-    // Add points to the user's wallet
-    user.walletPoints += points;
+    const user = await this.authService.findUserByEmailOrId(email, id);
 
-    // Save the updated user
-    await this.authService.save(user);
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
 
-    // Return the updated user
-    return user;
+    if (points <= 0) {
+      throw new BadRequestException('Points must be a positive number.');
+    }
+
+    const updatedUser = await this.authService.addWalletPoints(user, points);
+
+    return updatedUser;
   }
-
 
   @Post('contact-us')
   contactUs(@Body() addPointsDto: any) {

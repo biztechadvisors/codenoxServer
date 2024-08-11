@@ -9,6 +9,7 @@ import session from 'express-session';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: false });
@@ -16,13 +17,9 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.use(cookieParser());
 
-  // Use helmet for security
   app.use(helmet());
-
-  // Use compression for performance
   app.use(compression());
 
-  // Session configuration
   app.use(
     session({
       name: process.env.SESSION_NAME || 'sessionName',
@@ -31,13 +28,12 @@ async function bootstrap() {
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Ensures cookie is only used over HTTPS
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000,
       },
     }),
   );
 
-  // CORS configuration
   const corsOptions = {
     origin: (origin, callback) => {
       const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : [];
@@ -52,13 +48,9 @@ async function bootstrap() {
 
   app.use(cors(corsOptions));
 
-  // Set global API prefix
   app.setGlobalPrefix('api');
-
-  // Use global validation pipe
   app.useGlobalPipes(new ValidationPipe());
 
-  // Swagger setup
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Marvel')
@@ -72,7 +64,7 @@ async function bootstrap() {
 
   const PORT = process.env.PORT || 5000;
   await app.listen(PORT);
-  console.log(`Application is running on: ${await app.getUrl()}/api`);
+  Logger.log(`Application is running on: ${await app.getUrl()}/api`);
 }
 
 bootstrap();

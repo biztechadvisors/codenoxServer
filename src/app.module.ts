@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MulterModule } from '@nestjs/platform-express';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
-import * as redistStore from 'cache-manager-redis-store';
+import * as redisStore from 'cache-manager-redis-store';
 import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
 import { CommonModule } from './common/common.module';
@@ -34,7 +34,6 @@ import { ReviewModule } from './reviews/reviews.module';
 import { QuestionModule } from './questions/questions.module';
 import { WishlistsModule } from './wishlists/wishlists.module';
 import { ReportsModule } from './reports/reports.module';
-import { FeedbackModule } from './feedbacks/feedbacks.module';
 import { PaymentMethodModule } from './payment-method/payment-method.module';
 import { PaymentIntentModule } from './payment-intent/payment-intent.module';
 import { WebHookModule } from './web-hook/web-hook.module';
@@ -55,6 +54,7 @@ import { GetInspiredModule } from './get-inspired/get-inspired.module';
 import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { FeedbackModule } from './feedbacks/feedbacks.module';
 
 @Module({
   imports: [
@@ -97,8 +97,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
       useFactory: async (configService: ConfigService) => ({
         max: 100,
         isGlobal: true,
-        ttl: configService.get<number>('CACHE_TTL'),
-        store: redistStore,
+        store: redisStore,
         host: configService.get<string>('REDIS_HOST'),
         port: configService.get<number>('REDIS_PORT'),
       }),

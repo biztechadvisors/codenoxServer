@@ -143,6 +143,24 @@ export class MailService {
     }
   }
 
+  async sendWelcomeEmail(user: User): Promise<void> {
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        from: '"Support Team" <info@codenoxx.tech>',
+        subject: `Welcome to Our Platform, ${user.name}!`,
+        template: './welcome', // Adjust the template path as needed
+        context: {
+          name: user.name,
+          otp: user.otp, // If you want to include the OTP in the email
+        },
+      });
+      console.log(`Welcome email sent successfully to ${user.email}`);
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+    }
+  }
+
   async sendInvoiceToVendor(user: User, products: any) {
     try {
       const productDetails = products.map((items: any) => ({
