@@ -7,13 +7,15 @@ import { PermissionController } from "./permission.controller";
 import { PermissionService } from "./permission.service";
 import { User } from "src/users/entities/user.entity";
 import { CacheModule } from "@nestjs/cache-manager";
+import { PermissionRepository } from "./permission.repository";
 
 @Module({
     imports: [TypeOrmModule.forFeature([PermissionType, Permission, User]),
-    CacheModule.register()
+    TypeOrmModule.forFeature([PermissionRepository]),
+    CacheModule.register(),
     ],
     controllers: [PermissionController],
-    providers: [PermissionService]
+    providers: [PermissionService],
 })
 
 export class PermissionModule { }

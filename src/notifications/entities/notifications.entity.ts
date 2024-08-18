@@ -12,7 +12,10 @@ export class Notification {
     @Column()
     title: string;
 
-    @ManyToOne(() => User, user => user.notifications)
+    @ManyToOne(() => User, user => user.notifications, {
+        onDelete: 'CASCADE', // Automatically delete child rows when parent is deleted
+        onUpdate: 'CASCADE', // Automatically update child rows when parent is updated
+    })
     user: User;
 
     @CreateDateColumn()

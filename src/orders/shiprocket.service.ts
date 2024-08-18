@@ -1,17 +1,14 @@
-// shiprocket.service.ts
-
 import { Injectable, Logger } from '@nestjs/common';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 @Injectable()
 export class ShiprocketService {
-
-    private apiUrl = 'https://apiv2.shiprocket.in/v1/external/';
-    private headers = {
+    private readonly apiUrl = 'https://apiv2.shiprocket.in/v1/external/';
+    private readonly headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.SHIPROCKET_TOKEN}`,
     };
-    private logger = new Logger(ShiprocketService.name);
+    private readonly logger = new Logger(ShiprocketService.name);
 
     private async makeShiprocketRequest(url: string, method: 'get' | 'post', data?: any) {
         try {
@@ -21,36 +18,33 @@ export class ShiprocketService {
                 data,
                 headers: this.headers,
             });
-
             return response.data;
         } catch (error) {
-            if (error.response && error.response.status === 401) {
-                // console.log("error.response.data********", error.response.data)
-                this.logger.error('Shiprocket API Authentication Error:', error.response.data);
-                throw new Error('Shiprocket API Authentication Error. Check your credentials.');
-            } else {
-                this.handleApiError(error);
-            }
-            return undefined;
+            this.handleApiError(error);
         }
     }
 
-    private handleApiError(error: any) {
+    private handleApiError(error: AxiosError) {
         if (error.response) {
-            const shiprocketError = error.response.data;
-            this.logger.error('Shiprocket API Error:', shiprocketError);
-            throw shiprocketError;
+            const statusCode = error.response.status;
+            const errorMessage = error.response.data;
+            if (statusCode === 401) {
+                this.logger.error('Shiprocket API Authentication Error:', errorMessage);
+                throw new Error('Shiprocket API Authentication Error. Check your credentials.');
+            }
+            this.logger.error('Shiprocket API Error:', errorMessage);
+            throw new Error(`Shiprocket API Error: ${errorMessage}`);
         } else if (error.request) {
             this.logger.error('Network Error:', error.request);
             throw new Error('Network error. Please check your internet connection.');
         } else {
-            this.logger.error('Unexpected error:', error);
-            throw error;
+            this.logger.error('Unexpected Error:', error.message);
+            throw new Error(`Unexpected Error: ${error.message}`);
         }
     }
 
     async createOrder(order: any) {
-        return this.makeShiprocketRequest(this.apiUrl + 'orders/create/adhoc', 'post', order);
+        return this.makeShiprocketRequest(`${this.apiUrl}orders/create/adhoc`, 'post', order);
     }
 
     async generateLabel(orderId: number) {
@@ -61,28 +55,26 @@ export class ShiprocketService {
         return this.makeShiprocketRequest(`${this.apiUrl}courier/track/awb/${orderId}`, 'get');
     }
 
-    async trackOrderByShipment_id(shipment_id: string | number) {
-        return this.makeShiprocketRequest(`${this.apiUrl}courier/track/shipment/${shipment_id}`, 'get');
+    async trackOrderByShipmentId(shipmentId: string | number) {
+        return this.makeShiprocketRequest(`${this.apiUrl}courier/track/shipment/${shipmentId}`, 'get');
     }
 
-
     async calculateShippingCostAndChoosePartner(
-        pickup_postcode: number,
-        delivery_postcode: number,
-        weight: string = "1",
+        pickupPostcode: number,
+        deliveryPostcode: number,
+        weight: string = '1',
         cod: boolean = true,
     ): Promise<{ partner: string; shippingDetails: any }> {
         try {
             const shippingDetails = await this.calculateShippingCost({
-                pickup_postcode,
-                delivery_postcode,
+                pickup_postcode: pickupPostcode,
+                delivery_postcode: deliveryPostcode,
                 weight,
                 cod,
             });
 
             const minShippingDetails = this.findMinimumShippingCost(shippingDetails);
 
-            // Map the minimum shipping details to the desired response structure
             const courierDetails = {
                 id: minShippingDetails.courier_company_id,
                 currency: minShippingDetails.currency,
@@ -114,40 +106,9 @@ export class ShiprocketService {
             throw new Error('No shipping details available.');
         }
 
-        const minShippingDetails = shippingDetails.reduce((min, current) => {
-            return current.shippingCost < min.shippingCost ? current : min;
-        }, shippingDetails[0]);
-
-        // Extract relevant data from the minimum shipping details
-        const {
-            city,
-            cod,
-            courier_company_id,
-            courier_name,
-            postcode,
-            region,
-            state,
-            zone,
-            estimated_delivery_days,
-            etd,
-        } = minShippingDetails;
-
-        return {
-            city,
-            cod,
-            courier_company_id,
-            courier_name,
-            postcode,
-            region,
-            state,
-            zone,
-            shippingCost: minShippingDetails.shippingCost,
-            currency: minShippingDetails.currency,
-            min_weight: minShippingDetails.min_weight,
-            cod_charges: minShippingDetails.cod_charges,
-            estimated_delivery_days,
-            etd,
-        };
+        return shippingDetails.reduce((min, current) => (
+            current.shippingCost < min.shippingCost ? current : min
+        ));
     }
 
     async calculateShippingCost(shippingData: any): Promise<any[]> {
@@ -156,10 +117,8 @@ export class ShiprocketService {
 
         try {
             const response = await this.makeShiprocketRequest(url, 'get');
-
-            if (response && response.data && response.data.available_courier_companies) {
-                // Extract and filter the relevant data for each courier company
-                return response.data.available_courier_companies.map((courier) => ({
+            if (response?.data?.available_courier_companies) {
+                return response.data.available_courier_companies.map(courier => ({
                     id: courier.id,
                     currency: response.currency,
                     city: courier.city,
@@ -186,17 +145,11 @@ export class ShiprocketService {
         }
     }
 
-    async cancelOrder(order_id: string | number) {
+    async cancelOrder(orderId: string | number) {
         try {
-            const ids = [order_id];
-            return this.makeShiprocketRequest(`${this.apiUrl}orders/cancel`, 'post', { ids });
+            return this.makeShiprocketRequest(`${this.apiUrl}orders/cancel`, 'post', { ids: [orderId] });
         } catch (error) {
-            if (error.response && error.response.status === 401) {
-                this.logger.error('Shiprocket API Error: Authentication failed. Check your credentials.');
-                throw new Error('Authentication failed. Check your credentials.');
-            } else {
-                this.handleApiError(error);
-            }
+            this.handleApiError(error);
         }
     }
 
@@ -209,24 +162,14 @@ export class ShiprocketService {
     }
 
     async getShiprocketOrders() {
-        const response = await axios.get(`${this.apiUrl}orders`, {
-            headers: {
-                Authorization: `Bearer ${process.env.SHIPROCKET_TOKEN || ''}`,
-            },
-        });
-
-        if (response.status !== 200) {
-            this.handleApiError(response);
-        }
-
-        return response.data;
+        return this.makeShiprocketRequest(`${this.apiUrl}orders`, 'get');
     }
 
-    async returnAllShiprocketOrder() {
-        return this.makeShiprocketRequest(`${this.apiUrl}orders/processing/return`, 'post', {});
+    async returnAllShiprocketOrders() {
+        return this.makeShiprocketRequest(`${this.apiUrl}orders/processing/return`, 'post');
     }
 
-    // async generateToken(email: string, password: string) {
-    //     return this.makeShiprocketRequest(this.apiUrl + 'auth/login', 'post', { email, password });
-    // }
+    async generateToken(email: string, password: string) {
+        return this.makeShiprocketRequest(`${this.apiUrl}auth/login`, 'post', { email, password });
+    }
 }

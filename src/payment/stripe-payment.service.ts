@@ -1,202 +1,141 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common'
-import { InjectStripe } from 'nestjs-stripe'
-import { Order } from 'src/orders/entities/order.entity'
-import { User } from 'src/users/entities/user.entity'
-import Stripe from 'stripe'
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { InjectStripe } from 'nestjs-stripe';
+import { Order } from 'src/orders/entities/order.entity';
+import { User } from 'src/users/entities/user.entity';
+import Stripe from 'stripe';
 import {
-  CardElementDto,
-  CreatePaymentIntentDto,
-  StripeCreateCustomerDto,
-} from './dto/stripe.dto'
+    CardElementDto,
+    CreatePaymentIntentDto,
+    StripeCreateCustomerDto,
+} from './dto/stripe.dto';
 import {
-  StripeCustomer,
-  StripeCustomerList,
-  StripePaymentIntent,
-  StripePaymentMethod,
-} from './entity/stripe.entity'
+    StripeCustomer,
+    StripeCustomerList,
+    StripePaymentIntent,
+    StripePaymentMethod,
+} from './entity/stripe.entity';
 
 @Injectable()
 export class StripePaymentService {
+    constructor(
+        @InjectStripe() private readonly stripeClient: Stripe,
+    ) { }
 
-  constructor(@InjectStripe() private readonly stripeClient: Stripe) { }
+    async createCustomer(createCustomerDto?: StripeCreateCustomerDto): Promise<StripeCustomer> {
+        try {
+            return await this.stripeClient.customers.create(createCustomerDto);
+        } catch (error) {
+            throw new HttpException(`Failed to create Stripe customer: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-  /**
-   * @param  {StripeCreateCustomerDto} createCustomerDto?
-   * @returns Promise
-   */
-  async createCustomer(
-    createCustomerDto?: StripeCreateCustomerDto,
-  ): Promise<StripeCustomer> {
-    try {
-      return await this.stripeClient.customers.create(createCustomerDto)
-    } catch (error) {
-      console.log(error)
+    async retrieveCustomer(id: string): Promise<StripeCustomer> {
+        try {
+            return await this.stripeClient.customers.retrieve(id);
+        } catch (error) {
+            throw new HttpException(`Failed to retrieve Stripe customer: ${error.message}`, HttpStatus.NOT_FOUND);
+        }
     }
-  }
 
-  /**
-   * @param  {string} id
-   * @returns Promise
-   */
-  async retrieveCustomer(id: string): Promise<StripeCustomer> {
-    try {
-      return await this.stripeClient.customers.retrieve(id)
-    } catch (error) {
-      console.log(error)
+    async listAllCustomer(): Promise<StripeCustomerList> {
+        try {
+            return await this.stripeClient.customers.list();
+        } catch (error) {
+            throw new HttpException(`Failed to list Stripe customers: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-  }
 
-  /**
-   * @returns Promise
-   */
-  async listAllCustomer(): Promise<StripeCustomerList> {
-    try {
-      return await this.stripeClient.customers.list()
-    } catch (error) {
-      console.log(error)
+    async createPaymentMethod(cardElementDto: CardElementDto): Promise<StripePaymentMethod> {
+        try {
+            const paymentMethod = await this.stripeClient.paymentMethods.create({
+                type: 'card',
+                card: cardElementDto,
+            });
+            return paymentMethod as StripePaymentMethod;
+        } catch (error) {
+            throw new HttpException(`Failed to create payment method: ${error.message}`, HttpStatus.BAD_REQUEST);
+        }
     }
-  }
 
-  /**
-   *
-   * @param createStripPaymentMethod
-   * @returns StripePaymentMethod
-   */
-  async createPaymentMethod(
-    cardElementDto: CardElementDto,
-  ): Promise<StripePaymentMethod> {
-    try {
-      const paymentMethod = await this.stripeClient.paymentMethods.create({
-        type: 'card',
-        card: cardElementDto,
-      })
-      const { ...newPaymentMethod }: StripePaymentMethod = paymentMethod
-      return newPaymentMethod
-    } catch (error) {
-      console.log(error)
+    async retrievePaymentMethod(method_key: string): Promise<StripePaymentMethod> {
+        try {
+            return await this.stripeClient.paymentMethods.retrieve(method_key);
+        } catch (error) {
+            throw new HttpException(`Failed to retrieve payment method: ${error.message}`, HttpStatus.NOT_FOUND);
+        }
     }
-  }
 
-  /**
-   * @param  {string} id
-   * @returns Promise
-   */
-  async retrievePaymentMethod(
-    method_key: string,
-  ): Promise<StripePaymentMethod> {
-    try {
-      return await this.stripeClient.paymentMethods.retrieve(method_key)
-    } catch (error) {
-      console.log(error)
+    async retrievePaymentMethodByCustomerId(customer: string): Promise<StripePaymentMethod[]> {
+        try {
+            const { data } = await this.stripeClient.customers.listPaymentMethods(customer, {
+                type: 'card',
+            });
+            return data;
+        } catch (error) {
+            throw new HttpException(`Failed to retrieve payment methods by customer: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-  }
 
-  /**
-   * @param  {string} customer
-   * @returns Promise
-   */
-  async retrievePaymentMethodByCustomerId(
-    customer: string,
-  ): Promise<StripePaymentMethod[]> {
-    try {
-      const { data } = await this.stripeClient.customers.listPaymentMethods(
-        customer,
-        {
-          type: 'card',
-        },
-      )
-      return data
-    } catch (error) {
-      console.log(error)
+    async attachPaymentMethodToCustomer(method_id: string, customer_id: string): Promise<StripePaymentMethod> {
+        try {
+            return await this.stripeClient.paymentMethods.attach(method_id, {
+                customer: customer_id,
+            });
+        } catch (error) {
+            throw new HttpException(`Failed to attach payment method to customer: ${error.message}`, HttpStatus.BAD_REQUEST);
+        }
     }
-  }
 
-  /**
-   * Attach a payment method to a customer
-   * @param  {string} method_id
-   * @param  {string} customer_id
-   * @returns Promise
-   */
-  async attachPaymentMethodToCustomer(
-    method_id: string,
-    customer_id: string,
-  ): Promise<StripePaymentMethod> {
-    try {
-      return await this.stripeClient.paymentMethods.attach(method_id, {
-        customer: customer_id,
-      })
-    } catch (error) {
-      console.log(error)
+    async detachPaymentMethodFromCustomer(method_id: string): Promise<StripePaymentMethod> {
+        try {
+            return await this.stripeClient.paymentMethods.detach(method_id);
+        } catch (error) {
+            throw new HttpException(`Failed to detach payment method from customer: ${error.message}`, HttpStatus.BAD_REQUEST);
+        }
     }
-  }
 
-  /** Detach a payment method from customer
-   * @param  {string} method_id
-   * @returns Promise<StripePaymentMethod>
-   */
-  async detachPaymentMethodFromCustomer(
-    method_id: string,
-  ): Promise<StripePaymentMethod> {
-    try {
-      return await this.stripeClient.paymentMethods.detach(method_id)
-    } catch (error) {
-      console.log(error)
+    async createPaymentIntent(createPaymentIntentDto: CreatePaymentIntentDto): Promise<StripePaymentIntent> {
+        try {
+            const paymentIntent = await this.stripeClient.paymentIntents.create(createPaymentIntentDto);
+            return paymentIntent as StripePaymentIntent;
+        } catch (error) {
+            throw new HttpException(`Failed to create payment intent: ${error.message}`, HttpStatus.BAD_REQUEST);
+        }
     }
-  }
 
-  /**
-   * Create a Stripe paymentIntent
-   * @param createPaymentIntentDto
-   */
-  async createPaymentIntent(
-    createPaymentIntentDto: CreatePaymentIntentDto,
-  ): Promise<StripePaymentIntent> {
-    try {
-      const paymentIntent = await this.stripeClient.paymentIntents.create(
-        createPaymentIntentDto,
-      )
-      const { ...newIntent }: StripePaymentIntent = paymentIntent
-      return newIntent
-    } catch (error) {
-      console.log(error)
+    async retrievePaymentIntent(payment_id: string): Promise<StripePaymentIntent> {
+        try {
+            return await this.stripeClient.paymentIntents.retrieve(payment_id);
+        } catch (error) {
+            throw new HttpException(`Failed to retrieve payment intent: ${error.message}`, HttpStatus.NOT_FOUND);
+        }
     }
-  }
 
-  /**
-   * Retrieving Payment Intent from Stripe
-   * @param payment_id
-   */
-  async retrievePaymentIntent(
-    payment_id: string,
-  ): Promise<StripePaymentIntent> {
-    try {
-      return await this.stripeClient.paymentIntents.retrieve(payment_id)
-    } catch (error) {
-      console.log(error)
-    }
-  }
+    async makePaymentIntentParam(order: Order, me: User) {
+        try {
+            const customerList = await this.listAllCustomer();
+            let currentCustomer = customerList.data.find((customer: StripeCustomer) => customer.email === me.email);
 
-  async makePaymentIntentParam(order: Order, me: User) {
-    const customerList = await this.listAllCustomer()
-    const currentCustomer = customerList.data.find(
-      (customer: StripeCustomer) => customer.email === me.email,
-    )
-    if (!currentCustomer) {
-      const newCustomer = await this.createCustomer({
-        name: me.name,
-        email: me.email,
-      })
-      currentCustomer.id = newCustomer.id
+            if (!currentCustomer) {
+                const newCustomer = await this.createCustomer({
+                    name: me.name,
+                    email: me.email,
+                });
+                currentCustomer = newCustomer;
+            }
+
+            return {
+                customer: currentCustomer.id,
+                amount: Math.ceil(order.paid_total),
+                currency: process.env.DEFAULT_CURRENCY || 'usd',
+                payment_method_types: ['card'],
+                metadata: {
+                    order_tracking_number: order.tracking_number,
+                },
+            };
+        } catch (error) {
+            throw new HttpException(`Failed to create payment intent parameters: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    return {
-      customer: currentCustomer.id,
-      amount: Math.ceil(order.paid_total),
-      currency: process.env.DEFAULT_CURRENCY,
-      payment_method_types: ['card'],
-      metadata: {
-        order_tracking_number: order.tracking_number,
-      },
-    }
-  }
 }

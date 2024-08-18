@@ -44,6 +44,7 @@ export enum PaymentStatusType {
   WALLET = 'payment-wallet',
   AWAITING_FOR_APPROVAL = 'payment-awaiting-for-approval',
   DEFAULT_PAYMENT_STATUS = 'payment-pending',
+  PAID = "PAID",
 }
 
 @Entity()

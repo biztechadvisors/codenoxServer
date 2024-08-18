@@ -10,32 +10,43 @@ export class RegisterDto extends PickType(User, ['name', 'email', 'password', 'p
 }
 
 export class LoginDto extends PartialType(
-  PickType(User, ['email', 'password']),
+  PickType(User, ['email', 'password', 'contact', 'id'] as const),
 ) { }
+
 
 export class SocialLoginDto {
   provider: string;
   access_token: string;
 }
+
 export class ChangePasswordDto {
-  email: string;
+  email?: string;
+  phone_number?: string;
   oldPassword: string;
   newPassword: string;
 }
+
 export class ForgetPasswordDto {
-  email: string;
+  email?: string;
+  phone_number?: string;
 }
+
 export class VerifyForgetPasswordDto {
-  email: string;
-  token: number;
+  email?: string;
+  phone_number?: string;
+  token: string; // OTP is a string to handle both number and alphanumeric cases.
 }
+
 export class ResetPasswordDto {
-  email: string;
-  token: number;
+  email?: string;
+  phone_number?: string;
+  token: string;
   password: string;
 }
+
 export class ResendOtpDto {
-  email: string;
+  email?: string;
+  phone_number?: string;
 }
 
 export interface PermissionItem {
@@ -46,8 +57,9 @@ export interface PermissionItem {
 
 export class AuthResponse {
   token: string;
+  refreshToken: string;
   permissions: any[];
-  type_name?: string[]
+  type_name?: string[];
   success?: boolean;
   message?: string;
 }
@@ -58,6 +70,7 @@ export class VerifyOtpDto {
   otp_id: string;
   code: number;
   phone_number: string;
+  email: string;
 }
 
 export class OtpResponse {

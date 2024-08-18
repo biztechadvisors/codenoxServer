@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import {
   BadRequestException,
   Body,
@@ -12,6 +11,8 @@ import {
   Post,
   Put,
   Query,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { CreateOrderStatusDto } from './dto/create-order-status.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -24,66 +25,77 @@ import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
 import { Order, PaymentGatewayType, PaymentStatusType } from './entities/order.entity';
 import { OrdersService } from './orders.service';
 import { ShiprocketService } from './shiprocket.service';
-import { error } from 'console';
 import { StocksService } from 'src/stocks/stocks.service';
+import { Logger } from '@nestjs/common';
 
 @Controller('orders')
 export class OrdersController {
+  private readonly logger = new Logger(OrdersController.name);
+
   constructor(
     private readonly ordersService: OrdersService,
   ) { }
 
   @Post()
+  @UsePipes(new ValidationPipe())
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order | { statusCode: number; message: string }> {
     try {
-      // Attempt to create the order
       const OrdSuccess = await this.ordersService.create(createOrderDto);
-      // Attempt to update product quantities
-      await this.ordersService.updateOrdQuantityProd(createOrderDto.products);
+      await this.ordersService.updateOrderQuantityProducts(createOrderDto.products);
       return OrdSuccess;
     } catch (error) {
-      // Log the error for debugging purposes
-      console.error('Error creating order:', error.message || error);
+      this.logger.error('Error creating order:', error.message || error);
+      throw new BadRequestException('Failed to create order');
     }
   }
 
   @Get()
+  @UsePipes(new ValidationPipe())
   async getOrders(@Query() query: GetOrdersDto): Promise<OrderPaginator> {
     return this.ordersService.getOrders(query);
   }
 
   @Get(':id')
-  getOrderById(@Param('id') id: number) {
-    return this.ordersService.getOrderByIdOrTrackingNumber(Number(id));
+  async getOrderById(@Param('id', ParseIntPipe) id: number) {
+    const order = await this.ordersService.getOrderByIdOrTrackingNumber(id);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    return order;
   }
 
   @Get('tracking-number/:tracking_id')
-  getOrderByTrackingNumber(@Param('tracking_id') tracking_id: number) {
-    return this.ordersService.getOrderByIdOrTrackingNumber(tracking_id);
+  async getOrderByTrackingNumber(@Param('tracking_id', ParseIntPipe) tracking_id: number) {
+    const order = await this.ordersService.getOrderByIdOrTrackingNumber(tracking_id);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    return order;
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.ordersService.update(+id, updateOrderDto);
+  @UsePipes(new ValidationPipe())
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateOrderDto: UpdateOrderDto) {
+    return this.ordersService.update(id, updateOrderDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.ordersService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.remove(id);
   }
 
   @Post('checkout/verify')
-  verifyCheckout(@Body() body: CheckoutVerificationDto) {
+  @UsePipes(new ValidationPipe())
+  async verifyCheckout(@Body() body: CheckoutVerificationDto) {
     return this.ordersService.verifyCheckout(body);
   }
 
   @Post('/payment')
   @HttpCode(200)
+  @UsePipes(new ValidationPipe())
   async submitPayment(@Body() orderPaymentDto: OrderPaymentDto): Promise<void> {
     const { tracking_number, paymentIntentInfo } = orderPaymentDto;
-    const order: Order = await this.ordersService.getOrderByIdOrTrackingNumber(
-      tracking_number,
-    );
+    const order = await this.ordersService.getOrderByIdOrTrackingNumber(tracking_number);
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -103,37 +115,41 @@ export class OrdersController {
       default:
         throw new BadRequestException('Invalid payment gateway');
     }
-    // this.ordersService.processChildrenOrder(order);
   }
 }
 
 @Controller('order-status')
 export class OrderStatusController {
+  private readonly logger = new Logger(OrderStatusController.name);
+
   constructor(private readonly ordersService: OrdersService) { }
 
   @Post()
-  create(@Body() createOrderStatusDto: CreateOrderStatusDto) {
+  @UsePipes(new ValidationPipe())
+  async create(@Body() createOrderStatusDto: CreateOrderStatusDto) {
     return this.ordersService.createOrderStatus(createOrderStatusDto);
   }
 
   @Get()
-  findAll(@Query() query: GetOrderStatusesDto) {
+  @UsePipes(new ValidationPipe())
+  async findAll(@Query() query: GetOrderStatusesDto) {
     return this.ordersService.getOrderStatuses(query);
   }
 
   @Get(':param')
-  findOne(@Param('param') param: string, @Query('language') language: string) {
+  async findOne(@Param('param') param: string, @Query('language') language: string) {
     return this.ordersService.getOrderStatus(param, language);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.ordersService.update(+id, updateOrderDto);
+  @UsePipes(new ValidationPipe())
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateOrderDto: UpdateOrderDto) {
+    return this.ordersService.update(id, updateOrderDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.ordersService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.remove(id);
   }
 }
 
@@ -142,6 +158,7 @@ export class OrderFilesController {
   constructor(private ordersService: OrdersService) { }
 
   @Get()
+  @UsePipes(new ValidationPipe())
   async getOrderFileItems(
     @Query() query: GetOrderFilesDto,
   ): Promise<OrderFilesPaginator> {
@@ -149,6 +166,7 @@ export class OrderFilesController {
   }
 
   @Post('digital_file')
+  @UsePipes(new ValidationPipe())
   async getDigitalFileDownloadUrl(
     @Body('digital_file_id', ParseIntPipe) digitalFileId: number,
   ) {
@@ -158,9 +176,12 @@ export class OrderFilesController {
 
 @Controller('export-order-url')
 export class OrderExportController {
+  private readonly logger = new Logger(OrderExportController.name);
+
   constructor(private ordersService: OrdersService) { }
 
   @Get()
+  @UsePipes(new ValidationPipe())
   async orderExport(@Query('shop_id') shop_id: string) {
     return this.ordersService.exportOrder(shop_id);
   }
@@ -168,71 +189,54 @@ export class OrderExportController {
 
 @Controller('download-invoice-url')
 export class DownloadInvoiceController {
+  private readonly logger = new Logger(DownloadInvoiceController.name);
+
   constructor(private ordersService: OrdersService) { }
 
   @Post()
+  @UsePipes(new ValidationPipe())
   async downloadInvoiceUrl(@Body() input: { order_id: string }) {
-    const Invoice = this.ordersService.downloadInvoiceUrl(input.order_id);
-    return Invoice
+    return this.ordersService.downloadInvoiceUrl(input.order_id);
   }
 }
 
 @Controller('Shiprocket_Service')
 export class ShiprocketController {
+  private readonly logger = new Logger(ShiprocketController.name);
+
   constructor(private readonly shiprocketService: ShiprocketService) { }
 
   @Get('delivery-charge')
-  async deliveryCharge(@Body() requestBody: any) {
+  @UsePipes(new ValidationPipe())
+  async deliveryCharge(@Query() requestBody: any) {
     try {
-      // Extract necessary parameters from the request body
       const { pickup_postcode, delivery_postcode, weight, cod } = requestBody;
-
-      // Call the service method to calculate shipping cost and choose a partner
       const { partner, shippingDetails } = await this.shiprocketService.calculateShippingCostAndChoosePartner(
         pickup_postcode,
         delivery_postcode,
         weight,
         cod,
       );
-
-      // Return the response with the relevant information
       return {
         partner,
         shippingCost: shippingDetails.shippingCost,
-        courierDetails: {
-          // Assuming that courierDetails is part of shippingDetails
-          id: shippingDetails.courier_company_id,
-          currency: shippingDetails.currency,
-          city: shippingDetails.city,
-          cod: shippingDetails.cod,
-          courier_company_id: shippingDetails.courier_company_id,
-          courier_name: shippingDetails.courier_name,
-          min_weight: shippingDetails.min_weight,
-          cod_charges: shippingDetails.cod_charges,
-          postcode: shippingDetails.postcode,
-          region: shippingDetails.region,
-          state: shippingDetails.state,
-          zone: shippingDetails.zone,
-          shippingCost: shippingDetails.shippingCost,
-          estimated_delivery_days: shippingDetails.estimated_delivery_days,
-          estimated_date: shippingDetails.etd,
-        },
+        courierDetails: shippingDetails,
       };
     } catch (error) {
-      console.error('Error calculating shipping cost and choosing partner:', error);
-      return { error: 'Failed to calculate shipping cost and choose a partner.' };
+      this.logger.error('Error calculating shipping cost and choosing partner:', error.message);
+      throw new BadRequestException('Failed to calculate shipping cost and choose a partner.');
     }
   }
-  // @Post('shipdelivery-charge')
-  // async deliveryChargeT(@Body() requestBody: any): Promise<any> {
-  //   try {
-  //     console.log("requestBody", requestBody)
-  //     const { pickup_postcode, delivery_postcode, weight, cod } = requestBody;
-  //     const response = await this.shiprocketService.calculateShippingCost(pickup_postcode, delivery_postcode, weight, cod);
-  //     return response;
-  //   } catch (error) {
-  //     console.error('Error calculating shipping cost and choosing partner:', error.message);
-  //     return { error: 'Failed to calculate shipping cost and choose a partner.' };
-  //   }
-  // }
+
+  @Post('shipdelivery-charge')
+  @UsePipes(new ValidationPipe())
+  async deliveryChargeT(@Body() requestBody: any): Promise<any> {
+    try {
+      const response = await this.shiprocketService.calculateShippingCost(requestBody);
+      return response;
+    } catch (error) {
+      this.logger.error('Error calculating shipping cost and choosing partner:', error.message);
+      throw new BadRequestException('Failed to calculate shipping cost and choose a partner.');
+    }
+  }
 }

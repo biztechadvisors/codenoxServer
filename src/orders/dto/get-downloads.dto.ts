@@ -11,6 +11,7 @@ export class OrderFilesPaginator extends Paginator<OrderFiles> {
 export class GetOrderFilesDto extends PaginationArgs {
   orderBy?: QueryOrderFilesOrderByColumn
   sortedBy?: SortOrder
+  order_id?: any
   // search?: string;
 }
 

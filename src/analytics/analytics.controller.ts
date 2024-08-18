@@ -1,7 +1,6 @@
 import { BadRequestException, Body, Controller, ForbiddenException, Get, NotFoundException, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { AnalyticsService } from './analytics.service'
 import { Order } from 'src/orders/entities/order.entity';
-import { AuthGuard } from 'src/auth/auth.guards';
 import { AnalyticsResponseDTO } from './dto/analytics.dto';
 
 @Controller('analytics')

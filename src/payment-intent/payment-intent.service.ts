@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { GetPaymentIntentDto } from './dto/get-payment-intent.dto';
@@ -31,21 +31,19 @@ export class PaymentIntentService {
     return paymentIntent;
   }
 
-  async savePaymentIdIntent(razorpayData: any): Promise<any> {
+  async savePaymentIdIntent(razorpayData: { razorpay_order_id: string; razorpay_payment_id: string }): Promise<PaymentIntentInfo> {
     try {
       const paymentIntentInfo = await this.paymentIntentInfoRepository.findOne({ where: { order_id: razorpayData.razorpay_order_id } });
 
       if (paymentIntentInfo) {
         paymentIntentInfo.payment_id = razorpayData.razorpay_payment_id;
-        await this.paymentIntentInfoRepository.save(paymentIntentInfo);
-        return paymentIntentInfo; // Return the updated paymentIntentInfo
+        return await this.paymentIntentInfoRepository.save(paymentIntentInfo); // Return the updated paymentIntentInfo
       } else {
-        console.error('PaymentIntentInfo not found');
+        throw new NotFoundException('PaymentIntentInfo not found');
       }
     } catch (error) {
       console.error(error);
+      throw new InternalServerErrorException('Error saving payment ID intent');
     }
   }
-
-
 }

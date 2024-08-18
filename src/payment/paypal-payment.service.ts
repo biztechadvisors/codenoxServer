@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import * as Paypal from '@paypal/checkout-server-sdk';
 import { Order } from 'src/orders/entities/order.entity';
 import { v4 as uuidv4 } from 'uuid';
@@ -8,26 +8,29 @@ import { v4 as uuidv4 } from 'uuid';
 export class PaypalPaymentService {
   private clientId: string;
   private clientSecret: string;
-  private environment: any;
-  private client: any;
-  private paypal: any;
+  private environment: Paypal.core.LiveEnvironment | Paypal.core.SandboxEnvironment;
+  private client: Paypal.core.PayPalHttpClient;
+  private paypal: typeof Paypal;
+
   constructor() {
     this.paypal = Paypal;
-    if (process.env.NODE_ENV === "production") {
-      this.clientId = process.env.PAYPAL_CLIENT_ID;
-      this.clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-      this.environment = new this.paypal.core.LiveEnvironment(
-        this.clientId,
-        this.clientSecret,
-      );
-    } else {
-      this.clientId = process.env.PAYPAL_SANDBOX_CLIENT_ID;
-      this.clientSecret = process.env.PAYPAL_SANDBOX_CLIENT_SECRET;
-      this.environment = new this.paypal.core.SandboxEnvironment(
-        this.clientId,
-        this.clientSecret,
-      );
+
+    this.clientId = process.env.NODE_ENV === 'production'
+      ? process.env.PAYPAL_CLIENT_ID
+      : process.env.PAYPAL_SANDBOX_CLIENT_ID;
+
+    this.clientSecret = process.env.NODE_ENV === 'production'
+      ? process.env.PAYPAL_CLIENT_SECRET
+      : process.env.PAYPAL_SANDBOX_CLIENT_SECRET;
+
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error('PayPal client ID and secret must be provided.');
     }
+
+    this.environment = process.env.NODE_ENV === 'production'
+      ? new this.paypal.core.LiveEnvironment(this.clientId, this.clientSecret)
+      : new this.paypal.core.SandboxEnvironment(this.clientId, this.clientSecret);
+
     this.client = new this.paypal.core.PayPalHttpClient(this.environment);
   }
 
@@ -35,43 +38,50 @@ export class PaypalPaymentService {
     const request = new this.paypal.orders.OrdersCreateRequest();
     request.headers['Content-Type'] = 'application/json';
     request.headers['PayPal-Request-Id'] = uuidv4();
+
     const body = this.getRequestBody(order);
     request.requestBody(body);
+
     try {
       const response = await this.client.execute(request);
       const { links, id } = response.result;
-      let redirect_url = null;
-      if (links && links.find(link => link.rel === 'payer-action')) {
-        redirect_url = links.find(link => link.rel === 'payer-action').href;
-      }
+      const redirect_url = links?.find(link => link.rel === 'payer-action')?.href || '';
+
       return {
         client_secret: this.clientSecret,
-        redirect_url: redirect_url,
-        id: id,
+        redirect_url,
+        id,
       };
     } catch (error) {
-      console.log(error);
+      throw new HttpException({
+        message: 'Error creating PayPal payment intent',
+        error: error.message,
+      }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async verifyOrder(orderId: string | number) {
-
-    const request = await new this.paypal.orders.OrdersCaptureRequest(orderId);
+  async verifyOrder(orderId: string): Promise<{ id: string; status: string }> {
+    const request = new this.paypal.orders.OrdersCaptureRequest(orderId);
     request.requestBody({});
-    const response = await this.client.execute(request);
-    return {
-      id: response.result.id,
-      status: response.result.status,
-    };
+
+    try {
+      const response = await this.client.execute(request);
+      return {
+        id: response.result.id,
+        status: response.result.status,
+      };
+    } catch (error) {
+      throw new HttpException({
+        message: 'Error verifying PayPal order',
+        error: error.message,
+      }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   private getRequestBody(order: Order) {
     const redirectUrl = process.env.SHOP_URL || 'http://localhost:3003';
-    let reference_id = '';
-    if (order.tracking_number || order.id) {
-      reference_id = order.tracking_number ? order.tracking_number : order.id.toString();
-    }
-  
+    const reference_id = order.tracking_number || order.id?.toString() || uuidv4();
+
     return {
       intent: 'CAPTURE',
       payment_source: {
@@ -88,13 +98,12 @@ export class PaypalPaymentService {
         {
           amount: {
             currency_code: "USD",
-            value: order.total
+            value: order.total.toFixed(2), // Ensure value is a string with 2 decimal points
           },
-          description: 'Order From Marvel',
-          reference_id: reference_id,
+          description: 'Order from Marvel',
+          reference_id,
         },
       ],
     };
   }
-
 }

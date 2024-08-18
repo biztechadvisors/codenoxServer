@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { MailerService } from '@nestjs-modules/mailer';
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { User } from '../users/entities/user.entity';
 import path from 'path';
 import fs from 'fs';
@@ -67,17 +67,29 @@ export class MailService {
     }
   }
 
-  async sendUserConfirmation(user: User, token: string) {
+  async sendUserConfirmation(userOrEmail: User | string, token: string) {
     const url = `example.com/auth/confirm?token=${token}`;
     try {
+      let email: string;
+      let name: string;
+
+      // Determine if the input is a User object or a string (email)
+      if (typeof userOrEmail === 'string') {
+        email = userOrEmail;
+        name = email.substring(0, email.indexOf('@'));
+      } else {
+        email = userOrEmail.email;
+        name = userOrEmail.name;
+      }
+
       await this.mailerService.sendMail({
-        to: user.email,
+        to: email,
         from: '"Support Team" <info@codenoxx.tech>',
-        subject: `Welcome to Codenox! Confirm your OTP: ${user.otp}`,
-        template: 'confirmation',
+        subject: `Welcome to Codenox! Confirm your OTP: ${token}`,
+        template: './confirmation',
         context: {
-          name: user.name,
-          otp: user.otp,
+          name: name,
+          otp: token,
           url,
         },
       });
@@ -85,6 +97,7 @@ export class MailService {
       console.error('Error sending confirmation email:', error);
     }
   }
+
 
   async resendUserConfirmation(user: User, token: string) {
     const url = `example.com/auth/confirm?token=${token}`;
@@ -140,24 +153,6 @@ export class MailService {
       });
     } catch (error) {
       console.error('Error sending registration success email:', error);
-    }
-  }
-
-  async sendWelcomeEmail(user: User): Promise<void> {
-    try {
-      await this.mailerService.sendMail({
-        to: user.email,
-        from: '"Support Team" <info@codenoxx.tech>',
-        subject: `Welcome to Our Platform, ${user.name}!`,
-        template: './welcome', // Adjust the template path as needed
-        context: {
-          name: user.name,
-          otp: user.otp, // If you want to include the OTP in the email
-        },
-      });
-      console.log(`Welcome email sent successfully to ${user.email}`);
-    } catch (error) {
-      console.error('Error sending welcome email:', error);
     }
   }
 
@@ -251,7 +246,7 @@ export class MailService {
         invoice_date,
       };
 
-      const htmlContent = await this.renderTemplate(orderDetails, 'invoiceToCustomer');
+      await this.renderTemplate(orderDetails, 'invoiceToCustomer');
 
     } catch (error) {
       console.error('Invoice sending failed to Customer or Dealer:', error);
@@ -329,7 +324,7 @@ export class MailService {
         invoice_date,
       };
 
-      const htmlContent = await this.dealer_renderTemplate(orderDetails, 'invoiceToCustomer');
+      await this.dealer_renderTemplate(orderDetails, 'invoiceToCustomer');
     } catch (error) {
       console.error('Dealer Invoice sending failed:', error);
     }
@@ -380,6 +375,37 @@ export class MailService {
       });
     } catch (error) {
       console.error("Invoice sending failed to Customer", error)
+    }
+  }
+
+  async sendOrderConfirmation(order: any, user: User): Promise<void> {
+    try {
+      // Construct email content
+      const emailSubject = 'Order Confirmation';
+      const emailBody = `
+        <h1>Order Confirmation</h1>
+        <p>Dear ${user.name || 'Customer'},</p>
+        <p>Thank you for your order!</p>
+        <p>Your order ID: ${order.id}</p>
+        <p>Order Date: ${order.created_at.toLocaleDateString()}</p>
+        <p>Order Status: ${order.order_status}</p>
+        <p>Total Amount: ${order.total}</p>
+        <p>Billing Address: ${order.billing_address.street_address}, ${order.billing_address.city}, ${order.billing_address.state}, ${order.billing_address.country}, ${order.billing_address.zip}</p>
+        <p>Shipping Address: ${order.shipping_address.street_address}, ${order.shipping_address.city}, ${order.shipping_address.state}, ${order.shipping_address.country}, ${order.shipping_address.zip}</p>
+        <p>Thank you for shopping with us!</p>
+        <p>Best regards,</p>
+        <p>Codenox.com</p>
+      `;
+
+      // Send the email
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: emailSubject,
+        html: emailBody,
+      });
+    } catch (error) {
+      console.error('Error sending order confirmation email:', error.message || error);
+      throw new InternalServerErrorException('Failed to send order confirmation email');
     }
   }
 

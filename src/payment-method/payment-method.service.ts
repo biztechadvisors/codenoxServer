@@ -1,61 +1,84 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common'
-import { plainToClass } from 'class-transformer'
-import { AuthService } from 'src/auth/auth.service'
-import {
-  StripeCustomer,
-  StripePaymentMethod,
-} from 'src/payment/entity/stripe.entity';
+import { Injectable } from '@nestjs/common';
+import { AuthService } from 'src/auth/auth.service';
+import { StripeCustomer, StripePaymentMethod } from 'src/payment/entity/stripe.entity';
 import { StripePaymentService } from 'src/payment/stripe-payment.service';
-import { Setting } from 'src/settings/entities/setting.entity';
-import { SettingsService } from 'src/settings/settings.service';
 import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
 import { DefaultCart } from './dto/set-default-card.dto';
 import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto';
-import { PaymentGateWay } from './entities/payment-gateway.entity';
 import { PaymentMethod } from './entities/payment-method.entity';
 import { PaymentGatewayType } from 'src/orders/entities/order.entity';
 import { User } from 'src/users/entities/user.entity';
+import { ILike, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { GetPaymentMethodsDto } from './dto/get-payment-methods.dto';
 
 @Injectable()
 export class PaymentMethodService {
-  private paymentMethods: PaymentMethod
   constructor(
     private readonly authService: AuthService,
     private readonly stripeService: StripePaymentService,
-    private readonly settingService: SettingsService,
+    @InjectRepository(PaymentMethod)
+    private paymentMethodRepository: Repository<PaymentMethod>,
   ) { }
-  // private setting: Setting = this.settingService.findAll();
 
   async create(createPaymentMethodDto: CreatePaymentMethodDto, user: User) {
     try {
-      const defaultCard = []
       const paymentGateway: string = PaymentGatewayType.STRIPE as string;
       return await this.saveCard(createPaymentMethodDto, paymentGateway, user);
     } catch (error) {
-      console.log(error)
-      return this.paymentMethods[0]
+      console.log(error);
+      throw new Error('Error creating payment method');
     }
   }
 
-  findAll() {
-    return this.paymentMethods
+  async findAll(query: GetPaymentMethodsDto): Promise<PaymentMethod[]> {
+    const { text } = query;
+
+    const whereClause = text ? { owner_name: ILike(`%${text}%`) } : {};
+
+    return this.paymentMethodRepository.find({
+      where: whereClause,
+    });
   }
 
-  findOne(id: number) {
-    return []
+  async findOne(id: number) {
+    return this.paymentMethodRepository.findOne({ where: { id: id } });
   }
 
-  update(id: number, updatePaymentMethodDto: UpdatePaymentMethodDto) {
-    return this.findOne(id)
+  async update(id: number, updatePaymentMethodDto: UpdatePaymentMethodDto) {
+    const paymentMethod = await this.paymentMethodRepository.preload({
+      id: id,
+      ...updatePaymentMethodDto,
+    });
+    if (!paymentMethod) {
+      throw new Error('Payment method not found');
+    }
+    return this.paymentMethodRepository.save(paymentMethod);
   }
 
-  remove(id: number) {
-    return []
+  async remove(id: number) {
+    const paymentMethod = await this.findOne(id);
+    if (!paymentMethod) {
+      throw new Error('Payment method not found');
+    }
+    return this.paymentMethodRepository.remove(paymentMethod);
   }
 
-  saveDefaultCart(defaultCart: DefaultCart) {
-    return []
+  async saveDefaultCart(defaultCart: DefaultCart) {
+    let paymentMethod: PaymentMethod | undefined;
+
+    // Use method_id (which is now a number) to find the payment method
+    paymentMethod = await this.paymentMethodRepository.findOne({
+      where: { id: defaultCart.method_id },
+    });
+
+    if (paymentMethod) {
+      paymentMethod.default_card = true;
+      return this.paymentMethodRepository.save(paymentMethod);
+    } else {
+      throw new Error('Payment method not found.');
+    }
   }
 
   async savePaymentMethod(createPaymentMethodDto: CreatePaymentMethodDto, user: User) {
@@ -63,7 +86,8 @@ export class PaymentMethodService {
     try {
       return this.saveCard(createPaymentMethodDto, paymentGateway, user);
     } catch (err) {
-      console.log(err)
+      console.log(err);
+      throw new Error('Error saving payment method');
     }
   }
 
@@ -72,26 +96,26 @@ export class PaymentMethodService {
     paymentGateway: string,
     user: User
   ) {
-    const { method_key, default_card } = createPaymentMethodDto
-
-    const retrievedPaymentMethod =
-      await this.stripeService.retrievePaymentMethod(method_key)
-    if (
-      this.paymentMethodAlreadyExists(retrievedPaymentMethod.card.fingerprint)
-    )
+    const { method_key, default_card } = createPaymentMethodDto;
+    const retrievedPaymentMethod = await this.stripeService.retrievePaymentMethod(method_key);
+    if (this.paymentMethodAlreadyExists(retrievedPaymentMethod.card.fingerprint)) {
       switch (paymentGateway) {
         case 'stripe':
-          break
+          break;
         case 'paypal':
-          // TODO
-          //paypal code goes here
-          break
+          // TODO: Implement PayPal logic
+          break;
         default:
-          break
+          break;
       }
+    } else {
+      const paymentMethod = await this.makeNewPaymentMethodObject(createPaymentMethodDto, paymentGateway, user);
+      return this.paymentMethodRepository.save(paymentMethod);
+    }
   }
+
   paymentMethodAlreadyExists(fingerPrint: string) {
-    return false
+    return this.paymentMethodRepository.findOne({ where: { fingerprint: fingerPrint } }) !== null;
   }
 
   async makeNewPaymentMethodObject(
@@ -104,23 +128,17 @@ export class PaymentMethodService {
     const listofCustomer = await this.stripeService.listAllCustomer();
     let currentCustomer = listofCustomer.data.find(
       (customer: StripeCustomer) => customer.email === email,
-    )
+    );
     if (!currentCustomer) {
-      const newCustomer = await this.stripeService.createCustomer({
-        name,
-        email,
-      })
-      currentCustomer = newCustomer
+      const newCustomer = await this.stripeService.createCustomer({ name, email });
+      currentCustomer = newCustomer;
     }
     const attachedPaymentMethod: StripePaymentMethod =
-      await this.stripeService.attachPaymentMethodToCustomer(
-        method_key,
-        currentCustomer.id,
-      )
+      await this.stripeService.attachPaymentMethodToCustomer(method_key, currentCustomer.id);
     const paymentMethod: PaymentMethod = {
       id: Number(Date.now()),
       method_key: method_key,
-      payment_gateway_id: 1,
+      payment_gateway_id: 1, // Adjust based on actual logic
       default_card: default_card,
       fingerprint: attachedPaymentMethod.card.fingerprint,
       owner_name: attachedPaymentMethod.billing_details.name,
@@ -132,7 +150,7 @@ export class PaymentMethodService {
       verification_check: attachedPaymentMethod.card.checks.cvc_check,
       created_at: new Date(),
       updated_at: new Date(),
-    }
-    return paymentMethod
+    };
+    return paymentMethod;
   }
 }

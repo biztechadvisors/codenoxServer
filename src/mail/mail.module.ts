@@ -1,9 +1,10 @@
-/* eslint-disable prettier/prettier */
-import { MailerModule } from '@nestjs-modules/mailer'
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
-import { Module } from '@nestjs/common'
-import { MailService } from './mail.service'
-import { join } from 'path'
+import { join } from 'path';
+import { Module } from '@nestjs/common';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { MailService } from './mail.service';
+
+console.log("Template Directory:", join(__dirname, '..', 'templates'));
 
 @Module({
   imports: [
@@ -17,23 +18,22 @@ import { join } from 'path'
           pass: 'codenox@123',
         },
         tls: {
-          rejectUnauthorized: false, // only for testing purposes, remove this in production!
+          rejectUnauthorized: false,
         },
       },
       defaults: {
         from: '"No Reply" <info@codenoxx.tech>',
       },
       template: {
-        dir: join(__dirname, '..', 'templates'), // Adjust this path based on your project structure
+        dir: join(__dirname, 'templates'),
         adapter: new HandlebarsAdapter(),
         options: {
           strict: true,
         },
       },
-
     }),
   ],
   providers: [MailService],
-  exports: [MailService], // 👈 export for DI
+  exports: [MailService],
 })
 export class MailModule { }

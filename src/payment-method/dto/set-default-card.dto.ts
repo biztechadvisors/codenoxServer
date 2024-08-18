@@ -1,4 +1,4 @@
 /* eslint-disable prettier/prettier */
 export class DefaultCart {
-  method_id: string
+  method_id: number;
 }

@@ -27,16 +27,16 @@ export class User extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   password?: string;
 
-  @Column()
+  @Column({ nullable: true })
   otp: number;
 
   @Column({ default: false })
@@ -53,7 +53,11 @@ export class User extends CoreEntity {
   @JoinColumn()
   dealer?: Dealer;
 
-  @ManyToOne(() => User, user => user.createdUsers)
+  @ManyToOne(() => User, user => user.createdUsers, {
+    onDelete: 'CASCADE', // Automatically delete child rows when parent is deleted
+    onUpdate: 'CASCADE', // Automatically update child rows when parent is updated
+    nullable: true
+  })
   createdBy?: User;
 
   @OneToMany(() => User, user => user.createdBy)
@@ -62,10 +66,14 @@ export class User extends CoreEntity {
   @OneToMany(() => Shop, shop => shop.owner)
   owned_shops?: Shop[];
 
-  @OneToMany(() => Notification, notifications => notifications.user)
+  @OneToMany(() => Notification, notifications => notifications.user, { nullable: true })
   notifications?: Notification[];
 
-  @ManyToOne(() => Shop, shop => shop.staffs, { onDelete: 'SET NULL' })
+  @ManyToOne(() => Shop, shop => shop.staffs, {
+    onDelete: 'CASCADE', // Automatically delete child rows when parent is deleted
+    onUpdate: 'CASCADE', // Automatically update child rows when parent is updated
+    nullable: true
+  })
   @JoinColumn({ name: 'shop_id' })
   managed_shop?: Shop;
 
@@ -90,11 +98,15 @@ export class User extends CoreEntity {
   @OneToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.customer)
   stocksSellOrd: StocksSellOrd[];
 
-  @ManyToOne(() => Permission, permission => permission.user)
+  @ManyToOne(() => Permission, permission => permission.user, {
+    onDelete: 'CASCADE', // Automatically delete child rows when parent is deleted
+    onUpdate: 'CASCADE', // Automatically update child rows when parent is updated
+    nullable: true
+  })
   @JoinColumn({ name: 'permission_id' })
   permission: Permission;
 
-  @Column()
+  @Column({ nullable: true })
   walletPoints: number;
 
   @Column('varchar', { length: 200, nullable: true })

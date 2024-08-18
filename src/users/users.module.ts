@@ -21,16 +21,17 @@ import { MailService } from 'src/mail/mail.service';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { Address, UserAddress } from 'src/addresses/entities/address.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
-import { JwtStrategy } from 'src/auth/jwt.strategy';
+import { JwtStrategy } from '@db/src/auth/auth-helper/jwt.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { NotificationModule } from 'src/notifications/notifications.module'; // Ensure this is imported
 import { CacheModule } from '@nestjs/cache-manager';
+import { PermissionRepository } from '../permission/permission.repository';
 
 @Module({
   imports: [
     TypeOrmExModule.forCustomRepository([
       UserRepository, UserAddressRepository, ProfileRepository, AttachmentRepository,
-      DealerRepository, CategoryRepository, DealerProductMarginRepository,
+      DealerRepository, CategoryRepository, DealerProductMarginRepository, PermissionRepository,
       SocialRepository, DealerCategoryMarginRepository, ShopRepository, AddressRepository
     ]),
     TypeOrmModule.forFeature([
@@ -38,8 +39,8 @@ import { CacheModule } from '@nestjs/cache-manager';
       Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission
     ]),
     JwtModule.register({}), // Register JwtModule with default settings or specific configuration
-    NotificationModule, // Import NotificationModule to provide NotificationService
     CacheModule.register(),
+    NotificationModule, // Import NotificationModule to provide NotificationService
   ],
   controllers: [UsersController, ProfilesController, DealerController],
   providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy],

@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MulterModule } from '@nestjs/platform-express';
-import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import { CacheInterceptor, CacheModule, CacheStore } from '@nestjs/cache-manager';
 import * as redisStore from 'cache-manager-redis-store';
 import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
@@ -53,8 +53,12 @@ import { GetInspiredModule } from './get-inspired/get-inspired.module';
 
 import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { FeedbackModule } from './feedbacks/feedbacks.module';
+import { AuthService } from './auth/auth.service';
+import { AuthGuard } from './auth/auth-helper/auth.guards';
+import { UserRepository } from './users/users.repository';
+import { PermissionRepository } from './permission/permission.repository';
 
 @Module({
   imports: [
@@ -68,19 +72,19 @@ import { FeedbackModule } from './feedbacks/feedbacks.module';
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
         host: configService.get('DB_HOST'),
-        port: +configService.get('DB_PORT'),
+        port: +configService.get('DB_PORT', 10),
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         synchronize: configService.get('DB_SYNC'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        logging: ['error'], // log only errors for production
+        logging: ['error'],
         extra: {
-          connectionLimit: 100, // set based on your server's capacity and expected load
+          connectionLimit: 50,
           waitForConnections: true,
           queueLimit: 0,
-          connectTimeout: 10000, // 10 seconds
-          acquireTimeout: 30000, // 30 seconds
+          connectTimeout: 10000,
+          acquireTimeout: 30000,
         },
         ssl: configService.get('DB_SSL') ? { rejectUnauthorized: false } : false,
         autoLoadEntities: true,
@@ -95,11 +99,12 @@ import { FeedbackModule } from './feedbacks/feedbacks.module';
     CacheModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        max: 100,
-        isGlobal: true,
-        store: redisStore,
+        store: redisStore as unknown as CacheStore,
         host: configService.get<string>('REDIS_HOST'),
         port: configService.get<number>('REDIS_PORT'),
+        ttl: 600,
+        max: 100,
+        isGlobal: true,
       }),
       inject: [ConfigService],
     }),
@@ -151,11 +156,10 @@ import { FeedbackModule } from './feedbacks/feedbacks.module';
   ],
   controllers: [],
   providers: [
-    ShiprocketServiceEnv,
     {
       provide: APP_INTERCEPTOR,
       useClass: CacheInterceptor
-    }
+    },
   ],
 })
 export class AppModule implements NestModule {

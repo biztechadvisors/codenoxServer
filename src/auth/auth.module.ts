@@ -5,31 +5,33 @@ import { UserRepository } from 'src/users/users.repository';
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 import { UsersModule } from 'src/users/users.module';
 import { JwtModule } from '@nestjs/jwt';
-import { jwtConstants } from './constants';
+import { jwtConstants } from './auth-helper/constants';
 import { MailModule } from 'src/mail/mail.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { User } from 'src/users/entities/user.entity';
-import { JwtStrategy } from './jwt.strategy';
+import { JwtStrategy } from './auth-helper/jwt.strategy';
 import { NotificationModule } from 'src/notifications/notifications.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { PermissionRepository } from '../permission/permission.repository';
+import { SessionService } from './auth-helper/session.service';
 
 @Module({
   imports: [
-    TypeOrmExModule.forCustomRepository([UserRepository]),
+    TypeOrmExModule.forCustomRepository([UserRepository, PermissionRepository]),
     TypeOrmModule.forFeature([Permission, User]),
     UsersModule,
     MailModule,
-    NotificationModule, // Import NotificationModule to provide NotificationService
+    NotificationModule,
     JwtModule.register({
       global: true,
       secret: jwtConstants.access_secret,
-      signOptions: { expiresIn: '60s' },
+      signOptions: { expiresIn: '4m' },
     }),
     CacheModule.register()
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, SessionService],
   exports: [AuthService],
 })
 export class AuthModule { }
