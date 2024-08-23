@@ -144,7 +144,6 @@ export class AuthService {
     }
   }
 
-
   async getPermissions(typeName: string): Promise<any[]> {
     const result = await this.permissionRepository
       .createQueryBuilder('permission')
@@ -443,7 +442,6 @@ export class AuthService {
       throw new UnauthorizedException('Login failed. Please try again.');
     }
   }
-
 
   async logout(logoutDto: LoginDto): Promise<string> {
     const user = await this.userRepository.findOne({ where: { email: logoutDto.email } });
