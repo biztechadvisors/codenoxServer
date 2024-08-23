@@ -29,7 +29,6 @@ import {
 } from './dto/create-auth.dto';
 import { AddPointsDto } from './dto/addWalletPoints.dto';
 import { AuthGuard } from './auth-helper/auth.guards';
-import { jwtConstants } from './auth-helper/constants';
 import { JwtService } from '@nestjs/jwt';
 import { SessionService } from './auth-helper/session.service';
 
@@ -75,19 +74,30 @@ export class AuthController {
   @Post('refresh')
   async refreshToken(@Body('refreshToken') refreshToken: string) {
     try {
+      // Verify the refresh token using the refresh secret
       const payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: jwtConstants.refresh_secret,
+        secret: process.env.REFRESH_SECRET,
       });
 
+      console.log('payload', payload);
+
+      // Ensure that payload contains required fields
+      if (!payload || !payload.username || !payload.sub) {
+        throw new UnauthorizedException('Invalid token payload');
+      }
+
+      // Find the user using the payload from the refresh token
       const user = await this.authService.findUserByEmailOrId(payload.username, payload.sub);
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
 
-      // Generate new tokens
-      const tokens = this.authService.signIn(user);
+      // Generate new access and refresh tokens
+      const tokens = await this.authService.signIn(user);
       return tokens;
     } catch (error) {
+      // Handle errors and return a proper response
+      console.error('Error refreshing token:', error);
       throw new UnauthorizedException('Invalid refresh token');
     }
   }

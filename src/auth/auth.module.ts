@@ -25,7 +25,7 @@ import { SessionService } from './auth-helper/session.service';
     NotificationModule,
     JwtModule.register({
       global: true,
-      secret: jwtConstants.access_secret,
+      secret: process.env.JWT_ACCESS_SECRET,
       signOptions: { expiresIn: '4m' },
     }),
     CacheModule.register()
