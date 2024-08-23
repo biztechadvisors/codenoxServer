@@ -7,7 +7,6 @@
     ],
     "assets": [
       "mail/templates/**/*"
-    ],
-    "watchAssets": true
+    ]
   }
 }

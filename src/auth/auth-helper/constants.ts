@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 export const jwtConstants = {
-  access_secret: process.env.access_secret,
-  refresh_secret: process.env.refresh_secret,
-  cookies_secret: process.env.cookies_secret,
+  access_secret: process.env.JWT_ACCESS_SECRET,
+  refresh_secret: process.env.REFRESH_SECRET,
+  cookies_secret: process.env.COOKIES_SECRET,
 };

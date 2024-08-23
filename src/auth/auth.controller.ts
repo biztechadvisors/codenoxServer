@@ -76,7 +76,7 @@ export class AuthController {
   async refreshToken(@Body('refreshToken') refreshToken: string) {
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || jwtConstants.refresh_secret,
+        secret: jwtConstants.refresh_secret,
       });
 
       const user = await this.authService.findUserByEmailOrId(payload.username, payload.sub);

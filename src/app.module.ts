@@ -1,11 +1,14 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import {
+  MiddlewareConsumer, Module, NestModule, RequestMethod,
+  //  CacheInterceptor 
+} from '@nestjs/common';
 import { StripeModule } from 'nestjs-stripe';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MulterModule } from '@nestjs/platform-express';
-import { CacheInterceptor, CacheModule, CacheStore } from '@nestjs/cache-manager';
-import * as redisStore from 'cache-manager-redis-store';
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redistStore from 'cache-manager-redis-store';
 import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
 import { CommonModule } from './common/common.module';
@@ -34,6 +37,7 @@ import { ReviewModule } from './reviews/reviews.module';
 import { QuestionModule } from './questions/questions.module';
 import { WishlistsModule } from './wishlists/wishlists.module';
 import { ReportsModule } from './reports/reports.module';
+import { FeedbackModule } from './feedbacks/feedbacks.module';
 import { PaymentMethodModule } from './payment-method/payment-method.module';
 import { PaymentIntentModule } from './payment-intent/payment-intent.module';
 import { WebHookModule } from './web-hook/web-hook.module';
@@ -53,12 +57,7 @@ import { GetInspiredModule } from './get-inspired/get-inspired.module';
 
 import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { FeedbackModule } from './feedbacks/feedbacks.module';
-import { AuthService } from './auth/auth.service';
-import { AuthGuard } from './auth/auth-helper/auth.guards';
-import { UserRepository } from './users/users.repository';
-import { PermissionRepository } from './permission/permission.repository';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -99,12 +98,12 @@ import { PermissionRepository } from './permission/permission.repository';
     CacheModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        store: redisStore as unknown as CacheStore,
-        host: configService.get<string>('REDIS_HOST'),
-        port: configService.get<number>('REDIS_PORT'),
-        ttl: 600,
         max: 100,
         isGlobal: true,
+        ttl: configService.get<number>('CACHE_TTL'),
+        store: redistStore,
+        host: configService.get<string>('REDIS_HOST'),
+        port: configService.get<number>('REDIS_PORT'),
       }),
       inject: [ConfigService],
     }),
@@ -156,10 +155,10 @@ import { PermissionRepository } from './permission/permission.repository';
   ],
   controllers: [],
   providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: CacheInterceptor
-    },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: CacheInterceptor
+    // },
   ],
 })
 export class AppModule implements NestModule {

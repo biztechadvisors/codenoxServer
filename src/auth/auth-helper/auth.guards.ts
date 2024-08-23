@@ -12,6 +12,7 @@ import { IS_PUBLIC_KEY } from './auth.meta';
 import { UsersService } from '../../users/users.service';
 import { AuthService } from '../auth.service';
 import { SessionService } from './session.service';
+import { jwtConstants } from './constants';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -41,7 +42,7 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(accessToken, {
-        secret: process.env.JWT_ACCESS_SECRET,
+        secret: jwtConstants.access_secret,
       });
       request['user'] = payload;
 
@@ -77,7 +78,7 @@ export class AuthGuard implements CanActivate {
 
     try {
       const sessionPayload = await this.jwtService.verifyAsync(sessionToken, {
-        secret: process.env.JWT_SESSION_SECRET,
+        secret: jwtConstants.cookies_secret,
       });
 
       const isValidSession = await this.sessionService.validateSession(sessionPayload.sub, sessionToken);
@@ -90,7 +91,7 @@ export class AuthGuard implements CanActivate {
         username: sessionPayload.username,
         sub: sessionPayload.sub,
       }, {
-        secret: process.env.JWT_ACCESS_SECRET,
+        secret: jwtConstants.access_secret,
         expiresIn: '4m',
       });
 
