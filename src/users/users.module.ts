@@ -26,6 +26,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { NotificationModule } from 'src/notifications/notifications.module'; // Ensure this is imported
 import { CacheModule } from '@nestjs/cache-manager';
 import { PermissionRepository } from '../permission/permission.repository';
+import { SessionService } from '../auth/auth-helper/session.service';
 
 @Module({
   imports: [
@@ -43,7 +44,7 @@ import { PermissionRepository } from '../permission/permission.repository';
     NotificationModule, // Import NotificationModule to provide NotificationService
   ],
   controllers: [UsersController, ProfilesController, DealerController],
-  providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy],
+  providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy, SessionService],
   exports: [UsersService], // Export UsersService if needed by other modules
 })
 export class UsersModule { }

@@ -30,6 +30,8 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { PermissionRepository } from '../permission/permission.repository';
+import { SessionService } from './auth-helper/session.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
@@ -46,6 +48,8 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
+    private readonly sessionService: SessionService,
+
     private readonly notificationService: NotificationService,
     private readonly configService: ConfigService,
   ) {
@@ -109,25 +113,29 @@ export class AuthService {
     }
   }
 
-  async signIn(payload: any): Promise<{ access_token: string; refresh_token: string }> {
-    const { email, phoneNumber, user } = payload;
+  async signIn(user: any): Promise<{ access_token: string; refresh_token: string }> {
+    if (!user || !user.id) {
+      throw new UnauthorizedException('Invalid user credentials.');
+    }
+
     try {
       const tokenPayload = {
-        sub: user?.id || new Date().getTime(), // Ensure unique user ID or timestamp
-        username: user?.email || email || phoneNumber,
+        sub: user.id, // Ensure the user ID is valid
+        username: user.email || user.phoneNumber,
       };
 
-      // Create a new access token
       const accessToken = await this.jwtService.signAsync(tokenPayload, {
         secret: process.env.JWT_ACCESS_SECRET,
         expiresIn: '4m',
       });
 
-      // Generate a refresh token only if necessary (e.g., upon first login)
       const refreshToken = await this.jwtService.signAsync(tokenPayload, {
         secret: process.env.REFRESH_SECRET,
         expiresIn: '7d',
       });
+
+      // Store session with refresh token
+      await this.sessionService.storeSession(user.id, refreshToken);
 
       return { access_token: accessToken, refresh_token: refreshToken };
     } catch (error) {
@@ -135,6 +143,7 @@ export class AuthService {
       throw new UnauthorizedException('An error occurred during sign-in');
     }
   }
+
 
   async getPermissions(typeName: string): Promise<any[]> {
     const result = await this.permissionRepository
@@ -411,7 +420,7 @@ export class AuthService {
         throw new BadRequestException('Password is required.');
       }
 
-      const { access_token, refresh_token } = await this.signIn(user);
+      const { access_token, refresh_token } = await this.signIn(user); // Pass the user object
 
       let formattedPermissions: any[] = [];
       if (user.permission?.type_name) {
@@ -434,6 +443,7 @@ export class AuthService {
       throw new UnauthorizedException('Login failed. Please try again.');
     }
   }
+
 
   async logout(logoutDto: LoginDto): Promise<string> {
     const user = await this.userRepository.findOne({ where: { email: logoutDto.email } });

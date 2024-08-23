@@ -45,7 +45,6 @@ export class AuthGuard implements CanActivate {
       });
       request['user'] = payload;
 
-      // Optionally handle token refresh if close to expiration
       const now = Math.floor(Date.now() / 1000);
       if (payload.exp - now < 60) { // If access token is expiring soon
         const newAccessToken = await this.refreshAccessToken(request);
@@ -85,7 +84,6 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException('Invalid session token');
       }
 
-      // Issue a new access token only
       const newAccessToken = await this.jwtService.signAsync({
         username: sessionPayload.username,
         sub: sessionPayload.sub,

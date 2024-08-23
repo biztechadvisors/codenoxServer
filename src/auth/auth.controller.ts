@@ -35,10 +35,12 @@ import { SessionService } from './auth-helper/session.service';
 @Controller()
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
-  jwtService: JwtService;
-  sessionService: SessionService;
 
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
+    private readonly sessionService: SessionService,
+  ) { }
 
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
@@ -74,29 +76,31 @@ export class AuthController {
   @Post('refresh')
   async refreshToken(@Body('refreshToken') refreshToken: string) {
     try {
-      // Verify the refresh token using the refresh secret
       const payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: process.env.REFRESH_SECRET,
       });
 
-      console.log('payload', payload);
-
-      // Ensure that payload contains required fields
       if (!payload || !payload.username || !payload.sub) {
         throw new UnauthorizedException('Invalid token payload');
       }
 
-      // Find the user using the payload from the refresh token
-      const user = await this.authService.findUserByEmailOrId(payload.username, payload.sub);
-      if (!user) {
-        throw new UnauthorizedException('User not found');
+      // Validate session
+      const isValidSession = await this.sessionService.validateSession(payload.sub, refreshToken);
+      if (!isValidSession) {
+        throw new UnauthorizedException('Invalid session token');
       }
 
-      // Generate new access and refresh tokens
-      const tokens = await this.authService.signIn(user);
-      return tokens;
+      // Generate new access token
+      const newAccessToken = await this.jwtService.signAsync({
+        username: payload.username,
+        sub: payload.sub,
+      }, {
+        secret: process.env.JWT_ACCESS_SECRET,
+        expiresIn: '4m',
+      });
+
+      return { access_token: newAccessToken };
     } catch (error) {
-      // Handle errors and return a proper response
       console.error('Error refreshing token:', error);
       throw new UnauthorizedException('Invalid refresh token');
     }
