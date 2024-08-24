@@ -456,7 +456,8 @@ export class ShopsService {
             'additionalPermissions',
             'additionalPermissions.permissions',
             'permission',
-            'permission.permissions'
+            'permission.permissions',
+            'regions'
           ],
         });
 
@@ -524,7 +525,8 @@ export class ShopsService {
         order: existShop.order,
         additionalPermissions: existShop.additionalPermissions,
         permission: existShop.permission,
-        dealerCount: existShop.dealerCount
+        dealerCount: existShop.dealerCount,
+        regions: existShop.regions,
       };
 
       return mappedShop;

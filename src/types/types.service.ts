@@ -20,6 +20,7 @@ import { Category } from 'src/categories/entities/category.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { Region } from '../region/entities/region.entity';
 
 @Injectable()
 export class TypesService {
@@ -34,6 +35,7 @@ export class TypesService {
     @InjectRepository(Tag) private readonly tagRepository: Repository<Tag>,
     @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Product) private readonly productRepository: Repository<Product>,
+    @InjectRepository(Region) private readonly regionRepository: Repository<Region>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
 
   ) { }
@@ -43,11 +45,11 @@ export class TypesService {
   }
 
   async findAll(query: GetTypesDto) {
-    const { text, search, shop_id, shopSlug } = query;
+    const { text, search, shop_id, shopSlug, region_name } = query;
     let data: Type[];
 
     // Generate a unique cache key based on query parameters
-    const cacheKey = `types_${shop_id || 'none'}_${shopSlug || 'none'}_${text || 'none'}_${search || 'none'}`;
+    const cacheKey = `types_${shop_id || 'none'}_${shopSlug || 'none'}_${text || 'none'}_${search || 'none'}_${region_name || 'none'}`;
 
     // Check if the data is cached
     const cachedData = await this.cacheManager.get<Type[]>(cacheKey);
@@ -56,18 +58,19 @@ export class TypesService {
     }
 
     // Fetch data from the database
-    if (shop_id || shopSlug) {
-      const shopCondition = shop_id ? { id: shop_id } : { slug: shopSlug };
+    const queryOptions: any = {
+      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'regions']
+    };
 
-      data = await this.typeRepository.find({
-        where: { shop: shopCondition },
-        relations: ['settings', 'promotional_sliders', 'banners', 'banners.image']
-      });
-    } else {
-      data = await this.typeRepository.find({
-        relations: ['settings', 'promotional_sliders', 'banners', 'banners.image']
-      });
+    if (shop_id || shopSlug) {
+      queryOptions.where = { shop: shop_id ? { id: shop_id } : { slug: shopSlug } };
     }
+
+    if (region_name) {
+      queryOptions.where = { ...queryOptions.where, regions: { name: region_name } };
+    }
+
+    data = await this.typeRepository.find(queryOptions);
 
     const fuse = new Fuse(data, { keys: ['name', 'slug'] });
 
@@ -88,11 +91,10 @@ export class TypesService {
     }
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, data, 3600); // Cache for 5 minutes
+    await this.cacheManager.set(cacheKey, data, 3600); // Cache for 1 hour
 
     return data;
   }
-
 
   async getTypeBySlug(slug: string): Promise<Type> {
     // Generate a unique cache key based on the slug
@@ -121,7 +123,6 @@ export class TypesService {
   }
 
   async create(data: CreateTypeDto) {
-
     // Create and save TypeSettings
     const typeSettings = this.typeSettingsRepository.create(data.settings);
     await this.typeSettingsRepository.save(typeSettings);
@@ -135,14 +136,12 @@ export class TypesService {
     // Create and save banners with associated images
     let banners = [];
     if (data.banners && Array.isArray(data.banners)) {
-
       banners = await Promise.all(data.banners.map(async (bannerData) => {
         if (bannerData.image || bannerData.image.id || bannerData.title) {
           const image = await this.attachmentRepository.findOne({
             where: { id: bannerData.image.id, thumbnail: bannerData.image.thumbnail, original: bannerData.image.original }
           });
 
-          // Create banner entity with the correct title, description, and related image
           const banner = this.bannerRepository.create({
             title: bannerData.title,
             description: bannerData.description,
@@ -158,13 +157,21 @@ export class TypesService {
     if (data.name) {
       data.slug = await this.convertToSlug(data.name);
     }
+
+    // Fetch the shop by ID
     const shop = await this.shopRepository.findOne({ where: { id: data.shop_id } });
+
+    // Fetch the region by name
+    const region = await this.regionRepository.findOne({ where: { name: data.region_name } });
 
     // Create and save Type entity
     const type = this.typeRepository.create({ ...data, settings: typeSettings, promotional_sliders: promotionalSliders, banners });
-    type.shop = shop; // Correcting the typo here
+    type.shop = shop;
+    type.regions = [region];  // Associate the region with the type
+
     return this.typeRepository.save(type);
   }
+
 
   async update(id: number, updateTypeDto: UpdateTypeDto): Promise<Type> {
     const type = await this.typeRepository.findOne({

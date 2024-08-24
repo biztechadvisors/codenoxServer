@@ -22,6 +22,7 @@ import { Product } from 'src/products/entities/product.entity'
 import { Order } from 'src/orders/entities/order.entity'
 import { Setting } from 'src/settings/entities/setting.entity'
 import { Permission } from 'src/permission/entities/permission.entity'
+import { Region } from '@db/src/region/entities/region.entity'
 
 @Entity()
 export class Shop extends CoreEntity {
@@ -109,6 +110,9 @@ export class Shop extends CoreEntity {
 
   @Column({ nullable: true })
   dealerCount: number;
+
+  @OneToMany(() => Region, (region) => region.shop, { nullable: true })
+  regions: Region[];
 }
 
 @Entity()

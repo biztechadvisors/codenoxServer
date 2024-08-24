@@ -1,6 +1,4 @@
 /* eslint-disable prettier/prettier */
-import products from 'razorpay/dist/types/products';
-import { Category } from 'src/categories/entities/category.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { Shop } from 'src/shops/entities/shop.entity';

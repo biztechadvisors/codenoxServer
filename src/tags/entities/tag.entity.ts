@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+import { Region } from '@db/src/region/entities/region.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Product } from 'src/products/entities/product.entity';
@@ -32,6 +33,9 @@ export class Tag extends CoreEntity {
 
   @ManyToOne(() => Type, (type) => type.tags, { nullable: true, eager: true, onDelete: 'SET NULL' })
   type: Type | null;
+
+  @ManyToOne(() => Region, (region) => region.tags, { nullable: true, onDelete: 'CASCADE' })
+  region: Region;
 
   @ManyToMany(() => Product, (product) => product.tags, { cascade: true })
   @JoinTable({ name: 'product_tags' })

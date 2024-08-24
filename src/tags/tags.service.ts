@@ -17,6 +17,7 @@ import { TagRepository } from './tags.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { Region } from '../region/entities/region.entity';
 
 @Injectable()
 export class TagsService {
@@ -25,12 +26,14 @@ export class TagsService {
     @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
     @InjectRepository(Type) private typeRepository: TypeRepository,
     @InjectRepository(Shop) private shopRepository: Repository<Shop>,
+    @InjectRepository(Region) private regionRepository: Repository<Region>,
+
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
 
   ) { }
 
   async create(createTagDto: CreateTagDto): Promise<Tag> {
-    const { name, icon, details, language, translatedLanguages, shopSlug, image, type_id, parent } = createTagDto;
+    const { name, icon, details, language, translatedLanguages, shopSlug, image, type_id, parent, region_name } = createTagDto;
 
     // Find the shop by slug
     const shopRes = await this.shopRepository.findOne({ where: { slug: shopSlug } });
@@ -56,6 +59,12 @@ export class TagsService {
       }
     }
 
+    // Find the region by name
+    const regionRes = await this.regionRepository.findOne({ where: { name: region_name } });
+    if (!regionRes) {
+      throw new NotFoundException(`Region with name ${region_name} not found`);
+    }
+
     // Create the new Tag entity
     const tag = new Tag();
     tag.name = name;
@@ -68,14 +77,16 @@ export class TagsService {
     tag.image = imageRes;
     tag.shop = shopRes;
     tag.type = typeRes;
+    tag.region = regionRes;  // Associate the region with the tag
 
     // Save and return the tag
     return await this.tagRepository.save(tag);
   }
 
 
+
   async findAll(query: GetTagsDto) {
-    let { limit = '10', page = '1', search, shopSlug } = query;
+    let { limit = '10', page = '1', search, shopSlug, region_name } = query;
 
     // Convert to numbers
     const numericPage = Number(page);
@@ -89,7 +100,7 @@ export class TagsService {
     const skip = (numericPage - 1) * numericLimit;
 
     // Generate a unique cache key based on the query parameters
-    const cacheKey = `tags_${numericPage}_${numericLimit}_${search || 'none'}_${shopSlug || 'none'}`;
+    const cacheKey = `tags_${numericPage}_${numericLimit}_${search || 'none'}_${shopSlug || 'none'}_${region_name || 'none'}`;
 
     // Check if the data is cached
     const cachedData = await this.cacheManager.get<any>(cacheKey);
@@ -111,11 +122,16 @@ export class TagsService {
     const queryBuilder: SelectQueryBuilder<Tag> = this.tagRepository.createQueryBuilder('tag')
       .leftJoinAndSelect('tag.image', 'image')
       .leftJoinAndSelect('tag.type', 'type')
+      .leftJoinAndSelect('tag.region', 'region') // Include region in the query
       .take(numericLimit)
       .skip(skip);
 
     if (shopId) {
       queryBuilder.andWhere('tag.shopId = :shopId', { shopId });
+    }
+
+    if (region_name) {
+      queryBuilder.andWhere('region.name = :regionName', { regionName: region_name });
     }
 
     if (search) {
@@ -136,17 +152,18 @@ export class TagsService {
       return { ...item, type_id };
     });
 
-    const url = `/tags?search=${search}&limit=${numericLimit}&shopSlug=${shopSlug}`;
+    const url = `/tags?search=${search}&limit=${numericLimit}&shopSlug=${shopSlug}&region_name=${region_name}`;
     const response = {
       data: formattedData,
       ...paginate(total, numericPage, numericLimit, formattedData.length, url),
     };
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, response, 3600); // Cache for 5 minutes
+    await this.cacheManager.set(cacheKey, response, 3600); // Cache for 1 hour
 
     return response;
   }
+
 
   async findOne(param: string, language: string): Promise<Tag> {
     // Generate a unique cache key based on the tag identifier and language

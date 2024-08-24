@@ -17,4 +17,8 @@ export class CreateBlogDto {
     @IsArray()
     @IsInt({ each: true })
     attachmentIds?: number[];
+
+    @IsNotEmpty()
+    @IsString()
+    regionName: string;  // Added regionName to DTO
 }

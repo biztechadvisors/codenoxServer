@@ -8,6 +8,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Region } from '../region/entities/region.entity';
 
 @Injectable()
 export class EventService {
@@ -16,21 +17,32 @@ export class EventService {
         private readonly eventRepository: Repository<Event>,
         @InjectRepository(Shop)
         private readonly shopRepository: Repository<Shop>,
+        @InjectRepository(Region)
+        private readonly regionRepository: Repository<Region>,
         @InjectRepository(Attachment)
         private readonly attachmentRepository: Repository<Attachment>,
         @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
     ) { }
 
     async createEvent(createEventDto: CreateEventDto): Promise<Event> {
-        const { title, eventName, description, date, time, location, collaboration, shopId, imageIds } = createEventDto;
+        const { title, eventName, description, date, time, location, collaboration, shopId, imageIds, regionName } = createEventDto;
 
+        // Retrieve images if they exist
         const images = imageIds ? await this.attachmentRepository.findByIds(imageIds) : [];
-        const shop = await this.shopRepository.findOne({ where: { id: shopId } });
 
+        // Check if the shop exists
+        const shop = await this.shopRepository.findOne({ where: { id: shopId } });
         if (!shop) {
             throw new NotFoundException(`Shop with ID ${shopId} not found`);
         }
 
+        // Check if the region exists
+        const region = await this.regionRepository.findOne({ where: { name: regionName } });
+        if (!region) {
+            throw new NotFoundException(`Region with name ${regionName} not found`);
+        }
+
+        // Create and save the event
         const event = this.eventRepository.create({
             title,
             eventName,
@@ -41,10 +53,12 @@ export class EventService {
             collaboration,
             shop,
             images,
+            region,  // Associate region with the event
         });
 
         return this.eventRepository.save(event);
     }
+
 
     async getEventById(id: number): Promise<Event> {
         const cacheKey = `event-${id}`;
@@ -66,19 +80,27 @@ export class EventService {
         return event;
     }
 
-    async getAllEvents(shopSlug: string): Promise<Event[]> {
-        const cacheKey = `events-${shopSlug}`;
+    async getAllEvents(shopSlug: string, regionName: string): Promise<Event[]> {
+        const cacheKey = `events-${shopSlug}-${regionName}`;
         let events = await this.cacheManager.get<Event[]>(cacheKey);
 
         if (!events) {
+            // Check if the shop exists
             const shop = await this.shopRepository.findOne({ where: { slug: shopSlug }, relations: ['events'] });
             if (!shop) {
                 throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
             }
 
+            // Check if the region exists
+            const region = await this.regionRepository.findOne({ where: { name: regionName } });
+            if (!region) {
+                throw new NotFoundException(`Region with name ${regionName} not found`);
+            }
+
+            // Retrieve events filtered by shop and region
             events = await this.eventRepository.find({
-                where: { shop: { id: shop.id } },
-                relations: ['shop', 'images'],
+                where: { shop: { id: shop.id }, region: { id: region.id } },
+                relations: ['shop', 'images', 'region'],
             });
 
             await this.cacheManager.set(cacheKey, events, 3600); // Cache for 1 hour

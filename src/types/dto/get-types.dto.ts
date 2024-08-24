@@ -8,6 +8,7 @@ export class GetTypesDto {
   shop_id?: number;
   shopSlug?: string; // Make shopSlug optional
   search?: string;
+  region_name?: string;
 }
 
 export class QueryTypesOrderByOrderByClause {

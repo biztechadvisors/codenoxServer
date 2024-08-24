@@ -2,6 +2,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, JoinTable } from 'typeorm';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { Region } from '@db/src/region/entities/region.entity';
 
 @Entity()
 export class Blog {
@@ -26,4 +27,7 @@ export class Blog {
         inverseJoinColumn: { name: 'attachmentId', referencedColumnName: 'id' },
     })
     attachments?: Attachment[];
+
+    @ManyToOne(() => Region, (region) => region.blogs, { nullable: true, onDelete: 'CASCADE' })
+    region: Region;
 }

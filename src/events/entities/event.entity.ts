@@ -2,6 +2,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, JoinTable } from 'typeorm';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
+import { Region } from '@db/src/region/entities/region.entity';
 
 @Entity()
 export class Event {
@@ -39,4 +40,7 @@ export class Event {
         inverseJoinColumn: { name: 'attachmentId', referencedColumnName: 'id' },
     })
     images?: Attachment[];
+
+    @ManyToOne(() => Region, (region) => region.events, { nullable: true, onDelete: 'CASCADE' })
+    region: Region;
 }

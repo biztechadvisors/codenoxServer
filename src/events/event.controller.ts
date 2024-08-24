@@ -14,8 +14,8 @@ export class EventController {
     }
 
     @Get('shop/:shopSlug')
-    getAllEvents(@Param('shopSlug') shopSlug: string): Promise<Event[]> {
-        return this.eventService.getAllEvents(shopSlug);
+    getAllEvents(@Param('shopSlug') shopSlug: string, @Param('regionName') regionName: string): Promise<Event[]> {
+        return this.eventService.getAllEvents(shopSlug, regionName);
     }
 
     @Get(':id')

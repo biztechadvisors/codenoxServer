@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Param, Body, Query } from '@nestjs/common';
 import { BlogService } from './blog.service';
 import { Blog } from './entities/blog.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
@@ -13,9 +13,9 @@ export class BlogController {
         return this.blogService.createBlog(createBlogDto);
     }
 
-    @Get('shop/:shopSlug')
-    getAllBlogs(@Param('shopSlug') shopSlug: string): Promise<Blog[]> {
-        return this.blogService.getAllBlogs(shopSlug);
+    @Get('shop/:shopSlug/region/:regionName')
+    getAllBlogs(@Param('shopSlug') shopSlug: string, @Param('regionName') regionName: string): Promise<Blog[]> {
+        return this.blogService.getAllBlogs(shopSlug, regionName);
     }
 
     @Get(':id')

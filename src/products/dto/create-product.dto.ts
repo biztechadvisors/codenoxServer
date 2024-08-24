@@ -39,6 +39,7 @@ export class CreateProductDto extends OmitType(Product, [
   } = { delete: [], upsert: [] };
   related_products: Product[];
   translated_languages: string[];
+  regionName: string; // Added regionName to DTO
 }
 
 export class VariationDto {

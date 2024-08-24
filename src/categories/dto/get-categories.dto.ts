@@ -17,8 +17,8 @@ export class GetCategoriesDto extends PaginationArgs {
   shopId?: number;
   parent?: number | string = 'null';
   language?: string;
+  region_name?: string; // Add this to filter by region name
 }
-
 
 export enum QueryCategoriesOrderByColumn {
   CREATED_AT = 'CREATED_AT',
@@ -27,7 +27,8 @@ export enum QueryCategoriesOrderByColumn {
 }
 
 export class GetSubCategoriesDto {
-  search?: string
-  categoryId: number;
-  shopSlug: string;
+  search?: string;
+  categoryId?: number;
+  shopSlug?: string;
+  regionName?: string;  // Added regionName for filtering
 }

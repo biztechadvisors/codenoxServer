@@ -17,6 +17,7 @@ import { ILike, IsNull, Like, Repository } from 'typeorm';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Region } from '../region/entities/region.entity';
 
 const options = {
   keys: ['name', 'type.slug'],
@@ -33,6 +34,8 @@ export class CategoriesService {
     @InjectRepository(TypeRepository) private typeRepository: TypeRepository,
     @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
     @InjectRepository(SubCategory) private readonly subCategoryRepository: Repository<SubCategory>,
+    @InjectRepository(Region) private readonly regionRepository: Repository<Region>,
+
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 
@@ -43,13 +46,12 @@ export class CategoriesService {
   // private categories: Category[] = categories
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-
     // Check if the image exists
     let imageAttachment;
-    if (createCategoryDto.image.id) {
+    if (createCategoryDto.image?.id) {
       imageAttachment = await this.attachmentRepository.findOne({ where: { id: createCategoryDto.image.id } });
       if (!imageAttachment) {
-        throw new Error(`Attachment with id '${createCategoryDto.image_id}' not found`);
+        throw new Error(`Attachment with id '${createCategoryDto.image?.id}' not found`);
       }
     }
 
@@ -57,6 +59,12 @@ export class CategoriesService {
     const type = await this.typeRepository.findOne({ where: { id: createCategoryDto.type_id } });
     if (!type) {
       throw new Error(`Type with id '${createCategoryDto.type_id}' not found`);
+    }
+
+    // Check if the region exists
+    const region = await this.regionRepository.findOne({ where: { name: createCategoryDto.region_name } });
+    if (!region) {
+      throw new Error(`Region with name '${createCategoryDto.region_name}' not found`);
     }
 
     // Create a new Category instance
@@ -69,15 +77,22 @@ export class CategoriesService {
     category.image = imageAttachment;
     category.icon = createCategoryDto.icon;
     category.language = createCategoryDto.language;
+    category.region = region; // Associate the region with the category
+
     const shop = await this.shopRepository.findOne({ where: { id: createCategoryDto.shop_id } });
-    category.shop = shop;
+    if (shop) {
+      category.shop = shop;
+    } else {
+      throw new NotFoundException(`Shop with id '${createCategoryDto.shop_id}' not found`);
+    }
 
     // Save the Category instance to the database
     return await this.categoryRepository.save(category);
   }
 
+
   async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
-    let { limit = '10', page = '1', search, parent, shopSlug, shopId, language, orderBy, sortedBy } = query;
+    let { limit = '10', page = '1', search, parent, shopSlug, shopId, language, orderBy, sortedBy, region_name } = query;
 
     // Convert to numbers
     const numericPage = Number(page);
@@ -90,7 +105,7 @@ export class CategoriesService {
 
     const skip = (numericPage - 1) * numericLimit;
 
-    const cacheKey = `categories-${numericPage}-${numericLimit}-${search || 'all'}-${parent || 'all'}-${shopSlug || 'all'}-${shopId || 'all'}-${language || 'all'}-${orderBy || 'none'}-${sortedBy || 'none'}`;
+    const cacheKey = `categories-${numericPage}-${numericLimit}-${search || 'all'}-${parent || 'all'}-${shopSlug || 'all'}-${shopId || 'all'}-${language || 'all'}-${orderBy || 'none'}-${sortedBy || 'none'}-${region_name || 'all'}`;
 
     let categories = await this.cacheManager.get<CategoryPaginator>(cacheKey);
 
@@ -124,13 +139,21 @@ export class CategoriesService {
         where['language'] = language;
       }
 
+      if (region_name) {
+        const region = await this.regionRepository.findOne({ where: { name: region_name } });
+        if (!region) {
+          throw new NotFoundException(`Region with name '${region_name}' not found`);
+        }
+        where['region'] = { id: region.id };
+      }
+
       const order = orderBy && sortedBy ? { [orderBy]: sortedBy.toUpperCase() } : {};
 
       const [data, total] = await this.categoryRepository.findAndCount({
         where,
         take: numericLimit,
         skip,
-        relations: ['type', 'image', 'subCategories', 'shop'],
+        relations: ['type', 'image', 'subCategories', 'shop', 'region'], // Include region in the relations
         order,
       });
 
@@ -146,6 +169,7 @@ export class CategoriesService {
 
     return categories;
   }
+
 
   async getCategory(param: string, language: string, shopId: number): Promise<Category> {
     // Generate a unique cache key based on the parameters
@@ -286,6 +310,12 @@ export class CategoriesService {
       throw new Error(`Shop with id '${createSubCategoryDto.shop_id}' not found`);
     }
 
+    // Check if the region exists
+    const region = await this.regionRepository.findOne({ where: { name: createSubCategoryDto.regionName } });
+    if (!region) {
+      throw new Error(`Region with name '${createSubCategoryDto.regionName}' not found`);
+    }
+
     // Create a new SubCategory instance
     const subCategory = new SubCategory();
     subCategory.name = createSubCategoryDto.name;
@@ -295,10 +325,12 @@ export class CategoriesService {
     subCategory.image = imageAttachment;
     subCategory.language = createSubCategoryDto.language;
     subCategory.shop = shop;
+    subCategory.region = region;  // Associate region with subcategory
 
     // Save the SubCategory instance to the database
     return await this.subCategoryRepository.save(subCategory);
   }
+
 
   async getSubCategory(param: string, language: string, shopSlug: string): Promise<SubCategory> {
     // Try to parse the param as a number to see if it's an id
@@ -320,10 +352,10 @@ export class CategoriesService {
   }
 
   async getSubCategories(query: GetSubCategoriesDto): Promise<SubCategory[]> {
-    const { categoryId, shopSlug } = query;
+    const { categoryId, shopSlug, regionName } = query;
 
-    if (!categoryId && !shopSlug) {
-      throw new BadRequestException('Either categoryId or shopSlug must be provided in the query');
+    if (!categoryId && !shopSlug && !regionName) {
+      throw new BadRequestException('Either categoryId, shopSlug, or regionName must be provided in the query');
     }
 
     let where: { [key: string]: any } = {};
@@ -333,10 +365,14 @@ export class CategoriesService {
     if (shopSlug) {
       where['shop'] = { slug: shopSlug };
     }
+    if (regionName) {
+      where['region'] = { name: regionName };  // Filter by region name
+    }
 
-    const relations = ['category', 'image', 'shop'];
+    const relations = ['category', 'image', 'shop', 'region'];  // Include region in relations
     return await this.subCategoryRepository.find({ where, relations });
   }
+
 
   async updateSubCategory(id: number, updateSubCategoryDto: UpdateSubCategoryDto): Promise<SubCategory> {
     const subCategory = await this.subCategoryRepository.findOne({

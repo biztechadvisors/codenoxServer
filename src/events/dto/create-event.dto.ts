@@ -37,4 +37,8 @@ export class CreateEventDto {
     @IsArray()
     @IsInt({ each: true })
     imageIds?: number[];
+
+    @IsNotEmpty()
+    @IsString()
+    regionName: string;  // Added regionName to DTO
 }

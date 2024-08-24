@@ -27,6 +27,7 @@ import { Tax } from 'src/taxes/entities/tax.entity';
 import { Cron } from '@nestjs/schedule';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { CreateProductDto } from './dto/create-product.dto';
 
 
 @Injectable()
@@ -109,97 +110,138 @@ export class ProductsService {
     }
   }
 
-  async create(createProductDto: any): Promise<Product | { message: string }> {
+  async create(createProductDto: CreateProductDto): Promise<Product | { message: string }> {
+    const {
+      name,
+      slug,
+      description,
+      product_type,
+      status,
+      quantity,
+      max_price,
+      min_price,
+      price,
+      sale_price,
+      unit,
+      height,
+      length,
+      width,
+      sku,
+      language,
+      translated_languages,
+      taxes,
+      type_id,
+      shop_id,
+      categories,
+      subCategories,
+      tags,
+      image,
+      gallery,
+      variations,
+      variation_options,
+      regionName // Extract regionName
+    } = createProductDto;
 
+    // Check for existing product
     const existedProduct = await this.productRepository.findOne({
       where: {
-        name: createProductDto.name,
-        slug: createProductDto.slug
+        name,
+        slug
       }
     });
 
     if (existedProduct) {
       return { message: "Product already exists." };
     } else {
+      // Create new product instance
       const product = new Product();
-      product.name = createProductDto.name;
-      product.slug = createProductDto.name
+      product.name = name;
+      product.slug = name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
-      product.description = createProductDto.description;
-      product.product_type = createProductDto.product_type;
-      product.status = createProductDto.status;
-      product.quantity = createProductDto.quantity;
-      product.max_price = createProductDto.max_price || createProductDto.price;
-      product.min_price = createProductDto.min_price || createProductDto.sale_price;
-      product.price = createProductDto.max_price || createProductDto.price;
-      product.sale_price = createProductDto.min_price || createProductDto.sale_price;
-      product.unit = createProductDto.unit;
-      product.height = createProductDto.height;
-      product.length = createProductDto.length;
-      product.width = createProductDto.width;
-      product.sku = createProductDto.sku;
-      product.language = createProductDto.language || 'en';
-      product.translated_languages = createProductDto.translated_languages || ['en'];
+      product.description = description;
+      product.product_type = product_type;
+      product.status = status;
+      product.quantity = quantity;
+      product.max_price = max_price || price;
+      product.min_price = min_price || sale_price;
+      product.price = max_price || price;
+      product.sale_price = min_price || sale_price;
+      product.unit = unit;
+      product.height = height;
+      product.length = length;
+      product.width = width;
+      product.sku = sku;
+      product.language = language || 'en';
+      product.translated_languages = translated_languages || ['en'];
 
-      if (createProductDto?.taxes) {
-        const tax = await this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } });
+      // Handle taxes
+      if (taxes) {
+        const tax = await this.taxRepository.findOne({ where: { id: taxes.id } });
         if (tax) {
           product.taxes = tax;
         }
       }
 
-      const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
+      // Handle type
+      const type = await this.typeRepository.findOne({ where: { id: type_id } });
       if (!type) {
-        throw new NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
+        throw new NotFoundException(`Type with ID ${type_id} not found`);
       }
       product.type = type;
       product.type_id = type.id;
 
-      const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
+      // Handle shop
+      const shop = await this.shopRepository.findOne({ where: { id: shop_id } });
       if (!shop) {
-        throw new NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
+        throw new NotFoundException(`Shop with ID ${shop_id} not found`);
       }
       product.shop = shop;
       product.shop_id = shop.id;
 
-      if (createProductDto.categories) {
-        const categories = await this.categoryRepository.findByIds(createProductDto.categories);
-        product.categories = categories;
+      // Handle categories
+      if (categories) {
+        const categoryEntities = await this.categoryRepository.findByIds(categories);
+        product.categories = categoryEntities;
       }
 
-      if (createProductDto?.subCategories) {
-        const subCategories = await this.subCategoryRepository.findByIds(createProductDto.subCategories);
-        product.subCategories = subCategories;
+      // Handle subCategories
+      if (subCategories) {
+        const subCategoryEntities = await this.subCategoryRepository.findByIds(subCategories);
+        product.subCategories = subCategoryEntities;
       }
 
-      const tags = await this.tagRepository.findByIds(createProductDto.tags);
-      product.tags = tags;
+      // Handle tags
+      const tagEntities = await this.tagRepository.findByIds(tags);
+      product.tags = tagEntities;
 
-      if (createProductDto.image?.length > 0 || undefined) {
-        const image = await this.attachmentRepository.findOne(createProductDto.image.id);
-        if (!image) {
-          throw new NotFoundException(`Image with ID ${createProductDto.image.id} not found`);
+      // Handle image
+      if (image) {
+        const imageEntity = await this.attachmentRepository.findOne({ where: { id: image.id } });
+        if (!imageEntity) {
+          throw new NotFoundException(`Image with ID ${image.id} not found`);
         }
-        product.image = image;
+        product.image = imageEntity;
       }
 
-      if (createProductDto?.gallery?.length > 0 || undefined) {
-        const galleryAttachments = [];
-        for (const galleryImage of createProductDto.gallery) {
-          const image = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
-          if (!image) {
+      // Handle gallery
+      if (gallery) {
+        const galleryEntities = [];
+        for (const galleryImage of gallery) {
+          const imageEntity = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
+          if (!imageEntity) {
             throw new NotFoundException(`Gallery image with ID ${galleryImage.id} not found`);
           }
-          galleryAttachments.push(image);
+          galleryEntities.push(imageEntity);
         }
-        product.gallery = galleryAttachments;
+        product.gallery = galleryEntities;
       }
 
-      if (createProductDto?.variations) {
+      // Handle variations
+      if (variations) {
         const attributeValues: AttributeValue[] = [];
-        for (const variation of createProductDto.variations) {
+        for (const variation of variations) {
           const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
           if (!attributeValue) {
             throw new NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
@@ -209,15 +251,13 @@ export class ProductsService {
         product.variations = attributeValues;
       }
 
+      // Save the product
       await this.productRepository.save(product);
 
-      if (
-        product.product_type === ProductType.VARIABLE &&
-        createProductDto.variation_options &&
-        createProductDto.variation_options.upsert
-      ) {
+      // Handle variation options
+      if (product.product_type === ProductType.VARIABLE && variation_options?.upsert) {
         const variationOptions = [];
-        for (const variationDto of createProductDto.variation_options.upsert) {
+        for (const variationDto of variation_options.upsert) {
           const newVariation = new Variation();
           newVariation.title = variationDto?.title;
           newVariation.price = variationDto?.price;
@@ -241,7 +281,7 @@ export class ProductsService {
           const savedVariation = await this.variationRepository.save(newVariation);
 
           const variationOptionEntities = [];
-          if (variationDto && variationDto.options) {
+          if (variationDto?.options) {
             for (const option of variationDto.options) {
               const newVariationOption = new VariationOption();
               newVariationOption.name = option.name;
@@ -265,21 +305,24 @@ export class ProductsService {
         await this.productRepository.save(product);
       }
 
+      // Update shop products count if necessary
       if (product) {
         await this.updateShopProductsCount(shop.id, product.id);
       }
+
       return product;
     }
   }
 
   async getProducts(query: GetProductsDto): Promise<ProductPaginator> {
-    const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName } = query;
+    const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName, regionName } = query;
     const startIndex = (page - 1) * limit;
 
-    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${page}:${limit}`;
-
+    // Generate cache key
+    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${regionName || ' '}:${page}:${limit}`;
     this.logger.log(`Generated cache key: ${cacheKey}`);
 
+    // Check cache
     const cachedResult: ProductPaginator | undefined = await this.cacheManager.get(cacheKey);
     if (cachedResult) {
       this.logger.log(`Cache hit for key: ${cacheKey}`);
@@ -288,10 +331,8 @@ export class ProductsService {
       this.logger.log(`Cache miss for key: ${cacheKey}`);
     }
 
-    const productQueryBuilder = this.productRepository.createQueryBuilder('product');
-
-    // Perform the necessary joins
-    productQueryBuilder
+    // Initialize query builder
+    const productQueryBuilder = this.productRepository.createQueryBuilder('product')
       .leftJoinAndSelect('product.type', 'type')
       .leftJoinAndSelect('product.shop', 'shop')
       .leftJoinAndSelect('product.image', 'image')
@@ -306,71 +347,80 @@ export class ProductsService {
       .leftJoinAndSelect('product.orders', 'orders')
       .leftJoinAndSelect('product.my_review', 'my_review')
       .leftJoinAndSelect('product.variations', 'attributeValues')
-      .leftJoinAndSelect('attributeValues.attribute', 'attribute');
+      .leftJoinAndSelect('attributeValues.attribute', 'attribute')
+      .where('product.is_delete = :isDelete', { isDelete: false });
 
-    // Adding conditions dynamically
+    // Add filters
     if (shop_id) {
       productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
     } else if (shopName) {
-      productQueryBuilder.andWhere('(shop.name = :shopName OR shop.slug = :shopName)', { shopName });
+      productQueryBuilder.andWhere('(shop.name ILIKE :shopName OR shop.slug ILIKE :shopName)', { shopName: `%${shopName}%` });
     } else if (dealerId) {
       productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
     }
 
+    // Add region filter
+    if (regionName) {
+      productQueryBuilder
+        .leftJoinAndSelect('product.region', 'region') // Ensure proper join with region entity
+        .andWhere('region.name ILIKE :regionName', { regionName: `%${regionName}%` });
+    }
+
+    // Add search and filter conditions
     if (search || filter) {
-      const parseSearchParams = filter ? filter.split(';') : [];
       const searchConditions = [];
       const searchParams: any = {};
 
-      parseSearchParams.forEach(searchParam => {
-        const [key, value] = searchParam.split(':');
-        const searchTerm = `%${value}%`;
+      // Parse filters
+      if (filter) {
+        const parseSearchParams = filter.split(';');
+        parseSearchParams.forEach(searchParam => {
+          const [key, value] = searchParam.split(':');
+          const searchTerm = `%${value}%`;
 
-        switch (key) {
-          case 'product':
-            searchConditions.push(`(product.name LIKE :productSearchTerm OR product.slug LIKE :productSearchTerm)`);
-            searchParams.productSearchTerm = searchTerm;
-            break;
-          case 'category':
-            searchConditions.push(`(categories.name LIKE :categorySearchTerm OR categories.slug LIKE :categorySearchTerm)`);
-            searchParams.categorySearchTerm = searchTerm;
-            break;
-          case 'subCategories':
-            searchConditions.push(`(subCategories.name LIKE :subCategorySearchTerm OR subCategories.slug LIKE :subCategorySearchTerm)`);
-            searchParams.subCategorySearchTerm = searchTerm;
-            break;
-          case 'type':
-            searchConditions.push(`(type.name LIKE :typeSearchTerm OR type.slug LIKE :typeSearchTerm)`);
-            searchParams.typeSearchTerm = searchTerm;
-            break;
-          case 'tags':
-            searchConditions.push(`(tags.name LIKE :tagSearchTerm OR tags.slug LIKE :tagSearchTerm)`);
-            searchParams.tagSearchTerm = searchTerm;
-            break;
-          case 'variations':
-            const variationParams = value.split(',');
-            const variationSearchTerm = variationParams.map(param => param.split('=')[1]).join('/');
-            const paramName = `variation_title`;
-            searchConditions.push(`(variation_options.title LIKE :${paramName})`);
-            searchParams[paramName] = `%${variationSearchTerm}%`;
-            break;
-          default:
-            break;
-        }
-      });
+          switch (key) {
+            case 'product':
+              searchConditions.push('(product.name ILIKE :productSearchTerm OR product.slug ILIKE :productSearchTerm)');
+              searchParams.productSearchTerm = searchTerm;
+              break;
+            case 'category':
+              searchConditions.push('(categories.name ILIKE :categorySearchTerm OR categories.slug ILIKE :categorySearchTerm)');
+              searchParams.categorySearchTerm = searchTerm;
+              break;
+            case 'subCategories':
+              searchConditions.push('(subCategories.name ILIKE :subCategorySearchTerm OR subCategories.slug ILIKE :subCategorySearchTerm)');
+              searchParams.subCategorySearchTerm = searchTerm;
+              break;
+            case 'type':
+              searchConditions.push('(type.name ILIKE :typeSearchTerm OR type.slug ILIKE :typeSearchTerm)');
+              searchParams.typeSearchTerm = searchTerm;
+              break;
+            case 'tags':
+              searchConditions.push('(tags.name ILIKE :tagSearchTerm OR tags.slug ILIKE :tagSearchTerm)');
+              searchParams.tagSearchTerm = searchTerm;
+              break;
+            case 'variations':
+              const variationParams = value.split(',');
+              const variationSearchTerm = variationParams.map(param => param.split('=')[1]).join('/');
+              searchConditions.push('(variation_options.title ILIKE :variationSearchTerm)');
+              searchParams.variationSearchTerm = `%${variationSearchTerm}%`;
+              break;
+            default:
+              break;
+          }
+        });
+      }
 
+      // Add search term conditions
       if (search) {
         const filterTerms = search.split(' ');
         filterTerms.forEach(term => {
           const searchTerm = `%${term}%`;
           searchConditions.push(
-            `(product.name LIKE :filterSearchTerm OR 
-            product.sku LIKE :filterSearchTerm OR 
-            categories.name LIKE :filterSearchTerm OR 
-            subCategories.name LIKE :filterSearchTerm OR 
-            type.name LIKE :filterSearchTerm OR 
-            tags.name LIKE :filterSearchTerm OR 
-            variation_options.title LIKE :filterSearchTerm)`
+            '(product.name ILIKE :filterSearchTerm OR product.sku ILIKE :filterSearchTerm OR ' +
+            'categories.name ILIKE :filterSearchTerm OR subCategories.name ILIKE :filterSearchTerm OR ' +
+            'type.name ILIKE :filterSearchTerm OR tags.name ILIKE :filterSearchTerm OR ' +
+            'variation_options.title ILIKE :filterSearchTerm)'
           );
           searchParams.filterSearchTerm = searchTerm;
         });
@@ -378,17 +428,11 @@ export class ProductsService {
 
       if (searchConditions.length > 0) {
         const combinedConditions = searchConditions.join(' AND ');
-
-        productQueryBuilder
-          .leftJoinAndSelect('product.categories', 'categories1')
-          .leftJoinAndSelect('product.subCategories', 'subCategories1')
-          .leftJoinAndSelect('product.type', 'type1')
-          .leftJoinAndSelect('product.tags', 'tags1')
-          .leftJoinAndSelect('product.variation_options', 'variation_options1')
-          .where(combinedConditions, searchParams);
+        productQueryBuilder.andWhere(combinedConditions, searchParams);
       }
     }
 
+    // Execute query and handle results
     try {
       let products: Product[] = [];
       let total: number;
@@ -453,7 +497,7 @@ export class ProductsService {
         ...paginator,
       };
 
-      await this.cacheManager.set(cacheKey, result, 1800);
+      await this.cacheManager.set(cacheKey, result, 1800); // Cache for 30 minutes
       this.logger.log(`Data cached with key: ${cacheKey}`);
 
       return result;

@@ -16,6 +16,7 @@ import { Product } from 'src/products/entities/product.entity'
 import { Shop } from 'src/shops/entities/shop.entity'
 import { Tag } from 'src/tags/entities/tag.entity'
 import { Category } from 'src/categories/entities/category.entity'
+import { Region } from '@db/src/region/entities/region.entity'
 
 // TypeSettings entity
 @Entity()
@@ -75,6 +76,12 @@ export class Type extends CoreEntity {
   @ManyToOne(() => Shop, { cascade: true })
   @JoinColumn()
   shop?: Shop;
+
+  @ManyToOne(() => Region, (region) => region.types, { eager: true, nullable: true, onDelete: 'CASCADE' })
+  region: Region;
+  @ManyToMany(() => Region)
+  @JoinTable()
+  regions: Region[];
 
   @Column()
   language: string;

@@ -27,4 +27,5 @@ export class CreateTypeDto {
   promotional_sliders: AttachmentDTO[];
   banners: BannerDto[];
   translated_languages: string[];
+  region_name: string;
 }

@@ -27,11 +27,12 @@ import { User } from 'src/users/entities/user.entity';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { UploadXlService } from './uploadProductsXl';
 import { CacheModule } from '@nestjs/cache-manager';
+import { Region } from '../region/entities/region.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Product, OrderProductPivot, Variation, VariationOption, Attachment, Category, SubCategory, Shop, Type, Tag, AttributeValue, File, Dealer, DealerProductMargin, DealerCategoryMargin, User, Tax
+      Product, Region, OrderProductPivot, Variation, VariationOption, Attachment, Category, SubCategory, Shop, Type, Tag, AttributeValue, File, Dealer, DealerProductMargin, DealerCategoryMargin, User, Tax
     ]),
     CacheModule.register(), // Register CacheModule here
   ],

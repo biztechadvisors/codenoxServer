@@ -13,6 +13,7 @@ import { Tax } from 'src/taxes/entities/tax.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 import { Attribute } from 'src/attributes/entities/attribute.entity';
 import { Stocks } from 'src/stocks/entities/stocks.entity';
+import { Region } from '@db/src/region/entities/region.entity';
 
 enum ProductStatus {
   PUBLISH = 'Publish',
@@ -40,6 +41,9 @@ export class Product extends CoreEntity {
   @ManyToOne(() => Type, (type) => type.products, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'typeId' })
   type: Type | null;
+
+  @ManyToOne(() => Region, (region) => region.products, { nullable: true, onDelete: 'CASCADE' })
+  region: Region;
 
   @ManyToMany(() => Category, category => category.products, { eager: true, cascade: true })
   @JoinTable({ name: "product_category" })
