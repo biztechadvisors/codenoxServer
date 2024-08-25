@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsArray, IsInt } from 'class-validator';
+import { IsOptional, IsString, IsArray, IsInt, IsNotEmpty } from 'class-validator';
 
 export class UpdateBlogDto {
     @IsOptional()
@@ -17,4 +17,8 @@ export class UpdateBlogDto {
     @IsArray()
     @IsInt({ each: true })
     attachmentIds?: number[];
+
+    @IsNotEmpty()
+    @IsString()
+    regionName: string;
 }

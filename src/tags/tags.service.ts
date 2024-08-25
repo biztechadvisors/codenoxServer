@@ -193,7 +193,6 @@ export class TagsService {
     return tag;
   }
 
-
   async update(id: number, updateTagDto: UpdateTagDto): Promise<Tag> {
     const tag = await this.tagRepository.findOne({ where: { id }, relations: ['image', 'type'] });
 
@@ -201,15 +200,15 @@ export class TagsService {
       throw new NotFoundException(`Tag with ID ${id} not found`);
     }
 
-    // Check if the image is part of the updateTagDto and different from the current one
+    // Handle image update
     if (updateTagDto.image?.id && updateTagDto.image.id !== tag.image?.id) {
       const referencingTags = await this.tagRepository.find({ where: { image: tag.image } });
 
       if (referencingTags.length === 1) {
-        const image = tag.image;
+        const oldImage = tag.image;
         tag.image = null;
         await this.tagRepository.save(tag);
-        await this.attachmentRepository.remove(image);
+        await this.attachmentRepository.remove(oldImage);
       }
 
       const newImage = await this.attachmentRepository.findOne({ where: { id: updateTagDto.image.id } });
@@ -219,13 +218,22 @@ export class TagsService {
       tag.image = newImage;
     }
 
-    // Check if the type is part of the updateTagDto and different from the current one
+    // Handle type update
     if (updateTagDto.type_id && updateTagDto.type_id !== tag.type?.id) {
       const type = await this.typeRepository.findOne({ where: { id: updateTagDto.type_id } });
       if (!type) {
         throw new NotFoundException('Type not found');
       }
       tag.type = type;
+    }
+
+    // Handle region update
+    if (updateTagDto.region_name) {
+      const region = await this.regionRepository.findOne({ where: { name: updateTagDto.region_name } });
+      if (!region) {
+        throw new NotFoundException(`Region with name '${updateTagDto.region_name}' not found`);
+      }
+      tag.region = region;
     }
 
     // Update other fields

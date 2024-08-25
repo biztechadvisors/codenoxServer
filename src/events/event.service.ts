@@ -113,6 +113,10 @@ export class EventService {
     async updateEvent(id: number, updateEventDto: UpdateEventDto): Promise<Event> {
         const event = await this.getEventById(id);
 
+        if (!event) {
+            throw new NotFoundException(`Event with ID ${id} not found`);
+        }
+
         if (updateEventDto.title) event.title = updateEventDto.title;
         if (updateEventDto.eventName) event.eventName = updateEventDto.eventName;
         if (updateEventDto.description) event.description = updateEventDto.description;
@@ -130,7 +134,19 @@ export class EventService {
         }
 
         if (updateEventDto.imageIds) {
-            event.images = await this.attachmentRepository.findByIds(updateEventDto.imageIds);
+            const images = await this.attachmentRepository.findByIds(updateEventDto.imageIds);
+            if (images.length !== updateEventDto.imageIds.length) {
+                throw new NotFoundException('One or more images not found');
+            }
+            event.images = images;
+        }
+
+        if (updateEventDto.regionName) {
+            const region = await this.regionRepository.findOne({ where: { name: updateEventDto.regionName } });
+            if (!region) {
+                throw new NotFoundException(`Region with name '${updateEventDto.regionName}' not found`);
+            }
+            event.region = region;
         }
 
         return this.eventRepository.save(event);

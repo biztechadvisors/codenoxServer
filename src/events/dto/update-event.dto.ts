@@ -37,4 +37,8 @@ export class UpdateEventDto {
     @IsArray()
     @IsInt({ each: true })
     imageIds?: number[];
+
+    @IsOptional()
+    @IsString()
+    regionName: string;
 }

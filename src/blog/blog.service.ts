@@ -108,9 +108,17 @@ export class BlogService {
     async updateBlog(id: number, updateBlogDto: UpdateBlogDto): Promise<Blog> {
         const blog = await this.getBlogById(id);
 
-        if (updateBlogDto.title) blog.title = updateBlogDto.title;
-        if (updateBlogDto.content) blog.content = updateBlogDto.content;
+        // Update title if provided
+        if (updateBlogDto.title) {
+            blog.title = updateBlogDto.title;
+        }
 
+        // Update content if provided
+        if (updateBlogDto.content) {
+            blog.content = updateBlogDto.content;
+        }
+
+        // Update shop if shopId is provided
         if (updateBlogDto.shopId) {
             const shop = await this.shopRepository.findOne({ where: { id: updateBlogDto.shopId } });
             if (!shop) {
@@ -119,12 +127,24 @@ export class BlogService {
             blog.shop = shop;
         }
 
+        // Update attachments if attachmentIds are provided
         if (updateBlogDto.attachmentIds) {
             blog.attachments = await this.attachmentRepository.findByIds(updateBlogDto.attachmentIds);
         }
 
+        // Update region if region_name is provided
+        if (updateBlogDto.regionName) {
+            const region = await this.regionRepository.findOne({ where: { name: updateBlogDto.regionName } });
+            if (!region) {
+                throw new NotFoundException(`Region with name ${updateBlogDto.regionName} not found`);
+            }
+            blog.region = region;
+        }
+
+        // Save the updated blog entity
         return this.blogRepository.save(blog);
     }
+
 
     async deleteBlog(id: number): Promise<void> {
         const result = await this.blogRepository.delete(id);

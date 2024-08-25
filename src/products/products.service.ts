@@ -28,6 +28,7 @@ import { Cron } from '@nestjs/schedule';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CreateProductDto } from './dto/create-product.dto';
+import { Region } from '../region/entities/region.entity';
 
 
 @Injectable()
@@ -52,6 +53,8 @@ export class ProductsService {
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
     @InjectRepository(User) private readonly userRepository: UserRepository,
     @InjectRepository(Tax) private readonly taxRepository: Repository<Tax>,
+    @InjectRepository(Region) private readonly regionRepository: Repository<Region>,
+
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 
@@ -661,7 +664,21 @@ export class ProductsService {
   }
 
   async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
-    const product = await this.productRepository.findOne({ where: { id: id }, relations: ['type', 'shop', 'categories', 'tags', 'image', 'gallery', 'variations', 'variation_options', 'pivot'] });
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: [
+        'type',
+        'shop',
+        'categories',
+        'tags',
+        'image',
+        'gallery',
+        'variations',
+        'variation_options',
+        'pivot',
+      ],
+    });
+
     if (!product) {
       throw new NotFoundException('Product not found');
     }
@@ -674,7 +691,12 @@ export class ProductsService {
     }
 
     product.name = updateProductDto.name || product.name;
-    product.slug = updateProductDto.name ? updateProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : product.slug;
+    product.slug = updateProductDto.name
+      ? updateProductDto.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+      : product.slug;
     product.description = updateProductDto.description || product.description;
     product.product_type = updateProductDto.product_type || product.product_type;
     product.status = updateProductDto.status || product.status;
@@ -689,32 +711,41 @@ export class ProductsService {
     product.width = updateProductDto.width;
     product.sku = updateProductDto.sku;
 
+    // Update taxes if provided
     if (updateProductDto.taxes) {
-      const tax = this.taxRepository.findOne({ where: { id: updateProductDto.taxes.id } })
+      const tax = await this.taxRepository.findOne({ where: { id: updateProductDto.taxes.id } });
       if (tax) {
-        product.taxes = updateProductDto.taxes
+        product.taxes = updateProductDto.taxes;
       }
     }
 
+    // Update type if provided
     if (updateProductDto.type_id) {
       const type = await this.typeRepository.findOne({ where: { id: updateProductDto.type_id } });
       product.type = type;
       product.type_id = type.id;
     }
+
+    // Update shop if provided
     if (updateProductDto.shop_id) {
       const shop = await this.shopRepository.findOne({ where: { id: updateProductDto.shop_id } });
       product.shop = shop;
       product.shop_id = shop.id;
     }
 
+    // Update categories if provided
     if (updateProductDto.categories) {
       const categories = await this.categoryRepository.findByIds(updateProductDto.categories);
       product.categories = categories;
     }
+
+    // Update tags if provided
     if (updateProductDto.tags) {
       const tags = await this.tagRepository.findByIds(updateProductDto.tags);
       product.tags = tags;
     }
+
+    // Update image if provided
     if (updateProductDto.image) {
       const existingImage = product.image ? product.image.id : null;
       const updatedImage = updateProductDto.image.id;
@@ -734,35 +765,41 @@ export class ProductsService {
       }
     }
 
+    // Update gallery if provided
     if (updateProductDto.gallery) {
-      const existingGalleryImages = product.gallery.map(galleryImage => galleryImage.id);
-      const updatedGalleryImages = updateProductDto.gallery.map(galleryImage => galleryImage.id);
+      const existingGalleryImages = product.gallery.map((galleryImage) => galleryImage.id);
+      const updatedGalleryImages = updateProductDto.gallery.map((galleryImage) => galleryImage.id);
 
       // Identify images to be removed
-      const imagesToRemove = existingGalleryImages.filter(id => !updatedGalleryImages.includes(id));
+      const imagesToRemove = existingGalleryImages.filter((id) => !updatedGalleryImages.includes(id));
 
       // Remove images
       for (const imageId of imagesToRemove) {
-        const image = product.gallery.find(galleryImage => galleryImage.id === imageId);
+        const image = product.gallery.find((galleryImage) => galleryImage.id === imageId);
         product.gallery.splice(product.gallery.indexOf(image!), 1);
         await this.attachmentRepository.remove(image);
       }
 
       // Add new images
-      const newGalleryImages = updateProductDto.gallery.filter(galleryImage => !existingGalleryImages.includes(galleryImage.id));
+      const newGalleryImages = updateProductDto.gallery.filter(
+        (galleryImage) => !existingGalleryImages.includes(galleryImage.id),
+      );
       for (const newGalleryImage of newGalleryImages) {
         const image = await this.attachmentRepository.findOne({ where: { id: newGalleryImage.id } });
         product.gallery.push(image);
       }
     }
 
+    // Update variations if provided
     if (updateProductDto.variations) {
       // Ensure product.variations is an array
       product.variations = Array.isArray(product.variations) ? product.variations : [];
-      const existingVariations = product.variations.map(variation => variation.attribute_value_id);
+      const existingVariations = product.variations.map((variation) => variation.attribute_value_id);
       // Ensure updateProductDto.variations is an array
       const updateVariations = Array.isArray(updateProductDto.variations) ? updateProductDto.variations : [];
-      const newVariations = updateVariations.filter(variation => !existingVariations.includes(variation.attribute_value_id));
+      const newVariations = updateVariations.filter(
+        (variation) => !existingVariations.includes(variation.attribute_value_id),
+      );
       for (const newVariation of newVariations) {
         const variation = await this.attributeValueRepository.findOne({ where: { id: newVariation.attribute_value_id } });
         if (variation) {
@@ -770,23 +807,27 @@ export class ProductsService {
         }
       }
       // Remove the association between the Product and AttributeValue which is not in the updated product variation
-      const variationsToRemove = existingVariations.filter(variation => !updateVariations.map(v => v.attribute_value_id).includes(variation));
+      const variationsToRemove = existingVariations.filter(
+        (variation) => !updateVariations.map((v) => v.attribute_value_id).includes(variation),
+      );
       for (const variationId of variationsToRemove) {
-        const variationIndex = product.variations.findIndex(v => v.attribute_value_id === variationId);
+        const variationIndex = product.variations.findIndex((v) => v.attribute_value_id === variationId);
         if (variationIndex !== -1) {
           product.variations.splice(variationIndex, 1);
         }
       }
     }
 
-    await this.productRepository.save(product);
+    // Update variation options if provided
     if (updateProductDto.product_type === 'variable' && updateProductDto.variation_options) {
-      const existingVariations = product.variation_options.map(variation => variation.id);
-      const upsertVariations = Array.isArray(updateProductDto.variation_options.upsert) ? updateProductDto.variation_options.upsert : [];
+      const existingVariations = product.variation_options.map((variation) => variation.id);
+      const upsertVariations = Array.isArray(updateProductDto.variation_options.upsert)
+        ? updateProductDto.variation_options.upsert
+        : [];
       for (const upsertVariationDto of upsertVariations) {
         let variation;
         if (existingVariations.includes(upsertVariationDto.id)) {
-          variation = product.variation_options.find(variation => variation.id === upsertVariationDto.id);
+          variation = product.variation_options.find((variation) => variation.id === upsertVariationDto.id);
         } else {
           variation = new Variation();
           product.variation_options.push(variation);
@@ -810,17 +851,17 @@ export class ProductsService {
         }
         // Ensure variation.options is an array
         variation.options = Array.isArray(variation.options) ? variation.options : [];
-        const existingOptionIds = variation.options.map(option => option.id);
-        const updatedOptionIds = upsertVariationDto.options.map(option => option.id);
-        const optionsToRemove = existingOptionIds.filter(id => !updatedOptionIds.includes(id));
+        const existingOptionIds = variation.options.map((option) => option.id);
+        const updatedOptionIds = upsertVariationDto.options.map((option) => option.id);
+        const optionsToRemove = existingOptionIds.filter((id) => !updatedOptionIds.includes(id));
         for (const optionId of optionsToRemove) {
-          const option = variation.options.find(option => option.id === optionId);
+          const option = variation.options.find((option) => option.id === optionId);
           if (option) {
             variation.options.splice(variation.options.indexOf(option), 1);
             await this.variationOptionRepository.remove(option);
           }
         }
-        const newOptions = upsertVariationDto.options.filter(option => !existingOptionIds.includes(option.id));
+        const newOptions = upsertVariationDto.options.filter((option) => !existingOptionIds.includes(option.id));
         for (const newOptionDto of newOptions) {
           const newOption = new VariationOption();
           newOption.id = newOptionDto.id;
@@ -833,49 +874,43 @@ export class ProductsService {
       }
       if (updateProductDto.variation_options.delete) {
         for (const deleteId of updateProductDto.variation_options.delete) {
-          const variation = await this.variationRepository.findOne({ where: { id: deleteId }, relations: ['options', 'image'] });
+          const variation = await this.variationRepository.findOne({
+            where: { id: deleteId },
+            relations: ['options', 'image'],
+          });
           if (!variation) {
-            throw new NotFoundException(`Variation with ID ${deleteId} not found`);
+            throw new NotFoundException('Variation not found');
           }
-
-          await Promise.all([
-            ...variation.options ? [this.variationOptionRepository.remove(variation.options)] : [],
-            (async () => {
-              if (variation.image) {
-                const image = variation.image;
-                variation.image = null;
-                await this.variationRepository.save(variation);
-                const file = await this.fileRepository.findOne({ where: { id: image.id } });
-                if (file) {
-                  file.attachment_id = null;
-                  await this.fileRepository.save(file).then(async () => {
-                    await this.fileRepository.remove(file);
-                  });
-                }
-                const attachment = await this.attachmentRepository.findOne({ where: { id: image.attachment_id } });
-                if (attachment) {
-                  await this.attachmentRepository.remove(attachment);
-                }
-              }
-            })(),
-            this.variationRepository.remove(variation),
-          ]);
-
-          product.variation_options.splice(product.variation_options.indexOf(variation), 1);
-
-          // Remove the association between the Product and AttributeValue
-          const attributeValueIndex = product.variations.findIndex(v => v.attribute_value_id === variation.id);
-          if (attributeValueIndex !== -1) {
-            product.variations.splice(attributeValueIndex);
+          const variationImage = variation.image;
+          if (variationImage) {
+            variation.image = null;
+            await this.fileRepository.remove(variationImage);
           }
+          await this.variationRepository.remove(variation);
         }
       }
     }
 
-    await this.productRepository.save(product);
-    // throw error
-    return product;
+    // Update variation if provided
+    if (updateProductDto.variation) {
+      const variation = await this.variationRepository.findOne({ where: { id: updateProductDto.variation.id } });
+      if (variation) {
+        product.variation = variation;
+      }
+    }
+
+    // Region-based functionality
+    if (updateProductDto.region_name) {
+      const region = await this.regionRepository.findOne({ where: { name: updateProductDto.region_name } });
+      if (region) {
+        product.region = region;
+      }
+    }
+
+    // Save updated product
+    return await this.productRepository.save(product);
   }
+
 
   async remove(id: number): Promise<void> {
     const product = await this.productRepository.findOne({

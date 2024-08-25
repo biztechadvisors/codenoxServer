@@ -172,11 +172,10 @@ export class TypesService {
     return this.typeRepository.save(type);
   }
 
-
   async update(id: number, updateTypeDto: UpdateTypeDto): Promise<Type> {
     const type = await this.typeRepository.findOne({
       where: { id },
-      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image'],
+      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'region'],
     });
 
     if (!type) {
@@ -189,7 +188,7 @@ export class TypesService {
       await this.typeSettingsRepository.save(type.settings);
     }
 
-    // Update promotional_sliders
+    // Update promotional sliders
     if (updateTypeDto.promotional_sliders) {
       const sliders = await this.attachmentRepository.findByIds(updateTypeDto.promotional_sliders.map(slider => slider.id));
       type.promotional_sliders = sliders;
@@ -219,6 +218,15 @@ export class TypesService {
       }));
     }
 
+    // Update region
+    if (updateTypeDto.region_name) {
+      const region = await this.regionRepository.findOne({ where: { name: updateTypeDto.region_name } });
+      if (!region) {
+        throw new NotFoundException(`Region with name '${updateTypeDto.region_name}' not found`);
+      }
+      type.region = region;
+    }
+
     // Update other properties
     if (updateTypeDto.name) {
       type.name = updateTypeDto.name;
@@ -236,6 +244,7 @@ export class TypesService {
     // Save the updated type
     return this.typeRepository.save(type);
   }
+
 
   async remove(id: number): Promise<void> {
     const type = await this.typeRepository.findOne({

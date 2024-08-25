@@ -206,12 +206,12 @@ export class CategoriesService {
 
     return category;
   }
+
   async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
     const category = await this.categoryRepository.findOne({
       where: { id },
-      relations: ['type', 'image'],
+      relations: ['type', 'image', 'region'],
     });
-
 
     if (!category) {
       throw new NotFoundException('Category not found');
@@ -220,27 +220,29 @@ export class CategoriesService {
     if (updateCategoryDto.image) {
       const image = await this.attachmentRepository.findOne({ where: { id: updateCategoryDto.image.id } });
       if (!image) {
-        throw new Error(`Image with id '${updateCategoryDto.image.id}' not found`);
+        throw new NotFoundException(`Image with ID '${updateCategoryDto.image.id}' not found`);
       }
-      const referencingCategories = await this.categoryRepository.find({ where: { image: category.image } });
 
-      if (referencingCategories.length === 1) {
-        const oldImage = category.image;
-        category.image = null;
-        await this.categoryRepository.save(category);
-        await this.attachmentRepository.remove(oldImage);
+      if (category.image && (await this.categoryRepository.count({ where: { image: category.image } })) === 1) {
+        await this.attachmentRepository.remove(category.image);
       }
       category.image = image;
     }
 
     if (updateCategoryDto.type_id) {
-
       const type = await this.typeRepository.findOne({ where: { id: updateCategoryDto.type_id } });
       if (!type) {
-        // Handle the case when the type is not found
-        throw new Error(`Type with name '${updateCategoryDto.type_id}' not found`);
+        throw new NotFoundException(`Type with ID '${updateCategoryDto.type_id}' not found`);
       }
       category.type = type;
+    }
+
+    if (updateCategoryDto.region_name) {
+      const region = await this.regionRepository.findOne({ where: { name: updateCategoryDto.region_name } });
+      if (!region) {
+        throw new NotFoundException(`Region with name '${updateCategoryDto.region_name}' not found`);
+      }
+      category.region = region;
     }
 
     category.name = updateCategoryDto.name;
@@ -377,7 +379,7 @@ export class CategoriesService {
   async updateSubCategory(id: number, updateSubCategoryDto: UpdateSubCategoryDto): Promise<SubCategory> {
     const subCategory = await this.subCategoryRepository.findOne({
       where: { id },
-      relations: ['category', 'image', 'shop'],
+      relations: ['category', 'image', 'shop', 'region'],
     });
 
     if (!subCategory) {
@@ -387,15 +389,11 @@ export class CategoriesService {
     if (updateSubCategoryDto.image) {
       const image = await this.attachmentRepository.findOne({ where: { id: updateSubCategoryDto.image.id } });
       if (!image) {
-        throw new Error(`Image with id '${updateSubCategoryDto.image.id}' not found`);
+        throw new NotFoundException(`Image with ID '${updateSubCategoryDto.image.id}' not found`);
       }
-      const referencingSubCategories = await this.subCategoryRepository.find({ where: { image: subCategory.image } });
 
-      if (referencingSubCategories.length === 1) {
-        const oldImage = subCategory.image;
-        subCategory.image = null;
-        await this.subCategoryRepository.save(subCategory);
-        await this.attachmentRepository.remove(oldImage);
+      if (subCategory.image && (await this.subCategoryRepository.count({ where: { image: subCategory.image } })) === 1) {
+        await this.attachmentRepository.remove(subCategory.image);
       }
       subCategory.image = image;
     }
@@ -403,9 +401,17 @@ export class CategoriesService {
     if (updateSubCategoryDto.category_id) {
       const category = await this.categoryRepository.findOne({ where: { id: updateSubCategoryDto.category_id } });
       if (!category) {
-        throw new Error(`Category with id '${updateSubCategoryDto.category_id}' not found`);
+        throw new NotFoundException(`Category with ID '${updateSubCategoryDto.category_id}' not found`);
       }
       subCategory.category = category;
+    }
+
+    if (updateSubCategoryDto.regionName) {
+      const region = await this.regionRepository.findOne({ where: { name: updateSubCategoryDto.regionName } });
+      if (!region) {
+        throw new NotFoundException(`Region with name '${updateSubCategoryDto.regionName}' not found`);
+      }
+      subCategory.region = region;
     }
 
     subCategory.name = updateSubCategoryDto.name;
@@ -415,7 +421,6 @@ export class CategoriesService {
 
     return this.subCategoryRepository.save(subCategory);
   }
-
 
   async removeSubCategory(id: number): Promise<void> {
     // Find the SubCategory instance to be removed
