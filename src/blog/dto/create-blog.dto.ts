@@ -18,7 +18,12 @@ export class CreateBlogDto {
     @IsInt({ each: true })
     attachmentIds?: number[];
 
+    @IsOptional()
+    @IsArray()
+    @IsInt({ each: true })
+    tagIds?: number[]; // Include tagIds for associating tags
+
     @IsNotEmpty()
     @IsString()
-    regionName: string;  // Added regionName to DTO
+    regionName: string;
 }

@@ -14,9 +14,14 @@ export class BlogController {
     }
 
     @Get('shop/:shopSlug/region/:regionName')
-    getAllBlogs(@Param('shopSlug') shopSlug: string, @Param('regionName') regionName: string): Promise<Blog[]> {
-        return this.blogService.getAllBlogs(shopSlug, regionName);
+    getAllBlogs(
+        @Param('shopSlug') shopSlug: string,
+        @Query('regionName') regionName: string,
+        @Query('tagName') tagName?: string  // Optional query parameter for tagName
+    ): Promise<Blog[]> {
+        return this.blogService.getAllBlogs(shopSlug, regionName, tagName);
     }
+
 
     @Get(':id')
     getBlogById(@Param('id') id: number): Promise<Blog> {

@@ -24,6 +24,8 @@ import { Setting } from 'src/settings/entities/setting.entity'
 import { Permission } from 'src/permission/entities/permission.entity'
 import { Region } from '@db/src/region/entities/region.entity'
 import { Event } from '@db/src/events/entities/event.entity'
+import { Career } from '@db/src/career/entities/career.entity'
+import { Contact } from '@db/src/contact/entity/createcontact.entitiy'
 
 @Entity()
 export class Shop extends CoreEntity {

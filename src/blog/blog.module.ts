@@ -7,9 +7,10 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Region } from '../region/entities/region.entity';
+import { Tag } from '../tags/entities/tag.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Blog, Attachment, Shop, Region]),
+    imports: [TypeOrmModule.forFeature([Blog, Attachment, Shop, Region, Tag]),
     CacheModule.register()
     ],
     providers: [BlogService],

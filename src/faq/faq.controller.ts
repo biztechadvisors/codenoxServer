@@ -2,7 +2,7 @@ import { Controller, Post, Get, Put, Delete, Param, Body } from '@nestjs/common'
 import { FAQService } from './faq.service';
 import { FAQ } from './entities/faq.entity';
 import { QnA, QnAType } from './entities/qna.entity';
-import { CreateFAQDto, UpdateFAQDto } from './dto/CreateFAQDto.dto';
+import { CreateFAQDto, UpdateFAQDto } from './dto/createfaqdto.dto';
 import { CreateQnADto, UpdateQnADto } from './dto/createqnadto.dto';
 
 @Controller('faqs')

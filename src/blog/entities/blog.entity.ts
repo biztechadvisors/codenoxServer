@@ -3,6 +3,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, JoinTabl
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Region } from '@db/src/region/entities/region.entity';
+import { Tag } from '@db/src/tags/entities/tag.entity';
 
 @Entity()
 export class Blog {
@@ -12,12 +13,13 @@ export class Blog {
     @Column()
     title: string;
 
-    @Column({
-        type: 'text'
-    })
+    @Column({ type: 'text' })
     content: string;
 
-    @ManyToOne(() => Shop)
+    @Column({ type: 'date' })
+    date: string;
+
+    @ManyToOne(() => Shop, { nullable: false, onDelete: 'CASCADE' })
     shop: Shop;
 
     @ManyToMany(() => Attachment, { cascade: true, eager: true })
@@ -30,4 +32,12 @@ export class Blog {
 
     @ManyToOne(() => Region, (region) => region.blogs, { nullable: true, onDelete: 'CASCADE' })
     region: Region;
+
+    @ManyToMany(() => Tag, { cascade: true, eager: true })
+    @JoinTable({
+        name: 'blog_tags',
+        joinColumn: { name: 'blogId', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' },
+    })
+    tags?: Tag[];
 }

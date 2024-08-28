@@ -58,6 +58,8 @@ import { GetInspiredModule } from './get-inspired/get-inspired.module';
 import { ShiprocketServiceEnv } from './updateEnv';
 import { NotificationsMiddleware } from './common/middleware/notifications.middleware';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { CareerModule } from './career/career.module';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
   imports: [
@@ -152,6 +154,8 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     BlogModule,
     EventModule,
     GetInspiredModule,
+    CareerModule,
+    ContactModule
   ],
   controllers: [],
   providers: [

@@ -18,6 +18,11 @@ export class UpdateBlogDto {
     @IsInt({ each: true })
     attachmentIds?: number[];
 
+    @IsOptional()
+    @IsArray()
+    @IsInt({ each: true })
+    tagIds?: number[]; // Include tagIds for updating tags
+
     @IsNotEmpty()
     @IsString()
     regionName: string;

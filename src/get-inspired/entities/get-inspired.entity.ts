@@ -13,7 +13,7 @@ export class GetInspired {
     title: string;
 
     @Column()
-    type: string; // You can use an enum type if there are specific types
+    type: string;
 
     @ManyToOne(() => Shop)
     shop: Shop;

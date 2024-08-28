@@ -18,11 +18,11 @@ export class Event {
     @Column('text')
     description: string;
 
-    @Column()
-    date: string;
+    @Column({ type: 'date' })
+    date: string; // You can use `Date` type here if you prefer
 
-    @Column()
-    time: string;
+    @Column({ type: 'time' })
+    time: string; // You can use `Date` type here if you prefer
 
     @Column()
     location: string;

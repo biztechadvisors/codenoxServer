@@ -9,6 +9,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Region } from '../region/entities/region.entity';
+import { Tag } from '../tags/entities/tag.entity';
 
 @Injectable()
 export class BlogService {
@@ -21,14 +22,19 @@ export class BlogService {
         private readonly attachmentRepository: Repository<Attachment>,
         @InjectRepository(Shop)
         private readonly shopRepository: Repository<Shop>,
+        @InjectRepository(Tag)
+        private readonly tagRepository: Repository<Tag>, // Inject Tag repository
         @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     ) { }
 
     async createBlog(createBlogDto: CreateBlogDto): Promise<Blog> {
-        const { title, content, shopId, attachmentIds, regionName } = createBlogDto;
+        const { title, content, shopId, attachmentIds, tagIds, regionName } = createBlogDto;
 
         // Retrieve attachments if they exist
         const attachments = attachmentIds ? await this.attachmentRepository.findByIds(attachmentIds) : [];
+
+        // Retrieve tags if they exist
+        const tags = tagIds ? await this.tagRepository.findByIds(tagIds) : [];
 
         // Check if the shop exists
         const shop = await this.shopRepository.findOne({ where: { id: shopId } });
@@ -48,13 +54,12 @@ export class BlogService {
             content,
             shop,
             attachments,
+            tags, // Associate tags with the blog
             region,  // Associate region with the blog
         });
 
         return this.blogRepository.save(blog);
     }
-
-
 
     async getBlogById(id: number): Promise<Blog> {
         const cacheKey = `blog-${id}`;
@@ -63,7 +68,7 @@ export class BlogService {
         if (!blog) {
             blog = await this.blogRepository.findOne({
                 where: { id },
-                relations: ['shop', 'attachments'],
+                relations: ['shop', 'attachments', 'tags', 'region'], // Include tags in relations
             });
 
             if (!blog) {
@@ -76,8 +81,8 @@ export class BlogService {
         return blog;
     }
 
-    async getAllBlogs(shopSlug: string, regionName: string): Promise<Blog[]> {
-        const cacheKey = `blogs-${shopSlug}-${regionName}`;
+    async getAllBlogs(shopSlug: string, regionName: string, tagName?: string): Promise<Blog[]> {
+        const cacheKey = `blogs-${shopSlug}-${regionName}-${tagName || 'all'}`;
         let blogs = await this.cacheManager.get<Blog[]>(cacheKey);
 
         if (!blogs) {
@@ -93,11 +98,22 @@ export class BlogService {
                 throw new NotFoundException(`Region with name ${regionName} not found`);
             }
 
-            // Retrieve blogs filtered by shop and region
-            blogs = await this.blogRepository.find({
-                where: { shop: { id: shop.id }, region: { id: region.id } },
-                relations: ['shop', 'attachments', 'region'],
-            });
+            // Create query builder for filtering by shop, region, and optionally by tag
+            const queryBuilder = this.blogRepository.createQueryBuilder('blog')
+                .leftJoinAndSelect('blog.shop', 'shop')
+                .leftJoinAndSelect('blog.attachments', 'attachments')
+                .leftJoinAndSelect('blog.tags', 'tags')
+                .leftJoinAndSelect('blog.region', 'region')
+                .where('blog.shopId = :shopId', { shopId: shop.id })
+                .andWhere('blog.regionId = :regionId', { regionId: region.id });
+
+            // Filter by tag name if provided
+            if (tagName) {
+                queryBuilder.andWhere('tags.name = :tagName', { tagName });
+            }
+
+            // Execute the query and retrieve the blogs
+            blogs = await queryBuilder.getMany();
 
             await this.cacheManager.set(cacheKey, blogs, 3600); // Cache for 1 hour
         }
@@ -108,35 +124,42 @@ export class BlogService {
     async updateBlog(id: number, updateBlogDto: UpdateBlogDto): Promise<Blog> {
         const blog = await this.getBlogById(id);
 
+        const { title, content, shopId, attachmentIds, tagIds, regionName } = updateBlogDto;
+
         // Update title if provided
-        if (updateBlogDto.title) {
-            blog.title = updateBlogDto.title;
+        if (title) {
+            blog.title = title;
         }
 
         // Update content if provided
-        if (updateBlogDto.content) {
-            blog.content = updateBlogDto.content;
+        if (content) {
+            blog.content = content;
         }
 
         // Update shop if shopId is provided
-        if (updateBlogDto.shopId) {
-            const shop = await this.shopRepository.findOne({ where: { id: updateBlogDto.shopId } });
+        if (shopId) {
+            const shop = await this.shopRepository.findOne({ where: { id: shopId } });
             if (!shop) {
-                throw new NotFoundException(`Shop with ID ${updateBlogDto.shopId} not found`);
+                throw new NotFoundException(`Shop with ID ${shopId} not found`);
             }
             blog.shop = shop;
         }
 
         // Update attachments if attachmentIds are provided
-        if (updateBlogDto.attachmentIds) {
-            blog.attachments = await this.attachmentRepository.findByIds(updateBlogDto.attachmentIds);
+        if (attachmentIds) {
+            blog.attachments = await this.attachmentRepository.findByIds(attachmentIds);
         }
 
-        // Update region if region_name is provided
-        if (updateBlogDto.regionName) {
-            const region = await this.regionRepository.findOne({ where: { name: updateBlogDto.regionName } });
+        // Update tags if tagIds are provided
+        if (tagIds) {
+            blog.tags = await this.tagRepository.findByIds(tagIds);
+        }
+
+        // Update region if regionName is provided
+        if (regionName) {
+            const region = await this.regionRepository.findOne({ where: { name: regionName } });
             if (!region) {
-                throw new NotFoundException(`Region with name ${updateBlogDto.regionName} not found`);
+                throw new NotFoundException(`Region with name ${regionName} not found`);
             }
             blog.region = region;
         }
@@ -144,7 +167,6 @@ export class BlogService {
         // Save the updated blog entity
         return this.blogRepository.save(blog);
     }
-
 
     async deleteBlog(id: number): Promise<void> {
         const result = await this.blogRepository.delete(id);
