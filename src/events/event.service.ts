@@ -86,7 +86,8 @@ export class EventService {
 
         if (!events) {
             // Check if the shop exists
-            const shop = await this.shopRepository.findOne({ where: { slug: shopSlug }, relations: ['events'] });
+            const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+
             if (!shop) {
                 throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
             }

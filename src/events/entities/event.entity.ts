@@ -30,7 +30,7 @@ export class Event {
     @Column()
     collaboration: string;
 
-    @ManyToOne(() => Shop)
+    @ManyToOne(() => Shop, (shop) => shop.events)
     shop: Shop;
 
     @ManyToMany(() => Attachment, { cascade: true, eager: true })

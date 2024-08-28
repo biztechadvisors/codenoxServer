@@ -527,6 +527,7 @@ export class ShopsService {
         permission: existShop.permission,
         dealerCount: existShop.dealerCount,
         regions: existShop.regions,
+        events: existShop.events,
       };
 
       return mappedShop;

@@ -2,13 +2,15 @@ import { Controller, Post, Get, Put, Delete, Param, Body } from '@nestjs/common'
 import { FAQService } from './faq.service';
 import { FAQ } from './entities/faq.entity';
 import { QnA, QnAType } from './entities/qna.entity';
+import { CreateFAQDto, UpdateFAQDto } from './dto/CreateFAQDto.dto';
+import { CreateQnADto, UpdateQnADto } from './dto/createqnadto.dto';
 
 @Controller('faqs')
 export class FAQController {
     constructor(private readonly faqService: FAQService) { }
 
     @Post()
-    createFAQ(@Body() createFAQDto: any): Promise<FAQ> {
+    createFAQ(@Body() createFAQDto: CreateFAQDto): Promise<FAQ> {
         return this.faqService.createFAQ(createFAQDto);
     }
 
@@ -23,7 +25,7 @@ export class FAQController {
     }
 
     @Put(':id')
-    updateFAQ(@Param('id') id: number, @Body() updateFAQDto: any): Promise<FAQ> {
+    updateFAQ(@Param('id') id: number, @Body() updateFAQDto: UpdateFAQDto): Promise<FAQ> {
         return this.faqService.updateFAQ(id, updateFAQDto);
     }
 
@@ -33,12 +35,12 @@ export class FAQController {
     }
 
     @Post(':faqId/qna')
-    addQnA(@Param('faqId') faqId: number, @Body() createQnADto: { question: string; answer: string; type?: QnAType }): Promise<QnA> {
+    addQnA(@Param('faqId') faqId: number, @Body() createQnADto: CreateQnADto): Promise<QnA> {
         return this.faqService.addQnAToFAQ(faqId, createQnADto);
     }
 
     @Put('qna/:id')
-    updateQnA(@Param('id') id: number, @Body() updateQnADto: any): Promise<QnA> {
+    updateQnA(@Param('id') id: number, @Body() updateQnADto: UpdateQnADto): Promise<QnA> {
         return this.faqService.updateQnA(id, updateQnADto);
     }
 

@@ -6,6 +6,7 @@ import { QnA, QnAType } from './entities/qna.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager'
+import { CreateQnADto } from './dto/createqnadto.dto';
 
 @Injectable()
 export class FAQService {
@@ -90,14 +91,20 @@ export class FAQService {
         }
     }
 
-    async addQnAToFAQ(faqId: number, createQnADto: { question: string; answer: string; type?: QnAType; }): Promise<QnA> {
+    async addQnAToFAQ(faqId: number, createQnADto: CreateQnADto): Promise<QnA> {
         const faq = await this.getFAQById(faqId);
+        if (!faq) {
+            throw new NotFoundException(`FAQ with ID ${faqId} not found`);
+        }
+
         const qna = this.qnaRepository.create({
             ...createQnADto,
             faq,
         });
+
         return this.qnaRepository.save(qna);
     }
+
 
     async updateQnA(id: number, updateQnADto: any): Promise<QnA> {
         const qna = await this.qnaRepository.findOne({

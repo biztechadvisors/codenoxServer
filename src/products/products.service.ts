@@ -350,8 +350,7 @@ export class ProductsService {
       .leftJoinAndSelect('product.orders', 'orders')
       .leftJoinAndSelect('product.my_review', 'my_review')
       .leftJoinAndSelect('product.variations', 'attributeValues')
-      .leftJoinAndSelect('attributeValues.attribute', 'attribute')
-      .where('product.is_delete = :isDelete', { isDelete: false });
+      .leftJoinAndSelect('attributeValues.attribute', 'attribute');
 
     // Add filters
     if (shop_id) {
