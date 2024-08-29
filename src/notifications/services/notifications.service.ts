@@ -28,15 +28,20 @@ export class NotificationService {
         return notification;
     }
 
-    getNotifications(userId: number): Notification[] {
-        return this.cache.get(userId) || [];
-    }
-
-    async getUserNotifications(userId: number): Promise<Notification[]> {
+    async getNotifications(userId: number): Promise<Notification[]> {
+        // Fetch notifications from the database to ensure cache consistency
         return await this.notificationRepository.find({
-            where: { user: { id: userId } },
+            where: { user: { id: userId }, seen: false },
             order: { createdAt: 'DESC' },
             take: 15,
         });
     }
+
+    async markAsSeen(notificationId: number): Promise<void> {
+        await this.notificationRepository.update(notificationId, { seen: true });
+    }
 }
+
+
+
+

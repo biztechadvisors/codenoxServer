@@ -13,7 +13,7 @@ import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { convertToSlug } from 'src/helpers';
 import { TypeRepository } from 'src/types/types.repository';
-import { ILike, IsNull, Like, Repository } from 'typeorm';
+import { ILike, In, IsNull, Like, Repository } from 'typeorm';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -61,14 +61,28 @@ export class CategoriesService {
       throw new Error(`Type with id '${createCategoryDto.type_id}' not found`);
     }
 
-    // Check if the region exists
-    const region = await this.regionRepository.findOne({ where: { name: createCategoryDto.region_name } });
-    if (!region) {
-      throw new Error(`Region with name '${createCategoryDto.region_name}' not found`);
-    }
-
     // Create a new Category instance
     const category = new Category();
+
+    // Handling regions
+    if (createCategoryDto.region_name && createCategoryDto.region_name.length > 0) {
+      const regions = await this.regionRepository.find({
+        where: {
+          name: In(createCategoryDto.region_name),
+        },
+      });
+
+      // Check if all requested regions were found
+      if (regions.length !== createCategoryDto.region_name.length) {
+        const missingRegionNames = createCategoryDto.region_name.filter(
+          (name) => !regions.some((region) => region.name === name)
+        );
+        throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
+      }
+
+      category.regions = regions; // Correctly assign an array of regions
+    }
+
     category.name = createCategoryDto.name;
     category.slug = await this.convertToSlug(createCategoryDto.name);
     category.type = type;
@@ -77,7 +91,6 @@ export class CategoriesService {
     category.image = imageAttachment;
     category.icon = createCategoryDto.icon;
     category.language = createCategoryDto.language;
-    category.region = region; // Associate the region with the category
 
     const shop = await this.shopRepository.findOne({ where: { id: createCategoryDto.shop_id } });
     if (shop) {
@@ -237,13 +250,25 @@ export class CategoriesService {
       category.type = type;
     }
 
-    if (updateCategoryDto.region_name) {
-      const region = await this.regionRepository.findOne({ where: { name: updateCategoryDto.region_name } });
-      if (!region) {
-        throw new NotFoundException(`Region with name '${updateCategoryDto.region_name}' not found`);
+    // Handling regions
+    if (updateCategoryDto.region_name && updateCategoryDto.region_name.length > 0) {
+      const regions = await this.regionRepository.find({
+        where: {
+          name: In(updateCategoryDto.region_name),
+        },
+      });
+
+      // Check if all requested regions were found
+      if (regions.length !== updateCategoryDto.region_name.length) {
+        const missingRegionNames = updateCategoryDto.region_name.filter(
+          (name) => !regions.some((region) => region.name === name)
+        );
+        throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
       }
-      category.region = region;
+
+      category.regions = regions; // This should work if `regions` is of type Region[]
     }
+
 
     category.name = updateCategoryDto.name;
     category.slug = await this.convertToSlug(updateCategoryDto.name);
@@ -312,14 +337,28 @@ export class CategoriesService {
       throw new Error(`Shop with id '${createSubCategoryDto.shop_id}' not found`);
     }
 
-    // Check if the region exists
-    const region = await this.regionRepository.findOne({ where: { name: createSubCategoryDto.regionName } });
-    if (!region) {
-      throw new Error(`Region with name '${createSubCategoryDto.regionName}' not found`);
-    }
-
     // Create a new SubCategory instance
     const subCategory = new SubCategory();
+
+    // Handling regions
+    if (createSubCategoryDto.regionName && createSubCategoryDto.regionName.length > 0) {
+      const regions = await this.regionRepository.find({
+        where: {
+          name: In(createSubCategoryDto.regionName),
+        },
+      });
+
+      // Check if all requested regions were found
+      if (regions.length !== createSubCategoryDto.regionName.length) {
+        const missingRegionNames = createSubCategoryDto.regionName.filter(
+          (name) => !regions.some((region) => region.name === name)
+        );
+        throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
+      }
+
+      subCategory.regions = regions; // Correctly assign an array of regions
+    }
+
     subCategory.name = createSubCategoryDto.name;
     subCategory.slug = await this.convertToSlug(createSubCategoryDto.name);
     subCategory.category = category;
@@ -327,7 +366,6 @@ export class CategoriesService {
     subCategory.image = imageAttachment;
     subCategory.language = createSubCategoryDto.language;
     subCategory.shop = shop;
-    subCategory.region = region;  // Associate region with subcategory
 
     // Save the SubCategory instance to the database
     return await this.subCategoryRepository.save(subCategory);
@@ -406,12 +444,23 @@ export class CategoriesService {
       subCategory.category = category;
     }
 
-    if (updateSubCategoryDto.regionName) {
-      const region = await this.regionRepository.findOne({ where: { name: updateSubCategoryDto.regionName } });
-      if (!region) {
-        throw new NotFoundException(`Region with name '${updateSubCategoryDto.regionName}' not found`);
+    // Handling regions
+    if (updateSubCategoryDto.regionName && updateSubCategoryDto.regionName.length > 0) {
+      const regions = await this.regionRepository.find({
+        where: {
+          name: In(updateSubCategoryDto.regionName),
+        },
+      });
+
+      // Check if all requested regions were found
+      if (regions.length !== updateSubCategoryDto.regionName.length) {
+        const missingRegionNames = updateSubCategoryDto.regionName.filter(
+          (name) => !regions.some((region) => region.name === name)
+        );
+        throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
       }
-      subCategory.region = region;
+
+      subCategory.regions = regions; // Correctly assign an array of regions
     }
 
     subCategory.name = updateSubCategoryDto.name;

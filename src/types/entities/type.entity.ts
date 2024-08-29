@@ -77,10 +77,12 @@ export class Type extends CoreEntity {
   @JoinColumn()
   shop?: Shop;
 
-  @ManyToOne(() => Region, (region) => region.types, { eager: true, nullable: true, onDelete: 'CASCADE' })
-  region: Region;
-  @ManyToMany(() => Region)
-  @JoinTable()
+  @ManyToMany(() => Region, (region) => region.types, { eager: true })
+  @JoinTable({
+    name: 'types_regions',
+    joinColumn: { name: 'typeId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'regionId', referencedColumnName: 'id' },
+  })
   regions: Region[];
 
   @Column()
@@ -89,6 +91,7 @@ export class Type extends CoreEntity {
   @Column({ type: 'json' })
   translated_languages: string[];
 }
+
 
 // Banner entity
 @Entity()

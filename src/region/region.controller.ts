@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { CreateRegionDto, UpdateRegionDto } from './dto/create-region.dto';
 import { RegionService } from './region.service';
+import { Region } from './entities/region.entity';
 
 @Controller('regions')
 export class RegionController {
@@ -11,9 +12,9 @@ export class RegionController {
         return this.regionService.create(createRegionDto);
     }
 
-    @Get()
-    async findAll() {
-        return this.regionService.findAll();
+    @Get('shop/:shopSlug')
+    async findAll(@Param('shopSlug') shopSlug: string): Promise<Region[]> {
+        return this.regionService.findAll(shopSlug);
     }
 
     @Get(':id')

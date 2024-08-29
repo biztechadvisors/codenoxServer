@@ -1,13 +1,12 @@
 import {
-  MiddlewareConsumer, Module, NestModule, RequestMethod,
-  //  CacheInterceptor 
+  MiddlewareConsumer, Module, NestModule, RequestMethod
 } from '@nestjs/common';
 import { StripeModule } from 'nestjs-stripe';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MulterModule } from '@nestjs/platform-express';
-import { CacheModule } from '@nestjs/cache-manager';
+import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import * as redistStore from 'cache-manager-redis-store';
 import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
@@ -159,10 +158,10 @@ import { ContactModule } from './contact/contact.module';
   ],
   controllers: [],
   providers: [
-    // {
-    //   provide: APP_INTERCEPTOR,
-    //   useClass: CacheInterceptor
-    // },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor
+    },
   ],
 })
 export class AppModule implements NestModule {

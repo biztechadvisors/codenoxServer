@@ -24,6 +24,7 @@ export class CreateProductDto extends OmitType(Product, [
   'height',
   'length',
   'width',
+  'regionName'
 ]) {
   categories: number[];
   subCategories: number[];
@@ -39,7 +40,7 @@ export class CreateProductDto extends OmitType(Product, [
   } = { delete: [], upsert: [] };
   related_products: Product[];
   translated_languages: string[];
-  regionName: string; // Added regionName to DTO
+  regionName: string[];
 }
 
 export class VariationDto {

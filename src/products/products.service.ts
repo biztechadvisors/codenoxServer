@@ -22,7 +22,7 @@ import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from 'src/users/entities/dealer.entity';
 import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, UserRepository } from 'src/users/users.repository';
 import { User } from 'src/users/entities/user.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { Cron } from '@nestjs/schedule';
 import { Cache } from 'cache-manager';
@@ -155,167 +155,183 @@ export class ProductsService {
 
     if (existedProduct) {
       return { message: "Product already exists." };
-    } else {
-      // Create new product instance
-      const product = new Product();
-      product.name = name;
-      product.slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-      product.description = description;
-      product.product_type = product_type;
-      product.status = status;
-      product.quantity = quantity;
-      product.max_price = max_price || price;
-      product.min_price = min_price || sale_price;
-      product.price = max_price || price;
-      product.sale_price = min_price || sale_price;
-      product.unit = unit;
-      product.height = height;
-      product.length = length;
-      product.width = width;
-      product.sku = sku;
-      product.language = language || 'en';
-      product.translated_languages = translated_languages || ['en'];
-
-      // Handle taxes
-      if (taxes) {
-        const tax = await this.taxRepository.findOne({ where: { id: taxes.id } });
-        if (tax) {
-          product.taxes = tax;
-        }
-      }
-
-      // Handle type
-      const type = await this.typeRepository.findOne({ where: { id: type_id } });
-      if (!type) {
-        throw new NotFoundException(`Type with ID ${type_id} not found`);
-      }
-      product.type = type;
-      product.type_id = type.id;
-
-      // Handle shop
-      const shop = await this.shopRepository.findOne({ where: { id: shop_id } });
-      if (!shop) {
-        throw new NotFoundException(`Shop with ID ${shop_id} not found`);
-      }
-      product.shop = shop;
-      product.shop_id = shop.id;
-
-      // Handle categories
-      if (categories) {
-        const categoryEntities = await this.categoryRepository.findByIds(categories);
-        product.categories = categoryEntities;
-      }
-
-      // Handle subCategories
-      if (subCategories) {
-        const subCategoryEntities = await this.subCategoryRepository.findByIds(subCategories);
-        product.subCategories = subCategoryEntities;
-      }
-
-      // Handle tags
-      const tagEntities = await this.tagRepository.findByIds(tags);
-      product.tags = tagEntities;
-
-      // Handle image
-      if (image) {
-        const imageEntity = await this.attachmentRepository.findOne({ where: { id: image.id } });
-        if (!imageEntity) {
-          throw new NotFoundException(`Image with ID ${image.id} not found`);
-        }
-        product.image = imageEntity;
-      }
-
-      // Handle gallery
-      if (gallery) {
-        const galleryEntities = [];
-        for (const galleryImage of gallery) {
-          const imageEntity = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
-          if (!imageEntity) {
-            throw new NotFoundException(`Gallery image with ID ${galleryImage.id} not found`);
-          }
-          galleryEntities.push(imageEntity);
-        }
-        product.gallery = galleryEntities;
-      }
-
-      // Handle variations
-      if (variations) {
-        const attributeValues: AttributeValue[] = [];
-        for (const variation of variations) {
-          const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
-          if (!attributeValue) {
-            throw new NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
-          }
-          attributeValues.push(attributeValue);
-        }
-        product.variations = attributeValues;
-      }
-
-      // Save the product
-      await this.productRepository.save(product);
-
-      // Handle variation options
-      if (product.product_type === ProductType.VARIABLE && variation_options?.upsert) {
-        const variationOptions = [];
-        for (const variationDto of variation_options.upsert) {
-          const newVariation = new Variation();
-          newVariation.title = variationDto?.title;
-          newVariation.price = variationDto?.price;
-          newVariation.sku = variationDto?.sku;
-          newVariation.is_disable = variationDto?.is_disable;
-          newVariation.sale_price = variationDto?.sale_price;
-          newVariation.quantity = variationDto?.quantity;
-
-          if (variationDto?.image) {
-            let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
-            if (!image) {
-              image = new File();
-              image.attachment_id = variationDto.image.id;
-              image.url = variationDto.image.original;
-              image.fileable_id = newVariation.id;
-              await this.fileRepository.save(image);
-            }
-            newVariation.image = image;
-          }
-
-          const savedVariation = await this.variationRepository.save(newVariation);
-
-          const variationOptionEntities = [];
-          if (variationDto?.options) {
-            for (const option of variationDto.options) {
-              const newVariationOption = new VariationOption();
-              newVariationOption.name = option.name;
-              newVariationOption.value = option.value;
-
-              const savedVariationOption = await this.variationOptionRepository.save(newVariationOption);
-              variationOptionEntities.push(savedVariationOption);
-            }
-          } else {
-            console.log("variationDto or its options are null or undefined");
-          }
-
-          savedVariation.options = variationOptionEntities;
-          await this.variationRepository.save(savedVariation);
-
-          variationOptions.push(savedVariation);
-        }
-
-        product.variation_options = variationOptions;
-
-        await this.productRepository.save(product);
-      }
-
-      // Update shop products count if necessary
-      if (product) {
-        await this.updateShopProductsCount(shop.id, product.id);
-      }
-
-      return product;
     }
+
+    // Create new product instance
+    const product = new Product();
+    product.name = name;
+    product.slug = slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    product.description = description;
+    product.product_type = product_type;
+    product.status = status;
+    product.quantity = quantity;
+    product.max_price = max_price || price;
+    product.min_price = min_price || sale_price;
+    product.price = max_price || price;
+    product.sale_price = min_price || sale_price;
+    product.unit = unit;
+    product.height = height;
+    product.length = length;
+    product.width = width;
+    product.sku = sku;
+    product.language = language || 'en';
+    product.translated_languages = translated_languages || ['en'];
+
+    // Handle taxes
+    if (taxes) {
+      const tax = await this.taxRepository.findOne({ where: { id: taxes.id } });
+      if (tax) {
+        product.taxes = tax;
+      }
+    }
+
+    // Handle type
+    const type = await this.typeRepository.findOne({ where: { id: type_id } });
+    if (!type) {
+      throw new NotFoundException(`Type with ID ${type_id} not found`);
+    }
+    product.type = type;
+    product.type_id = type.id;
+
+    // Handle shop
+    const shop = await this.shopRepository.findOne({ where: { id: shop_id } });
+    if (!shop) {
+      throw new NotFoundException(`Shop with ID ${shop_id} not found`);
+    }
+    product.shop = shop;
+    product.shop_id = shop.id;
+
+    // Handle categories
+    if (categories) {
+      const categoryEntities = await this.categoryRepository.findByIds(categories);
+      product.categories = categoryEntities;
+    }
+
+    // Handle subCategories
+    if (subCategories) {
+      const subCategoryEntities = await this.subCategoryRepository.findByIds(subCategories);
+      product.subCategories = subCategoryEntities;
+    }
+
+    // Handle tags
+    const tagEntities = await this.tagRepository.findByIds(tags);
+    product.tags = tagEntities;
+
+    // Handle image
+    if (image) {
+      const imageEntity = await this.attachmentRepository.findOne({ where: { id: image.id } });
+      if (!imageEntity) {
+        throw new NotFoundException(`Image with ID ${image.id} not found`);
+      }
+      product.image = imageEntity;
+    }
+
+    // Handle gallery
+    if (gallery) {
+      const galleryEntities = [];
+      for (const galleryImage of gallery) {
+        const imageEntity = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
+        if (!imageEntity) {
+          throw new NotFoundException(`Gallery image with ID ${galleryImage.id} not found`);
+        }
+        galleryEntities.push(imageEntity);
+      }
+      product.gallery = galleryEntities;
+    }
+
+    // Handle variations
+    if (variations) {
+      const attributeValues: AttributeValue[] = [];
+      for (const variation of variations) {
+        const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
+        if (!attributeValue) {
+          throw new NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
+        }
+        attributeValues.push(attributeValue);
+      }
+      product.variations = attributeValues;
+    }
+
+    // Handle variation options
+    if (product.product_type === ProductType.VARIABLE && variation_options?.upsert) {
+      const variationOptions = [];
+      for (const variationDto of variation_options.upsert) {
+        const newVariation = new Variation();
+        newVariation.title = variationDto?.title;
+        newVariation.price = variationDto?.price;
+        newVariation.sku = variationDto?.sku;
+        newVariation.is_disable = variationDto?.is_disable;
+        newVariation.sale_price = variationDto?.sale_price;
+        newVariation.quantity = variationDto?.quantity;
+
+        if (variationDto?.image) {
+          let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
+          if (!image) {
+            image = new File();
+            image.attachment_id = variationDto.image.id;
+            image.url = variationDto.image.original;
+            image.fileable_id = newVariation.id;
+            await this.fileRepository.save(image);
+          }
+          newVariation.image = image;
+        }
+
+        const savedVariation = await this.variationRepository.save(newVariation);
+
+        const variationOptionEntities = [];
+        if (variationDto?.options) {
+          for (const option of variationDto.options) {
+            const newVariationOption = new VariationOption();
+            newVariationOption.name = option.name;
+            newVariationOption.value = option.value;
+
+            const savedVariationOption = await this.variationOptionRepository.save(newVariationOption);
+            variationOptionEntities.push(savedVariationOption);
+          }
+        } else {
+          console.log("variationDto or its options are null or undefined");
+        }
+
+        savedVariation.options = variationOptionEntities;
+        await this.variationRepository.save(savedVariation);
+
+        variationOptions.push(savedVariation);
+      }
+
+      product.variation_options = variationOptions;
+
+      await this.productRepository.save(product);
+    }
+
+    // Handle regions
+    if (regionName) {
+      const regions = await this.regionRepository.find({
+        where: {
+          name: In(regionName),
+        },
+      });
+
+      // Check if all requested regions were found
+      if (regions.length !== regionName.length) {
+        const missingRegionNames = regionName.filter(
+          (name) => !regions.some((region) => region.name === name)
+        );
+        throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
+      }
+      product.regions = regions;
+    }
+
+    // Save the product
+    await this.productRepository.save(product);
+
+    // Update shop products count if necessary
+    if (product) {
+      await this.updateShopProductsCount(shop.id, product.id);
+    }
+
+    return product;
   }
+
 
   async getProducts(query: GetProductsDto): Promise<ProductPaginator> {
     const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName, regionName } = query;
@@ -898,11 +914,28 @@ export class ProductsService {
       }
     }
 
+
     // Region-based functionality
-    if (updateProductDto.region_name) {
-      const region = await this.regionRepository.findOne({ where: { name: updateProductDto.region_name } });
-      if (region) {
-        product.region = region;
+    if (updateProductDto.regionName) {
+      const regionNames: string[] = Array.isArray(updateProductDto.regionName) ? updateProductDto.regionName : [updateProductDto.regionName];
+
+      if (regionNames && regionNames.length > 0) {
+        const regions = await this.regionRepository.find({
+          where: {
+            name: In(regionNames)
+          }
+        });
+
+        const existingRegionNames = regions.map(region => region.name);
+        const missingRegionNames = regionNames.filter(name => !existingRegionNames.includes(name));
+
+        // Handle missing regions
+        if (missingRegionNames.length > 0) {
+          // Logic to create missing regions
+        }
+
+        // Assign regions to the product
+        product.regions = regions;
       }
     }
 

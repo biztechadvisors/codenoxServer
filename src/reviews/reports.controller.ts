@@ -18,10 +18,9 @@ export class AbusiveReportsController {
   constructor(private reportService: AbusiveReportService) { }
 
   @Get()
-  async findAll(@Query('shopSlug') shopSlug?: string, @Query('userId') userId?: number) {
-    return this.reportService.findAllReports(shopSlug, userId);
+  async findAll(@Query('shopSlug') shopSlug?: string, @Query('userId') userId?: number, @Query('page') page = 1, @Query('limit') limit = 10) {
+    return this.reportService.findAllReports(shopSlug, userId, page, limit);
   }
-
 
   // get single feedback
   @Get(':id')

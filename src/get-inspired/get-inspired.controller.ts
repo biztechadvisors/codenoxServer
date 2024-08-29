@@ -1,6 +1,6 @@
 // src/get-inspired/get-inspired.controller.ts
 
-import { Controller, Post, Get, Put, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Param, Body, Query } from '@nestjs/common';
 import { GetInspiredService } from './get-inspired.service';
 import { CreateGetInspiredDto, UpdateGetInspiredDto } from './dto/create-get-inspired.dto';
 import { GetInspired } from './entities/get-inspired.entity';
@@ -15,8 +15,17 @@ export class GetInspiredController {
     }
 
     @Get('shop/:shopSlug')
-    getAllGetInspired(@Param('shopSlug') shopSlug: string): Promise<GetInspired[]> {
-        return this.getInspiredService.getAllGetInspired(shopSlug);
+    async getAllGetInspired(
+        @Param('shopSlug') shopSlug: string,
+        @Query('type') type?: string, // Optional query parameter for type
+        @Query('tagIds') tagIds?: string, // Optional query parameter for tagIds (comma-separated)
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10
+    ): Promise<{ data: GetInspired[], total: number, page: number, limit: number }> {
+        // Convert comma-separated tagIds string to an array of numbers
+        const tagIdsArray = tagIds ? tagIds.split(',').map(id => parseInt(id, 10)) : [];
+
+        return this.getInspiredService.getAllGetInspired(shopSlug, type, tagIdsArray, page, limit);
     }
 
     @Get(':id')

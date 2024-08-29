@@ -134,21 +134,20 @@ export class ReviewService {
   }
 
   async findAllReviews({
-    limit,
-    page,
+    limit = 10,
+    page = 1,
     search,
     product_id,
     shopSlug,
     userId,
   }: GetReviewsDto): Promise<ReviewPaginator> {
-    const cacheKey = `reviews_${shopSlug || 'all'}_${userId || 'all'}_${product_id || 'all'}_${search || 'all'}`;
+    const cacheKey = `reviews_${shopSlug || 'all'}_${userId || 'all'}_${product_id || 'all'}_${search || 'all'}_${page}_${limit}`;
 
     let reviews = await this.cacheManager.get<Review[]>(cacheKey);
 
     if (!reviews) {
       reviews = await this.getReviewsFromDatabase();
 
-      // Apply search filtering if search parameter is provided
       if (search) {
         const parseSearchParams = search.split(';');
         for (const searchParam of parseSearchParams) {
@@ -162,29 +161,24 @@ export class ReviewService {
         }
       }
 
-      // Filter by product ID if provided
       if (product_id) {
         reviews = reviews.filter((p) => p.product_id === Number(product_id));
       }
 
-      // Filter by shopSlug if provided
       if (shopSlug) {
         reviews = reviews.filter((review) => review.shop.slug === shopSlug);
       }
 
-      // Filter by userId if provided
       if (userId) {
         reviews = reviews.filter((review) => review.user.id === userId);
       }
 
-      // Cache the results
       await this.cacheManager.set(cacheKey, reviews, 300); // Cache for 5 minutes
     }
 
     const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const results = reviews.slice(startIndex, endIndex);
-    const url = `/reviews?search=${search}&limit=${limit}`;
+    const results = reviews.slice(startIndex, startIndex + limit);
+    const url = `/reviews?search=${search}&limit=${limit}&page=${page}`;
 
     return {
       data: results,

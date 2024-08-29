@@ -1,5 +1,5 @@
-import { User } from 'src/users/entities/user.entity';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import { User } from 'src/users/entities/user.entity';
 
 @Entity()
 export class Notification {
@@ -11,6 +11,9 @@ export class Notification {
 
     @Column()
     title: string;
+
+    @Column({ default: false })
+    seen: boolean; // Track if the notification has been seen
 
     @ManyToOne(() => User, user => user.notifications, {
         onDelete: 'CASCADE', // Automatically delete child rows when parent is deleted

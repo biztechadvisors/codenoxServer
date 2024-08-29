@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Param, Body, Query } from '@nestjs/common';
 import { FAQService } from './faq.service';
 import { FAQ } from './entities/faq.entity';
 import { QnA, QnAType } from './entities/qna.entity';
@@ -20,8 +20,12 @@ export class FAQController {
     }
 
     @Get('shop/:shopSlug')
-    getFAQsByShopSlug(@Param('shopSlug') shopSlug: string): Promise<FAQ[]> {
-        return this.faqService.getFAQsByShopSlug(shopSlug);
+    async getFAQsByShopSlug(
+        @Param('shopSlug') shopSlug: string,
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10
+    ): Promise<{ data: FAQ[], total: number, page: number, limit: number }> {
+        return this.faqService.getFAQsByShopSlug(shopSlug, page, limit);
     }
 
     @Put(':id')
@@ -55,7 +59,11 @@ export class FAQController {
     }
 
     @Get('shop/:shopSlug/qnas')
-    getQnAsByShopId(@Param('shopSlug') shopSlug: string): Promise<QnA[]> {
-        return this.faqService.getQnAsByShopId(shopSlug);
+    async getQnAsByShopId(
+        @Param('shopSlug') shopSlug: string,
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10
+    ): Promise<{ data: QnA[], total: number, page: number, limit: number }> {
+        return this.faqService.getQnAsByShopId(shopSlug, page, limit);
     }
 }

@@ -16,12 +16,15 @@ export class BlogController {
     @Get('shop/:shopSlug/region/:regionName')
     getAllBlogs(
         @Param('shopSlug') shopSlug: string,
-        @Query('regionName') regionName: string,
-        @Query('tagName') tagName?: string  // Optional query parameter for tagName
-    ): Promise<Blog[]> {
-        return this.blogService.getAllBlogs(shopSlug, regionName, tagName);
+        @Param('regionName') regionName: string,
+        @Query('tagName') tagName?: string,  // Optional query parameter for tagName
+        @Query('page') page: number = 1,    // Default to page 1
+        @Query('limit') limit: number = 10,  // Default to 10 items per page
+        @Query('startDate') startDate?: string,  // Optional query parameter for startDate
+        @Query('endDate') endDate?: string    // Optional query parameter for endDate
+    ): Promise<{ data: Blog[], count: number }> {
+        return this.blogService.getAllBlogs(shopSlug, regionName, tagName, page, limit, startDate, endDate);
     }
-
 
     @Get(':id')
     getBlogById(@Param('id') id: number): Promise<Blog> {

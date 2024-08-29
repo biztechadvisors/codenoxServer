@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateContactDto, UpdateContactDto } from './dto/createcontact.dto';
 import { Contact } from './entity/createcontact.entitiy';
 import { Shop } from '../shops/entities/shop.entity';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class ContactService {
@@ -12,6 +14,7 @@ export class ContactService {
         private readonly contactRepository: Repository<Contact>,
         @InjectRepository(Shop)
         private readonly shopRepository: Repository<Shop>,
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     ) { }
 
     async create(createContactDto: CreateContactDto): Promise<Contact> {
@@ -27,15 +30,46 @@ export class ContactService {
         return this.contactRepository.save(contact);
     }
 
-    async findAllByShop(shopSlug: string): Promise<Contact[]> {
+    async findAllByShop(
+        shopSlug: string,
+        page: number = 1,
+        limit: number = 10
+    ): Promise<{ data: Contact[], total: number, page: number, limit: number }> {
+        // Calculate the offset (skip) and limit (take)
+        const skip = (page - 1) * limit;
+
         // Find the shop by its slug
         const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
         if (!shop) {
             throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
         }
 
-        // Fetch all contacts related to the shop
-        return this.contactRepository.find({ where: { shop: { id: shop.id } }, relations: ['shop'] });
+        // Use cache key based on shop slug, page, and limit
+        const cacheKey = `contacts_${shopSlug}_page_${page}_limit_${limit}`;
+        const cachedData = await this.cacheManager.get<{ data: Contact[], total: number }>(cacheKey);
+
+        if (cachedData) {
+            return {
+                ...cachedData,
+                page,
+                limit
+            };
+        }
+
+        // Fetch total count of contacts for pagination
+        const [data, total] = await this.contactRepository.findAndCount({
+            where: { shop: { id: shop.id } },
+            relations: ['shop'],
+            skip,
+            take: limit,
+        });
+
+        const result = { data, total, page, limit };
+
+        // Cache the result for future requests
+        await this.cacheManager.set(cacheKey, result, 300); // Cache for 5 minutes (300 seconds)
+
+        return result;
     }
 
     async findOne(id: number): Promise<Contact> {

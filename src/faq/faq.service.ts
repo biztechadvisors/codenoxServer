@@ -54,22 +54,36 @@ export class FAQService {
         return faq;
     }
 
-    async getFAQsByShopSlug(shopSlug: string): Promise<FAQ[]> {
-        const cacheKey = `faqs-${shopSlug}`;
-        let faqs = await this.cacheManager.get<FAQ[]>(cacheKey);
+    async getFAQsByShopSlug(
+        shopSlug: string,
+        page: number = 1,
+        limit: number = 10
+    ): Promise<{ data: FAQ[], total: number, page: number, limit: number }> {
+        const cacheKey = `faqs-${shopSlug}-page-${page}-limit-${limit}`;
+        let cachedResult = await this.cacheManager.get<{ data: FAQ[], total: number }>(cacheKey);
 
-        if (!faqs) {
-            faqs = await this.faqRepository
-                .createQueryBuilder('faq')
-                .innerJoinAndSelect('faq.shop', 'shop', 'shop.slug = :slug', { slug: shopSlug })
-                .leftJoinAndSelect('faq.images', 'images')
-                .leftJoinAndSelect('faq.qnas', 'qnas')
-                .getMany();
-
-            await this.cacheManager.set(cacheKey, faqs, 3600); // Cache for 1 hour
+        if (cachedResult) {
+            return {
+                ...cachedResult,
+                page,
+                limit
+            };
         }
 
-        return faqs;
+        const [data, total] = await this.faqRepository
+            .createQueryBuilder('faq')
+            .innerJoinAndSelect('faq.shop', 'shop', 'shop.slug = :slug', { slug: shopSlug })
+            .leftJoinAndSelect('faq.images', 'images')
+            .leftJoinAndSelect('faq.qnas', 'qnas')
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getManyAndCount();
+
+        const result = { data, total, page, limit };
+
+        await this.cacheManager.set(cacheKey, result, 3600); // Cache for 1 hour
+
+        return result;
     }
 
     async updateFAQ(id: number, updateFAQDto: any): Promise<FAQ> {
@@ -141,20 +155,36 @@ export class FAQService {
 
         return qnas;
     }
+    async getQnAsByShopId(
+        shopSlug: string,
+        page: number = 1,
+        limit: number = 10
+    ): Promise<{ data: QnA[], total: number, page: number, limit: number }> {
+        const cacheKey = `qnas-shop-${shopSlug}-page-${page}-limit-${limit}`;
+        let cachedResult = await this.cacheManager.get<{ data: QnA[], total: number }>(cacheKey);
 
-    async getQnAsByShopId(shopSlug: string): Promise<QnA[]> {
-        const cacheKey = `qnas-shop-${shopSlug}`;
-        let qnas = await this.cacheManager.get<QnA[]>(cacheKey);
-
-        if (!qnas) {
-            const faqs = await this.getFAQsByShopSlug(shopSlug);
-            const faqIds = faqs.map(faq => faq.id);
-            qnas = await this.qnaRepository.find({ where: { faq: { id: In(faqIds) } } });
-
-            await this.cacheManager.set(cacheKey, qnas, 3600); // Cache for 1 hour
+        if (cachedResult) {
+            return {
+                ...cachedResult,
+                page,
+                limit
+            };
         }
 
-        return qnas;
+        const faqs = await this.getFAQsByShopSlug(shopSlug);
+        const faqIds = faqs.data.map(faq => faq.id);
+
+        const [data, total] = await this.qnaRepository.findAndCount({
+            where: { faq: { id: In(faqIds) } },
+            skip: (page - 1) * limit,
+            take: limit,
+        });
+
+        const result = { data, total, page, limit };
+
+        await this.cacheManager.set(cacheKey, result, 3600); // Cache for 1 hour
+
+        return result;
     }
 
 }

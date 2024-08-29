@@ -9,6 +9,7 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { Tag } from '../tags/entities/tag.entity';
 
 @Injectable()
 export class GetInspiredService {
@@ -19,12 +20,14 @@ export class GetInspiredService {
         private readonly attachmentRepository: Repository<Attachment>,
         @InjectRepository(Shop)
         private readonly shopRepository: Repository<Shop>,
+        @InjectRepository(Tag)
+        private readonly tagRepository: Repository<Tag>,
         @Inject(CACHE_MANAGER)
         private readonly cacheManager: Cache,
     ) { }
 
     async createGetInspired(createGetInspiredDto: CreateGetInspiredDto): Promise<GetInspired> {
-        const { title, type, shopId, imageIds } = createGetInspiredDto;
+        const { title, type, shopId, imageIds = [], tagIds = [] } = createGetInspiredDto;
 
         const shop = await this.shopRepository.findOne({ where: { id: shopId } });
         if (!shop) {
@@ -32,32 +35,68 @@ export class GetInspiredService {
         }
 
         const images = await this.attachmentRepository.findByIds(imageIds);
+        const tags = await this.tagRepository.findByIds(tagIds);
 
         const getInspired = this.getInspiredRepository.create({
             title,
             type,
             shop,
             images,
+            tags,
         });
 
         return this.getInspiredRepository.save(getInspired);
     }
 
-    async getAllGetInspired(shopSlug: string): Promise<GetInspired[]> {
-        const cacheKey = `get-inspired-shop-${shopSlug}`;
-        let getInspiredItems = await this.cacheManager.get<GetInspired[]>(cacheKey);
+    async getAllGetInspired(
+        shopSlug: string,
+        type?: string,
+        tagIds: number[] = [],
+        page: number = 1,
+        limit: number = 10
+    ): Promise<{ data: GetInspired[], total: number, page: number, limit: number }> {
+        const cacheKey = `get-inspired-shop-${shopSlug}-type-${type || 'all'}-tags-${tagIds.join(',')}-page-${page}-limit-${limit}`;
+        let cachedResult = await this.cacheManager.get<{ data: GetInspired[], total: number }>(cacheKey);
 
-        if (!getInspiredItems) {
-            getInspiredItems = await this.getInspiredRepository
-                .createQueryBuilder('getInspired')
-                .innerJoinAndSelect('getInspired.shop', 'shop', 'shop.slug = :slug', { slug: shopSlug })
-                .leftJoinAndSelect('getInspired.images', 'images')
-                .getMany();
-
-            await this.cacheManager.set(cacheKey, getInspiredItems, 3600); // Cache for 1 hour
+        if (cachedResult) {
+            return {
+                ...cachedResult,
+                page,
+                limit
+            };
         }
 
-        return getInspiredItems;
+        // Create query builder for filtering by shop, type, and tags
+        const queryBuilder = this.getInspiredRepository.createQueryBuilder('getInspired')
+            .innerJoinAndSelect('getInspired.shop', 'shop', 'shop.slug = :slug', { slug: shopSlug })
+            .leftJoinAndSelect('getInspired.images', 'images')
+            .leftJoinAndSelect('getInspired.tags', 'tags');
+
+        // Filter by type if provided
+        if (type) {
+            queryBuilder.andWhere('getInspired.type = :type', { type });
+        }
+
+        // Filter by tags if provided
+        if (tagIds.length > 0) {
+            queryBuilder.andWhere('tags.id IN (:...tagIds)', { tagIds });
+        }
+
+        // Calculate pagination parameters
+        const skip = (page - 1) * limit;
+
+        // Retrieve data with pagination
+        const [data, total] = await queryBuilder
+            .skip(skip)
+            .take(limit)
+            .getManyAndCount();
+
+        const result = { data, total, page, limit };
+
+        // Cache the result for 1 hour
+        await this.cacheManager.set(cacheKey, result, 3600);
+
+        return result;
     }
 
     async getGetInspiredById(id: number): Promise<GetInspired> {
@@ -81,12 +120,21 @@ export class GetInspiredService {
     }
 
     async updateGetInspired(id: number, updateGetInspiredDto: UpdateGetInspiredDto): Promise<GetInspired> {
-        const getInspired = await this.getGetInspiredById(id);
+        const getInspired = await this.getInspiredRepository.findOne({ where: { id }, relations: ['tags'] });
 
-        if (updateGetInspiredDto.title) getInspired.title = updateGetInspiredDto.title;
-        if (updateGetInspiredDto.type) getInspired.type = updateGetInspiredDto.type;
-        if (updateGetInspiredDto.imageIds) {
-            getInspired.images = await this.attachmentRepository.findByIds(updateGetInspiredDto.imageIds);
+        if (!getInspired) {
+            throw new NotFoundException(`GetInspired with ID ${id} not found`);
+        }
+
+        const { title, type, imageIds, tagIds } = updateGetInspiredDto;
+
+        if (title) getInspired.title = title;
+        if (type) getInspired.type = type;
+        if (imageIds) {
+            getInspired.images = await this.attachmentRepository.findByIds(imageIds);
+        }
+        if (tagIds) {
+            getInspired.tags = await this.tagRepository.findByIds(tagIds);
         }
 
         return this.getInspiredRepository.save(getInspired);

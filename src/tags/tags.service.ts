@@ -8,7 +8,7 @@ import { Tag } from './entities/tag.entity';
 import { plainToClass } from 'class-transformer';
 import Fuse from 'fuse.js';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOneOptions, ILike, Repository, SelectQueryBuilder } from 'typeorm';
+import { FindOneOptions, ILike, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { TypeRepository } from 'src/types/types.repository';
 import { Type } from 'src/types/entities/type.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
@@ -35,13 +35,11 @@ export class TagsService {
   async create(createTagDto: CreateTagDto): Promise<Tag> {
     const { name, icon, details, language, translatedLanguages, shopSlug, image, type_id, parent, region_name } = createTagDto;
 
-    // Find the shop by slug
     const shopRes = await this.shopRepository.findOne({ where: { slug: shopSlug } });
     if (!shopRes) {
       throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
     }
 
-    // Find the image by ID if provided
     let imageRes = null;
     if (image?.id) {
       imageRes = await this.attachmentRepository.findOne({ where: { id: image.id } });
@@ -50,7 +48,6 @@ export class TagsService {
       }
     }
 
-    // Find the type by ID if provided
     let typeRes = null;
     if (type_id) {
       typeRes = await this.typeRepository.findOne({ where: { id: type_id } });
@@ -59,13 +56,20 @@ export class TagsService {
       }
     }
 
-    // Find the region by name
-    const regionRes = await this.regionRepository.findOne({ where: { name: region_name } });
-    if (!regionRes) {
-      throw new NotFoundException(`Region with name ${region_name} not found`);
+    const regions = await this.regionRepository.find({
+      where: {
+        name: In(createTagDto.region_name),
+      },
+    });
+
+    // Check if all requested regions were found
+    if (regions.length !== createTagDto.region_name.length) {
+      const missingRegionNames = createTagDto.region_name.filter(
+        (name) => !regions.some((region) => region.name === name)
+      );
+      throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
     }
 
-    // Create the new Tag entity
     const tag = new Tag();
     tag.name = name;
     tag.slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -77,12 +81,10 @@ export class TagsService {
     tag.image = imageRes;
     tag.shop = shopRes;
     tag.type = typeRes;
-    tag.region = regionRes;  // Associate the region with the tag
+    tag.regions = regions;  // Associate the region with the tag
 
-    // Save and return the tag
     return await this.tagRepository.save(tag);
   }
-
 
 
   async findAll(query: GetTagsDto) {
@@ -194,13 +196,12 @@ export class TagsService {
   }
 
   async update(id: number, updateTagDto: UpdateTagDto): Promise<Tag> {
-    const tag = await this.tagRepository.findOne({ where: { id }, relations: ['image', 'type'] });
+    const tag = await this.tagRepository.findOne({ where: { id }, relations: ['image', 'type', 'regions'] });
 
     if (!tag) {
       throw new NotFoundException(`Tag with ID ${id} not found`);
     }
 
-    // Handle image update
     if (updateTagDto.image?.id && updateTagDto.image.id !== tag.image?.id) {
       const referencingTags = await this.tagRepository.find({ where: { image: tag.image } });
 
@@ -218,7 +219,6 @@ export class TagsService {
       tag.image = newImage;
     }
 
-    // Handle type update
     if (updateTagDto.type_id && updateTagDto.type_id !== tag.type?.id) {
       const type = await this.typeRepository.findOne({ where: { id: updateTagDto.type_id } });
       if (!type) {
@@ -227,16 +227,26 @@ export class TagsService {
       tag.type = type;
     }
 
-    // Handle region update
-    if (updateTagDto.region_name) {
-      const region = await this.regionRepository.findOne({ where: { name: updateTagDto.region_name } });
-      if (!region) {
-        throw new NotFoundException(`Region with name '${updateTagDto.region_name}' not found`);
+    // Handle regions
+    if (updateTagDto.region_name && updateTagDto.region_name.length > 0) {
+      // Find all regions that match the names provided
+      const regions = await this.regionRepository.find({
+        where: {
+          name: In(updateTagDto.region_name),
+        },
+      });
+
+      // Check if all requested regions were found
+      if (regions.length !== updateTagDto.region_name.length) {
+        const missingRegionNames = updateTagDto.region_name.filter(
+          (name) => !regions.some((region) => region.name === name)
+        );
+        throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
       }
-      tag.region = region;
+
+      tag.regions = regions; // Correctly assign the array of regions
     }
 
-    // Update other fields
     tag.name = updateTagDto.name;
     tag.slug = updateTagDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     tag.parent = updateTagDto.parent;
@@ -247,6 +257,7 @@ export class TagsService {
 
     return this.tagRepository.save(tag);
   }
+
 
   async remove(id: number): Promise<void> {
     const tag = await this.tagRepository.findOne({ where: { id }, relations: ['image', 'type'] });

@@ -14,7 +14,7 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 import { UploadsService } from 'src/uploads/uploads.service';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { Product } from 'src/products/entities/product.entity';
@@ -137,23 +137,21 @@ export class TypesService {
     let banners = [];
     if (data.banners && Array.isArray(data.banners)) {
       banners = await Promise.all(data.banners.map(async (bannerData) => {
-        if (bannerData.image || bannerData.image.id || bannerData.title) {
-          const image = await this.attachmentRepository.findOne({
-            where: { id: bannerData.image.id, thumbnail: bannerData.image.thumbnail, original: bannerData.image.original }
-          });
+        const image = await this.attachmentRepository.findOne({
+          where: { id: bannerData.image.id, thumbnail: bannerData.image.thumbnail, original: bannerData.image.original }
+        });
 
-          const banner = this.bannerRepository.create({
-            title: bannerData.title,
-            description: bannerData.description,
-            image: image,
-          });
+        const banner = this.bannerRepository.create({
+          title: bannerData.title,
+          description: bannerData.description,
+          image,
+        });
 
-          return this.bannerRepository.save(banner);
-        }
+        return this.bannerRepository.save(banner);
       }));
     }
 
-    // Convert name to slug if present
+    // Convert name to slug
     if (data.name) {
       data.slug = await this.convertToSlug(data.name);
     }
@@ -162,12 +160,29 @@ export class TypesService {
     const shop = await this.shopRepository.findOne({ where: { id: data.shop_id } });
 
     // Fetch the region by name
-    const region = await this.regionRepository.findOne({ where: { name: data.region_name } });
+    const regions = await this.regionRepository.find({
+      where: {
+        name: In(data.region_name),
+      },
+    });
+
+    // Check if all requested regions were found
+    if (regions.length !== data.region_name.length) {
+      const missingRegionNames = data.region_name.filter(
+        (name) => !regions.some((region) => region.name === name)
+      );
+      throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
+    }
 
     // Create and save Type entity
-    const type = this.typeRepository.create({ ...data, settings: typeSettings, promotional_sliders: promotionalSliders, banners });
-    type.shop = shop;
-    type.regions = [region];  // Associate the region with the type
+    const type = this.typeRepository.create({
+      ...data,
+      settings: typeSettings,
+      promotional_sliders: promotionalSliders,
+      banners,
+      shop,
+      regions
+    });
 
     return this.typeRepository.save(type);
   }
@@ -175,7 +190,7 @@ export class TypesService {
   async update(id: number, updateTypeDto: UpdateTypeDto): Promise<Type> {
     const type = await this.typeRepository.findOne({
       where: { id },
-      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'region'],
+      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'regions'],
     });
 
     if (!type) {
@@ -218,13 +233,22 @@ export class TypesService {
       }));
     }
 
-    // Update region
+    // Update regions
     if (updateTypeDto.region_name) {
-      const region = await this.regionRepository.findOne({ where: { name: updateTypeDto.region_name } });
-      if (!region) {
-        throw new NotFoundException(`Region with name '${updateTypeDto.region_name}' not found`);
+      const regions = await this.regionRepository.find({
+        where: {
+          name: In(updateTypeDto.region_name),
+        },
+      });
+
+      // Check if all requested regions were found
+      if (regions.length !== updateTypeDto.region_name.length) {
+        const missingRegionNames = updateTypeDto.region_name.filter(
+          (name) => !regions.some((region) => region.name === name)
+        );
+        throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
       }
-      type.region = region;
+      type.regions = regions;
     }
 
     // Update other properties

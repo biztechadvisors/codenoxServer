@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Career } from './entities/career.entity';
 import { CreateCareerDto, UpdateCareerDto } from './dto/createcareer.dto';
 import { Shop } from '../shops/entities/shop.entity';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class CareerService {
@@ -12,6 +14,8 @@ export class CareerService {
         private readonly careerRepository: Repository<Career>,
         @InjectRepository(Shop)
         private readonly shopRepository: Repository<Shop>,
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+
     ) { }
 
     async createCareer(createCareerDto: CreateCareerDto): Promise<Career> {
@@ -56,14 +60,49 @@ export class CareerService {
         await this.careerRepository.remove(career);
     }
 
-    async findAllByShop(shopSlug: string): Promise<Career[]> {
-        // Find the shop by its slug
-        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
-        if (!shop) {
-            throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
+    async findAllByShop(
+        shopSlug: string,
+        location?: string,
+        page: number = 1,
+        limit: number = 10
+    ): Promise<{ data: Career[], count: number }> {
+        const offset = (page - 1) * limit;
+        const cacheKey = `careers-${shopSlug}-${location || 'all'}-page${page}-limit${limit}`;
+
+        // Check cache first
+        let cachedData = await this.cacheManager.get<{ data: Career[], count: number }>(cacheKey);
+        if (!cachedData) {
+            // Find the shop by its slug
+            const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+            if (!shop) {
+                throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
+            }
+
+            // Build query with optional location filter
+            const queryBuilder = this.careerRepository.createQueryBuilder('career')
+                .leftJoinAndSelect('career.shop', 'shop')
+                .where('career.shopId = :shopId', { shopId: shop.id });
+
+            if (location) {
+                queryBuilder.andWhere('career.location = :location', { location });
+            }
+
+            // Get the total count before applying pagination
+            const count = await queryBuilder.getCount();
+
+            // Apply pagination
+            const data = await queryBuilder
+                .skip(offset)
+                .take(limit)
+                .getMany();
+
+            // Cache the result
+            cachedData = { data, count };
+            await this.cacheManager.set(cacheKey, cachedData, 3600); // Cache for 1 hour
         }
 
-        // Fetch all careers related to the shop
-        return this.careerRepository.find({ where: { shop: { id: shop.id } }, relations: ['shop'] });
+        return cachedData;
     }
+
+
 }

@@ -8,6 +8,8 @@ import { UpdateReportDto } from './dto/update-report.dto';
 import { Report } from './entities/reports.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { paginate } from '../common/pagination/paginate';
+import { MyReportPaginator } from '../reports/dto/get-reports.dto';
 
 @Injectable()
 export class AbusiveReportService {
@@ -19,13 +21,12 @@ export class AbusiveReportService {
 
   ) { }
 
-  async findAllReports(shopSlug?: string, userId?: number): Promise<Report[]> {
-    const cacheKey = `reports_${shopSlug || 'all'}_${userId || 'all'}`;
+  async findAllReports(shopSlug?: string, userId?: number, page = 1, limit = 10): Promise<MyReportPaginator> {
+    const cacheKey = `reports_${shopSlug || 'all'}_${userId || 'all'}_${page}_${limit}`;
 
-    // Check if the data is in the cache
     let reports = await this.cacheManager.get<Report[]>(cacheKey);
+
     if (!reports) {
-      // If not, fetch the data from the repository
       const query = this.reportRepository.createQueryBuilder('report');
 
       if (shopSlug) {
@@ -36,12 +37,20 @@ export class AbusiveReportService {
         query.innerJoinAndSelect('report.user', 'user', 'user.id = :id', { id: userId });
       }
 
+      query.skip((page - 1) * limit).take(limit);
+
       reports = await query.getMany();
 
-      // Store the result in the cache
       await this.cacheManager.set(cacheKey, reports, 300); // Cache for 5 minutes
     }
-    return reports;
+
+    const totalReports = await this.reportRepository.count();
+    const url = `/reports?shopSlug=${shopSlug || ''}&userId=${userId || ''}&page=${page}&limit=${limit}`;
+
+    return {
+      data: reports,
+      ...paginate(totalReports, page, limit, reports.length, url),
+    };
   }
 
   async findReport(id: number): Promise<Report> {

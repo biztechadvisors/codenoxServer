@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
 import { ContactService } from './contact.service';
 import { CreateContactDto, UpdateContactDto } from './dto/createcontact.dto';
 import { Contact } from './entity/createcontact.entitiy';
@@ -13,9 +13,14 @@ export class ContactController {
     }
 
     @Get('shop/:shopSlug')
-    findAllByShop(@Param('shopSlug') shopSlug: string): Promise<Contact[]> {
-        return this.contactService.findAllByShop(shopSlug);
+    async findAllByShop(
+        @Param('shopSlug') shopSlug: string,
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10
+    ): Promise<{ data: Contact[], total: number, page: number, limit: number }> {
+        return this.contactService.findAllByShop(shopSlug, page, limit);
     }
+
 
     @Get(':id')
     findOne(@Param('id') id: number): Promise<Contact> {

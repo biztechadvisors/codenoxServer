@@ -28,8 +28,9 @@ export class Category extends CoreEntity {
   @OneToMany(() => SubCategory, subCategory => subCategory.category)
   subCategories: SubCategory[];
 
-  @ManyToOne(() => Region, (region) => region.categories, { nullable: true, onDelete: 'CASCADE' })
-  region: Region;
+  @ManyToMany(() => Region, (region) => region.categories, { nullable: true, onDelete: 'CASCADE' })
+  @JoinTable({ name: 'categories_regions' })
+  regions: Region[];
 
   @Column()
   details?: string;
@@ -83,8 +84,9 @@ export class SubCategory extends CoreEntity {
   @ManyToOne(() => Shop, shop => shop.subCategories)
   shop: Shop;
 
-  @ManyToOne(() => Region, (region) => region.subCategories, { nullable: true, onDelete: 'CASCADE' })
-  region: Region;
+  @ManyToMany(() => Region, (region) => region.subCategories, { nullable: true, onDelete: 'CASCADE' })
+  @JoinTable({ name: 'subCategories_regions' })
+  regions: Region[];
 
   @Column()
   details?: string

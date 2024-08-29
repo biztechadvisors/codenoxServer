@@ -15,39 +15,40 @@ export class Tag extends CoreEntity {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ unique: true })
   slug: string;
 
   @Column({ nullable: true })
   parent: number | null;
 
-  @Column()
+  @Column({ nullable: true })
   details: string;
 
   @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
   image: Attachment | null;
 
-  @Column()
+  @Column({ nullable: true })
   icon: string;
 
   @ManyToOne(() => Type, (type) => type.tags, { nullable: true, eager: true, onDelete: 'SET NULL' })
   type: Type | null;
 
-  @ManyToOne(() => Region, (region) => region.tags, { nullable: true, onDelete: 'CASCADE' })
-  region: Region;
+  @ManyToMany(() => Region, (region) => region.tags, { nullable: true, cascade: true })
+  @JoinTable({ name: 'tags_regions' })
+  regions: Region[];
 
   @ManyToMany(() => Product, (product) => product.tags, { cascade: true })
   @JoinTable({ name: 'product_tags' })
   products: Product[];
 
-  @ManyToOne(() => Shop, { cascade: true })
+  @ManyToOne(() => Shop, { cascade: true, onDelete: 'CASCADE' })
   @JoinColumn()
   shop?: Shop;
 
   @Column()
   language: string;
 
-  @Column({ type: 'json' })
+  @Column({ type: 'json', nullable: true })
   translatedLanguages: string[];
 }

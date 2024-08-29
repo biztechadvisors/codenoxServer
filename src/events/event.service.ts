@@ -80,36 +80,81 @@ export class EventService {
         return event;
     }
 
-    async getAllEvents(shopSlug: string, regionName: string): Promise<Event[]> {
-        const cacheKey = `events-${shopSlug}-${regionName}`;
-        let events = await this.cacheManager.get<Event[]>(cacheKey);
+    async getAllEvents(
+        shopSlug: string,
+        regionName: string,
+        page: number = 1,
+        limit: number = 10,
+        filter?: 'upcoming' | 'latest' | 'past',
+        startDate?: string,
+        endDate?: string,
+        location?: string
+    ): Promise<{ data: Event[], total: number, page: number, limit: number }> {
+        const cacheKey = `events-${shopSlug}-${regionName}-page-${page}-limit-${limit}-filter-${filter}-startDate-${startDate}-endDate-${endDate}-location-${location}`;
+        let cachedResult = await this.cacheManager.get<{ data: Event[], total: number }>(cacheKey);
 
-        if (!events) {
-            // Check if the shop exists
-            const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
-
-            if (!shop) {
-                throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
-            }
-
-            // Check if the region exists
-            const region = await this.regionRepository.findOne({ where: { name: regionName } });
-            if (!region) {
-                throw new NotFoundException(`Region with name ${regionName} not found`);
-            }
-
-            // Retrieve events filtered by shop and region
-            events = await this.eventRepository.find({
-                where: { shop: { id: shop.id }, region: { id: region.id } },
-                relations: ['shop', 'images', 'region'],
-            });
-
-            await this.cacheManager.set(cacheKey, events, 3600); // Cache for 1 hour
+        if (cachedResult) {
+            return {
+                ...cachedResult,
+                page,
+                limit
+            };
         }
 
-        return events;
-    }
+        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        if (!shop) {
+            throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
+        }
 
+        const region = await this.regionRepository.findOne({ where: { name: regionName } });
+        if (!region) {
+            throw new NotFoundException(`Region with name ${regionName} not found`);
+        }
+
+        const now = new Date();
+        const skip = (page - 1) * limit;
+        const queryBuilder = this.eventRepository.createQueryBuilder('event')
+            .leftJoinAndSelect('event.shop', 'shop')
+            .leftJoinAndSelect('event.images', 'images')
+            .leftJoinAndSelect('event.region', 'region')
+            .where('event.shopId = :shopId', { shopId: shop.id })
+            .andWhere('event.regionId = :regionId', { regionId: region.id });
+
+        // Apply filters based on the filter parameter
+        if (filter === 'upcoming') {
+            queryBuilder.andWhere('event.date > :now', { now });
+        } else if (filter === 'past') {
+            queryBuilder.andWhere('event.date < :now', { now });
+        } else if (filter === 'latest') {
+            queryBuilder.orderBy('event.date', 'DESC');
+        }
+
+        // Apply date range filter if provided
+        if (startDate) {
+            queryBuilder.andWhere('event.date >= :startDate', { startDate });
+        }
+        if (endDate) {
+            queryBuilder.andWhere('event.date <= :endDate', { endDate });
+        }
+
+        // Apply location filter if provided
+        if (location) {
+            queryBuilder.andWhere('event.location LIKE :location', { location: `%${location}%` });
+        }
+
+        // Calculate pagination parameters
+        const [data, total] = await queryBuilder
+            .skip(skip)
+            .take(limit)
+            .getManyAndCount();
+
+        const result = { data, total, page, limit };
+
+        // Cache the result for 1 hour
+        await this.cacheManager.set(cacheKey, result, 3600);
+
+        return result;
+    }
 
     async updateEvent(id: number, updateEventDto: UpdateEventDto): Promise<Event> {
         const event = await this.getEventById(id);

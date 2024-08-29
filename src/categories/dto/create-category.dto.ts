@@ -14,7 +14,7 @@ export class CreateCategoryDto extends PickType(Category, [
   shop_id: number;
   type_id: number;
   image_id?: number;
-  region_name: string; // Add this to receive the region name
+  region_name: string[];
 }
 
 export class CreateSubCategoryDto {
@@ -24,7 +24,7 @@ export class CreateSubCategoryDto {
   image?: { id: number };
   language: string;
   shop_id: number;
-  regionName: string;  // Added regionName to DTO
+  regionName: string[];  // Added regionName to DTO
 }
 
 

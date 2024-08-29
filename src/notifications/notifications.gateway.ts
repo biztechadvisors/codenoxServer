@@ -21,10 +21,10 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
             client.join(`user_${userId}`);
             this.logger.log(`User ${userId} connected with client ID ${client.id}`);
 
-            // Fetch existing notifications for the user
-            const notifications = await this.notificationService.getUserNotifications(userId);
+            // Fetch existing unseen notifications for the user
+            const notifications = await this.notificationService.getNotifications(userId);
             notifications.forEach(notification => {
-                this.notifyUser(userId, notification.title, notification.message, notification.createdAt);
+                this.notifyUser(userId, notification);
             });
         } else {
             this.logger.warn('User ID is missing in connection query');
@@ -40,12 +40,17 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
         }
     }
 
-    notifyUser(userId: number, title: string, message: string, timestamp: Date = new Date()) {
+    notifyUser(userId: number, notification: Notification) {
         const socketId = this.connectedClients.get(userId);
         this.logger.log(`Notifying user ${userId}, socket ID: ${socketId}`);
         if (socketId) {
-            this.server.to(`user_${userId}`).emit('notification', { title, message, timestamp });
-            this.logger.log(`Notification sent to user ${userId}: ${title}`);
+            this.server.to(`user_${userId}`).emit('notification', {
+                id: notification.id,
+                title: notification.title,
+                message: notification.message,
+                timestamp: notification.createdAt,
+            });
+            this.logger.log(`Notification sent to user ${userId}: ${notification.title}`);
         } else {
             this.logger.warn(`User ${userId} not connected, could not send notification`);
         }

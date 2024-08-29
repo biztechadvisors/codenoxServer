@@ -5,7 +5,7 @@ import { Product } from '@db/src/products/entities/product.entity';
 import { Shop } from '@db/src/shops/entities/shop.entity';
 import { Tag } from '@db/src/tags/entities/tag.entity';
 import { Type } from '@db/src/types/entities/type.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, ManyToMany, JoinTable } from 'typeorm';
 
 @Entity()
 export class Region {
@@ -18,19 +18,24 @@ export class Region {
     @ManyToOne(() => Shop, (shop) => shop.regions)
     shop: Shop;
 
-    @OneToMany(() => Product, (product) => product.region, { nullable: true })
+    @ManyToMany(() => Product, (product) => product.regions)
+    @JoinTable({ name: 'product_regions' })
     products: Product[];
 
-    @OneToMany(() => Type, (type) => type.region, { nullable: true })
+    @ManyToMany(() => Type, (type) => type.regions)
+    @JoinTable({ name: 'types_regions' })
     types: Type[];
 
-    @OneToMany(() => Category, (category) => category.region, { nullable: true })
+    @ManyToMany(() => Category, (category) => category.regions)
+    @JoinTable({ name: 'categories_regions' })
     categories: Category[];
 
-    @OneToMany(() => SubCategory, (subCategory) => subCategory.region, { nullable: true })
+    @ManyToMany(() => SubCategory, (subCategory) => subCategory.regions)
+    @JoinTable({ name: 'subCategories_regions' })
     subCategories: SubCategory[];
 
-    @OneToMany(() => Tag, (tag) => tag.region, { nullable: true })
+    @ManyToMany(() => Tag, (tag) => tag.regions)
+    @JoinTable({ name: 'tags_regions' })
     tags: Tag[];
 
     @OneToMany(() => Event, (event) => event.region, { nullable: true })

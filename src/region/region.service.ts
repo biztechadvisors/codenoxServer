@@ -2,12 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Region } from './entities/region.entity';
+import { Shop } from '../shops/entities/shop.entity';
 
 @Injectable()
 export class RegionService {
     constructor(
         @InjectRepository(Region)
         private readonly regionRepository: Repository<Region>,
+        @InjectRepository(Shop)
+        private readonly shopRepository: Repository<Shop>,
     ) { }
 
     async create(createRegionDto: { name: string; description?: string }): Promise<Region> {
@@ -15,8 +18,15 @@ export class RegionService {
         return this.regionRepository.save(region);
     }
 
-    async findAll(): Promise<Region[]> {
-        return this.regionRepository.find();
+    async findAll(shopSlug: string): Promise<Region[]> {
+        // Fetch the shop by its slug
+        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        if (!shop) {
+            throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
+        }
+
+        // Find regions associated with the shop
+        return this.regionRepository.find({ where: { shop: { id: shop.id } }, relations: ['shop'] });
     }
 
     async findOne(id: number): Promise<Region> {

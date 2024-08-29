@@ -10,5 +10,5 @@ export class CreateTagDto {
   image?: { id: number };
   type_id?: number;
   parent?: number;
-  region_name: string;  // Add this to receive the region name
+  region_name: string[];  // Add this to receive the region name
 }

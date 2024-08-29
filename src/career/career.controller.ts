@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Put, Delete, Get } from '@nestjs/common';
+import { Controller, Post, Body, Param, Put, Delete, Get, Query } from '@nestjs/common';
 import { CareerService } from './career.service';
 import { CreateCareerDto, UpdateCareerDto } from './dto/createcareer.dto';
 import { Career } from './entities/career.entity';
@@ -13,9 +13,15 @@ export class CareerController {
     }
 
     @Get('shop/:shopSlug')
-    findAllByShop(@Param('shopSlug') shopSlug: string): Promise<Career[]> {
-        return this.careerService.findAllByShop(shopSlug);
+    findAllByShop(
+        @Param('shopSlug') shopSlug: string,
+        @Query('location') location?: string, // Optional query parameter for location
+        @Query('page') page: number = 1,     // Default to page 1
+        @Query('limit') limit: number = 10   // Default to 10 items per page
+    ): Promise<{ data: Career[], count: number }> {
+        return this.careerService.findAllByShop(shopSlug, location, page, limit);
     }
+
 
     @Get(':id')
     findOne(@Param('id') id: number): Promise<Career> {
