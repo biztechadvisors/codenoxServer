@@ -29,7 +29,7 @@ export class GetProductsDto extends PaginationArgs {
   dealerId?: number;
   shop_id?: number;
   shopName?: string;
-  regionName: string;
+  regionNames?: string[]; // Updated to handle an array of region names
 }
 
 export enum QueryProductsOrderByColumn {

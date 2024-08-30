@@ -66,10 +66,6 @@ export class Shop extends CoreEntity {
   @Column({ nullable: true })
   description?: string;
 
-  // @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
-  // @JoinColumn()
-  // cover_image: Attachment;
-
   @ManyToMany(() => Attachment, { cascade: true, eager: true, nullable: true })
   @JoinTable({
     name: 'shop_cover_image',
@@ -96,14 +92,14 @@ export class Shop extends CoreEntity {
   @OneToMany(() => Category, (category) => category.shop)
   category: Category[];
 
-  @OneToMany(() => SubCategory, subCategory => subCategory.shop)
+  @OneToMany(() => SubCategory, (subCategory) => subCategory.shop)
   subCategories: SubCategory[];
 
   @ManyToMany(() => Order, (order) => order.shop, { cascade: true, nullable: true })
-  @JoinTable({ name: "shop_order" })
+  @JoinTable({ name: 'shop_order' })
   order: Order[];
 
-  @ManyToOne(() => Permission, permission => permission.shop)
+  @ManyToOne(() => Permission, (permission) => permission.shop)
   @JoinColumn({ name: 'permission_id' })
   permission: Permission;
 
@@ -117,7 +113,8 @@ export class Shop extends CoreEntity {
   @OneToMany(() => Event, (event) => event.shop)
   events: Event[];
 
-  @OneToMany(() => Region, (region) => region.shop, { nullable: true })
+  @ManyToMany(() => Region, (region) => region.shop)
+  @JoinTable({ name: 'shop_regions' })
   regions: Region[];
 }
 

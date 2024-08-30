@@ -5,7 +5,7 @@ import { Product } from '@db/src/products/entities/product.entity';
 import { Shop } from '@db/src/shops/entities/shop.entity';
 import { Tag } from '@db/src/tags/entities/tag.entity';
 import { Type } from '@db/src/types/entities/type.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, ManyToMany, JoinTable, JoinColumn } from 'typeorm';
 
 @Entity()
 export class Region {
@@ -15,8 +15,13 @@ export class Region {
     @Column({ unique: true })
     name: string;
 
-    @ManyToOne(() => Shop, (shop) => shop.regions)
-    shop: Shop;
+    @ManyToMany(() => Shop, (shop) => shop.regions)
+    @JoinTable({
+        name: 'shop_regions',
+        joinColumn: { name: 'regionId', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'shopId', referencedColumnName: 'id' },
+    })
+    shop: Shop[];
 
     @ManyToMany(() => Product, (product) => product.regions)
     @JoinTable({ name: 'product_regions' })

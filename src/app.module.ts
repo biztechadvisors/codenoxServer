@@ -59,6 +59,7 @@ import { NotificationsMiddleware } from './common/middleware/notifications.middl
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { CareerModule } from './career/career.module';
 import { ContactModule } from './contact/contact.module';
+import { RegionModule } from './region/region.module';
 
 @Module({
   imports: [
@@ -154,7 +155,8 @@ import { ContactModule } from './contact/contact.module';
     EventModule,
     GetInspiredModule,
     CareerModule,
-    ContactModule
+    ContactModule,
+    RegionModule,
   ],
   controllers: [],
   providers: [

@@ -334,11 +334,11 @@ export class ProductsService {
 
 
   async getProducts(query: GetProductsDto): Promise<ProductPaginator> {
-    const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName, regionName } = query;
+    const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName, regionNames } = query;
     const startIndex = (page - 1) * limit;
 
     // Generate cache key
-    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${regionName || ' '}:${page}:${limit}`;
+    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${regionNames || ' '}:${page}:${limit}`;
     this.logger.log(`Generated cache key: ${cacheKey}`);
 
     // Check cache
@@ -366,22 +366,21 @@ export class ProductsService {
       .leftJoinAndSelect('product.orders', 'orders')
       .leftJoinAndSelect('product.my_review', 'my_review')
       .leftJoinAndSelect('product.variations', 'attributeValues')
-      .leftJoinAndSelect('attributeValues.attribute', 'attribute');
+      .leftJoinAndSelect('attributeValues.attribute', 'attribute')
+      .leftJoinAndSelect('product.regions', 'regions'); // Ensure proper join with region entity
 
     // Add filters
     if (shop_id) {
       productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
     } else if (shopName) {
-      productQueryBuilder.andWhere('(shop.name ILIKE :shopName OR shop.slug ILIKE :shopName)', { shopName: `%${shopName}%` });
+      productQueryBuilder.andWhere('(shop.name LIKE :shopName OR shop.slug LIKE :shopName)', { shopName: `%${shopName}%` });
     } else if (dealerId) {
       productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
     }
 
     // Add region filter
-    if (regionName) {
-      productQueryBuilder
-        .leftJoinAndSelect('product.region', 'region') // Ensure proper join with region entity
-        .andWhere('region.name ILIKE :regionName', { regionName: `%${regionName}%` });
+    if (regionNames && regionNames.length > 0) {
+      productQueryBuilder.andWhere('regions.name IN (:...regionNames)', { regionNames });
     }
 
     // Add search and filter conditions

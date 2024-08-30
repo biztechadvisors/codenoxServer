@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsArray, ArrayNotEmpty, ArrayUnique } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 
 export class CreateRegionDto {
@@ -7,8 +7,10 @@ export class CreateRegionDto {
     name: string;
 
     @IsOptional()
-    @IsString()
-    shop?: number;
+    @IsArray()
+    @ArrayNotEmpty()
+    @ArrayUnique()
+    shop?: number[];  // Now an array of shop IDs
 }
 
 export class UpdateRegionDto extends PartialType(CreateRegionDto) { }
