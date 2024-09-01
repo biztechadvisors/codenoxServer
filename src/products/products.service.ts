@@ -334,11 +334,28 @@ export class ProductsService {
 
 
   async getProducts(query: GetProductsDto): Promise<ProductPaginator> {
-    const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName, regionNames } = query;
+    const {
+      limit = 20,
+      page = 1,
+      search,
+      filter,
+      dealerId,
+      shop_id,
+      shopName,
+      regionNames
+    } = query;
     const startIndex = (page - 1) * limit;
 
+    // Handle regionNames as a string or array
+    let regionsArray: string[] = [];
+    if (Array.isArray(regionNames)) {
+      regionsArray = regionNames;
+    } else if (typeof regionNames === 'string') {
+      regionsArray = [regionNames]; // Convert string to array
+    }
+
     // Generate cache key
-    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${regionNames || ' '}:${page}:${limit}`;
+    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${regionsArray.join(',') || ' '}:${page}:${limit}`;
     this.logger.log(`Generated cache key: ${cacheKey}`);
 
     // Check cache
@@ -362,8 +379,8 @@ export class ProductsService {
       .leftJoinAndSelect('product.variations', 'variations')
       .leftJoinAndSelect('product.variation_options', 'variation_options')
       .leftJoinAndSelect('product.gallery', 'gallery')
-      .leftJoinAndSelect('product.pivot', 'pivot')
-      .leftJoinAndSelect('product.orders', 'orders')
+      // .leftJoinAndSelect('product.pivot', 'pivot')
+      // .leftJoinAndSelect('product.orders', 'orders')
       .leftJoinAndSelect('product.my_review', 'my_review')
       .leftJoinAndSelect('product.variations', 'attributeValues')
       .leftJoinAndSelect('attributeValues.attribute', 'attribute')
@@ -374,13 +391,15 @@ export class ProductsService {
       productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
     } else if (shopName) {
       productQueryBuilder.andWhere('(shop.name LIKE :shopName OR shop.slug LIKE :shopName)', { shopName: `%${shopName}%` });
-    } else if (dealerId) {
+    }
+
+    if (dealerId) {
       productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
     }
 
     // Add region filter
-    if (regionNames && regionNames.length > 0) {
-      productQueryBuilder.andWhere('regions.name IN (:...regionNames)', { regionNames });
+    if (regionsArray.length > 0) {
+      productQueryBuilder.andWhere('regions.name IN (:...regionsArray)', { regionsArray });
     }
 
     // Add search and filter conditions

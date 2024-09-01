@@ -15,13 +15,19 @@ export class Region {
     @Column({ unique: true })
     name: string;
 
-    @ManyToMany(() => Shop, (shop) => shop.regions)
+    @ManyToMany(() => Shop, (shop) => shop.regions, { cascade: true })
     @JoinTable({
-        name: 'shop_regions',
-        joinColumn: { name: 'regionId', referencedColumnName: 'id' },
-        inverseJoinColumn: { name: 'shopId', referencedColumnName: 'id' },
+        name: 'shop_regions_region', // The table name for the join table
+        joinColumn: {
+            name: 'regionId',
+            referencedColumnName: 'id',
+        },
+        inverseJoinColumn: {
+            name: 'shopId',
+            referencedColumnName: 'id',
+        },
     })
-    shop: Shop[];
+    shops: Shop[];
 
     @ManyToMany(() => Product, (product) => product.regions)
     @JoinTable({ name: 'product_regions' })

@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, QueryFailedError, Repository } from 'typeorm';
 import { Region } from './entities/region.entity';
 import { Shop } from '../shops/entities/shop.entity';
 import { CreateRegionDto, UpdateRegionDto } from './dto/create-region.dto';
@@ -14,23 +14,18 @@ export class RegionService {
         private readonly shopRepository: Repository<Shop>,
     ) { }
 
-    async create(createRegionDto: CreateRegionDto): Promise<Region> {
-        const { shop: shopIds, ...regionData } = createRegionDto;
+    async createRegion(createRegionDto: CreateRegionDto): Promise<Region> {
+        const { name, shop: shopIds } = createRegionDto;
 
-        let shops: Shop[] = [];
-        if (shopIds) {
-            shops = await this.shopRepository.findByIds(shopIds);
-            if (shops.length !== shopIds.length) {
-                throw new NotFoundException(`One or more shops not found`);
-            }
+        // Verify that all provided shop IDs exist
+        const shops = await this.shopRepository.findByIds(shopIds);
+        if (shops.length !== shopIds.length) {
+            throw new NotFoundException('One or more shops not found');
         }
 
-        const region = this.regionRepository.create({
-            ...regionData,
-            shop: shops,
-        });
-
-        return this.regionRepository.save(region);
+        // Create the new region and associate the shops
+        const region = this.regionRepository.create({ name, shops });
+        return await this.regionRepository.save(region);
     }
 
     async findAllRegionByShop(shopSlug: string): Promise<Region[]> {
@@ -63,21 +58,28 @@ export class RegionService {
         if (shopIds) {
             shops = await this.shopRepository.findByIds(shopIds);
             if (shops.length !== shopIds.length) {
-                throw new NotFoundException(`One or more shops not found`);
+                throw new NotFoundException('One or more shops not found');
             }
         }
 
         const region = await this.regionRepository.preload({
             id,
             ...regionData,
-            shop: shops,
+            shops,  // Correctly assign `shops` as an array of `Shop` entities
         });
 
         if (!region) {
             throw new NotFoundException(`Region with ID ${id} not found`);
         }
 
-        return this.regionRepository.save(region);
+        try {
+            return await this.regionRepository.save(region);
+        } catch (error) {
+            if (error instanceof QueryFailedError && error.message.includes('Duplicate entry')) {
+                throw new ConflictException(`Region with name '${regionData.name}' already exists`);
+            }
+            throw error;
+        }
     }
 
     async remove(id: number): Promise<void> {

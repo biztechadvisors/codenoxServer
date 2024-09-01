@@ -113,8 +113,7 @@ export class Shop extends CoreEntity {
   @OneToMany(() => Event, (event) => event.shop)
   events: Event[];
 
-  @ManyToMany(() => Region, (region) => region.shop)
-  @JoinTable({ name: 'shop_regions' })
+  @ManyToMany(() => Region, (region) => region.shops)
   regions: Region[];
 }
 

@@ -9,7 +9,7 @@ export class RegionController {
 
     @Post()
     async create(@Body() createRegionDto: CreateRegionDto): Promise<Region> {
-        return this.regionService.create(createRegionDto);
+        return this.regionService.createRegion(createRegionDto);
     }
 
     @Get('shop/:shopSlug')

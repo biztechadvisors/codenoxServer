@@ -103,15 +103,12 @@ export class CategoriesService {
     return await this.categoryRepository.save(category);
   }
 
-
   async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
     let { limit = '10', page = '1', search, parent, shopSlug, shopId, language, orderBy, sortedBy, region_name } = query;
 
-    // Convert to numbers
     const numericPage = Number(page);
     const numericLimit = Number(limit);
 
-    // Handle invalid values
     if (isNaN(numericPage) || isNaN(numericLimit)) {
       throw new BadRequestException('Page and limit values must be numbers');
     }
@@ -126,49 +123,59 @@ export class CategoriesService {
       const where: any = {};
 
       if (search) {
-        where['name'] = Like(`%${search}%`);
+        where['category.name'] = Like(`%${search}%`);
       }
 
       if (shopSlug) {
         const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
         if (shop) {
-          where['shop'] = { id: shop.id };
+          where['category.shop'] = { id: shop.id };
         } else {
           throw new NotFoundException('Shop not found');
         }
       }
 
       if (shopId) {
-        where['shop'] = { id: shopId };
+        where['category.shop'] = { id: shopId };
       }
 
       if (parent && parent !== 'null') {
-        where['parent'] = { id: parent };
+        where['category.parent'] = { id: parent };
       } else if (parent === 'null') {
-        where['parent'] = IsNull();
+        where['category.parent'] = IsNull();
       }
 
       if (language) {
-        where['language'] = language;
+        where['category.language'] = language;
       }
 
+      // Initialize the query builder with necessary joins
+      let queryBuilder = this.categoryRepository.createQueryBuilder('category')
+        .leftJoinAndSelect('category.type', 'type')
+        .leftJoinAndSelect('category.image', 'image')
+        .leftJoinAndSelect('category.subCategories', 'subCategories')
+        .leftJoinAndSelect('category.shop', 'shop')
+        .leftJoinAndSelect('category.regions', 'regions');
+
+      // Apply region filter if region_name is provided
       if (region_name) {
-        const region = await this.regionRepository.findOne({ where: { name: region_name } });
-        if (!region) {
-          throw new NotFoundException(`Region with name '${region_name}' not found`);
-        }
-        where['region'] = { id: region.id };
+        queryBuilder = queryBuilder.andWhere('regions.name = :region_name', { region_name });
       }
 
-      const order = orderBy && sortedBy ? { [orderBy]: sortedBy.toUpperCase() } : {};
+      // Apply other conditions
+      if (Object.keys(where).length > 0) {
+        queryBuilder = queryBuilder.andWhere(where);
+      }
 
-      const [data, total] = await this.categoryRepository.findAndCount({
-        where,
-        take: numericLimit,
-        skip,
-        relations: ['type', 'image', 'subCategories', 'shop', 'region'], // Include region in the relations
-        order,
-      });
+      // Apply ordering
+      if (orderBy && sortedBy) {
+        queryBuilder = queryBuilder.orderBy(`category.${orderBy}`, sortedBy.toUpperCase() as 'ASC' | 'DESC');
+      }
+
+      // Apply pagination
+      queryBuilder = queryBuilder.take(numericLimit).skip(skip);
+
+      const [data, total] = await queryBuilder.getManyAndCount();
 
       const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}`;
 
@@ -182,7 +189,6 @@ export class CategoriesService {
 
     return categories;
   }
-
 
   async getCategory(param: string, language: string, shopId: number): Promise<Category> {
     // Generate a unique cache key based on the parameters
