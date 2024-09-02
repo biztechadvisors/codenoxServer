@@ -160,10 +160,10 @@ import { RegionModule } from './region/region.module';
   ],
   controllers: [],
   providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: CacheInterceptor
-    },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: CacheInterceptor
+    // },
   ],
 })
 export class AppModule implements NestModule {

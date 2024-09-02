@@ -104,7 +104,18 @@ export class CategoriesService {
   }
 
   async getCategories(query: GetCategoriesDto): Promise<CategoryPaginator> {
-    let { limit = '10', page = '1', search, parent, shopSlug, shopId, language, orderBy, sortedBy, region_name } = query;
+    const {
+      limit = '10',
+      page = '1',
+      search,
+      parent,
+      shopSlug,
+      shopId,
+      language,
+      orderBy = '',
+      sortedBy = 'DESC',
+      region_name,
+    } = query;
 
     const numericPage = Number(page);
     const numericLimit = Number(limit);
@@ -114,7 +125,6 @@ export class CategoriesService {
     }
 
     const skip = (numericPage - 1) * numericLimit;
-
     const cacheKey = `categories-${numericPage}-${numericLimit}-${search || 'all'}-${parent || 'all'}-${shopSlug || 'all'}-${shopId || 'all'}-${language || 'all'}-${orderBy || 'none'}-${sortedBy || 'none'}-${region_name || 'all'}`;
 
     let categories = await this.cacheManager.get<CategoryPaginator>(cacheKey);
@@ -123,61 +133,53 @@ export class CategoriesService {
       const where: any = {};
 
       if (search) {
-        where['category.name'] = Like(`%${search}%`);
+        where.name = Like(`%${search}%`);
       }
 
       if (shopSlug) {
         const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
-        if (shop) {
-          where['category.shop'] = { id: shop.id };
-        } else {
+        if (!shop) {
           throw new NotFoundException('Shop not found');
         }
+        where.shop = { id: shop.id };
       }
 
       if (shopId) {
-        where['category.shop'] = { id: shopId };
+        where.shop = { id: shopId };
       }
 
       if (parent && parent !== 'null') {
-        where['category.parent'] = { id: parent };
+        where.parent = { id: parent };
       } else if (parent === 'null') {
-        where['category.parent'] = IsNull();
+        where.parent = IsNull();
       }
 
       if (language) {
-        where['category.language'] = language;
+        where.language = language;
       }
 
-      // Initialize the query builder with necessary joins
-      let queryBuilder = this.categoryRepository.createQueryBuilder('category')
-        .leftJoinAndSelect('category.type', 'type')
-        .leftJoinAndSelect('category.image', 'image')
-        .leftJoinAndSelect('category.subCategories', 'subCategories')
-        .leftJoinAndSelect('category.shop', 'shop')
-        .leftJoinAndSelect('category.regions', 'regions');
-
-      // Apply region filter if region_name is provided
       if (region_name) {
-        queryBuilder = queryBuilder.andWhere('regions.name = :region_name', { region_name });
+        const region = await this.regionRepository.findOne({
+          where: { name: region_name },
+          relations: ['categories'],
+        });
+        if (!region) {
+          throw new NotFoundException('Region not found');
+        }
+        where.regions = { id: region.id };
       }
 
-      // Apply other conditions
-      if (Object.keys(where).length > 0) {
-        queryBuilder = queryBuilder.andWhere(where);
-      }
+      const order = orderBy && sortedBy ? { [orderBy]: sortedBy.toUpperCase() } : {};
 
-      // Apply ordering
-      if (orderBy && sortedBy) {
-        queryBuilder = queryBuilder.orderBy(`category.${orderBy}`, sortedBy.toUpperCase() as 'ASC' | 'DESC');
-      }
+      const [data, total] = await this.categoryRepository.findAndCount({
+        where,
+        take: numericLimit,
+        skip,
+        relations: ['type', 'image', 'subCategories', 'shop', 'regions'],
+        order,
+      });
 
-      // Apply pagination
-      queryBuilder = queryBuilder.take(numericLimit).skip(skip);
-
-      const [data, total] = await queryBuilder.getManyAndCount();
-
-      const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}`;
+      const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}&shopSlug=${shopSlug}&shopId=${shopId}&language=${language}&region_name=${region_name}`;
 
       categories = {
         data,
@@ -189,6 +191,7 @@ export class CategoriesService {
 
     return categories;
   }
+
 
   async getCategory(param: string, language: string, shopId: number): Promise<Category> {
     // Generate a unique cache key based on the parameters

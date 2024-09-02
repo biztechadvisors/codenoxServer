@@ -25,9 +25,8 @@ export class CreateCareerDto {
     @IsString()
     cv_resume?: string;
 
-    @IsNotEmpty()
-    @IsNumber()
-    shopId: number; // Add shopId to associate with a Shop
+    @IsOptional()
+    shopSlug?: string;
 }
 
 export class UpdateCareerDto {
@@ -56,6 +55,5 @@ export class UpdateCareerDto {
     cv_resume?: string;
 
     @IsOptional()
-    @IsNumber()
-    shopId?: number; // Add shopId to update the shop association
+    shopSlug?: string;
 }

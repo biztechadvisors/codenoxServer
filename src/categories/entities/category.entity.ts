@@ -25,41 +25,45 @@ export class Category extends CoreEntity {
   @OneToMany(() => Category, (category) => category.parent)
   children?: Category[];
 
-  @OneToMany(() => SubCategory, subCategory => subCategory.category)
+  @OneToMany(() => SubCategory, (subCategory) => subCategory.category)
   subCategories: SubCategory[];
 
   @ManyToMany(() => Region, (region) => region.categories, { nullable: true, onDelete: 'CASCADE' })
-  @JoinTable({ name: 'categories_regions' })
+  @JoinTable({
+    name: 'categories_regions',
+    joinColumn: { name: 'categoryId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'regionId', referencedColumnName: 'id' },
+  })
   regions: Region[];
 
-  @Column()
+  @Column({ nullable: true })
   details?: string;
 
   @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn()
   image?: Attachment;
 
-  @Column()
+  @Column({ nullable: true })
   icon?: string;
 
   @ManyToOne(() => Type, (type) => type.categories, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'typeId' })
   type: Type | null;
 
-  @ManyToMany(() => Product, product => product.categories)
-  @JoinTable({ name: "product_category" })
+  @ManyToMany(() => Product, (product) => product.categories)
+  @JoinTable({ name: 'product_category' })
   products: Product[];
 
-  @ManyToOne(() => Shop, shop => shop.category)
+  @ManyToOne(() => Shop, (shop) => shop.category)
   shop?: Shop;
 
   @Column()
   language: string;
 
-  @Column({ type: 'json' })
+  @Column({ type: 'json', nullable: true })
   translated_languages: string[];
 
-  @Column()
+  @Column({ default: 0 })
   products_count: number;
 }
 

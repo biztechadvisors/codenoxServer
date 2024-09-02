@@ -10,6 +10,9 @@ export class Contact {
     fullName: string;
 
     @Column()
+    email: string;
+
+    @Column()
     phone: string;
 
     @Column({ nullable: true })
@@ -20,9 +23,6 @@ export class Contact {
 
     @Column({ type: 'text' })
     message: string;
-
-    @Column({ nullable: true })
-    file?: string; // Path to the uploaded file
 
     @ManyToOne(() => Shop, { eager: true }) // Load related Shop data eagerly
     @JoinColumn({ name: 'shop_id' }) // Name of the foreign key column in the Contact table

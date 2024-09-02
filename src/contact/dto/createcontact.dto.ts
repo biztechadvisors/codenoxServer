@@ -9,6 +9,10 @@ export class CreateContactDto {
     @IsString()
     phone: string;
 
+    @IsNotEmpty()
+    @IsString()
+    email: string;
+
     @IsOptional()
     @IsString()
     location?: string;
@@ -21,13 +25,8 @@ export class CreateContactDto {
     @IsString()
     message: string;
 
-    @IsOptional()
-    @IsString()
-    file?: string; // Path to the uploaded file
-
     @IsNotEmpty()
-    @IsInt()
-    shopId: number; // Shop ID for the relation
+    shopSlug: string;
 }
 
 export class UpdateContactDto {
@@ -38,6 +37,10 @@ export class UpdateContactDto {
     @IsOptional()
     @IsString()
     phone?: string;
+
+    @IsNotEmpty()
+    @IsString()
+    email: string;
 
     @IsOptional()
     @IsString()
@@ -51,11 +54,6 @@ export class UpdateContactDto {
     @IsString()
     message?: string;
 
-    @IsOptional()
-    @IsString()
-    file?: string; // Path to the uploaded file
-
-    @IsOptional()
-    @IsInt()
-    shopId?: number; // Shop ID for the relation
+    @IsNotEmpty()
+    shopSlug: string;
 }

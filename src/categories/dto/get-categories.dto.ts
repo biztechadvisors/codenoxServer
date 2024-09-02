@@ -17,7 +17,7 @@ export class GetCategoriesDto extends PaginationArgs {
   shopId?: number;
   parent?: number | string = 'null';
   language?: string;
-  region_name?: string; // Add this to filter by region name
+  region_name?: string; // To filter by region name
 }
 
 export enum QueryCategoriesOrderByColumn {

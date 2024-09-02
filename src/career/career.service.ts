@@ -19,12 +19,12 @@ export class CareerService {
     ) { }
 
     async createCareer(createCareerDto: CreateCareerDto): Promise<Career> {
-        const { shopId, ...careerData } = createCareerDto;
+        const { shopSlug, ...careerData } = createCareerDto;
 
         // Check if the shop exists
-        const shop = await this.shopRepository.findOne({ where: { id: shopId } });
+        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
         if (!shop) {
-            throw new NotFoundException(`Shop with ID ${shopId} not found`);
+            throw new NotFoundException(`Shop with ID ${shopSlug} not found`);
         }
 
         const career = this.careerRepository.create({ ...careerData, shop });
@@ -33,12 +33,12 @@ export class CareerService {
 
     async updateCareer(id: number, updateCareerDto: UpdateCareerDto): Promise<Career> {
         const career = await this.getCareerById(id);
-        const { shopId, ...updateData } = updateCareerDto;
+        const { shopSlug, ...updateData } = updateCareerDto;
 
-        if (shopId) {
-            const shop = await this.shopRepository.findOne({ where: { id: shopId } });
+        if (shopSlug) {
+            const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
             if (!shop) {
-                throw new NotFoundException(`Shop with ID ${shopId} not found`);
+                throw new NotFoundException(`Shop with ID ${shopSlug} not found`);
             }
             career.shop = shop;
         }

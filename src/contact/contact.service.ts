@@ -18,12 +18,12 @@ export class ContactService {
     ) { }
 
     async create(createContactDto: CreateContactDto): Promise<Contact> {
-        const { shopId, ...contactData } = createContactDto;
+        const { shopSlug, ...contactData } = createContactDto;
 
         // Check if the shop exists
-        const shop = await this.shopRepository.findOne({ where: { id: shopId } });
+        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
         if (!shop) {
-            throw new NotFoundException(`Shop with ID ${shopId} not found`);
+            throw new NotFoundException(`Shop with ID ${shopSlug} not found`);
         }
 
         const contact = this.contactRepository.create({ ...contactData, shop });
@@ -82,12 +82,12 @@ export class ContactService {
 
     async update(id: number, updateContactDto: UpdateContactDto): Promise<Contact> {
         const contact = await this.findOne(id);
-        const { shopId, ...updateData } = updateContactDto;
+        const { shopSlug, ...updateData } = updateContactDto;
 
-        if (shopId) {
-            const shop = await this.shopRepository.findOne({ where: { id: shopId } });
+        if (shopSlug) {
+            const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
             if (!shop) {
-                throw new NotFoundException(`Shop with ID ${shopId} not found`);
+                throw new NotFoundException(`Shop with ID ${shopSlug} not found`);
             }
             contact.shop = shop;
         }
