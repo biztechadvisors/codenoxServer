@@ -156,9 +156,13 @@ export class TagsService {
     }
 
     if (search) {
-      // Use `LOWER` for case-insensitive search
-      queryBuilder.andWhere('LOWER(tag.name) LIKE LOWER(:search)', { search: `%${search.toLowerCase()}%` });
+      // Ensure search is correctly formatted
+      const searchPattern = `%${search.toLowerCase()}%`;
+      queryBuilder.andWhere('LOWER(tag.name) LIKE :search', { search: searchPattern });
     }
+
+    // Debugging: print generated SQL query
+    console.log(queryBuilder.getSql());
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
@@ -209,15 +213,24 @@ export class TagsService {
   }
 
   async update(id: number, updateTagDto: UpdateTagDto): Promise<Tag> {
-    const tag = await this.tagRepository.findOne({ where: { id }, relations: ['image', 'type', 'regions'] });
+    // Find the existing tag with related entities
+    const tag = await this.tagRepository.findOne({
+      where: { id },
+      relations: ['image', 'type', 'regions'],
+    });
 
     if (!tag) {
       throw new NotFoundException(`Tag with ID ${id} not found`);
     }
 
+    // Handle image updates
     if (updateTagDto.image?.id && updateTagDto.image.id !== tag.image?.id) {
-      const referencingTags = await this.tagRepository.find({ where: { image: tag.image } });
+      // Find referencing tags with the old image
+      const referencingTags = await this.tagRepository.find({
+        where: { image: tag.image },
+      });
 
+      // If the old image is not referenced elsewhere, remove it
       if (referencingTags.length === 1) {
         const oldImage = tag.image;
         tag.image = null;
@@ -225,34 +238,37 @@ export class TagsService {
         await this.attachmentRepository.remove(oldImage);
       }
 
-      const newImage = await this.attachmentRepository.findOne({ where: { id: updateTagDto.image.id } });
+      // Assign the new image to the tag
+      const newImage = await this.attachmentRepository.findOne({
+        where: { id: updateTagDto.image.id },
+      });
       if (!newImage) {
-        throw new NotFoundException('Image not found');
+        throw new NotFoundException('New image not found');
       }
       tag.image = newImage;
     }
 
+    // Handle type updates
     if (updateTagDto.type_id && updateTagDto.type_id !== tag.type?.id) {
-      const type = await this.typeRepository.findOne({ where: { id: updateTagDto.type_id } });
+      const type = await this.typeRepository.findOne({
+        where: { id: updateTagDto.type_id },
+      });
       if (!type) {
         throw new NotFoundException('Type not found');
       }
       tag.type = type;
     }
 
-    // Handle regions
+    // Handle regions updates
     if (updateTagDto.region_name && updateTagDto.region_name.length > 0) {
-      // Find all regions that match the names provided
       const regions = await this.regionRepository.find({
-        where: {
-          name: In(updateTagDto.region_name),
-        },
+        where: { name: In(updateTagDto.region_name) },
       });
 
       // Check if all requested regions were found
       if (regions.length !== updateTagDto.region_name.length) {
         const missingRegionNames = updateTagDto.region_name.filter(
-          (name) => !regions.some((region) => region.name === name)
+          (name) => !regions.some((region) => region.name === name),
         );
         throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
       }
@@ -260,6 +276,7 @@ export class TagsService {
       tag.regions = regions; // Correctly assign the array of regions
     }
 
+    // Update tag properties
     tag.name = updateTagDto.name;
     tag.slug = updateTagDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     tag.parent = updateTagDto.parent;
@@ -268,6 +285,7 @@ export class TagsService {
     tag.language = updateTagDto.language;
     tag.translatedLanguages = updateTagDto.translatedLanguages;
 
+    // Save and return the updated tag
     return this.tagRepository.save(tag);
   }
 

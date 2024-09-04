@@ -29,6 +29,7 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Region } from '../region/entities/region.entity';
+import { convertToSlug } from '../helpers';
 
 
 @Injectable()
@@ -160,7 +161,7 @@ export class ProductsService {
     // Create new product instance
     const product = new Product();
     product.name = name;
-    product.slug = slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    product.slug = convertToSlug(name);
     product.description = description;
     product.product_type = product_type;
     product.status = status;
@@ -303,24 +304,20 @@ export class ProductsService {
       await this.productRepository.save(product);
     }
 
-    // Handle regions
-    if (regionName) {
-      const regions = await this.regionRepository.find({
-        where: {
-          name: In(regionName),
-        },
-      });
+    const regions = await this.regionRepository.find({
+      where: {
+        name: In(regionName),
+      },
+    });
 
-      // Check if all requested regions were found
-      if (regions.length !== regionName.length) {
-        const missingRegionNames = regionName.filter(
-          (name) => !regions.some((region) => region.name === name)
-        );
-        throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
-      }
-      product.regions = regions;
+    // Check if all requested regions were found
+    if (regions.length !== regionName.length) {
+      const missingRegionNames = regionName.filter(
+        (name) => !regions.some((region) => region.name === name)
+      );
+      throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
     }
-
+    product.regions = regions;
     // Save the product
     await this.productRepository.save(product);
 
@@ -707,6 +704,7 @@ export class ProductsService {
         'type',
         'shop',
         'categories',
+        'subCategories',
         'tags',
         'image',
         'gallery',
@@ -774,6 +772,12 @@ export class ProductsService {
     if (updateProductDto.categories) {
       const categories = await this.categoryRepository.findByIds(updateProductDto.categories);
       product.categories = categories;
+    }
+
+    // Update subcategories if provided
+    if (updateProductDto.subCategories) {
+      const subCategories = await this.subCategoryRepository.findByIds(updateProductDto.subCategories);
+      product.subCategories = subCategories;
     }
 
     // Update tags if provided
@@ -935,7 +939,6 @@ export class ProductsService {
         product.variation = variation;
       }
     }
-
 
     // Region-based functionality
     if (updateProductDto.regionName) {

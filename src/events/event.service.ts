@@ -82,7 +82,7 @@ export class EventService {
 
     async getAllEvents(
         shopSlug: string,
-        regionName: string,
+        regionName: string | any,
         page: number = 1,
         limit: number = 10,
         filter?: 'upcoming' | 'latest' | 'past',
@@ -91,8 +91,9 @@ export class EventService {
         location?: string
     ): Promise<{ data: Event[], total: number, page: number, limit: number }> {
         const cacheKey = `events-${shopSlug}-${regionName}-page-${page}-limit-${limit}-filter-${filter}-startDate-${startDate}-endDate-${endDate}-location-${location}`;
-        let cachedResult = await this.cacheManager.get<{ data: Event[], total: number }>(cacheKey);
 
+        // Attempt to retrieve from cache
+        const cachedResult = await this.cacheManager.get<{ data: Event[], total: number }>(cacheKey);
         if (cachedResult) {
             return {
                 ...cachedResult,
@@ -101,32 +102,47 @@ export class EventService {
             };
         }
 
+        // Fetch shop by slug
         const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
         if (!shop) {
-            throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
+            throw new NotFoundException(`Shop with slug '${shopSlug}' not found`);
         }
 
-        const region = await this.regionRepository.findOne({ where: { name: regionName } });
-        if (!region) {
-            throw new NotFoundException(`Region with name ${regionName} not found`);
+        // Fetch region by name (if provided)
+        let region = null;
+        if (regionName) {
+            region = await this.regionRepository.findOne({ where: { name: regionName } });
+            if (!region) {
+                console.warn(`Warning: Region with name '${regionName}' not found. Proceeding without region filter.`);
+            }
         }
 
         const now = new Date();
         const skip = (page - 1) * limit;
+
+        // Build the query
         const queryBuilder = this.eventRepository.createQueryBuilder('event')
             .leftJoinAndSelect('event.shop', 'shop')
             .leftJoinAndSelect('event.images', 'images')
             .leftJoinAndSelect('event.region', 'region')
-            .where('event.shopId = :shopId', { shopId: shop.id })
-            .andWhere('event.regionId = :regionId', { regionId: region.id });
+            .where('event.shopId = :shopId', { shopId: shop.id });
+
+        // Apply region filter if region exists
+        if (region) {
+            queryBuilder.andWhere('event.regionId = :regionId', { regionId: region.id });
+        }
 
         // Apply filters based on the filter parameter
-        if (filter === 'upcoming') {
-            queryBuilder.andWhere('event.date > :now', { now });
-        } else if (filter === 'past') {
-            queryBuilder.andWhere('event.date < :now', { now });
-        } else if (filter === 'latest') {
-            queryBuilder.orderBy('event.date', 'DESC');
+        switch (filter) {
+            case 'upcoming':
+                queryBuilder.andWhere('event.date > :now', { now });
+                break;
+            case 'past':
+                queryBuilder.andWhere('event.date < :now', { now });
+                break;
+            case 'latest':
+                queryBuilder.orderBy('event.date', 'DESC');
+                break;
         }
 
         // Apply date range filter if provided
@@ -142,15 +158,16 @@ export class EventService {
             queryBuilder.andWhere('event.location LIKE :location', { location: `%${location}%` });
         }
 
-        // Calculate pagination parameters
+        // Fetch data with pagination
         const [data, total] = await queryBuilder
             .skip(skip)
             .take(limit)
             .getManyAndCount();
 
+        // Structure the result
         const result = { data, total, page, limit };
 
-        // Cache the result for 1 hour
+        // Cache the result for 1 hour (3600 seconds)
         await this.cacheManager.set(cacheKey, result, 3600);
 
         return result;

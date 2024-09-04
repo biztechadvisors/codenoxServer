@@ -83,7 +83,7 @@ export class BlogService {
 
     async getAllBlogs(
         shopSlug: string,
-        regionName: string,
+        regionName: string | any,
         tagName?: string,
         page: number = 1,
         limit: number = 10,
@@ -91,55 +91,70 @@ export class BlogService {
         endDate?: string
     ): Promise<{ data: Blog[], count: number }> {
         const offset = (page - 1) * limit;
-        const cacheKey = `blogs-${shopSlug}-${regionName}-${tagName || 'all'}-${startDate || 'all'}-${endDate || 'all'}-page${page}-limit${limit}`;
+        const cacheKey = `blogs-${shopSlug}-${regionName || 'all'}-${tagName || 'all'}-${startDate || 'all'}-${endDate || 'all'}-page${page}-limit${limit}`;
 
+        // Attempt to retrieve from cache
         let cachedData = await this.cacheManager.get<{ data: Blog[], count: number }>(cacheKey);
-
-        if (!cachedData) {
-            const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
-            if (!shop) {
-                throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
-            }
-
-            const region = await this.regionRepository.findOne({ where: { name: regionName } });
-            if (!region) {
-                throw new NotFoundException(`Region with name ${regionName} not found`);
-            }
-
-            const queryBuilder = this.blogRepository.createQueryBuilder('blog')
-                .leftJoinAndSelect('blog.shop', 'shop')
-                .leftJoinAndSelect('blog.attachments', 'attachments')
-                .leftJoinAndSelect('blog.tags', 'tags')
-                .leftJoinAndSelect('blog.region', 'region')
-                .where('blog.shopId = :shopId', { shopId: shop.id })
-                .andWhere('blog.regionId = :regionId', { regionId: region.id });
-
-            if (tagName) {
-                queryBuilder.andWhere('tags.name = :tagName', { tagName });
-            }
-
-            if (startDate) {
-                queryBuilder.andWhere('blog.date >= :startDate', { startDate });
-            }
-
-            if (endDate) {
-                queryBuilder.andWhere('blog.date <= :endDate', { endDate });
-            }
-
-            const count = await queryBuilder.getCount();
-
-            const data = await queryBuilder
-                .skip(offset)
-                .take(limit)
-                .getMany();
-
-            cachedData = { data, count };
-            await this.cacheManager.set(cacheKey, cachedData, 3600); // Cache for 1 hour
+        if (cachedData) {
+            return cachedData;
         }
+
+        // Fetch the shop by slug
+        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        if (!shop) {
+            throw new NotFoundException(`Shop with slug '${shopSlug}' not found`);
+        }
+
+        // Fetch the region by name (if provided)
+        let region = null;
+        if (regionName) {
+            region = await this.regionRepository.findOne({ where: { name: regionName } });
+            if (!region) {
+                console.warn(`Warning: Region with name '${regionName}' not found. Proceeding without region filter.`);
+            }
+        }
+
+        // Build the query
+        const queryBuilder = this.blogRepository.createQueryBuilder('blog')
+            .leftJoinAndSelect('blog.shop', 'shop')
+            .leftJoinAndSelect('blog.attachments', 'attachments')
+            .leftJoinAndSelect('blog.tags', 'tags')
+            .leftJoinAndSelect('blog.region', 'region')
+            .where('blog.shopId = :shopId', { shopId: shop.id });
+
+        // Apply region filter if region exists
+        if (region) {
+            queryBuilder.andWhere('blog.regionId = :regionId', { regionId: region.id });
+        }
+
+        // Apply tag filter if tagName is provided
+        if (tagName) {
+            queryBuilder.andWhere('tags.name = :tagName', { tagName });
+        }
+
+        // Apply date range filters if provided
+        if (startDate) {
+            queryBuilder.andWhere('blog.date >= :startDate', { startDate });
+        }
+        if (endDate) {
+            queryBuilder.andWhere('blog.date <= :endDate', { endDate });
+        }
+
+        // Get the total count before pagination
+        const count = await queryBuilder.getCount();
+
+        // Fetch data with pagination
+        const data = await queryBuilder
+            .skip(offset)
+            .take(limit)
+            .getMany();
+
+        // Cache the result for 1 hour (3600 seconds)
+        cachedData = { data, count };
+        await this.cacheManager.set(cacheKey, cachedData, 3600);
 
         return cachedData;
     }
-
 
     async updateBlog(id: number, updateBlogDto: UpdateBlogDto): Promise<Blog> {
         const blog = await this.getBlogById(id);

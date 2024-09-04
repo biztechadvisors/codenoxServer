@@ -25,7 +25,6 @@ export class Region {
 
     // 
     @ManyToMany(() => Product, (product) => product.regions)
-    @JoinTable({ name: 'product_regions' })
     products: Product[];
 
     // 
@@ -47,6 +46,7 @@ export class Region {
     @OneToMany(() => Event, (event) => event.region, { nullable: true })
     events: Event[];
 
+    // 
     @OneToMany(() => Blog, (blog) => blog.region, { nullable: true })
     blogs: Blog[];
 }

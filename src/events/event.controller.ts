@@ -13,10 +13,10 @@ export class EventController {
         return this.eventService.createEvent(createEventDto);
     }
 
-    @Get('shop/:shopSlug/region/:regionName')
+    @Get('shop/:shopSlug')
     async getAllEvents(
         @Param('shopSlug') shopSlug: string,
-        @Param('regionName') regionName: string,
+        @Query('regionName') regionName: string | any,
         @Query('page') page: number = 1,
         @Query('limit') limit: number = 10,
         @Query('filter') filter?: 'upcoming' | 'latest' | 'past', // Optional filter for event type
