@@ -52,7 +52,7 @@ export class Type extends CoreEntity {
   @OneToMany(() => Banner, (banner) => banner.type, { cascade: true })
   banners?: Banner[];
 
-  @ManyToMany(() => Attachment, { cascade: true, eager: true })
+  @ManyToMany(() => Attachment, { cascade: true })
   @JoinTable({
     name: 'type_promotional_sliders',
     joinColumn: { name: 'typeId', referencedColumnName: 'id' },
@@ -77,10 +77,10 @@ export class Type extends CoreEntity {
   @JoinColumn()
   shop?: Shop;
 
-  @ManyToMany(() => Region, (region) => region.types, { eager: true })
+  @ManyToMany(() => Region, (region) => region.types, { nullable: true, onDelete: 'CASCADE' })
   @JoinTable({
-    name: 'types_regions',
-    joinColumn: { name: 'typeId', referencedColumnName: 'id' },
+    name: 'types_regions', // Table name
+    joinColumn: { name: 'typeId', referencedColumnName: 'id' }, // Correct the column name
     inverseJoinColumn: { name: 'regionId', referencedColumnName: 'id' },
   })
   regions: Region[];
@@ -91,7 +91,6 @@ export class Type extends CoreEntity {
   @Column({ type: 'json' })
   translated_languages: string[];
 }
-
 
 // Banner entity
 @Entity()

@@ -447,18 +447,22 @@ export class ProductsService {
         });
       }
 
-      // Add search term conditions
+      // Apply search conditions
       if (search) {
-        const filterTerms = search.split(' ');
-        filterTerms.forEach(term => {
-          const searchTerm = `%${term}%`;
-          searchConditions.push(
-            '(product.name ILIKE :filterSearchTerm OR product.sku ILIKE :filterSearchTerm OR ' +
-            'categories.name ILIKE :filterSearchTerm OR subCategories.name ILIKE :filterSearchTerm OR ' +
-            'type.name ILIKE :filterSearchTerm OR tags.name ILIKE :filterSearchTerm OR ' +
-            'variation_options.title ILIKE :filterSearchTerm)'
-          );
-          searchParams.filterSearchTerm = searchTerm;
+        const filterTerms = search.split(' ').map(term => `%${term}%`);
+        const searchConditions = filterTerms.map((_, index) =>
+          `(product.name LIKE :filterSearchTerm${index} OR ` +
+          `product.sku LIKE :filterSearchTerm${index} OR ` +
+          `categories.name LIKE :filterSearchTerm${index} OR ` +
+          `subCategories.name LIKE :filterSearchTerm${index} OR ` +
+          `type.name LIKE :filterSearchTerm${index} OR ` +
+          `tags.name LIKE :filterSearchTerm${index} OR ` +
+          `variation_options.title LIKE :filterSearchTerm${index})`
+        ).join(' OR ');
+
+        // Apply search terms to query
+        filterTerms.forEach((term, index) => {
+          productQueryBuilder.orWhere(searchConditions, { [`filterSearchTerm${index}`]: term });
         });
       }
 

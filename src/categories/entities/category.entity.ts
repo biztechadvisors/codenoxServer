@@ -70,38 +70,43 @@ export class Category extends CoreEntity {
 @Entity()
 export class SubCategory extends CoreEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
   @Column()
-  name: string
+  name: string;
 
   @Column()
-  slug: string
+  slug: string;
 
-  @ManyToOne(() => Category, category => category.subCategories)
+  @ManyToOne(() => Category, (category) => category.subCategories)
   category: Category;
 
-  @ManyToMany(() => Product, product => product.subCategories, { cascade: true })
+  @ManyToMany(() => Product, (product) => product.subCategories, { cascade: true })
   @JoinTable({ name: "product_subcategory" })
   products: Product[];
 
-  @ManyToOne(() => Shop, shop => shop.subCategories)
+  @ManyToOne(() => Shop, (shop) => shop.subCategories)
   shop: Shop;
 
   @ManyToMany(() => Region, (region) => region.subCategories, { nullable: true, onDelete: 'CASCADE' })
-  @JoinTable({ name: 'subCategories_regions' })
+  @JoinTable({
+    name: 'subcategories_regions', // Table name
+    joinColumn: { name: 'subCategoryId', referencedColumnName: 'id' }, // Correct the column name
+    inverseJoinColumn: { name: 'regionId', referencedColumnName: 'id' },
+  })
   regions: Region[];
 
   @Column()
-  details?: string
+  details?: string;
 
   @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn()
   image?: Attachment;
 
   @Column()
-  language: string
+  language: string;
 
   @Column({ type: 'json' })
-  translated_languages: string[]
+  translated_languages: string[];
 }
+

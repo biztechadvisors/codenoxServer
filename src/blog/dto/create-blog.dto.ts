@@ -23,7 +23,6 @@ export class CreateBlogDto {
     @IsInt({ each: true })
     tagIds?: number[]; // Include tagIds for associating tags
 
-    @IsNotEmpty()
-    @IsString()
-    regionName: string;
+    @IsOptional()
+    regionName: string | null;
 }

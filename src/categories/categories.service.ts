@@ -2,7 +2,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { CreateCategoryDto, CreateSubCategoryDto } from './dto/create-category.dto';
-import { CategoryPaginator, GetCategoriesDto, GetSubCategoriesDto } from './dto/get-categories.dto';
+import { CategoryPaginator, GetCategoriesDto, GetSubCategoriesDto, SubCategoryPaginator } from './dto/get-categories.dto';
 import { UpdateCategoryDto, UpdateSubCategoryDto } from './dto/update-category.dto';
 import { Category, SubCategory } from './entities/category.entity';
 import Fuse from 'fuse.js';
@@ -192,7 +192,6 @@ export class CategoriesService {
     return categories;
   }
 
-
   async getCategory(param: string, language: string, shopId: number): Promise<Category> {
     // Generate a unique cache key based on the parameters
     const cacheKey = `category-${param}-${language}-${shopId}`;
@@ -327,7 +326,7 @@ export class CategoriesService {
   async createSubCategory(createSubCategoryDto: CreateSubCategoryDto): Promise<SubCategory> {
     // Check if the image exists
     let imageAttachment;
-    if (createSubCategoryDto.image?.id !== undefined) {
+    if (createSubCategoryDto.image?.id) {
       imageAttachment = await this.attachmentRepository.findOne({ where: { id: createSubCategoryDto.image.id } });
       if (!imageAttachment) {
         throw new Error(`Attachment with id '${createSubCategoryDto.image.id}' not found`);
@@ -380,7 +379,6 @@ export class CategoriesService {
     return await this.subCategoryRepository.save(subCategory);
   }
 
-
   async getSubCategory(param: string, language: string, shopSlug: string): Promise<SubCategory> {
     // Try to parse the param as a number to see if it's an id
     const id = Number(param);
@@ -400,51 +398,112 @@ export class CategoriesService {
     }
   }
 
-  async getSubCategories(query: GetSubCategoriesDto): Promise<SubCategory[]> {
-    const { categoryId, shopSlug, regionName } = query;
+  async getSubCategories(query: GetSubCategoriesDto): Promise<SubCategoryPaginator> {
+    const {
+      limit = '10',
+      page = '1',
+      search,
+      categoryId,
+      shopSlug,
+      regionName,
+      orderBy = '',
+      sortedBy = 'DESC',
+    } = query;
 
-    if (!categoryId && !shopSlug && !regionName) {
-      throw new BadRequestException('Either categoryId, shopSlug, or regionName must be provided in the query');
+    const numericPage = Number(page);
+    const numericLimit = Number(limit);
+
+    if (isNaN(numericPage) || isNaN(numericLimit)) {
+      throw new BadRequestException('Page and limit values must be numbers');
     }
 
-    let where: { [key: string]: any } = {};
-    if (categoryId) {
-      where['category'] = { id: Number(categoryId) };
-    }
-    if (shopSlug) {
-      where['shop'] = { slug: shopSlug };
-    }
-    if (regionName) {
-      where['region'] = { name: regionName };  // Filter by region name
+    const skip = (numericPage - 1) * numericLimit;
+    const cacheKey = `subcategories-${numericPage}-${numericLimit}-${search || 'all'}-${categoryId || 'all'}-${shopSlug || 'all'}-${regionName || 'all'}-${orderBy || 'none'}-${sortedBy || 'none'}`;
+
+    let subCategories = await this.cacheManager.get<SubCategoryPaginator>(cacheKey);
+
+    if (!subCategories) {
+      const where: any = {};
+
+      if (search) {
+        where.name = Like(`%${search}%`);
+      }
+
+      if (categoryId) {
+        where.category = { id: categoryId };
+      }
+
+      if (shopSlug) {
+        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        if (!shop) {
+          throw new NotFoundException('Shop not found');
+        }
+        where.shop = { id: shop.id };
+      }
+
+      if (regionName) {
+        const region = await this.regionRepository.findOne({
+          where: { name: regionName },
+          relations: ['categories'],
+        });
+        if (!region) {
+          throw new NotFoundException('Region not found');
+        }
+        where.regions = { id: region.id };
+      }
+
+      const order = orderBy && sortedBy ? { [orderBy]: sortedBy.toUpperCase() } : {};
+
+      const [data, total] = await this.subCategoryRepository.findAndCount({
+        where,
+        take: numericLimit,
+        skip,
+        relations: ['category', 'image', 'shop', 'regions'],
+        order,
+      });
+
+      const url = `/subcategories?search=${search}&limit=${numericLimit}&categoryId=${categoryId}&shopSlug=${shopSlug}&regionName=${regionName}`;
+
+      subCategories = {
+        data,
+        ...paginate(total, numericPage, numericLimit, data.length, url),
+      };
+
+      await this.cacheManager.set(cacheKey, subCategories, 3600); // Cache for 1 hour
     }
 
-    const relations = ['category', 'image', 'shop', 'region'];  // Include region in relations
-    return await this.subCategoryRepository.find({ where, relations });
+    return subCategories;
   }
 
 
   async updateSubCategory(id: number, updateSubCategoryDto: UpdateSubCategoryDto): Promise<SubCategory> {
+    // Find the existing subcategory
     const subCategory = await this.subCategoryRepository.findOne({
       where: { id },
-      relations: ['category', 'image', 'shop', 'region'],
+      relations: ['category', 'image', 'shop', 'regions'],
     });
 
+    // Throw an error if the subcategory is not found
     if (!subCategory) {
       throw new NotFoundException('SubCategory not found');
     }
 
+    // Update the image if provided
     if (updateSubCategoryDto.image) {
       const image = await this.attachmentRepository.findOne({ where: { id: updateSubCategoryDto.image.id } });
       if (!image) {
         throw new NotFoundException(`Image with ID '${updateSubCategoryDto.image.id}' not found`);
       }
 
+      // If the current image is only used by this subcategory, remove it
       if (subCategory.image && (await this.subCategoryRepository.count({ where: { image: subCategory.image } })) === 1) {
         await this.attachmentRepository.remove(subCategory.image);
       }
+
       subCategory.image = image;
     }
 
+    // Update the category if provided
     if (updateSubCategoryDto.category_id) {
       const category = await this.categoryRepository.findOne({ where: { id: updateSubCategoryDto.category_id } });
       if (!category) {
@@ -472,11 +531,21 @@ export class CategoriesService {
       subCategory.regions = regions; // Correctly assign an array of regions
     }
 
-    subCategory.name = updateSubCategoryDto.name;
-    subCategory.slug = await this.convertToSlug(updateSubCategoryDto.name);
-    subCategory.details = updateSubCategoryDto.details;
-    subCategory.language = updateSubCategoryDto.language;
+    // Update the remaining fields
+    if (updateSubCategoryDto.name) {
+      subCategory.name = updateSubCategoryDto.name;
+      subCategory.slug = await this.convertToSlug(updateSubCategoryDto.name);
+    }
 
+    if (updateSubCategoryDto.details) {
+      subCategory.details = updateSubCategoryDto.details;
+    }
+
+    if (updateSubCategoryDto.language) {
+      subCategory.language = updateSubCategoryDto.language;
+    }
+
+    // Save the updated subcategory to the database
     return this.subCategoryRepository.save(subCategory);
   }
 
@@ -504,6 +573,5 @@ export class CategoriesService {
     // Remove the SubCategory instance from the database
     await this.subCategoryRepository.remove(subCategory);
   }
-
 
 }

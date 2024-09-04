@@ -3,7 +3,7 @@ import { SortOrder } from 'src/common/dto/generic-conditions.dto'
 import { PaginationArgs } from 'src/common/dto/pagination-args.dto'
 import { Paginator } from 'src/common/dto/paginator.dto'
 
-import { Category } from '../entities/category.entity'
+import { Category, SubCategory } from '../entities/category.entity'
 
 export class CategoryPaginator extends Paginator<Category> {
   data: Category[]
@@ -31,4 +31,14 @@ export class GetSubCategoriesDto {
   categoryId?: number;
   shopSlug?: string;
   regionName?: string;  // Added regionName for filtering
+  limit?: string;       // Added for pagination
+  page?: string;        // Added for pagination
+  orderBy?: string;     // Added for sorting
+  sortedBy?: string;    // Added for sorting direction
 }
+
+export class SubCategoryPaginator extends Paginator<SubCategory> {
+  data: SubCategory[]
+}
+
+

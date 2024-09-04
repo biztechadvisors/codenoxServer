@@ -24,7 +24,8 @@ export class CreateSubCategoryDto {
   image?: { id: number };
   language: string;
   shop_id: number;
-  regionName: string[];  // Added regionName to DTO
+  regionName: string[];  // Ensure this is correctly handled
 }
+
 
 

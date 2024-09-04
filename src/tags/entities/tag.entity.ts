@@ -34,8 +34,12 @@ export class Tag extends CoreEntity {
   @ManyToOne(() => Type, (type) => type.tags, { nullable: true, eager: true, onDelete: 'SET NULL' })
   type: Type | null;
 
-  @ManyToMany(() => Region, (region) => region.tags, { nullable: true, cascade: true })
-  @JoinTable({ name: 'tags_regions' })
+  @ManyToMany(() => Region, (region) => region.tags, { nullable: true, onDelete: 'CASCADE' })
+  @JoinTable({
+    name: 'tags_regions',
+    joinColumn: { name: 'tagsId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'regionId', referencedColumnName: 'id' },
+  })
   regions: Region[];
 
   @ManyToMany(() => Product, (product) => product.tags, { cascade: true })

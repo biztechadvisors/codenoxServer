@@ -158,8 +158,11 @@ export class TypesService {
 
     // Fetch the shop by ID
     const shop = await this.shopRepository.findOne({ where: { id: data.shop_id } });
+    if (!shop) {
+      throw new NotFoundException(`Shop with ID ${data.shop_id} not found`);
+    }
 
-    // Fetch the region by name
+    // Fetch the regions by names
     const regions = await this.regionRepository.find({
       where: {
         name: In(data.region_name),
@@ -187,14 +190,16 @@ export class TypesService {
     return this.typeRepository.save(type);
   }
 
+
   async update(id: number, updateTypeDto: UpdateTypeDto): Promise<Type> {
+    // Find the type to be updated
     const type = await this.typeRepository.findOne({
       where: { id },
       relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'regions'],
     });
 
     if (!type) {
-      throw new Error('Type not found');
+      throw new NotFoundException(`Type with ID ${id} not found`);
     }
 
     // Update settings
@@ -205,7 +210,8 @@ export class TypesService {
 
     // Update promotional sliders
     if (updateTypeDto.promotional_sliders) {
-      const sliders = await this.attachmentRepository.findByIds(updateTypeDto.promotional_sliders.map(slider => slider.id));
+      const sliderIds = updateTypeDto.promotional_sliders.map(slider => slider.id);
+      const sliders = await this.attachmentRepository.findByIds(sliderIds);
       type.promotional_sliders = sliders;
     }
 
@@ -248,6 +254,7 @@ export class TypesService {
         );
         throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
       }
+
       type.regions = regions;
     }
 
@@ -268,7 +275,6 @@ export class TypesService {
     // Save the updated type
     return this.typeRepository.save(type);
   }
-
 
   async remove(id: number): Promise<void> {
     const type = await this.typeRepository.findOne({

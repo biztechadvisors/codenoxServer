@@ -23,23 +23,25 @@ export class Region {
     })
     shops: Shop[];
 
+    // 
     @ManyToMany(() => Product, (product) => product.regions)
     @JoinTable({ name: 'product_regions' })
     products: Product[];
 
+    // 
     @ManyToMany(() => Type, (type) => type.regions)
-    @JoinTable({ name: 'types_regions' })
     types: Type[];
 
+    // 
     @ManyToMany(() => Category, (category) => category.regions)
     categories: Category[];
 
+    // 
     @ManyToMany(() => SubCategory, (subCategory) => subCategory.regions)
-    @JoinTable({ name: 'subCategories_regions' })
     subCategories: SubCategory[];
 
+    // 
     @ManyToMany(() => Tag, (tag) => tag.regions)
-    @JoinTable({ name: 'tags_regions' })
     tags: Tag[];
 
     @OneToMany(() => Event, (event) => event.region, { nullable: true })
