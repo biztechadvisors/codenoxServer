@@ -158,41 +158,66 @@ export class UploadXlService {
         const promises = attributeValues.map(attrValue => this.getOrCreateAttributeValue(attrValue));
         return Promise.all(promises);
     }
-
     async createMainProduct(row: any, headerRow: any, shopSlug: string, variations: any[]): Promise<any> {
         let category = [];
         let subCategories = [];
         let tags = [];
 
-        let categoryId;
+        // Fetch categories
         if (row[headerRow.indexOf('Product Category')]) {
-            categoryId = await this.categoryRepository.findOne({ where: { name: row[headerRow.indexOf('Product Category')] } });
-        }
-        let subCategoryId;
-        if (row[headerRow.indexOf('Product SubCategory')]) {
-            subCategoryId = await this.subCategoryRepository.findOne({ where: { name: row[headerRow.indexOf('Product SubCategory')] } });
-        }
-        let type;
-        if (row[headerRow.indexOf('Product Collection')]) {
-            type = await this.typeRepository.findOne({ where: { name: row[headerRow.indexOf('Product Collection')] } });
-        }
-        let shop;
-        if (shopSlug) {
-            shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
-        }
-        let tagsId;
-        if (row[headerRow.indexOf('Product Tags')]) {
-            tagsId = await this.tagRepository.findOne({ where: { name: row[headerRow.indexOf('Product Tags')] } });
+            const categoryNames = row[headerRow.indexOf('Product Category')].split(',').map(name => name.trim());
+            for (const categoryName of categoryNames) {
+                const categoryRecord = await this.categoryRepository.findOne({ where: { name: categoryName } });
+                if (categoryRecord) {
+                    category.push(categoryRecord.id);
+                } else {
+                    console.warn(`Category '${categoryName}' not found in the database`);
+                }
+            }
         }
 
-        if (categoryId) {
-            category.push(categoryId.id);
+        // Fetch subcategories
+        if (row[headerRow.indexOf('Product SubCategory')]) {
+            const subCategoryNames = row[headerRow.indexOf('Product SubCategory')].split(',').map(name => name.trim());
+            for (const subCategoryName of subCategoryNames) {
+                const subCategoryRecord = await this.subCategoryRepository.findOne({ where: { name: subCategoryName } });
+                if (subCategoryRecord) {
+                    subCategories.push(subCategoryRecord.id);
+                } else {
+                    console.warn(`SubCategory '${subCategoryName}' not found in the database`);
+                }
+            }
         }
-        if (tagsId) {
-            tags.push(tagsId.id);
+
+        // Fetch tags
+        if (row[headerRow.indexOf('Product Tags')]) {
+            const tagNames = row[headerRow.indexOf('Product Tags')].split(',').map(name => name.trim());
+            for (const tagName of tagNames) {
+                const tagRecord = await this.tagRepository.findOne({ where: { name: tagName } });
+                if (tagRecord) {
+                    tags.push(tagRecord.id);
+                } else {
+                    console.warn(`Tag '${tagName}' not found in the database`);
+                }
+            }
         }
-        if (subCategoryId) {
-            subCategories.push(subCategoryId.id);
+
+        // Fetch type
+        let type = null;
+        if (row[headerRow.indexOf('Product Collection')]) {
+            type = await this.typeRepository.findOne({ where: { name: row[headerRow.indexOf('Product Collection')] } });
+            if (!type) {
+                console.warn(`Type '${row[headerRow.indexOf('Product Collection')]}' not found in the database`);
+            }
+        }
+
+        // Fetch shop
+        let shop = null;
+        if (shopSlug) {
+            shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+            if (!shop) {
+                throw new Error(`Shop with slug '${shopSlug}' not found`);
+            }
         }
 
         // Collect all variation prices and sum the quantities
@@ -212,32 +237,42 @@ export class UploadXlService {
         const min_price = prices.length > 0 ? Math.min(...prices) : 0;
         const max_price = prices.length > 0 ? Math.max(...prices) : 0;
 
+        // Handle undefined optional values gracefully
+        const status = row[headerRow.indexOf('Product Status')] || "Published";
+        const unit = row[headerRow.indexOf('Product Unit')] || 1;
+        const sku = row[headerRow.indexOf('Product SKU')] || null;
+        const price = parseFloat(row[headerRow.indexOf('Price')] || "0");
+        const salePrice = parseFloat(row[headerRow.indexOf('Sale Price')] || "0");
+        const height = row[headerRow.indexOf('Height')] || 1;
+        const length = row[headerRow.indexOf('Length')] || 1;
+        const width = row[headerRow.indexOf('Width')] || 1;
+
         return {
             name: row[headerRow.indexOf('Product Name')],
             description: row[headerRow.indexOf('Product Description')],
             product_type: "variable",
-            status: row[headerRow.indexOf('Product Status')] ? row[headerRow.indexOf('Product Status')] : "Publised",
+            status: status,
             quantity: totalQuantity,
             min_price: min_price,
             max_price: max_price,
-            price: parseFloat(row[headerRow.indexOf('Price')]),
-            sale_price: parseFloat(row[headerRow.indexOf('Sale Price')]),
-            unit: row[headerRow.indexOf('Product Unit')] ? row[headerRow.indexOf('Product Unit')] : 1,
-            sku: row[headerRow.indexOf('Product SKU')] ? row[headerRow.indexOf('Product SKU')] : null,
-            category: category,
-            subCategories: subCategories,
-            type_id: type.id,
-            shop_id: shop.id,
-            tags: tags,
+            price: price,
+            sale_price: salePrice,
+            unit: unit,
+            sku: sku,
+            category: category, // Array of category IDs
+            subCategories: subCategories, // Array of subcategory IDs
+            type_id: type ? type.id : null, // Type ID if found
+            shop_id: shop ? shop.id : null, // Shop ID
+            tags: tags, // Array of tag IDs
             variations: variations,
             attributes: [],
             variation_options: {
                 delete: [],
                 upsert: []
             },
-            height: row[headerRow.indexOf('Height')] ? row[headerRow.indexOf('Height')] : 1,
-            length: row[headerRow.indexOf('Length')] ? row[headerRow.indexOf('Length')] : 1,
-            width: row[headerRow.indexOf('Width')] ? row[headerRow.indexOf('Width')] : 1,
+            height: height,
+            length: length,
+            width: width,
             related_products: [],
             translated_languages: []
         };
