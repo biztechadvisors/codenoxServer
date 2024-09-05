@@ -66,37 +66,18 @@ export class ShopsService {
     const newShop = new Shop();
     const newBalance = new Balance();
     const newSetting = new ShopSettings();
-
     try {
-      // Validate and fetch user
-      const userToUpdate = await this.userRepository.findOne({
-        where: { id: createShopDto.user.id },
-        relations: ['permission'],
-      });
+      const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id }, relations: ['permission'] });
 
       if (!userToUpdate) {
-        throw new NotFoundException('User does not exist');
-      }
-
-      const userPermissionName = userToUpdate.permission?.permission_name;
-      if (!userPermissionName || typeof userPermissionName !== 'string') {
-        throw new BadRequestException('Invalid permission_name');
-      }
-
-      const foundPermission = await this.permissionRepository.findOne({
-        where: { permission_name: ILike(userPermissionName) },
-      });
-
-      if (!foundPermission) {
-        throw new NotFoundException('Permission not found');
+        throw new Error('User does not exist');
       }
 
       if (userToUpdate.permission.type_name !== UserType.Company) {
-        throw new ForbiddenException('User is not a vendor');
+        throw new Error('User is not a vendor');
       }
 
-      // Handle address creation
-      let address: UserAddress | undefined;
+      let addressId;
       if (createShopDto.address) {
         const createAddressDto = new CreateAddressDto();
         createAddressDto.title = createShopDto.address.street_address;
@@ -106,109 +87,128 @@ export class ShopsService {
         createAddressDto.customer_id = createShopDto.user.id;
 
         const savedAddress = await this.addressesService.create(createAddressDto);
-        address = savedAddress.address;
+        addressId = savedAddress.address.id;
 
-        const addressExists = await this.userAddressRepository.findOne({ where: { id: address.id } });
+        const addressExists = await this.userAddressRepository.findOne({ where: { id: addressId } });
         if (!addressExists) {
           throw new Error('Address does not exist in the user_address table');
         }
       }
 
-      // Handle shop settings creation
-      let settingId: ShopSettings | undefined;
+      let settingId;
+
       if (createShopDto.settings) {
         const newSettings = this.shopSettingsRepository.create(createShopDto.settings);
 
-        if (createShopDto.settings.socials) {
-          const socials = await Promise.all(createShopDto.settings.socials.map(async (social) => {
+        if (createShopDto.settings.socials && createShopDto.settings.socials.length > 0) {
+          const socials: ShopSocials[] = [];
+          for (const social of createShopDto.settings.socials) {
             const newSocial = this.shopSocialsRepository.create(social);
-            return await this.shopSocialsRepository.save(newSocial);
-          }));
+            const savedSocial = await this.shopSocialsRepository.save(newSocial);
+            socials.push(savedSocial);
+          }
           newSettings.socials = socials;
         }
 
+        let savedLocation;
         if (createShopDto.settings.location) {
           const newLocation = this.locationRepository.create(createShopDto.settings.location);
-          const savedLocation = await this.locationRepository.save(newLocation);
+          savedLocation = await this.locationRepository.save(newLocation);
           newSettings.location = savedLocation;
         }
 
-        const savedSettings = await this.shopSettingsRepository.save(newSettings);
-        settingId = savedSettings;
+        newSettings.contact = createShopDto.settings.contact;
+        newSettings.website = createShopDto.settings.website;
+
+        settingId = await this.shopSettingsRepository.save(newSettings);
+
+        if (settingId.socials) {
+          const socialIds = settingId.socials.map((social) => social.id);
+          settingId.socials = socialIds;
+        }
       }
 
-      // Create and save the shop
       newShop.name = createShopDto.name;
       newShop.slug = await this.convertToSlug(createShopDto.name);
       newShop.description = createShopDto.description;
-      newShop.owner = userToUpdate;
-      newShop.owner_id = userToUpdate.id;
-      newShop.address = address;
-      newShop.settings = settingId;
+      newShop.owner = createShopDto.user;
+      newShop.owner_id = createShopDto.user.id;
+      // Handle cover_image relationship
+      if (createShopDto.cover_image && createShopDto.cover_image.length > 0) {
+        const attachments = await this.attachmentRepository.findByIds(createShopDto.cover_image);
+        newShop.cover_image = attachments;
+      }
       newShop.logo = createShopDto.logo;
-      newShop.cover_image = createShopDto.cover_image ? await this.attachmentRepository.findByIds(createShopDto.cover_image) : [];
+      newShop.address = addressId;
+      newShop.settings = settingId;
       newShop.created_at = new Date();
+      const shop = await this.shopRepository.save(newShop);
 
-      const savedShop = await this.shopRepository.save(newShop);
-
-      // Handle shop balance
       if (createShopDto.balance) {
-        const newPaymentInfo = createShopDto.balance.payment_info ? this.paymentInfoRepository.create(createShopDto.balance.payment_info) : undefined;
-        const savedPaymentInfo = newPaymentInfo ? await this.paymentInfoRepository.save(newPaymentInfo) : undefined;
-
+        let savedPaymentInfo;
+        if (createShopDto.balance.payment_info) {
+          const newPaymentInfo = this.paymentInfoRepository.create(createShopDto.balance.payment_info);
+          savedPaymentInfo = await this.paymentInfoRepository.save(newPaymentInfo);
+        }
         newBalance.admin_commission_rate = createShopDto.balance.admin_commission_rate;
         newBalance.current_balance = createShopDto.balance.current_balance;
+        // Ensure savedPaymentInfo is defined before accessing its id property
+        if (savedPaymentInfo) {
+          newBalance.payment_info = savedPaymentInfo.id;
+        }
         newBalance.total_earnings = createShopDto.balance.total_earnings;
         newBalance.withdrawn_amount = createShopDto.balance.withdrawn_amount;
-        newBalance.shop = savedShop;
-        if (savedPaymentInfo) {
-          newBalance.payment_info = savedPaymentInfo;
-        }
-
-        const savedBalance = await this.balanceRepository.save(newBalance);
-        savedShop.balance = savedBalance;
+        newBalance.shop = shop;
+        const balanceId = await this.balanceRepository.save(newBalance);
+        newShop.balance = balanceId;
       }
 
-      // Update user with shop information
       if (createShopDto.user) {
-        userToUpdate.shop_id = savedShop.id;
-        userToUpdate.managed_shop = savedShop;
-        await this.userRepository.save(userToUpdate);
+        const shp = new User();
+        shp.shop_id = shop.id;
+        shp.managed_shop = shop;
+
+        const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id }, relations: ['permission'] });
+
+        if (userToUpdate) {
+          userToUpdate.shop_id = shp.shop_id;
+          userToUpdate.managed_shop = shp.managed_shop;
+          await this.userRepository.save(userToUpdate);
+        }
       }
 
-      // Handle permissions
       if (createShopDto.permission) {
         const permission = await this.permissionRepository.findOne({
-          where: { permission_name: ILike(createShopDto.permission) },
+          where: { permission_name: ILike(createShopDto.permission) as unknown as FindOperator<string> },
         });
 
         if (permission) {
-          savedShop.permission = permission;
-          if (permission.type_name === UserType.Company) {
-            createShopDto.dealerCount = createShopDto.numberOfDealers || 0;
-          }
+          newShop.permission = permission;
         }
+
+        // Set dealerCount only if the user is of type Company
+        if (permission.type_name === UserType.Company) {
+          createShopDto.dealerCount = createShopDto.dealerCount || 0;
+        }
+
       }
 
-      // Handle additional permissions
       if (createShopDto.additionalPermissions) {
         const additionalPermissions = await this.permissionRepository.find({
-          where: {
-            permission_name: ILike(createShopDto.additionalPermissions) as unknown as FindOperator<string>,
-          },
+          where: { permission_name: ILike(createShopDto.additionalPermissions) as unknown as FindOperator<string> },
         });
 
-        if (additionalPermissions.length > 0) {
-          savedShop.additionalPermissions = additionalPermissions;
+        if (additionalPermissions) {
+          newShop.additionalPermissions = additionalPermissions;
         }
       }
 
-      // Save the updated shop
-      const createdShop = await this.shopRepository.save(savedShop);
+      await this.shopRepository.save(newShop);
+      const createdShop = await this.shopRepository.findOne({ where: { id: shop.id }, relations: ['balance'] });
       return createdShop;
     } catch (error) {
-      console.error('Error creating shop:', error);
-      throw new InternalServerErrorException('An error occurred while creating the shop');
+      console.error(error);
+      throw new InternalServerErrorException('An error occurred while creating the shop.');
     }
   }
 
@@ -436,103 +436,101 @@ export class ShopsService {
       if (!existShop) {
         // If the data is not in the cache, fetch it from the database
         existShop = await this.shopRepository.findOne({
-          where: { slug: slug },
+          where: { slug },
           relations: [
             'balance',
-            'balance.shop',
-            'balance.dealer',
             'balance.payment_info',
             'settings',
-            'settings.socials',
-            'settings.location',
             'address',
             'owner',
             'owner.profile',
             'cover_image',
             'logo',
             'staffs',
-            'category',
-            'order',
-            'additionalPermissions',
+            'additionalPermissions', // Fetch the additional permissions
             'additionalPermissions.permissions',
-            'permission',
+            'permission', // Fetch the main permission
             'permission.permissions',
-            'regions'
+            'regions',
+            'events',
           ],
         });
 
         // If the shop is not found, return null
         if (!existShop) {
-          console.error("Shop Not Found");
+          console.error('Shop Not Found');
           return null;
         }
 
-        // Cache the fetched shop data
-        await this.cacheManager.set(cacheKey, existShop, 3600); // Cache for 5 minutes
+        // Cache the fetched shop data for 1 hour (3600 seconds)
+        await this.cacheManager.set(cacheKey, existShop, 3600);
       }
 
       // Map the retrieved shop data to the desired structure
       const mappedShop = {
-        id: existShop?.id,
-        owner_id: existShop?.owner_id,
+        id: existShop.id,
+        owner_id: existShop.owner_id,
         name: existShop.name,
         slug: existShop.slug,
         description: existShop.description,
-        balance: {
-          id: existShop?.balance?.id,
-          admin_commission_rate: existShop?.balance?.admin_commission_rate,
-          total_earnings: existShop?.balance?.total_earnings,
-          withdrawn_amount: existShop?.balance?.withdrawn_amount,
-          current_balance: existShop?.balance?.current_balance,
-          shop: existShop?.balance?.shop, // Adjust accordingly
-          dealer: null, // Update with actual dealer data if available
-          payment_info: {
-            id: existShop?.balance?.payment_info?.id,
-            account: existShop?.balance?.payment_info?.account,
-            name: existShop?.balance?.payment_info?.name,
-            email: existShop?.balance?.payment_info?.email,
-            bank: existShop?.balance?.payment_info.bank,
-          },
-        },
-        cover_image: existShop?.cover_image || [],
-        logo: {
-          id: existShop?.logo?.id,
-          original: existShop.logo?.original,
-          thumbnail: existShop.logo?.thumbnail,
-        },
+        balance: existShop.balance
+          ? {
+            id: existShop.balance.id,
+            admin_commission_rate: existShop.balance.admin_commission_rate,
+            total_earnings: existShop.balance.total_earnings,
+            withdrawn_amount: existShop.balance.withdrawn_amount,
+            current_balance: existShop.balance.current_balance,
+            shop: existShop.balance.shop ?? null,
+            dealer: null,
+            payment_info: existShop.balance.payment_info
+              ? {
+                id: existShop.balance.payment_info.id,
+                account: existShop.balance.payment_info.account,
+                name: existShop.balance.payment_info.name,
+                email: existShop.balance.payment_info.email,
+                bank: existShop.balance.payment_info.bank,
+              }
+              : null,
+          }
+          : null,
+        cover_image: existShop.cover_image ?? null,
+        logo: existShop.logo
+          ? {
+            id: existShop.logo.id,
+            original: existShop.logo.original,
+            thumbnail: existShop.logo.thumbnail,
+          }
+          : null,
         is_active: existShop.is_active,
-        address: {
-          ...existShop?.address,
-        },
-        settings: {
-          ...existShop?.settings,
-        },
+        address: existShop.address ?? null,
+        settings: existShop.settings ?? null,
         created_at: existShop.created_at,
         updated_at: existShop.updated_at,
         orders_count: existShop.orders_count,
         products_count: existShop.products_count,
-        owner: {
-          ...existShop.owner,
-          profile: {
-            ...existShop.owner.profile,
-          },
-          walletPoints: 0,
-          contact: '', // Set an appropriate default value
-        },
-        gst_number: existShop.gst_number, // Include the missing property
-        category: existShop.category,
-        subCategories: existShop.subCategories,
-        order: existShop.order,
-        additionalPermissions: existShop.additionalPermissions,
-        permission: existShop.permission,
-        dealerCount: existShop.dealerCount,
-        regions: existShop.regions,
-        events: existShop.events,
+        owner: existShop.owner
+          ? {
+            ...existShop.owner,
+            profile: existShop.owner.profile ?? null,
+            walletPoints: existShop.owner.walletPoints ?? 0,
+            contact: existShop.owner.contact ?? '',
+          }
+          : null,
+        gst_number: existShop.gst_number ?? '',
+        category: existShop.category ?? [],
+        subCategories: existShop.subCategories ?? [],
+        order: existShop.order ?? [],
+        additionalPermissions: existShop.additionalPermissions ?? [], // Ensure this is an array
+        permission: existShop.permission ?? null, // Ensure this is a single object
+        dealerCount: existShop.dealerCount ?? 0,
+        regions: existShop.regions ?? [],
+        events: existShop.events ?? [],
       };
 
       return mappedShop;
     } catch (error) {
-      console.error("Error fetching shop:", error.message);
+      // Log error details for debugging
+      console.error(`Error fetching shop with slug '${slug}':`, error.message);
       return null;
     }
   }
@@ -541,7 +539,9 @@ export class ShopsService {
   async update(id: number, updateShopDto: UpdateShopDto): Promise<Shop> {
     const existingShop = await this.shopRepository.findOne({
       where: { id: id },
-      relations: ["balance", "address", "settings", "settings.socials", "settings.location"]
+      relations: ["balance", "address", "settings", "settings.socials", "settings.location",
+        'permission',
+        'permission.permissions']
     });
 
     if (!existingShop) {
@@ -567,6 +567,11 @@ export class ShopsService {
 
     if (existingLogoId) {
       await this.attachmentRepository.delete(existingLogoId);
+    }
+
+    // Set dealerCount only if the user is of type Company
+    if (existingShop.permission.type_name === UserType.Company) {
+      existingShop.dealerCount = updateShopDto.dealerCount || 0;
     }
 
     // Update fields

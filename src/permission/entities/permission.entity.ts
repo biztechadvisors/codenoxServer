@@ -13,7 +13,7 @@ export class Permission {
   @Column()
   permission_name: string;
 
-  @OneToMany(() => PermissionType, PermissionType => PermissionType.permissions)
+  @OneToMany(() => PermissionType, (permissionType) => permissionType.permissions)
   permissions: PermissionType[];
 
   @Column()
@@ -41,6 +41,6 @@ export class PermissionType {
   @Column()
   write: boolean;
 
-  @ManyToOne(() => Permission, permission => permission.id)
+  @ManyToOne(() => Permission, permission => permission.permissions)
   permissions: Permission;
 }

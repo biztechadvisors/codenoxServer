@@ -2,7 +2,6 @@
 import { UserAddress } from 'src/addresses/entities/address.entity'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { CoreEntity } from 'src/common/entities/core.entity'
-// import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
 import { User } from 'src/users/entities/user.entity'
 import {
   Column,
@@ -20,12 +19,9 @@ import { ShopSettings } from './shopSettings.entity'
 import { Category, SubCategory } from 'src/categories/entities/category.entity'
 import { Product } from 'src/products/entities/product.entity'
 import { Order } from 'src/orders/entities/order.entity'
-import { Setting } from 'src/settings/entities/setting.entity'
 import { Permission } from 'src/permission/entities/permission.entity'
 import { Region } from '@db/src/region/entities/region.entity'
 import { Event } from '@db/src/events/entities/event.entity'
-import { Career } from '@db/src/career/entities/career.entity'
-import { Contact } from '@db/src/contact/entity/createcontact.entitiy'
 
 @Entity()
 export class Shop extends CoreEntity {

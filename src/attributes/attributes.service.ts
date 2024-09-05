@@ -108,7 +108,7 @@ export class AttributesService {
     }
 
     const query = this.attributeRepository.createQueryBuilder('attribute')
-      .leftJoinAndSelect('attribute.values', 'value')
+      .leftJoinAndSelect('attribute.values', 'value') // Join the 'values' relation from Attribute
       .leftJoinAndSelect('attribute.shop', 'shop');
 
     if (shop_id) {
@@ -122,7 +122,11 @@ export class AttributesService {
     }
 
     if (search) {
-      query.andWhere('attribute.name LIKE :search', { search: `%${search}%` });
+      // Add search condition for both attribute.name and value.value
+      query.andWhere(
+        '(attribute.name LIKE :search OR value.value LIKE :search)',
+        { search: `%${search}%` }
+      );
     }
 
     if (orderBy && sortedBy) {
@@ -150,6 +154,7 @@ export class AttributesService {
 
     return formattedAttributes;
   }
+
 
 
   async findOne(param: GetAttributeArgs): Promise<{ message: string } | Attribute | undefined> {
