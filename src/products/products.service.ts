@@ -303,21 +303,23 @@ export class ProductsService {
 
       await this.productRepository.save(product);
     }
+    if (regionName) {
+      const regions = await this.regionRepository.find({
+        where: {
+          name: In(regionName),
+        },
+      });
 
-    const regions = await this.regionRepository.find({
-      where: {
-        name: In(regionName),
-      },
-    });
-
-    // Check if all requested regions were found
-    if (regions.length !== regionName.length) {
-      const missingRegionNames = regionName.filter(
-        (name) => !regions.some((region) => region.name === name)
-      );
-      throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
+      // Check if all requested regions were found
+      if (regions.length !== regionName.length) {
+        const missingRegionNames = regionName.filter(
+          (name) => !regions.some((region) => region.name === name)
+        );
+        throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
+      }
+      product.regions = regions;
     }
-    product.regions = regions;
+
     // Save the product
     await this.productRepository.save(product);
 
