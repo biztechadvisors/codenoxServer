@@ -1,0 +1,80 @@
+name: Build and Deploy BackendApp to ECS
+
+on:
+  push:
+    branches:
+      - deploy-to-ecs-farget
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY_NAME: marvel-mock-api-rest
+  ECS_CLUSTER_NAME: marvel-cluster
+  ECS_SERVICE_NAME: marvel-service
+  ECS_TASK_DEFINITION: marvel-task
+
+jobs:
+  deploy:
+    name: Deploy to AWS ECS Fargate
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Build the application
+      - name: Build the application
+        run: npm run build
+
+      # Step 5: Log in to AWS ECR
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # Step 6: Build and tag Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY_NAME }}:${{ github.sha }} .
+
+      # Step 7: Push Docker image to ECR
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY_NAME }}:${{ github.sha }}
+
+      # Step 8: Register new task definition
+      - name: Register ECS Task Definition
+        run: |
+          aws ecs register-task-definition \
+            --family ${{ env.ECS_TASK_DEFINITION }} \
+            --container-definitions "[{
+              \"name\": \"${{ env.ECS_TASK_DEFINITION }}\",
+              \"image\": \"${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY_NAME }}:${{ github.sha }}\",
+              \"memory\": 512,
+              \"cpu\": 256,
+              \"essential\": true,
+              \"portMappings\": [{\"containerPort\": 5050, \"hostPort\": 5050}]
+            }]" \
+            --requires-compatibilities FARGATE \
+            --network-mode awsvpc \
+            --execution-role-arn ${{ secrets.ECS_EXECUTION_ROLE_ARN }} \
+            --task-role-arn ${{ secrets.ECS_TASK_ROLE_ARN }} \
+            --cpu "256" \
+            --memory "512"
+
+      # Step 9: Update ECS Service with new task definition
+      - name: Update ECS Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER_NAME }} \
+            --service ${{ env.ECS_SERVICE_NAME }} \
+            --force-new-deployment

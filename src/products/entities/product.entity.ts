@@ -156,10 +156,13 @@ export class OrderProductPivot extends CoreEntity {
   unit_price: number;
   @Column()
   subtotal: number;
-  @ManyToOne(() => Product, (product) => product.pivot, { cascade: true, eager: true })
-  product: Product;
-  @ManyToOne(() => Order)
+  @ManyToOne(() => Order, (order) => order.orderProductPivots, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'order_id' })
   order: Order;
+
+  @ManyToOne(() => Product, (product) => product.pivot, { onDelete: 'CASCADE', eager: true })
+  @JoinColumn({ name: 'product_id' })
+  product: Product;
   @ManyToOne(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
   @JoinColumn()
   StocksSellOrd: StocksSellOrd;

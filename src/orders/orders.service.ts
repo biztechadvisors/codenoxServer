@@ -129,32 +129,29 @@ export class OrdersService {
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     const order = plainToClass(Order, createOrderInput);
-    const newOrderStatus = new OrderStatus();
-    const newOrderFile = new OrderFiles();
     const paymentGatewayType = createOrderInput.payment_gateway || PaymentGatewayType.CASH_ON_DELIVERY;
 
     try {
+      // Set payment gateway and order intent
       order.payment_gateway = paymentGatewayType;
       order.payment_intent = null;
       order.customerId = order.customerId || order.customer_id;
       order.customer_id = order.customer_id;
       order.dealer = createOrderInput.dealerId || null;
 
-      // Set order status based on payment gateway
-      this.setOrderStatus(order, newOrderStatus, paymentGatewayType);
-
-      // Handle customer association
-      if (order.customer_id && order.customer) {
+      // Ensure customer exists
+      if (order.customerId) {
         const customer = await this.userRepository.findOne({
-          where: { id: order.customer_id, email: order.customer.email },
-          relations: ['permission'],
+          where: { id: order.customerId },
         });
         if (!customer) {
           throw new NotFoundException('Customer not found');
         }
         order.customer = customer;
-        newOrderFile.customer_id = customer.id;
       }
+
+      // Set order status
+      await this.setOrderStatus(order, paymentGatewayType);
 
       const invoice = `OD${Math.floor(Math.random() * Date.now())}`;
       if (!order.products || order.products.some(product => product.product_id === undefined)) {
@@ -182,14 +179,6 @@ export class OrdersService {
       }
 
       const savedOrder = await this.orderRepository.save(order);
-      newOrderFile.order_id = savedOrder.id;
-      await this.orderFilesRepository.save(newOrderFile);
-
-      if (savedOrder?.id) {
-        await this.downloadInvoiceUrl(savedOrder.id.toString());
-      }
-
-      // Save order files
       await this.createOrderFiles(savedOrder, productEntities);
 
       if (savedOrder.customerId === savedOrder.dealer) {
@@ -221,6 +210,7 @@ export class OrdersService {
     }
   }
 
+
   private async createOrderFiles(order: Order, products: Product[]): Promise<void> {
     try {
       const orderFiles: OrderFiles[] = [];
@@ -251,29 +241,37 @@ export class OrdersService {
     }
   }
 
-  private setOrderStatus(order: Order, newOrderStatus: OrderStatus, paymentGatewayType: PaymentGatewayType) {
+  private async setOrderStatus(order: Order, paymentGatewayType: PaymentGatewayType) {
+    let statusSlug: string;
+    let paymentStatus: PaymentStatusType;
+
     switch (paymentGatewayType) {
       case PaymentGatewayType.CASH_ON_DELIVERY:
-        order.order_status = OrderStatusType.PROCESSING;
-        order.payment_status = PaymentStatusType.CASH_ON_DELIVERY;
-        newOrderStatus.slug = OrderStatusType.PROCESSING;
+        statusSlug = OrderStatusType.PROCESSING;
+        paymentStatus = PaymentStatusType.CASH_ON_DELIVERY;
         break;
       case PaymentGatewayType.CASH:
-        order.order_status = OrderStatusType.PROCESSING;
-        order.payment_status = PaymentStatusType.CASH;
-        newOrderStatus.slug = OrderStatusType.PROCESSING;
+        statusSlug = OrderStatusType.PROCESSING;
+        paymentStatus = PaymentStatusType.CASH;
         break;
       case PaymentGatewayType.FULL_WALLET_PAYMENT:
-        order.order_status = OrderStatusType.COMPLETED;
-        order.payment_status = PaymentStatusType.WALLET;
-        newOrderStatus.slug = OrderStatusType.COMPLETED;
+        statusSlug = OrderStatusType.COMPLETED;
+        paymentStatus = PaymentStatusType.WALLET;
         break;
       default:
-        order.order_status = OrderStatusType.PENDING;
-        order.payment_status = PaymentStatusType.PENDING;
-        newOrderStatus.slug = OrderStatusType.PENDING;
+        statusSlug = OrderStatusType.PENDING;
+        paymentStatus = PaymentStatusType.PENDING;
         break;
     }
+
+    // Find the status entity
+    const status = await this.orderStatusRepository.findOne({ where: { slug: statusSlug } });
+    if (!status) {
+      throw new NotFoundException(`Order status with slug ${statusSlug} not found`);
+    }
+
+    order.status = status;
+    order.payment_status = paymentStatus;
   }
 
   private async applyCoupon(couponCode: string, order: Order): Promise<void> {
@@ -335,10 +333,10 @@ export class OrdersService {
         hsn: product.hsn || 0,
       })),
       payment_method: order.payment_gateway,
-      shipping_charges: 0,
+      shipping_charges: order.delivery_fee || 0,
       giftwrap_charges: 0,
       transaction_charges: 0,
-      total_discount: 0,
+      total_discount: order.discount || 0,
       sub_total: order.total,
       length: 10,
       breadth: 10,
@@ -510,13 +508,11 @@ export class OrdersService {
         const fetchedOrder = await this.orderRepository.createQueryBuilder('order')
           .leftJoinAndSelect('order.status', 'status')
           .leftJoinAndSelect('order.dealer', 'dealer')
-          .leftJoinAndSelect('dealer.dealer', 'dealerData')
           .leftJoinAndSelect('order.customer', 'customer')
-          .leftJoinAndSelect('order.products', 'products')
-          .leftJoinAndSelect('order.orderProductPivots', 'pivot')  // Join OrderProductPivots here
-          .leftJoinAndSelect('pivot.product', 'pivot_product')  // Join Product in OrderProductPivots
-          .leftJoinAndSelect('products.taxes', 'product_taxes')
-          .leftJoinAndSelect('products.shop', 'product_shop')
+          .leftJoinAndSelect('order.orderProductPivots', 'pivot')
+          .leftJoinAndSelect('pivot.product', 'product')
+          .leftJoinAndSelect('product.taxes', 'product_taxes')
+          .leftJoinAndSelect('product.shop', 'product_shop')
           .leftJoinAndSelect('product_shop.address', 'shop_address')
           .leftJoinAndSelect('order.payment_intent', 'payment_intent')
           .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
@@ -526,6 +522,7 @@ export class OrdersService {
           .leftJoinAndSelect('order.parentOrder', 'parentOrder')
           .leftJoinAndSelect('order.children', 'children')
           .leftJoinAndSelect('order.coupon', 'coupon')
+          .leftJoinAndSelect('order.products', 'products') // Ensure 'products' relation is selected
           .where('order.id = :id', { id })
           .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
           .getOne();
@@ -549,18 +546,22 @@ export class OrdersService {
     // Collect pivots indexed by product id for quick lookup
     const pivotsByProductId = new Map<number, any>();
 
-    order.products.forEach((pivot) => {
-      pivotsByProductId.set(pivot.product.id, {
-        id: pivot.id,
-        variation_option_id: pivot.variation_option_id,
-        order_quantity: pivot.order_quantity,
-        unit_price: pivot.unit_price,
-        subtotal: pivot.subtotal,
-        Ord_Id: pivot.Ord_Id,
-        created_at: pivot.created_at,
-        updated_at: pivot.updated_at,
+    if (order.orderProductPivots) {
+      order.orderProductPivots.forEach((pivot) => {
+        if (pivot && pivot.product) { // Ensure pivot and product exist
+          pivotsByProductId.set(pivot.product.id, {
+            id: pivot.id,
+            variation_option_id: pivot.variation_option_id,
+            order_quantity: pivot.order_quantity,
+            unit_price: pivot.unit_price,
+            subtotal: pivot.subtotal,
+            Ord_Id: pivot.Ord_Id,
+            created_at: pivot.created_at,
+            updated_at: pivot.updated_at,
+          });
+        }
       });
-    });
+    }
 
     return {
       id: order.id,
@@ -591,7 +592,7 @@ export class OrdersService {
       updated_at: order.updated_at,
       status: order.status,
       products: order.products.map((product) => {
-        const pivot = pivotsByProductId.get(product.id) || null;
+        const pivot = pivotsByProductId.get(product.id) || null; // Safeguard for pivot lookup
         return {
           ...product,
           pivot,
