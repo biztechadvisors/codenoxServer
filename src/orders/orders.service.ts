@@ -128,78 +128,99 @@ export class OrdersService {
   }
 
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
-    const order = plainToClass(Order, createOrderInput);
+    const order = new Order();
     const paymentGatewayType = createOrderInput.payment_gateway || PaymentGatewayType.CASH_ON_DELIVERY;
 
     try {
-      // Set payment gateway and order intent
-      order.payment_gateway = paymentGatewayType;
-      order.payment_intent = null;
-      order.customerId = order.customerId || order.customer_id;
-      order.customer_id = order.customer_id;
-      order.dealer = createOrderInput.dealerId || null;
-
-      // Ensure customer exists
-      if (order.customerId) {
-        const customer = await this.userRepository.findOne({
-          where: { id: order.customerId },
-        });
+      // Handling registered customers
+      if (createOrderInput.customerId) {
+        const customer = await this.userRepository.findOne({ where: { id: createOrderInput.customerId } });
         if (!customer) {
           throw new NotFoundException('Customer not found');
         }
         order.customer = customer;
       }
+      // Handling guest orders
+      else if (createOrderInput.customer_contact) {
+        order.customer_contact = createOrderInput.customer_contact;
+      }
+      else {
+        throw new BadRequestException('Customer ID or contact information is required');
+      }
 
-      // Set order status
+      // Assign general order fields
+      order.payment_gateway = paymentGatewayType;
+      order.payment_intent = createOrderInput.payment_intent || null;
+      if (createOrderInput.dealerId) {
+        const dealer = await this.userRepository.findOne({ where: { id: createOrderInput.dealerId } });
+        if (!dealer) {
+          throw new NotFoundException('Dealer not found');
+        }
+        order.dealer = dealer; // Dealer should be a User type, not a number.
+      } else {
+        order.dealer = null; // If no dealerId is provided, set dealer to null.
+      }
+
+      order.total = createOrderInput.total;
+      order.amount = createOrderInput.amount;
+      order.sales_tax = createOrderInput.sales_tax;
+      order.paid_total = createOrderInput.paid_total;
+      order.discount = createOrderInput.discount || 0;
+      order.delivery_fee = createOrderInput.delivery_fee || 0;
+      order.delivery_time = createOrderInput.delivery_time;
+
+      // Set the order status based on the payment gateway
       await this.setOrderStatus(order, paymentGatewayType);
 
-      const invoice = `OD${Math.floor(Math.random() * Date.now())}`;
-      if (!order.products || order.products.some(product => product.product_id === undefined)) {
+      // Validate and process products
+      if (!createOrderInput.products || createOrderInput.products.some(product => !product.product_id)) {
         throw new BadRequestException('Invalid order products');
       }
 
       const productEntities = await this.productRepository.find({
-        where: { id: In(order.products.map(product => product.product_id)) },
+        where: { id: In(createOrderInput.products.map(product => product.product_id)) },
       });
 
       if (productEntities.length === 0) {
-        throw new NotFoundException('Product not found');
+        throw new NotFoundException('No products found for this order');
       }
 
       // Apply coupon if provided
-      if (order.coupon) {
-        await this.applyCoupon(order.coupon.code, order);
+      if (createOrderInput.coupon_id) {
+        await this.applyCoupon(createOrderInput.coupon_id, order);
       }
 
+      const invoice = `OD${Math.floor(Math.random() * Date.now())}`;
       const orderData = this.createOrderData(order, productEntities, invoice);
 
+      // Call external service for order creation (e.g., Shiprocket)
       const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
       if (!shiprocketResponse.shipment_id && !shiprocketResponse.order_id) {
         throw new InternalServerErrorException('Failed to create order in Shiprocket');
       }
 
+      // Save order to the database
       const savedOrder = await this.orderRepository.save(order);
+
+      // Save order files if needed
       await this.createOrderFiles(savedOrder, productEntities);
 
-      if (savedOrder.customerId === savedOrder.dealer) {
+      // Create stock records for customer orders
+      if (savedOrder.customer_id === savedOrder.dealer.id) {
         const createStocksDto = {
-          user_id: savedOrder.customerId,
+          user_id: savedOrder.customer_id,
           order_id: savedOrder.id,
           products: createOrderInput.products,
         };
-
-        if (!createStocksDto.order_id) {
-          throw new BadRequestException('Order ID is required');
-        }
-
         await this.stocksService.create(createStocksDto);
       }
 
-      if (savedOrder.customer) {
+      // Send notification
+      if (savedOrder.customer || savedOrder.customer_contact) {
         await this.notificationService.createNotification(
-          savedOrder.customer.id,
+          Number(savedOrder.customer?.id) || parseInt(savedOrder.customer_contact),
           'Order Created',
-          `New order with ID ${savedOrder.id} has been successfully created.`,
+          `Order #${savedOrder.id} has been successfully created.`
         );
       }
 
@@ -209,7 +230,6 @@ export class OrdersService {
       throw new InternalServerErrorException('Failed to create order');
     }
   }
-
 
   private async createOrderFiles(order: Order, products: Product[]): Promise<void> {
     try {
@@ -274,8 +294,8 @@ export class OrdersService {
     order.payment_status = paymentStatus;
   }
 
-  private async applyCoupon(couponCode: string, order: Order): Promise<void> {
-    const coupon = await this.couponRepository.findOne({ where: { code: couponCode } });
+  private async applyCoupon(couponId: number, order: Order): Promise<void> {
+    const coupon = await this.couponRepository.findOne({ where: { id: couponId } });
 
     if (!coupon) {
       throw new NotFoundException('Coupon not found');
@@ -286,7 +306,7 @@ export class OrdersService {
     }
 
     if (order.total < coupon.minimum_cart_amount) {
-      throw new BadRequestException('Order total does not meet the minimum cart amount required for the coupon');
+      throw new BadRequestException('Order total does not meet the minimum amount required for the coupon');
     }
 
     order.total -= coupon.amount;
@@ -1046,7 +1066,7 @@ export class OrdersService {
   // Optional method to send order confirmation email
   private async sendOrderConfirmation(order: Order): Promise<void> {
     try {
-      const user = await this.userRepository.findOne({ where: { id: order.customer_id || order.customerId } })
+      const user = await this.userRepository.findOne({ where: { id: order.customer_id || order.customer.id } })
       await this.mailService.sendOrderConfirmation(order, user);
     } catch (error) {
       console.error('Failed to send order confirmation email:', error.message || error);

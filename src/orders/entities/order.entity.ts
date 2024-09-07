@@ -52,18 +52,19 @@ export class Order extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   tracking_number: string;
 
-  @Column()
-  customer_id: number;
+  // Allow customer_id to be null for guest orders
+  @Column({ nullable: true })
+  customer_id?: number;
 
   @Column()
   customer_contact: string;
 
-  @ManyToOne(() => User, user => user.orders, { eager: true, nullable: false })
-  @JoinColumn({ name: 'customer_id' }) // Make sure the column name matches your database schema
-  customer: User;
+  @ManyToOne(() => User, user => user.orders, { nullable: true })
+  @JoinColumn({ name: 'customerId' })
+  customer?: User;
 
   @ManyToOne(() => Order, order => order.children, { nullable: true })
   @JoinColumn({ name: 'parentOrderId' })
@@ -94,7 +95,7 @@ export class Order extends CoreEntity {
   @Column()
   paid_total: number;
 
-  @Column()
+  @Column({ nullable: true })
   payment_id?: string;
 
   @Column()
@@ -145,9 +146,6 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   altered_payment_gateway?: string;
 
-  @Column()
-  customerId: any;
-
   @Column('json', { nullable: true })
   logistics_provider: object;
 
@@ -167,6 +165,7 @@ export class Order extends CoreEntity {
   @OneToMany(() => Stocks, stocks => stocks.order, { cascade: true })
   stocks: Stocks[];
 }
+
 
 @Entity()
 export class OrderFiles extends CoreEntity {

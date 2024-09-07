@@ -17,7 +17,7 @@ export class Region {
 
     @ManyToMany(() => Shop, (shop) => shop.regions, { cascade: true })
     @JoinTable({
-        name: 'shop_regions_region',
+        name: 'shop_regions',
         joinColumn: { name: 'regionId', referencedColumnName: 'id' },
         inverseJoinColumn: { name: 'shopId', referencedColumnName: 'id' },
     })
