@@ -54,9 +54,9 @@ export class User extends CoreEntity {
   dealer?: Dealer;
 
   @ManyToOne(() => User, user => user.createdUsers, {
-    onDelete: 'CASCADE', // Automatically delete child rows when parent is deleted
-    onUpdate: 'CASCADE', // Automatically update child rows when parent is updated
-    nullable: true
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    nullable: true,
   })
   createdBy?: User;
 
@@ -66,13 +66,13 @@ export class User extends CoreEntity {
   @OneToMany(() => Shop, shop => shop.owner)
   owned_shops?: Shop[];
 
-  @OneToMany(() => Notification, notifications => notifications.user, { nullable: true })
-  notifications?: Notification[];
+  @OneToMany(() => Notification, notification => notification.user, { nullable: true })
+  notifications: Notification[];
 
   @ManyToOne(() => Shop, shop => shop.staffs, {
-    onDelete: 'CASCADE', // Automatically delete child rows when parent is deleted
-    onUpdate: 'CASCADE', // Automatically update child rows when parent is updated
-    nullable: true
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    nullable: true,
   })
   @JoinColumn({ name: 'shop_id' })
   managed_shop?: Shop;
@@ -86,22 +86,22 @@ export class User extends CoreEntity {
   @Column({ default: true })
   is_active?: boolean;
 
-  @OneToMany(() => Address, address => address.customer, { cascade: true })
+  @OneToMany(() => Address, address => address.customer)
   address?: Address[];
 
   @OneToMany(() => Order, order => order.customer)
   orders: Order[];
 
-  @OneToMany(() => StocksSellOrd, (stocksSellOrd) => stocksSellOrd.soldBy)
-  stockOrd: StocksSellOrd;
+  @OneToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.soldBy)
+  stockOrd: StocksSellOrd[];
 
   @OneToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.customer)
   stocksSellOrd: StocksSellOrd[];
 
   @ManyToOne(() => Permission, permission => permission.user, {
-    onDelete: 'CASCADE', // Automatically delete child rows when parent is deleted
-    onUpdate: 'CASCADE', // Automatically update child rows when parent is updated
-    nullable: true
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    nullable: true,
   })
   @JoinColumn({ name: 'permission_id' })
   permission: Permission;

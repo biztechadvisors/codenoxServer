@@ -55,25 +55,24 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   tracking_number: string;
 
-  // Allow customer_id to be null for guest orders
   @Column({ nullable: true })
   customer_id?: number;
 
   @Column()
   customer_contact: string;
 
-  @ManyToOne(() => User, user => user.orders, { nullable: true })
+  @ManyToOne(() => User, user => user.orders, { nullable: true, onDelete: 'SET NULL', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'customerId' })
   customer?: User;
 
-  @ManyToOne(() => Order, order => order.children, { nullable: true })
+  @ManyToOne(() => Order, order => order.children, { nullable: true, cascade: true })
   @JoinColumn({ name: 'parentOrderId' })
   parentOrder: Order;
 
   @OneToMany(() => Order, order => order.parentOrder)
   children?: Order[];
 
-  @ManyToOne(() => OrderStatus, { nullable: false })
+  @ManyToOne(() => OrderStatus, { nullable: false, cascade: true })
   @JoinColumn({ name: 'statusId' })
   status: OrderStatus;
 
@@ -101,12 +100,12 @@ export class Order extends CoreEntity {
   @Column()
   payment_gateway: PaymentGatewayType;
 
-  @ManyToOne(() => Coupon, (coupon) => coupon.orders, { nullable: true })
+  @ManyToOne(() => Coupon, coupon => coupon.orders, { nullable: true, cascade: true })
   @JoinColumn({ name: 'coupon_id' })
   coupon?: Coupon;
 
-  @ManyToMany(() => Shop, (shop) => shop.order)
-  @JoinTable({ name: "shop_order" })
+  @ManyToMany(() => Shop, shop => shop.order)
+  @JoinTable({ name: 'shop_order' })
   shop: Shop;
 
   @Column({ nullable: true })
@@ -119,24 +118,25 @@ export class Order extends CoreEntity {
   delivery_time: string;
 
   @ManyToMany(() => Product, product => product.orders)
-  @JoinTable({ name: "product_order" })
+  @JoinTable({ name: 'product_order' })
   products: Product[];
 
+  // Corrected relationship with OrderProductPivot
   @OneToMany(() => OrderProductPivot, pivot => pivot.order, { cascade: true })
   orderProductPivots: OrderProductPivot[];
 
-  @ManyToOne(() => UserAddress, { nullable: false })
+  @ManyToOne(() => UserAddress, { nullable: false, cascade: true })
   @JoinColumn({ name: 'billingAddressId' })
   billing_address: UserAddress;
 
-  @ManyToOne(() => UserAddress, { nullable: false })
+  @ManyToOne(() => UserAddress, { nullable: false, cascade: true })
   @JoinColumn({ name: 'shippingAddressId' })
   shipping_address: UserAddress;
 
   @Column()
   language: string;
 
-  @Column({ type: "json" })
+  @Column({ type: 'json' })
   translated_languages: string[];
 
   @OneToOne(() => PaymentIntent, { nullable: true })
@@ -165,7 +165,6 @@ export class Order extends CoreEntity {
   @OneToMany(() => Stocks, stocks => stocks.order, { cascade: true })
   stocks: Stocks[];
 }
-
 
 @Entity()
 export class OrderFiles extends CoreEntity {

@@ -12,20 +12,29 @@ export enum AddressType {
 export class UserAddress {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   street_address: string;
+
   @Column()
   country: string;
+
   @Column()
   city: string;
+
   @Column()
   state: string;
+
   @Column()
   zip: string;
-  name: any;
-  lastName: any;
-  ShippingAddress: any;
+
+  @Column({ nullable: true })
+  name: string;
+
+  @Column({ nullable: true })
+  lastName: string;
 }
+
 
 @Entity()
 export class Address extends CoreEntity {
@@ -36,13 +45,12 @@ export class Address extends CoreEntity {
   @Column()
   default: boolean;
 
-  @OneToOne(() => UserAddress, { cascade: true })
-  @JoinColumn()
+  @ManyToOne(() => UserAddress, { cascade: true })
   address: UserAddress;
 
   @Column()
   type: AddressType;
 
-  @ManyToOne(() => User, (user) => user.address)
+  @ManyToOne(() => User, (user) => user.address, { cascade: true })
   customer: User;
 }

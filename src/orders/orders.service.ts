@@ -44,6 +44,7 @@ import { StocksService } from 'src/stocks/stocks.service';
 import { NotificationService } from 'src/notifications/services/notifications.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { UserAddress } from '../addresses/entities/address.entity';
 
 @Injectable()
 export class OrdersService {
@@ -62,6 +63,8 @@ export class OrdersService {
     private readonly orderStatusRepository: Repository<OrderStatus>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserAddress)
+    private readonly userAddressRepository: Repository<UserAddress>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     @InjectRepository(OrderFiles)
@@ -132,21 +135,36 @@ export class OrdersService {
     const paymentGatewayType = createOrderInput.payment_gateway || PaymentGatewayType.CASH_ON_DELIVERY;
 
     try {
-      // Handling registered customers
+      // Handle registered customers
       if (createOrderInput.customerId) {
         const customer = await this.userRepository.findOne({ where: { id: createOrderInput.customerId } });
         if (!customer) {
           throw new NotFoundException('Customer not found');
         }
         order.customer = customer;
-      }
-      // Handling guest orders
-      else if (createOrderInput.customer_contact) {
+        order.customer_id = customer.id;  // Ensure customer_id is set
+      } else if (createOrderInput.customer_contact) {
+        // Handle guest orders
         order.customer_contact = createOrderInput.customer_contact;
-      }
-      else {
+      } else {
         throw new BadRequestException('Customer ID or contact information is required');
       }
+
+      // Ensure billing address exists or create it
+      let billingAddress = await this.userAddressRepository.findOne({ where: { id: createOrderInput.billing_address.id } });
+      if (!billingAddress) {
+        billingAddress = this.userAddressRepository.create(createOrderInput.billing_address);
+        await this.userAddressRepository.save(billingAddress);
+      }
+      order.billing_address = billingAddress;
+
+      // Ensure shipping address exists or create it
+      let shippingAddress = await this.userAddressRepository.findOne({ where: { id: createOrderInput.shipping_address.id } });
+      if (!shippingAddress) {
+        shippingAddress = this.userAddressRepository.create(createOrderInput.shipping_address);
+        await this.userAddressRepository.save(shippingAddress);
+      }
+      order.shipping_address = shippingAddress;
 
       // Assign general order fields
       order.payment_gateway = paymentGatewayType;
@@ -156,20 +174,18 @@ export class OrdersService {
         if (!dealer) {
           throw new NotFoundException('Dealer not found');
         }
-        order.dealer = dealer; // Dealer should be a User type, not a number.
-      } else {
-        order.dealer = null; // If no dealerId is provided, set dealer to null.
+        order.dealer = dealer;
       }
 
-      order.total = createOrderInput.total;
+      order.total = createOrderInput.total || 0;
       order.amount = createOrderInput.amount;
       order.sales_tax = createOrderInput.sales_tax;
-      order.paid_total = createOrderInput.paid_total;
+      order.paid_total = createOrderInput.paid_total || 0;
       order.discount = createOrderInput.discount || 0;
       order.delivery_fee = createOrderInput.delivery_fee || 0;
       order.delivery_time = createOrderInput.delivery_time;
 
-      // Set the order status based on the payment gateway
+      // Set order status based on payment gateway
       await this.setOrderStatus(order, paymentGatewayType);
 
       // Validate and process products
@@ -181,8 +197,8 @@ export class OrdersService {
         where: { id: In(createOrderInput.products.map(product => product.product_id)) },
       });
 
-      if (productEntities.length === 0) {
-        throw new NotFoundException('No products found for this order');
+      if (productEntities.length !== createOrderInput.products.length) {
+        throw new NotFoundException('Some products not found for this order');
       }
 
       // Apply coupon if provided
@@ -191,9 +207,9 @@ export class OrdersService {
       }
 
       const invoice = `OD${Math.floor(Math.random() * Date.now())}`;
-      const orderData = this.createOrderData(order, productEntities, invoice);
+      const orderData = this.createOrderData(createOrderInput, productEntities, invoice);
 
-      // Call external service for order creation (e.g., Shiprocket)
+      // Call external service for order creation
       const shiprocketResponse = await this.shiprocketService.createOrder(orderData);
       if (!shiprocketResponse.shipment_id && !shiprocketResponse.order_id) {
         throw new InternalServerErrorException('Failed to create order in Shiprocket');
@@ -203,10 +219,10 @@ export class OrdersService {
       const savedOrder = await this.orderRepository.save(order);
 
       // Save order files if needed
-      await this.createOrderFiles(savedOrder, productEntities);
+      // await this.createOrderFiles(savedOrder, productEntities);
 
       // Create stock records for customer orders
-      if (savedOrder.customer_id === savedOrder.dealer.id) {
+      if (savedOrder.customer_id === savedOrder.dealer?.id) {
         const createStocksDto = {
           user_id: savedOrder.customer_id,
           order_id: savedOrder.id,
@@ -216,11 +232,11 @@ export class OrdersService {
       }
 
       // Send notification
-      if (savedOrder.customer || savedOrder.customer_contact) {
+      if (savedOrder.customer && savedOrder.customer_contact) {
         await this.notificationService.createNotification(
           Number(savedOrder.customer?.id) || parseInt(savedOrder.customer_contact),
           'Order Created',
-          `Order #${savedOrder.id} has been successfully created.`
+          `Order #${savedOrder.id} has been successfully created.`,
         );
       }
 
@@ -231,11 +247,16 @@ export class OrdersService {
     }
   }
 
+
   private async createOrderFiles(order: Order, products: Product[]): Promise<void> {
     try {
       const orderFiles: OrderFiles[] = [];
 
       for (const product of products) {
+        if (!product.attachment_id || !product.url) {
+          throw new BadRequestException(`Invalid file data for product ID ${product.id}`);
+        }
+
         const file = new File();
         file.attachment_id = product.attachment_id;
         file.url = product.url;
@@ -247,7 +268,7 @@ export class OrdersService {
         orderFile.purchase_key = `PK_${Math.random().toString(36).substr(2, 9)}`;
         orderFile.digital_file_id = savedFile.id;
         orderFile.order_id = order.id;
-        orderFile.customer_id = order.customer_id;
+        orderFile.customer_id = order.customer_id;  // Ensure customer_id is set
         orderFile.file = savedFile;
         orderFile.fileable = product;
 
@@ -260,6 +281,7 @@ export class OrdersService {
       throw new InternalServerErrorException('Failed to create order files');
     }
   }
+
 
   private async setOrderStatus(order: Order, paymentGatewayType: PaymentGatewayType) {
     let statusSlug: string;
@@ -284,7 +306,6 @@ export class OrdersService {
         break;
     }
 
-    // Find the status entity
     const status = await this.orderStatusRepository.findOne({ where: { slug: statusSlug } });
     if (!status) {
       throw new NotFoundException(`Order status with slug ${statusSlug} not found`);
@@ -313,51 +334,52 @@ export class OrdersService {
     order.coupon = coupon;
   }
 
-  private createOrderData(order: Order, productEntities: Product[], invoice: string) {
+  private createOrderData(order, productEntities: Product[], invoice: string) {
+    const billingAddress = order.billing_address || {};
+    const shippingAddress = order.shipping_address || {};
+
     return {
       order_id: invoice,
       order_date: new Date().toISOString(),
       pickup_location: 'Primary',
       channel_id: '',
       comment: '',
-      billing_customer_name: order.billing_address.name,
-      billing_last_name: order.billing_address.lastName,
-      billing_address: order.billing_address.street_address,
-      billing_address_2: order.billing_address.ShippingAddress,
-      billing_city: order.billing_address.city,
-      billing_pincode: order.billing_address.zip,
-      billing_state: order.billing_address.state,
-      billing_country: order.billing_address.country,
-      billing_email: order.customer?.email,
-      billing_phone: order.customer_contact,
+      billing_customer_name: billingAddress.name || '',
+      billing_last_name: billingAddress.lastName || '',
+      billing_address: billingAddress.street_address || '',
+      billing_address_2: billingAddress.ShippingAddress || '',
+      billing_city: billingAddress.city || 'Unknown',
+      billing_pincode: billingAddress.zip || '',
+      billing_state: billingAddress.state || '',
+      billing_country: billingAddress.country || '',
+      billing_email: order.customer?.email || '',
+      billing_phone: order.customer_contact || '',
       shipping_is_billing: true,
-      shipping_customer_name: order.shipping_address.name,
-      shipping_last_name: order.shipping_address.lastName,
-      shipping_address: order.shipping_address.street_address,
-      shipping_address_2: order.shipping_address.ShippingAddress,
-      shipping_city: order.shipping_address.city,
-      shipping_pincode: order.shipping_address.zip,
-      shipping_country: order.shipping_address.country,
-      shipping_state: order.shipping_address.state,
-      shipping_email: order.customer?.email,
-      shipping_phone: order.customer_contact,
+      shipping_customer_name: shippingAddress.name || '',
+      shipping_last_name: shippingAddress.lastName || '',
+      shipping_address: shippingAddress.street_address || '',
+      shipping_address_2: shippingAddress.ShippingAddress || '',
+      shipping_city: shippingAddress.city || 'Unknown',
+      shipping_pincode: shippingAddress.zip || '',
+      shipping_country: shippingAddress.country || '',
+      shipping_state: shippingAddress.state || '',
+      shipping_email: order.customer?.email || '',
+      shipping_phone: order.customer_contact || '',
       order_items: productEntities.map((product, index) => ({
-        name: product.name,
+        name: product.name || '',
         sku: product.sku || Math.random().toString(),
-        units: order.products[index].order_quantity,
-        selling_price: product.sale_price,
-        unit_price: order.products[index].unit_price,
-        subtotal: order.products[index].subtotal,
+        units: order.products[index]?.order_quantity || 1,
+        selling_price: product.sale_price || 0,
+        unit_price: order.products[index]?.unit_price || 0,
+        subtotal: order.products[index]?.subtotal || 0,
         discount: product.discount || 0,
         tax: product.tax || 0,
         hsn: product.hsn || 0,
       })),
-      payment_method: order.payment_gateway,
+      payment_method: order.payment_gateway || 'Unknown',
       shipping_charges: order.delivery_fee || 0,
-      giftwrap_charges: 0,
-      transaction_charges: 0,
       total_discount: order.discount || 0,
-      sub_total: order.total,
+      sub_total: order.total || 0,
       length: 10,
       breadth: 10,
       height: 10,

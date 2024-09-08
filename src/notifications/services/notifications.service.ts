@@ -11,10 +11,18 @@ export class NotificationService {
     constructor(
         @InjectRepository(Notification)
         private notificationRepository: Repository<Notification>,
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
     ) { }
 
     async createNotification(userId: number, title: string, message: string): Promise<Notification> {
-        const notification = this.notificationRepository.create({ title, message, user: { id: userId } as User });
+        // Check if the user exists before creating the notification
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (!user) {
+            throw new Error(`User with ID ${userId} does not exist.`);
+        }
+
+        const notification = this.notificationRepository.create({ title, message, user });
         await this.notificationRepository.save(notification);
 
         // Update cache
