@@ -61,14 +61,15 @@ export class Order extends CoreEntity {
   @Column()
   customer_contact: string;
 
-  @ManyToOne(() => User, user => user.orders, { eager: true, cascade: true })
+  @ManyToOne(() => User, (user) => user.orders, { eager: true, cascade: true })
+  @JoinColumn({ name: 'customerId' })
   customer: User;
 
-  @ManyToOne(() => Order, order => order.children, { nullable: true, cascade: true })
+  @ManyToOne(() => Order, (order) => order.children, { nullable: true, cascade: true })
   @JoinColumn({ name: 'parentOrderId' })
   parentOrder: Order;
 
-  @OneToMany(() => Order, order => order.parentOrder)
+  @OneToMany(() => Order, (order) => order.parentOrder)
   children?: Order[];
 
   @ManyToOne(() => OrderStatus, (orderStatus) => orderStatus.order, { nullable: true, cascade: true })
@@ -99,11 +100,11 @@ export class Order extends CoreEntity {
   @Column()
   payment_gateway: PaymentGatewayType;
 
-  @ManyToOne(() => Coupon, coupon => coupon.orders, { nullable: true, cascade: true })
+  @ManyToOne(() => Coupon, (coupon) => coupon.orders, { nullable: true, cascade: true })
   @JoinColumn({ name: 'coupon_id' })
   coupon?: Coupon;
 
-  @ManyToMany(() => Shop, shop => shop.order)
+  @ManyToMany(() => Shop, (shop) => shop.order)
   @JoinTable({ name: 'shop_order' })
   shop: Shop;
 
@@ -116,11 +117,11 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   delivery_time: string;
 
-  @ManyToMany(() => Product, product => product.orders)
+  @ManyToMany(() => Product, (product) => product.orders)
   @JoinTable({ name: 'product_order' })
   products: Product[];
 
-  @OneToMany(() => OrderProductPivot, pivot => pivot.order, { cascade: true })
+  @OneToMany(() => OrderProductPivot, (pivot) => pivot.order, { cascade: true })
   orderProductPivots: OrderProductPivot[];
 
   @ManyToOne(() => UserAddress, { nullable: false, cascade: true })
@@ -160,7 +161,7 @@ export class Order extends CoreEntity {
   @JoinColumn({ name: 'dealerId' })
   dealer: User;
 
-  @OneToMany(() => Stocks, stocks => stocks.order, { cascade: true })
+  @OneToMany(() => Stocks, (stocks) => stocks.order, { cascade: true })
   stocks: Stocks[];
 }
 
@@ -168,16 +169,22 @@ export class Order extends CoreEntity {
 export class OrderFiles extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   purchase_key: string;
+
   @Column()
   digital_file_id: number;
+
   @Column()
   order_id?: number;
+
   @Column()
   customer_id: number;
+
   @ManyToOne(() => File, { cascade: true })
   file: File;
+
   @ManyToOne(() => Product, { cascade: true })
   fileable: Product;
 }

@@ -35,7 +35,6 @@ export class UserAddress {
   lastName: string;
 }
 
-
 @Entity()
 export class Address extends CoreEntity {
   @PrimaryGeneratedColumn()

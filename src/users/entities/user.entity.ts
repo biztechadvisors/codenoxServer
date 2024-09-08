@@ -49,11 +49,11 @@ export class User extends CoreEntity {
   @JoinColumn()
   profile?: Profile;
 
-  @OneToOne(() => Dealer, dealer => dealer.user, { cascade: ['insert', 'update'] })
+  @OneToOne(() => Dealer, (dealer) => dealer.user, { cascade: ['insert', 'update'] })
   @JoinColumn()
   dealer?: Dealer;
 
-  @ManyToOne(() => User, user => user.createdUsers, {
+  @ManyToOne(() => User, (user) => user.createdUsers, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
     nullable: true,
@@ -66,7 +66,7 @@ export class User extends CoreEntity {
   @OneToMany(() => Shop, shop => shop.owner)
   owned_shops?: Shop[];
 
-  @OneToMany(() => Notification, notification => notification.user, { nullable: true })
+  @OneToMany(() => Notification, (notification) => notification.user, { nullable: true })
   notifications: Notification[];
 
   @ManyToOne(() => Shop, shop => shop.staffs, {
