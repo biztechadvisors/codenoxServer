@@ -137,7 +137,7 @@ export class OrdersService {
     try {
       // Handle registered customers
       if (createOrderInput.customerId) {
-        const customer = await this.userRepository.findOne({ where: { id: createOrderInput.customerId } });
+        const customer = await this.userRepository.findOne({ where: { id: createOrderInput.customerId }, relations: ['type'] });
         if (!customer) {
           throw new NotFoundException('Customer not found');
         }
@@ -215,29 +215,15 @@ export class OrdersService {
         throw new InternalServerErrorException('Failed to create order in Shiprocket');
       }
 
+      order.tracking_number = shiprocketResponse.shipment_id || shiprocketResponse.order_id;
+      order.logistics_provider = shiprocketResponse.courier_name || 'Unknown';
+
       // Save order to the database
       const savedOrder = await this.orderRepository.save(order);
 
-      // Save order files if needed
-      // await this.createOrderFiles(savedOrder, productEntities);
-
-      // Create stock records for customer orders
-      if (savedOrder.customer_id === savedOrder.dealer?.id) {
-        const createStocksDto = {
-          user_id: savedOrder.customer_id,
-          order_id: savedOrder.id,
-          products: createOrderInput.products,
-        };
-        await this.stocksService.create(createStocksDto);
-      }
-
-      // Send notification
-      if (savedOrder.customer && savedOrder.customer_contact) {
-        await this.notificationService.createNotification(
-          Number(savedOrder.customer?.id) || parseInt(savedOrder.customer_contact),
-          'Order Created',
-          `Order #${savedOrder.id} has been successfully created.`,
-        );
+      // Create order files if products have attachments
+      if (createOrderInput.products && createOrderInput.products.some(product => product.product_id && product.variation_option_id)) {
+        await this.createOrderFiles(savedOrder, productEntities);
       }
 
       return savedOrder;
@@ -247,41 +233,39 @@ export class OrdersService {
     }
   }
 
-
   private async createOrderFiles(order: Order, products: Product[]): Promise<void> {
     try {
       const orderFiles: OrderFiles[] = [];
 
       for (const product of products) {
-        if (!product.attachment_id || !product.url) {
-          throw new BadRequestException(`Invalid file data for product ID ${product.id}`);
+        if (product.attachment_id && product.url) {
+          const file = new File();
+          file.attachment_id = product.attachment_id;
+          file.url = product.url;
+          file.fileable_id = product.id;
+
+          const savedFile = await this.fileRepository.save(file);
+
+          const orderFile = new OrderFiles();
+          orderFile.purchase_key = `PK_${Math.random().toString(36).substr(2, 9)}`;
+          orderFile.digital_file_id = savedFile.id;
+          orderFile.order_id = order.id;
+          orderFile.customer_id = order.customer_id;  // Ensure customer_id is set
+          orderFile.file = savedFile;
+          orderFile.fileable = product;
+
+          orderFiles.push(orderFile);
         }
-
-        const file = new File();
-        file.attachment_id = product.attachment_id;
-        file.url = product.url;
-        file.fileable_id = product.id;
-
-        const savedFile = await this.fileRepository.save(file);
-
-        const orderFile = new OrderFiles();
-        orderFile.purchase_key = `PK_${Math.random().toString(36).substr(2, 9)}`;
-        orderFile.digital_file_id = savedFile.id;
-        orderFile.order_id = order.id;
-        orderFile.customer_id = order.customer_id;  // Ensure customer_id is set
-        orderFile.file = savedFile;
-        orderFile.fileable = product;
-
-        orderFiles.push(orderFile);
       }
 
-      await this.orderFilesRepository.save(orderFiles);
+      if (orderFiles.length > 0) {
+        await this.orderFilesRepository.save(orderFiles);
+      }
     } catch (error) {
       console.error('Error creating order files:', error.message || error);
       throw new InternalServerErrorException('Failed to create order files');
     }
   }
-
 
   private async setOrderStatus(order: Order, paymentGatewayType: PaymentGatewayType) {
     let statusSlug: string;
@@ -306,9 +290,18 @@ export class OrdersService {
         break;
     }
 
-    const status = await this.orderStatusRepository.findOne({ where: { slug: statusSlug } });
+    let status = await this.orderStatusRepository.findOne({ where: { slug: statusSlug } });
     if (!status) {
-      throw new NotFoundException(`Order status with slug ${statusSlug} not found`);
+      // Create a new status if it doesn't exist
+      status = this.orderStatusRepository.create({
+        name: statusSlug,
+        slug: statusSlug,
+        color: '#000',  // Default color
+        serial: 1,      // Default serial
+        language: 'en', // Default language
+        translated_languages: [],
+      });
+      await this.orderStatusRepository.save(status);
     }
 
     order.status = status;
@@ -334,9 +327,9 @@ export class OrdersService {
     order.coupon = coupon;
   }
 
-  private createOrderData(order, productEntities: Product[], invoice: string) {
-    const billingAddress = order.billing_address || {};
-    const shippingAddress = order.shipping_address || {};
+  private createOrderData(createOrderInput, productEntities: Product[], invoice: string) {
+    const billingAddress = createOrderInput.billing_address || {};
+    const shippingAddress = createOrderInput.shipping_address || {};
 
     return {
       order_id: invoice,
@@ -352,8 +345,8 @@ export class OrdersService {
       billing_pincode: billingAddress.zip || '',
       billing_state: billingAddress.state || '',
       billing_country: billingAddress.country || '',
-      billing_email: order.customer?.email || '',
-      billing_phone: order.customer_contact || '',
+      billing_email: createOrderInput.customer?.email || '',
+      billing_phone: createOrderInput.customer_contact || '',
       shipping_is_billing: true,
       shipping_customer_name: shippingAddress.name || '',
       shipping_last_name: shippingAddress.lastName || '',
@@ -363,29 +356,25 @@ export class OrdersService {
       shipping_pincode: shippingAddress.zip || '',
       shipping_country: shippingAddress.country || '',
       shipping_state: shippingAddress.state || '',
-      shipping_email: order.customer?.email || '',
-      shipping_phone: order.customer_contact || '',
+      shipping_email: createOrderInput.customer?.email || '',
+      shipping_phone: createOrderInput.customer_contact || '',
       order_items: productEntities.map((product, index) => ({
         name: product.name || '',
         sku: product.sku || Math.random().toString(),
-        units: order.products[index]?.order_quantity || 1,
+        units: createOrderInput.products[index]?.order_quantity || 1,
         selling_price: product.sale_price || 0,
-        unit_price: order.products[index]?.unit_price || 0,
-        subtotal: order.products[index]?.subtotal || 0,
+        unit_price: createOrderInput.products[index]?.unit_price || 0,
+        subtotal: createOrderInput.products[index]?.subtotal || 0,
         discount: product.discount || 0,
         tax: product.tax || 0,
-        hsn: product.hsn || 0,
+        hsn: product.hsn || '',
+        is_gst: product.is_gst || false,
+        gst: product.gst || 0,
+        original_price: product.original_price || 0,
       })),
-      payment_method: order.payment_gateway || 'Unknown',
-      shipping_charges: order.delivery_fee || 0,
-      total_discount: order.discount || 0,
-      sub_total: order.total || 0,
-      length: 10,
-      breadth: 10,
-      height: 10,
-      weight: 1,
     };
   }
+
 
   async getOrders(getOrdersDto: GetOrdersDto): Promise<OrderPaginator> {
     try {

@@ -4,7 +4,6 @@ import { PaymentGatewayType } from '../entities/order.entity'
 import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-
 export class UserAddressInput {
   id: number;
   street_address: string;

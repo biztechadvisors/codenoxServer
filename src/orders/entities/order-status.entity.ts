@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Order } from './order.entity';
 
 @Entity()
 export class OrderStatus extends CoreEntity {
@@ -18,4 +19,6 @@ export class OrderStatus extends CoreEntity {
   language: string;
   @Column({ type: "json" })
   translated_languages: string[];
+  @OneToMany(() => Order, (order) => order.status)
+  order: Order;
 }
