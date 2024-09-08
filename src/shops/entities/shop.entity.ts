@@ -46,7 +46,7 @@ export class Shop extends CoreEntity {
   @Column()
   products_count: number;
 
-  @OneToOne(() => Balance, (balance) => balance.shop, { cascade: true })
+  @OneToOne(() => Balance, (balance) => balance.shop, { cascade: ['insert', 'update'] })
   @JoinColumn()
   balance?: Balance;
 
@@ -62,7 +62,7 @@ export class Shop extends CoreEntity {
   @Column({ nullable: true })
   description?: string;
 
-  @ManyToMany(() => Attachment, { cascade: true, eager: true, nullable: true })
+  @ManyToMany(() => Attachment, { cascade: ['insert', 'update'], eager: true, nullable: true })
   @JoinTable({
     name: 'shop_cover_image',
     joinColumn: { name: 'shopId', referencedColumnName: 'id' },
@@ -70,15 +70,15 @@ export class Shop extends CoreEntity {
   })
   cover_image?: Attachment[];
 
-  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Attachment, { cascade: ['insert', 'update'], eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn()
   logo?: Attachment;
 
-  @ManyToOne(() => UserAddress, { cascade: true })
+  @ManyToOne(() => UserAddress, { cascade: ['insert', 'update'] })
   @JoinColumn()
   address: UserAddress;
 
-  @OneToOne(() => ShopSettings, { cascade: true })
+  @OneToOne(() => ShopSettings, { cascade: ['insert', 'update'] })
   @JoinColumn()
   settings?: ShopSettings;
 
@@ -91,7 +91,7 @@ export class Shop extends CoreEntity {
   @OneToMany(() => SubCategory, (subCategory) => subCategory.shop)
   subCategories: SubCategory[];
 
-  @ManyToMany(() => Order, (order) => order.shop, { cascade: true, nullable: true })
+  @ManyToMany(() => Order, (order) => order.shop, { nullable: true })
   @JoinTable({ name: 'shop_order' })
   order: Order[];
 
@@ -99,7 +99,7 @@ export class Shop extends CoreEntity {
   @JoinColumn({ name: 'permission_id' })
   permission: Permission;
 
-  @ManyToMany(() => Permission, (permission) => permission.shops, { cascade: true })
+  @ManyToMany(() => Permission, (permission) => permission.shops, { cascade: ['insert', 'update'] })
   @JoinTable({ name: 'shop_permission' })
   additionalPermissions: Permission[];
 

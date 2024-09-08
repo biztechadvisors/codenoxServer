@@ -61,18 +61,18 @@ export class Order extends CoreEntity {
   @Column()
   customer_contact: string;
 
-  @ManyToOne(() => User, (user) => user.orders, { eager: true, cascade: true })
+  @ManyToOne(() => User, (user) => user.orders, { eager: true, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'customerId' })
   customer: User;
 
-  @ManyToOne(() => Order, (order) => order.children, { nullable: true, cascade: true })
+  @ManyToOne(() => Order, (order) => order.children, { nullable: true, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'parentOrderId' })
   parentOrder: Order;
 
   @OneToMany(() => Order, (order) => order.parentOrder)
   children?: Order[];
 
-  @ManyToOne(() => OrderStatus, (orderStatus) => orderStatus.order, { nullable: true, cascade: true })
+  @ManyToOne(() => OrderStatus, (orderStatus) => orderStatus.order, { nullable: true, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'statusId' })
   status: OrderStatus;
 
@@ -100,13 +100,13 @@ export class Order extends CoreEntity {
   @Column()
   payment_gateway: PaymentGatewayType;
 
-  @ManyToOne(() => Coupon, (coupon) => coupon.orders, { nullable: true, cascade: true })
+  @ManyToOne(() => Coupon, (coupon) => coupon.orders, { nullable: true, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'coupon_id' })
   coupon?: Coupon;
 
-  @ManyToMany(() => Shop, (shop) => shop.order)
+  @ManyToMany(() => Shop, (shop) => shop.order, { cascade: ['insert', 'update'] })
   @JoinTable({ name: 'shop_order' })
-  shop: Shop;
+  shop: Shop[];
 
   @Column({ nullable: true })
   discount?: number;
@@ -117,18 +117,18 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   delivery_time: string;
 
-  @ManyToMany(() => Product, (product) => product.orders)
+  @ManyToMany(() => Product, (product) => product.orders, { cascade: ['insert', 'update'] })
   @JoinTable({ name: 'product_order' })
   products: Product[];
 
-  @OneToMany(() => OrderProductPivot, (pivot) => pivot.order, { cascade: true })
+  @OneToMany(() => OrderProductPivot, (pivot) => pivot.order, { cascade: ['insert', 'update'] })
   orderProductPivots: OrderProductPivot[];
 
-  @ManyToOne(() => UserAddress, { nullable: false, cascade: true })
+  @ManyToOne(() => UserAddress, { nullable: false, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'billingAddressId' })
   billing_address: UserAddress;
 
-  @ManyToOne(() => UserAddress, { nullable: false, cascade: true })
+  @ManyToOne(() => UserAddress, { nullable: false, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'shippingAddressId' })
   shipping_address: UserAddress;
 
@@ -138,7 +138,7 @@ export class Order extends CoreEntity {
   @Column({ type: 'json' })
   translated_languages: string[];
 
-  @OneToOne(() => PaymentIntent, { nullable: true, cascade: true })
+  @OneToOne(() => PaymentIntent, { nullable: true, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'paymentIntentId' })
   payment_intent: PaymentIntent;
 
@@ -148,7 +148,7 @@ export class Order extends CoreEntity {
   @Column('json', { nullable: true })
   logistics_provider: object;
 
-  @ManyToOne(() => UserAddress, { cascade: true })
+  @ManyToOne(() => UserAddress, { cascade: ['insert', 'update'] })
   soldByUserAddress: UserAddress;
 
   @Column('decimal', { precision: 5, scale: 2, nullable: true })
@@ -157,11 +157,11 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   wallet_point: number;
 
-  @ManyToOne(() => User, { nullable: true, cascade: true })
+  @ManyToOne(() => User, { nullable: true, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'dealerId' })
   dealer: User;
 
-  @OneToMany(() => Stocks, (stocks) => stocks.order, { cascade: true })
+  @OneToMany(() => Stocks, (stocks) => stocks.order, { cascade: ['insert', 'update'] })
   stocks: Stocks[];
 }
 
@@ -182,9 +182,9 @@ export class OrderFiles extends CoreEntity {
   @Column()
   customer_id: number;
 
-  @ManyToOne(() => File, { cascade: true })
+  @ManyToOne(() => File, { cascade: ['insert', 'update'] })
   file: File;
 
-  @ManyToOne(() => Product, { cascade: true })
+  @ManyToOne(() => Product, { cascade: ['insert', 'update'] })
   fileable: Product;
 }

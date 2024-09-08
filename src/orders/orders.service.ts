@@ -137,10 +137,11 @@ export class OrdersService {
     try {
       // Handle customer or guest orders
       if (createOrderInput.customerId) {
-        const customer = await this.userRepository.findOne({ where: { id: createOrderInput.customerId }, relations: ['type'] });
+        const customer = await this.userRepository.findOne({ where: { id: createOrderInput.customerId }, relations: ['permission'] });
         if (!customer) throw new NotFoundException('Customer not found');
         order.customer = customer;
-        order.customer_id = customer.id; // Ensure customer_id is set
+        order.customer_id = customer.id;
+        order.customer_contact = createOrderInput.customer_contact;
       } else if (createOrderInput.customer_contact) {
         order.customer_contact = createOrderInput.customer_contact;
       } else {
@@ -181,9 +182,12 @@ export class OrdersService {
       }
 
       if (createOrderInput.shop_id) {
-        const shop = await this.shopRepository.findOne({ where: { id: createOrderInput.shop_id } });
-        if (!shop) throw new NotFoundException('Shop not found');
-        order.shop = shop;
+        const shopIds = Array.isArray(createOrderInput.shop_id) ? createOrderInput.shop_id : [createOrderInput.shop_id];
+        const shops = await this.shopRepository.findByIds(shopIds);
+        if (shops.length === 0) {
+          throw new NotFoundException('Shop not found');
+        }
+        order.shop = shops; // Ensure shop is an array
       }
 
       if (createOrderInput.soldByUserAddress?.id) {
@@ -231,8 +235,9 @@ export class OrdersService {
 
       // Process payment if applicable
       if ([PaymentGatewayType.STRIPE, PaymentGatewayType.PAYPAL, PaymentGatewayType.RAZORPAY].includes(paymentGatewayType)) {
-        const paymentIntent = await this.processPaymentIntent(order);
+        const paymentIntent = await this.processPaymentIntent(savedOrder);
         order.payment_intent = paymentIntent;
+        await this.orderRepository.save(order);
       }
 
       // Handle order products
@@ -270,9 +275,9 @@ export class OrdersService {
       }
 
       // Download invoice URL if saved
-      if (savedOrder?.id) {
-        await this.downloadInvoiceUrl(savedOrder.id.toString());
-      }
+      // if (savedOrder?.id) {
+      //   await this.downloadInvoiceUrl(savedOrder.id.toString());
+      // }
 
       // Create stocks if customer and dealer are the same
       if (savedOrder.customer && savedOrder.dealer && savedOrder.customer.id === savedOrder.dealer.id) {
@@ -288,9 +293,9 @@ export class OrdersService {
       }
 
       // Send notification if customer is provided
-      if (savedOrder.customer || savedOrder.customer_contact) {
+      if (savedOrder.customer) {
         await this.notificationService.createNotification(
-          Number(savedOrder.customer?.id) || parseInt(savedOrder.customer_contact),
+          Number(savedOrder.customer.id),
           'Order Created',
           `New order with ID ${savedOrder.id} has been successfully created.`,
         );
@@ -303,41 +308,42 @@ export class OrdersService {
     }
   }
 
-
   private async createOrderFiles(order: Order, products: Product[]): Promise<void> {
     try {
-      const orderFiles = await Promise.all(products.map(async (product) => {
-        if (product.attachment_id && product.url) {
-          const file = new File();
-          file.attachment_id = product.attachment_id;
-          file.url = product.url;
-          file.fileable_id = product.id;
+      const orderFiles = await Promise.all(
+        products.map(async (product) => {
+          if (product?.attachment_id && product?.url) {
+            const file = new File();
+            file.attachment_id = product.attachment_id;
+            file.url = product.url;
+            file.fileable_id = product.id;
 
-          const savedFile = await this.fileRepository.save(file);
+            const savedFile = await this.fileRepository.save(file);
 
-          const orderFile = new OrderFiles();
-          orderFile.purchase_key = `PK_${Math.random().toString(36).substr(2, 9)}`;
-          orderFile.digital_file_id = savedFile.id;
-          orderFile.order_id = order.id;
-          orderFile.customer_id = order.customer_id;  // Ensure customer_id is set
-          orderFile.file = savedFile;
-          orderFile.fileable = product;
+            const orderFile = new OrderFiles();
+            orderFile.purchase_key = `PK_${Math.random().toString(36).substr(2, 9)}`;
+            orderFile.digital_file_id = savedFile.id;
+            orderFile.order_id = order.id;
+            orderFile.customer_id = order.customer_id;
+            orderFile.file = savedFile;
+            orderFile.fileable = product;
 
-          return orderFile;
-        }
-      }));
+            return orderFile;
+          }
+          return undefined; // If product doesn't have required fields, return undefined
+        })
+      );
 
-      const validOrderFiles = orderFiles.filter((orderFile) => orderFile !== undefined);
+      const validOrderFiles = orderFiles.filter(Boolean); // Filter out undefined entries
 
       if (validOrderFiles.length > 0) {
         await this.orderFilesRepository.save(validOrderFiles);
       }
     } catch (error) {
-      console.error('Error creating order files:', error);
+      console.error('Error creating order files:', error.message || error);
       throw new InternalServerErrorException('Failed to create order files');
     }
   }
-
 
   private async setOrderStatus(order: Order, paymentGatewayType: PaymentGatewayType) {
     let statusSlug: string;
@@ -379,7 +385,6 @@ export class OrdersService {
 
     order.status = status;
   }
-
 
   private async applyCoupon(couponId: number, order: Order): Promise<void> {
     const coupon = await this.couponRepository.findOne({ where: { id: couponId } });
@@ -1064,25 +1069,40 @@ export class OrdersService {
 
   async savePaymentIntent(order: Order): Promise<any> {
     try {
-      const user = await this.userRepository.findOne({
-        where: { id: order.customer.id },
-        relations: ['permission'],
-      });
+      let user;
+      let authUser;
 
-      if (!user) {
-        throw new NotFoundException(`User with ID ${order.customer.id} not found`);
+      // Check if the order is from a registered user or a guest
+      if (order.customer && order.customer.id) {
+        // Fetch user if the customer is a registered user
+        user = await this.userRepository.findOne({
+          where: { id: order.customer.id },
+          relations: ['permission'],
+        });
+
+        if (!user) {
+          throw new NotFoundException(`User with ID ${order.customer.id} not found`);
+        }
+
+        // Get authenticated user details
+        authUser = await this.authService.me(user.email, user.id);
+      } else {
+        // Handle guest checkout (e.g., by using a guest user model or a temporary auth object)
+        authUser = { email: order.customer_contact, id: null, isGuest: true };
       }
 
-      const authUser = this.authService.me(user.email, user.id);
-
+      // Handle payment intent based on the payment gateway
       switch (order.payment_gateway) {
         case PaymentGatewayType.STRIPE:
-          const stripeParams = await this.stripeService.makePaymentIntentParam(order, await authUser);
+          const stripeParams = await this.stripeService.makePaymentIntentParam(order, authUser);
           return this.stripeService.createPaymentIntent(stripeParams);
+
         case PaymentGatewayType.PAYPAL:
           return this.paypalService.createPaymentIntent(order);
+
         case PaymentGatewayType.RAZORPAY:
           return this.razorpayService.createPaymentIntent(order);
+
         default:
           throw new BadRequestException('Unsupported payment gateway');
       }
@@ -1091,6 +1111,7 @@ export class OrdersService {
       throw new InternalServerErrorException('Failed to save payment intent');
     }
   }
+
 
   async stripePay(order: Order): Promise<void> {
     try {

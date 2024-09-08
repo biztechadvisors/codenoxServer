@@ -14,6 +14,7 @@ import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 import { Attribute } from 'src/attributes/entities/attribute.entity';
 import { Stocks } from 'src/stocks/entities/stocks.entity';
 import { Region } from '@db/src/region/entities/region.entity';
+import { User } from '@db/src/users/entities/user.entity';
 
 enum ProductStatus {
   PUBLISH = 'Publish',
@@ -73,14 +74,14 @@ export class Product extends CoreEntity {
   @OneToMany(() => OrderProductPivot, orderProductPivot => orderProductPivot.product)
   pivot?: OrderProductPivot[];
 
-  @ManyToMany(() => Order, order => order.products, { cascade: true, eager: true })
-  @JoinTable({ name: "product_order" })
+  @ManyToMany(() => Order, (order) => order.products)
+  @JoinTable({ name: 'product_order' })
   orders: Order[];
 
   @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
   stocksSellOrders: StocksSellOrd[];
 
-  @ManyToOne(() => Shop, (shop) => shop.product, { eager: true, cascade: true })
+  @ManyToOne(() => Shop, (shop) => shop.product)
   shop: Shop;
 
   @Column()
@@ -103,6 +104,14 @@ export class Product extends CoreEntity {
   @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'image_id' })
   image?: Attachment;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'addedByUserId' })
+  addedByUser?: User;
+
+  // @ManyToOne(() => Unit, (unit) => unit.products, { nullable: true, onDelete: 'SET NULL' })
+  // @JoinColumn({ name: 'unitId' })
+  // unit: Unit;
 
   @Column()
   description: string;

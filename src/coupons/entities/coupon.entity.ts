@@ -30,7 +30,7 @@ export class Coupon extends CoreEntity {
 
   @Column()
   type: CouponType;
-  @OneToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
+  @OneToOne(() => Attachment, { cascade: ['insert', 'update'], eager: true, nullable: true, onDelete: 'SET NULL' })
   image: Attachment;
   @Column()
   is_valid: boolean;
