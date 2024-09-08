@@ -135,16 +135,13 @@ export class OrdersService {
     const paymentGatewayType = createOrderInput.payment_gateway || PaymentGatewayType.CASH_ON_DELIVERY;
 
     try {
-      // Handle registered customers
+      // Handle customer or guest orders
       if (createOrderInput.customerId) {
         const customer = await this.userRepository.findOne({ where: { id: createOrderInput.customerId }, relations: ['type'] });
-        if (!customer) {
-          throw new NotFoundException('Customer not found');
-        }
+        if (!customer) throw new NotFoundException('Customer not found');
         order.customer = customer;
-        order.customer_id = customer.id;  // Ensure customer_id is set
+        order.customer_id = customer.id; // Ensure customer_id is set
       } else if (createOrderInput.customer_contact) {
-        // Handle guest orders
         order.customer_contact = createOrderInput.customer_contact;
       } else {
         throw new BadRequestException('Customer ID or contact information is required');
@@ -168,15 +165,6 @@ export class OrdersService {
 
       // Assign general order fields
       order.payment_gateway = paymentGatewayType;
-      order.payment_intent = createOrderInput.payment_intent || null;
-      if (createOrderInput.dealerId) {
-        const dealer = await this.userRepository.findOne({ where: { id: createOrderInput.dealerId } });
-        if (!dealer) {
-          throw new NotFoundException('Dealer not found');
-        }
-        order.dealer = dealer;
-      }
-
       order.total = createOrderInput.total || 0;
       order.amount = createOrderInput.amount;
       order.sales_tax = createOrderInput.sales_tax;
@@ -185,7 +173,26 @@ export class OrdersService {
       order.delivery_fee = createOrderInput.delivery_fee || 0;
       order.delivery_time = createOrderInput.delivery_time;
 
-      // Set order status based on payment gateway
+      // Handle dealer, shop, and soldByUserAddress
+      if (createOrderInput.dealerId) {
+        const dealer = await this.userRepository.findOne({ where: { id: createOrderInput.dealerId } });
+        if (!dealer) throw new NotFoundException('Dealer not found');
+        order.dealer = dealer;
+      }
+
+      if (createOrderInput.shop_id) {
+        const shop = await this.shopRepository.findOne({ where: { id: createOrderInput.shop_id } });
+        if (!shop) throw new NotFoundException('Shop not found');
+        order.shop = shop;
+      }
+
+      if (createOrderInput.soldByUserAddress?.id) {
+        const soldByUserAddress = await this.userAddressRepository.findOne({ where: { id: createOrderInput.soldByUserAddress.id } });
+        if (!soldByUserAddress) throw new NotFoundException('SoldByUserAddress not found');
+        order.soldByUserAddress = soldByUserAddress;
+      }
+
+      // Set order status and payment status
       await this.setOrderStatus(order, paymentGatewayType);
 
       // Validate and process products
@@ -206,6 +213,7 @@ export class OrdersService {
         await this.applyCoupon(createOrderInput.coupon_id, order);
       }
 
+      // Create invoice number
       const invoice = `OD${Math.floor(Math.random() * Date.now())}`;
       const orderData = this.createOrderData(createOrderInput, productEntities, invoice);
 
@@ -221,9 +229,71 @@ export class OrdersService {
       // Save order to the database
       const savedOrder = await this.orderRepository.save(order);
 
-      // Create order files if products have attachments
+      // Process payment if applicable
+      if ([PaymentGatewayType.STRIPE, PaymentGatewayType.PAYPAL, PaymentGatewayType.RAZORPAY].includes(paymentGatewayType)) {
+        const paymentIntent = await this.processPaymentIntent(order);
+        order.payment_intent = paymentIntent;
+      }
+
+      // Handle order products
+      if (createOrderInput.products) {
+        const productEntities = await this.productRepository.find({
+          where: { id: In(createOrderInput.products.map(product => product.product_id)) },
+        });
+        for (const product of createOrderInput.products) {
+          if (product) {
+            const newPivot = new OrderProductPivot();
+            newPivot.order_quantity = product.order_quantity;
+            newPivot.unit_price = product.unit_price;
+            newPivot.subtotal = product.subtotal;
+            newPivot.variation_option_id = product.variation_option_id;
+            newPivot.order = savedOrder;
+            newPivot.Ord_Id = savedOrder.id;
+            const productEntity = productEntities.find(entity => entity.id === product.product_id);
+            if (productEntity) {
+              newPivot.product = productEntity;
+              await this.orderProductPivotRepository.save(newPivot);
+            } else {
+              throw new NotFoundException('Product not found');
+            }
+          }
+        }
+        savedOrder.products = productEntities;
+      }
+
+      // Handle child orders
+      savedOrder.children = this.processChildrenOrder(savedOrder);
+
+      // Save order files if products have attachments
       if (createOrderInput.products && createOrderInput.products.some(product => product.product_id && product.variation_option_id)) {
         await this.createOrderFiles(savedOrder, productEntities);
+      }
+
+      // Download invoice URL if saved
+      if (savedOrder?.id) {
+        await this.downloadInvoiceUrl(savedOrder.id.toString());
+      }
+
+      // Create stocks if customer and dealer are the same
+      if (savedOrder.customer && savedOrder.dealer && savedOrder.customer.id === savedOrder.dealer.id) {
+        const createStocksDto = {
+          user_id: savedOrder.customer.id,
+          order_id: savedOrder.id,
+          products: createOrderInput.products,
+        };
+        if (!createStocksDto.order_id) {
+          throw new BadRequestException('Order ID is required');
+        }
+        await this.stocksService.create(createStocksDto);
+      }
+
+      // Send notification if customer is provided
+      if (savedOrder.customer || savedOrder.customer_contact) {
+        await this.notificationService.createNotification(
+          Number(savedOrder.customer?.id) || parseInt(savedOrder.customer_contact),
+          'Order Created',
+          `New order with ID ${savedOrder.id} has been successfully created.`,
+        );
       }
 
       return savedOrder;
@@ -233,11 +303,10 @@ export class OrdersService {
     }
   }
 
+
   private async createOrderFiles(order: Order, products: Product[]): Promise<void> {
     try {
-      const orderFiles: OrderFiles[] = [];
-
-      for (const product of products) {
+      const orderFiles = await Promise.all(products.map(async (product) => {
         if (product.attachment_id && product.url) {
           const file = new File();
           file.attachment_id = product.attachment_id;
@@ -254,18 +323,21 @@ export class OrdersService {
           orderFile.file = savedFile;
           orderFile.fileable = product;
 
-          orderFiles.push(orderFile);
+          return orderFile;
         }
-      }
+      }));
 
-      if (orderFiles.length > 0) {
-        await this.orderFilesRepository.save(orderFiles);
+      const validOrderFiles = orderFiles.filter((orderFile) => orderFile !== undefined);
+
+      if (validOrderFiles.length > 0) {
+        await this.orderFilesRepository.save(validOrderFiles);
       }
     } catch (error) {
-      console.error('Error creating order files:', error.message || error);
+      console.error('Error creating order files:', error);
       throw new InternalServerErrorException('Failed to create order files');
     }
   }
+
 
   private async setOrderStatus(order: Order, paymentGatewayType: PaymentGatewayType) {
     let statusSlug: string;
@@ -273,26 +345,27 @@ export class OrdersService {
 
     switch (paymentGatewayType) {
       case PaymentGatewayType.CASH_ON_DELIVERY:
-        statusSlug = OrderStatusType.PROCESSING;
-        paymentStatus = PaymentStatusType.CASH_ON_DELIVERY;
-        break;
       case PaymentGatewayType.CASH:
+        order.order_status = OrderStatusType.PROCESSING;
+        order.payment_status = paymentGatewayType === PaymentGatewayType.CASH_ON_DELIVERY
+          ? PaymentStatusType.CASH_ON_DELIVERY
+          : PaymentStatusType.CASH;
         statusSlug = OrderStatusType.PROCESSING;
-        paymentStatus = PaymentStatusType.CASH;
         break;
       case PaymentGatewayType.FULL_WALLET_PAYMENT:
+        order.order_status = OrderStatusType.COMPLETED;
+        order.payment_status = PaymentStatusType.WALLET;
         statusSlug = OrderStatusType.COMPLETED;
-        paymentStatus = PaymentStatusType.WALLET;
         break;
       default:
+        order.order_status = OrderStatusType.PENDING;
+        order.payment_status = PaymentStatusType.PENDING;
         statusSlug = OrderStatusType.PENDING;
-        paymentStatus = PaymentStatusType.PENDING;
         break;
     }
 
     let status = await this.orderStatusRepository.findOne({ where: { slug: statusSlug } });
     if (!status) {
-      // Create a new status if it doesn't exist
       status = this.orderStatusRepository.create({
         name: statusSlug,
         slug: statusSlug,
@@ -305,8 +378,8 @@ export class OrdersService {
     }
 
     order.status = status;
-    order.payment_status = paymentStatus;
   }
+
 
   private async applyCoupon(couponId: number, order: Order): Promise<void> {
     const coupon = await this.couponRepository.findOne({ where: { id: couponId } });
@@ -372,9 +445,18 @@ export class OrdersService {
         gst: product.gst || 0,
         original_price: product.original_price || 0,
       })),
+      payment_method: createOrderInput.payment_gateway,
+      shipping_charges: createOrderInput.delivery_fee || 0,
+      giftwrap_charges: 0,
+      transaction_charges: 0,
+      total_discount: createOrderInput.discount || 0,
+      sub_total: createOrderInput.total,
+      length: 10,
+      breadth: 10,
+      height: 10,
+      weight: 1,
     };
   }
-
 
   async getOrders(getOrdersDto: GetOrdersDto): Promise<OrderPaginator> {
     try {
