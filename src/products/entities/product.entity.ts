@@ -75,7 +75,6 @@ export class Product extends CoreEntity {
   pivot?: OrderProductPivot[];
 
   @ManyToMany(() => Order, (order) => order.products)
-  @JoinTable({ name: 'product_order' })
   orders: Order[];
 
   @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
@@ -179,16 +178,15 @@ export class OrderProductPivot extends CoreEntity {
   Ord_Id: number
 }
 
-
 @Entity()
 export class File extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column()
+  @Column({ nullable: true })
   attachment_id: number;
-  @Column()
+  @Column({ nullable: true })
   url: string;
-  @Column()
+  @Column({ nullable: true })
   fileable_id: number;
 }
 

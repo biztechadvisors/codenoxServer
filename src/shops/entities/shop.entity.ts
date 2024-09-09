@@ -92,7 +92,6 @@ export class Shop extends CoreEntity {
   subCategories: SubCategory[];
 
   @ManyToMany(() => Order, (order) => order.shop, { nullable: true })
-  @JoinTable({ name: 'shop_order' })
   order: Order[];
 
   @ManyToOne(() => Permission, (permission) => permission.shop)

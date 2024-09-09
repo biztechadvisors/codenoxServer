@@ -173,6 +173,8 @@ export class OrdersService {
       order.discount = createOrderInput.discount || 0;
       order.delivery_fee = createOrderInput.delivery_fee || 0;
       order.delivery_time = createOrderInput.delivery_time;
+      order.language = createOrderInput.language || "en";
+      order.translated_languages = createOrderInput.translated_languages || ["en"]
 
       // Handle dealer, shop, and soldByUserAddress
       if (createOrderInput.dealerId) {
@@ -211,7 +213,7 @@ export class OrdersService {
       if (productEntities.length !== createOrderInput.products.length) {
         throw new NotFoundException('Some products not found for this order');
       }
-
+      console.log("createOrderInput.coupon_id ")
       // Apply coupon if provided
       if (createOrderInput.coupon_id) {
         await this.applyCoupon(createOrderInput.coupon_id, order);
@@ -229,6 +231,8 @@ export class OrdersService {
 
       order.tracking_number = shiprocketResponse.shipment_id || shiprocketResponse.order_id;
       order.logistics_provider = shiprocketResponse.courier_name || 'Unknown';
+
+      order.products = productEntities;
 
       // Save order to the database
       const savedOrder = await this.orderRepository.save(order);
@@ -263,7 +267,6 @@ export class OrdersService {
             }
           }
         }
-        savedOrder.products = productEntities;
       }
 
       // Handle child orders
@@ -279,16 +282,18 @@ export class OrdersService {
       //   await this.downloadInvoiceUrl(savedOrder.id.toString());
       // }
 
-      // Create stocks if customer and dealer are the same
-      if (savedOrder.customer && savedOrder.dealer && savedOrder.customer.id === savedOrder.dealer.id) {
+      if (savedOrder && savedOrder.customer.id == savedOrder.dealer.id) {
+
         const createStocksDto = {
-          user_id: savedOrder.customer.id,
+          user_id: savedOrder.customer,
           order_id: savedOrder.id,
           products: createOrderInput.products,
         };
+
         if (!createStocksDto.order_id) {
-          throw new BadRequestException('Order ID is required');
+          throw new Error('Order ID is required');
         }
+
         await this.stocksService.create(createStocksDto);
       }
 
@@ -310,32 +315,46 @@ export class OrdersService {
 
   private async createOrderFiles(order: Order, products: Product[]): Promise<void> {
     try {
+      // Ensure that products is an array
+      if (!Array.isArray(products)) {
+        throw new Error('Products should be an array');
+      }
+
+      // Create order files
       const orderFiles = await Promise.all(
         products.map(async (product) => {
-          if (product?.attachment_id && product?.url) {
+          if (product?.image || product?.url || product?.id) {
+            // Ensure that attachment_id is present
             const file = new File();
-            file.attachment_id = product.attachment_id;
-            file.url = product.url;
+            file.attachment_id = product.attachment_id || null; // Ensure this is not null
+            file.url = product.url || ''; // Provide a default value if URL is null
             file.fileable_id = product.id;
 
-            const savedFile = await this.fileRepository.save(file);
+            try {
+              const savedFile = await this.fileRepository.save(file);
 
-            const orderFile = new OrderFiles();
-            orderFile.purchase_key = `PK_${Math.random().toString(36).substr(2, 9)}`;
-            orderFile.digital_file_id = savedFile.id;
-            orderFile.order_id = order.id;
-            orderFile.customer_id = order.customer_id;
-            orderFile.file = savedFile;
-            orderFile.fileable = product;
+              const orderFile = new OrderFiles();
+              orderFile.purchase_key = `PK_${Math.random().toString(36).substr(2, 9)}`;
+              orderFile.digital_file_id = savedFile.id;
+              orderFile.order_id = order.id;
+              orderFile.customer_id = order.customer_id;
+              orderFile.file = savedFile;
+              orderFile.fileable = product;
 
-            return orderFile;
+              return orderFile;
+            } catch (fileError) {
+              console.error(`Error saving file for product ID ${product.id}:`, fileError.message || fileError);
+              return undefined;
+            }
           }
           return undefined; // If product doesn't have required fields, return undefined
         })
       );
 
-      const validOrderFiles = orderFiles.filter(Boolean); // Filter out undefined entries
+      // Filter out undefined entries
+      const validOrderFiles = orderFiles.filter(Boolean);
 
+      // Save valid order files
       if (validOrderFiles.length > 0) {
         await this.orderFilesRepository.save(validOrderFiles);
       }
@@ -347,8 +366,10 @@ export class OrdersService {
 
   private async setOrderStatus(order: Order, paymentGatewayType: PaymentGatewayType) {
     let statusSlug: string;
-    let paymentStatus: PaymentStatusType;
+    let statusName: string;
+    let statusColor: string;
 
+    // Determine the order and payment status based on the payment gateway type
     switch (paymentGatewayType) {
       case PaymentGatewayType.CASH_ON_DELIVERY:
       case PaymentGatewayType.CASH:
@@ -357,37 +378,48 @@ export class OrdersService {
           ? PaymentStatusType.CASH_ON_DELIVERY
           : PaymentStatusType.CASH;
         statusSlug = OrderStatusType.PROCESSING;
+        statusName = 'Order Processing';
+        statusColor = '#d87b64';
         break;
       case PaymentGatewayType.FULL_WALLET_PAYMENT:
         order.order_status = OrderStatusType.COMPLETED;
         order.payment_status = PaymentStatusType.WALLET;
         statusSlug = OrderStatusType.COMPLETED;
+        statusName = 'Order Completed';
+        statusColor = '#4caf50'; // Example color for completed status
         break;
       default:
         order.order_status = OrderStatusType.PENDING;
         order.payment_status = PaymentStatusType.PENDING;
         statusSlug = OrderStatusType.PENDING;
+        statusName = 'Order Pending';
+        statusColor = '#f44336'; // Example color for pending status
         break;
     }
 
+    // Find or create the order status
     let status = await this.orderStatusRepository.findOne({ where: { slug: statusSlug } });
     if (!status) {
       status = this.orderStatusRepository.create({
-        name: statusSlug,
+        name: statusName,
         slug: statusSlug,
-        color: '#000',  // Default color
-        serial: 1,      // Default serial
+        color: statusColor,
+        serial: 1,  // Default serial
         language: 'en', // Default language
         translated_languages: [],
       });
       await this.orderStatusRepository.save(status);
     }
 
+    // Assign the status to the order
     order.status = status;
   }
 
+
   private async applyCoupon(couponId: number, order: Order): Promise<void> {
+    console.log('first 422', couponId)
     const coupon = await this.couponRepository.findOne({ where: { id: couponId } });
+    console.log('first', coupon)
 
     if (!coupon) {
       throw new NotFoundException('Coupon not found');

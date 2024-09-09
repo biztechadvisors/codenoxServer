@@ -117,8 +117,12 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   delivery_time: string;
 
-  @ManyToMany(() => Product, (product) => product.orders, { cascade: ['insert', 'update'] })
-  @JoinTable({ name: 'product_order' })
+  @ManyToMany(() => Product, product => product.orders, { cascade: true })
+  @JoinTable({
+    name: 'order_product',
+    joinColumn: { name: 'order_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'product_id', referencedColumnName: 'id' },
+  })
   products: Product[];
 
   @OneToMany(() => OrderProductPivot, (pivot) => pivot.order, { cascade: ['insert', 'update'] })
@@ -170,21 +174,21 @@ export class OrderFiles extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   purchase_key: string;
 
-  @Column()
+  @Column({ nullable: true })
   digital_file_id: number;
 
   @Column()
   order_id?: number;
 
-  @Column()
+  @Column({ nullable: true })
   customer_id: number;
 
-  @ManyToOne(() => File, { cascade: ['insert', 'update'] })
+  @ManyToOne(() => File, { nullable: true, cascade: ['insert', 'update'] })
   file: File;
 
-  @ManyToOne(() => Product, { cascade: ['insert', 'update'] })
+  @ManyToOne(() => Product, { nullable: true, cascade: ['insert', 'update'] })
   fileable: Product;
 }

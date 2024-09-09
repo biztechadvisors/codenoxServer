@@ -122,6 +122,10 @@ export class CreateOrderDto {
   language?: string;  // Preferred language for communication
 
   @IsOptional()
+  @IsArray()
+  translated_languages?: string[];
+
+  @IsOptional()
   @IsNumber()
   dealerId?: number;  // Dealer ID if applicable
 }
