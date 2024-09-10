@@ -138,9 +138,9 @@ export class Order extends CoreEntity {
 
   @Column()
   language: string;
+  @Column({ type: 'json', nullable: true })
+  translated_languages: any[] | null;
 
-  @Column({ type: 'json' })
-  translated_languages: string[];
 
   @OneToOne(() => PaymentIntent, { nullable: true, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'paymentIntentId' })
@@ -149,8 +149,8 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   altered_payment_gateway?: string;
 
-  @Column('json', { nullable: true })
-  logistics_provider: object;
+  @Column({ nullable: true })
+  logistics_provider: string;
 
   @ManyToOne(() => UserAddress, { cascade: ['insert', 'update'] })
   soldByUserAddress: UserAddress;

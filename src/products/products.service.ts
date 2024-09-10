@@ -346,11 +346,14 @@ export class ProductsService {
     const startIndex = (page - 1) * limit;
 
     // Handle regionNames as a string or array
-    let regionsArray: string[] = [];
-    if (Array.isArray(regionNames)) {
-      regionsArray = regionNames;
-    } else if (typeof regionNames === 'string') {
-      regionsArray = [regionNames]; // Convert string to array
+    const regionsArray: string[] = [];
+
+    if (regionNames) {
+      if (Array.isArray(regionNames)) {
+        regionsArray.push(...regionNames); // Spread the array elements into regionsArray
+      } else if (typeof regionNames === 'string') {
+        regionsArray.push(regionNames); // Push the string directly into regionsArray
+      }
     }
 
     // Generate cache key
@@ -397,13 +400,14 @@ export class ProductsService {
     }
 
     // Add region filter
-    if (regionsArray.length > 0) {
+    if (regionsArray.length >= 1) {
+      console.log('first', regionsArray.length)
       productQueryBuilder.andWhere('regions.name IN (:...regionsArray)', { regionsArray });
     }
 
     // Add search and filter conditions
     if (search || filter) {
-      const searchConditions = [];
+      const searchConditions: string[] = [];
       const searchParams: any = {};
 
       // Parse filters
@@ -415,29 +419,29 @@ export class ProductsService {
 
           switch (key) {
             case 'product':
-              searchConditions.push('(product.name ILIKE :productSearchTerm OR product.slug ILIKE :productSearchTerm)');
+              searchConditions.push('(product.name LIKE :productSearchTerm OR product.slug LIKE :productSearchTerm)');
               searchParams.productSearchTerm = searchTerm;
               break;
             case 'category':
-              searchConditions.push('(categories.name ILIKE :categorySearchTerm OR categories.slug ILIKE :categorySearchTerm)');
+              searchConditions.push('(categories.name LIKE :categorySearchTerm OR categories.slug LIKE :categorySearchTerm)');
               searchParams.categorySearchTerm = searchTerm;
               break;
             case 'subCategories':
-              searchConditions.push('(subCategories.name ILIKE :subCategorySearchTerm OR subCategories.slug ILIKE :subCategorySearchTerm)');
+              searchConditions.push('(subCategories.name LIKE :subCategorySearchTerm OR subCategories.slug LIKE :subCategorySearchTerm)');
               searchParams.subCategorySearchTerm = searchTerm;
               break;
             case 'type':
-              searchConditions.push('(type.name ILIKE :typeSearchTerm OR type.slug ILIKE :typeSearchTerm)');
+              searchConditions.push('(type.name LIKE :typeSearchTerm OR type.slug LIKE :typeSearchTerm)');
               searchParams.typeSearchTerm = searchTerm;
               break;
             case 'tags':
-              searchConditions.push('(tags.name ILIKE :tagSearchTerm OR tags.slug ILIKE :tagSearchTerm)');
+              searchConditions.push('(tags.name LIKE :tagSearchTerm OR tags.slug LIKE :tagSearchTerm)');
               searchParams.tagSearchTerm = searchTerm;
               break;
             case 'variations':
               const variationParams = value.split(',');
               const variationSearchTerm = variationParams.map(param => param.split('=')[1]).join('/');
-              searchConditions.push('(variation_options.title ILIKE :variationSearchTerm)');
+              searchConditions.push('(variation_options.title LIKE :variationSearchTerm)');
               searchParams.variationSearchTerm = `%${variationSearchTerm}%`;
               break;
             default:
@@ -449,7 +453,7 @@ export class ProductsService {
       // Apply search conditions
       if (search) {
         const filterTerms = search.split(' ').map(term => `%${term}%`);
-        const searchConditions = filterTerms.map((_, index) =>
+        const searchTermsConditions = filterTerms.map((_, index) =>
           `(product.name LIKE :filterSearchTerm${index} OR ` +
           `product.sku LIKE :filterSearchTerm${index} OR ` +
           `categories.name LIKE :filterSearchTerm${index} OR ` +
@@ -461,8 +465,12 @@ export class ProductsService {
 
         // Apply search terms to query
         filterTerms.forEach((term, index) => {
-          productQueryBuilder.orWhere(searchConditions, { [`filterSearchTerm${index}`]: term });
+          searchParams[`filterSearchTerm${index}`] = term;
         });
+
+        if (searchTermsConditions) {
+          searchConditions.push(searchTermsConditions);
+        }
       }
 
       if (searchConditions.length > 0) {

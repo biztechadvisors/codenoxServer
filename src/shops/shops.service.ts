@@ -258,7 +258,7 @@ export class ShopsService {
       }
 
       // Cache the results
-      await this.cacheManager.set(cacheKey, data, 3600); // Cache for 5 minutes
+      await this.cacheManager.set(cacheKey, data, 3600); // Cache for 1 hour
     }
 
     const results = search ? data.slice(startIndex, endIndex) : data;
@@ -274,38 +274,38 @@ export class ShopsService {
       slug: shop.slug,
       description: shop.description,
       gst_number: shop.gst_number,
-      balance: {
-        id: shop?.balance?.id,
-        admin_commission_rate: shop.balance?.admin_commission_rate,
-        total_earnings: shop.balance?.total_earnings,
-        withdrawn_amount: shop.balance?.withdrawn_amount,
-        current_balance: shop.balance?.current_balance,
-        shop: shop.balance?.shop,
+      balance: shop.balance ? {
+        id: shop.balance.id,
+        admin_commission_rate: shop.balance.admin_commission_rate,
+        total_earnings: shop.balance.total_earnings,
+        withdrawn_amount: shop.balance.withdrawn_amount,
+        current_balance: shop.balance.current_balance,
+        shop: shop.balance.shop,
         dealer: null,
-        payment_info: {
-          id: shop.balance?.payment_info.id,
-          account: shop.balance?.payment_info.account,
-          name: shop.balance?.payment_info.name,
-          email: shop.balance?.payment_info.email,
-          bank: shop.balance?.payment_info.bank,
-        },
-      },
-      settings: {
+        payment_info: shop.balance.payment_info ? {
+          id: shop.balance.payment_info.id,
+          account: shop.balance.payment_info.account,
+          name: shop.balance.payment_info.name,
+          email: shop.balance.payment_info.email,
+          bank: shop.balance.payment_info.bank,
+        } : null,
+      } : null,
+      settings: shop.settings ? {
         id: shop.settings.id,
         contact: shop.settings.contact,
         website: shop.settings.website,
         socials: shop.settings.socials,
         location: shop.settings.location,
-      },
-      address: {
+      } : null,
+      address: shop.address ? {
         id: shop.address.id,
         street_address: shop.address.street_address,
         country: shop.address.country,
         city: shop.address.city,
         state: shop.address.state,
         zip: shop.address.zip,
-      },
-      owner: {
+      } : null,
+      owner: shop.owner ? {
         is_active: shop.owner.is_active,
         created_at: shop.owner.created_at,
         updated_at: shop.owner.updated_at,
@@ -321,16 +321,16 @@ export class ShopsService {
         contact: shop.owner.contact,
         email_verified_at: shop.owner.email_verified_at,
         profile: shop.owner.profile, // Update with actual profile data if available
-      },
+      } : null,
       cover_image: shop.cover_image || [],
-      logo: {
-        id: shop.logo?.id || "",
-        thumbnail: shop.logo?.thumbnail || "",
-        original: shop.logo?.original || "",
-      },
-      staffs: shop.staffs,
-      additionalPermissions: shop.additionalPermissions,
-      permission: shop.permission,
+      logo: shop.logo ? {
+        id: shop.logo.id || "",
+        thumbnail: shop.logo.thumbnail || "",
+        original: shop.logo.original || "",
+      } : null,
+      staffs: shop.staffs || [],
+      additionalPermissions: shop.additionalPermissions || [],
+      permission: shop.permission || null,
     }));
 
     return {
@@ -338,7 +338,6 @@ export class ShopsService {
       ...paginate(data.length, page, limit, results.length, `/shops?search=${search}&limit=${limit}`),
     };
   }
-
 
   async getStaffs({ shop_id, limit, page, orderBy, sortedBy, createdBy }: GetStaffsDto): Promise<any> {
     const limitNum = limit || 10;
@@ -424,7 +423,6 @@ export class ShopsService {
     return result;
   }
 
-
   async getShop(slug: string): Promise<Shop | null> {
     try {
       // Construct a unique cache key based on the shop slug
@@ -447,9 +445,9 @@ export class ShopsService {
             'cover_image',
             'logo',
             'staffs',
-            'additionalPermissions', // Fetch the additional permissions
+            'additionalPermissions',
             'additionalPermissions.permissions',
-            'permission', // Fetch the main permission
+            'permission',
             'permission.permissions',
             'regions',
             'events',
@@ -467,7 +465,7 @@ export class ShopsService {
       }
 
       // Map the retrieved shop data to the desired structure
-      const mappedShop = {
+      const mappedShop: Shop = {
         id: existShop.id,
         owner_id: existShop.owner_id,
         name: existShop.name,
@@ -502,8 +500,27 @@ export class ShopsService {
           }
           : null,
         is_active: existShop.is_active,
-        address: existShop.address ?? null,
-        settings: existShop.settings ?? null,
+        address: existShop.address
+          ? {
+            id: existShop.address.id,
+            name: existShop.address.name, // Ensure these match UserAddress properties
+            lastName: existShop.address.lastName, // Ensure these match UserAddress properties
+            street_address: existShop.address.street_address,
+            country: existShop.address.country,
+            city: existShop.address.city,
+            state: existShop.address.state,
+            zip: existShop.address.zip,
+          }
+          : null,
+        settings: existShop.settings
+          ? {
+            id: existShop.settings.id,
+            contact: existShop.settings.contact,
+            website: existShop.settings.website,
+            socials: existShop.settings.socials,
+            location: existShop.settings.location,
+          }
+          : null,
         created_at: existShop.created_at,
         updated_at: existShop.updated_at,
         orders_count: existShop.orders_count,
@@ -520,8 +537,8 @@ export class ShopsService {
         category: existShop.category ?? [],
         subCategories: existShop.subCategories ?? [],
         order: existShop.order ?? [],
-        additionalPermissions: existShop.additionalPermissions ?? [], // Ensure this is an array
-        permission: existShop.permission ?? null, // Ensure this is a single object
+        additionalPermissions: existShop.additionalPermissions ?? [],
+        permission: existShop.permission ?? null,
         dealerCount: existShop.dealerCount ?? 0,
         regions: existShop.regions ?? [],
         events: existShop.events ?? [],
@@ -534,7 +551,6 @@ export class ShopsService {
       return null;
     }
   }
-
 
   async update(id: number, updateShopDto: UpdateShopDto): Promise<Shop> {
     const existingShop = await this.shopRepository.findOne({

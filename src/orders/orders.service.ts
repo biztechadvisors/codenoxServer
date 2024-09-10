@@ -417,9 +417,7 @@ export class OrdersService {
 
 
   private async applyCoupon(couponId: number, order: Order): Promise<void> {
-    console.log('first 422', couponId)
     const coupon = await this.couponRepository.findOne({ where: { id: couponId } });
-    console.log('first', coupon)
 
     if (!coupon) {
       throw new NotFoundException('Coupon not found');
@@ -523,6 +521,7 @@ export class OrdersService {
           .leftJoinAndSelect('order.shipping_address', 'shipping_address')
           .leftJoinAndSelect('order.customer', 'customer')
           .leftJoinAndSelect('order.products', 'products')
+          .leftJoinAndSelect('order.orderProductPivots', 'orderProductPivots')
           .leftJoinAndSelect('products.pivot', 'pivot')
           .leftJoinAndSelect('products.taxes', 'taxes')
           .leftJoinAndSelect('products.variation_options', 'variation_options')

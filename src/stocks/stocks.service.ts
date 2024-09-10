@@ -69,30 +69,46 @@ export class StocksService {
         try {
             const { user_id, order_id, products } = createStocksDto;
 
-            const dealer = await this.userRepository.findOne({ where: { id: user_id }, relations: ['dealer'] });
+            // Find dealer
+            const dealer = await this.userRepository.findOne({
+                where: { id: user_id },
+                relations: ['dealer'],
+            });
             if (!dealer?.dealer) {
                 throw new NotFoundException(`Dealer not found by ID ${user_id}`);
             }
 
-            const updatedStocks: Stocks[] = [];
-
-            const orderEntity = await this.orderRepository.findOne({ where: { id: order_id } });
+            // Find order
+            const orderEntity = await this.orderRepository.findOne({
+                where: { id: order_id },
+            });
             if (!orderEntity) {
                 throw new NotFoundException(`Order not found by ID ${order_id}`);
             }
+
+            const updatedStocks: Stocks[] = [];
 
             for (const product of products) {
                 if (!product.product_id || !order_id) {
                     throw new NotFoundException(`Product id or Order id is not defined`);
                 }
 
-                const productEntity = await this.productRepository.findOne({ where: { id: product.product_id } });
+                // Find product
+                const productEntity = await this.productRepository.findOne({
+                    where: { id: product.product_id },
+                });
                 if (!productEntity) {
                     throw new NotFoundException(`Product not found by ID ${product.product_id}`);
                 }
 
-                const variationOptions = product.variation_option_id ? await this.variationRepository.findOne({ where: { id: product.variation_option_id } }) : null;
+                // Find variation options if provided
+                const variationOptions = product.variation_option_id
+                    ? await this.variationRepository.findOne({
+                        where: { id: product.variation_option_id },
+                    })
+                    : null;
 
+                // Create and save stock
                 const stock = this.stocksRepository.create({
                     orderedQuantity: product.order_quantity,
                     ordPendQuant: product.order_quantity,
@@ -107,61 +123,68 @@ export class StocksService {
                 const savedStock = await this.stocksRepository.save(stock);
                 updatedStocks.push(savedStock);
 
+                // Update inventory stocks
                 await this.updateInventoryStocks({
                     user_id: dealer.id,
                     product_id: productEntity.id,
                     variation_option_id: variationOptions ? variationOptions.id : null,
-                    orderedQuantity: product.order_quantity
+                    orderedQuantity: product.order_quantity,
                 });
             }
 
             return updatedStocks;
         } catch (error) {
-            throw new NotFoundException(`Error updating stock: ${error.message}`);
+            throw new NotFoundException(`Error creating stocks: ${error.message}`);
         }
     }
-
 
     async updateInventoryStocks(createStocksDto: any): Promise<InventoryStocks[]> {
         try {
             const { user_id, product_id, variation_option_id, orderedQuantity } = createStocksDto;
-
             let existingStock = await this.inventoryStocksRepository.findOne({
                 where: {
-                    user: user_id,
-                    product: product_id,
-                    variation_options: variation_option_id
+                    user: { id: parseInt(user_id) },
+                    product: { id: parseInt(product_id) },
+                    variation_options: { id: parseInt(variation_option_id) || -1 }, // Use -1 for non-existing ID
                 },
                 relations: ['product', 'variation_options'],
             });
 
             if (!existingStock) {
-                const userEntity = await this.userRepository.findOne({ where: { id: user_id } });
-                const productEntity = await this.productRepository.findOne({ where: { id: product_id } });
-                const variationOptionEntity = variation_option_id ? await this.variationRepository.findOne({ where: { id: variation_option_id } }) : null;
+                const userEntity = await this.userRepository.findOne({
+                    where: { id: parseInt(user_id) },
+                });
+                const productEntity = await this.productRepository.findOne({
+                    where: { id: parseInt(product_id) },
+                });
+                const variationOptionEntity = variation_option_id
+                    ? await this.variationRepository.findOne({
+                        where: { id: parseInt(variation_option_id) },
+                    })
+                    : null;
 
                 existingStock = this.inventoryStocksRepository.create({
-                    quantity: 0,
+                    quantity: orderedQuantity,
                     status: orderedQuantity > 2,
                     inStock: orderedQuantity > 2,
                     product: productEntity,
                     variation_options: variationOptionEntity ? [variationOptionEntity] : [],
                     user: userEntity,
                 });
-
                 await this.inventoryStocksRepository.save(existingStock);
             } else {
-                existingStock.quantity = 0;
+                existingStock.quantity += orderedQuantity;
                 existingStock.status = existingStock.quantity > 2;
                 existingStock.inStock = existingStock.quantity > 2;
                 await this.inventoryStocksRepository.save(existingStock);
             }
-
             return [existingStock];
         } catch (error) {
             throw new NotFoundException(`Error updating inventory stock: ${error.message}`);
         }
     }
+
+
 
     //update-stocks quantity by Admin and Dealer
 
