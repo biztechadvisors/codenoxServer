@@ -200,7 +200,7 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   async me(@Query('username') username?: string, @Query('sub') sub?: number) {
     try {
       return await this.authService.me(username, sub);

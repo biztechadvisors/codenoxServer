@@ -100,7 +100,7 @@ export class Order extends CoreEntity {
   @Column()
   payment_gateway: PaymentGatewayType;
 
-  @ManyToOne(() => Coupon, (coupon) => coupon.orders, { nullable: true, cascade: ['insert', 'update'] })
+  @ManyToOne(() => Coupon, (coupon) => coupon.orders, { nullable: true, cascade: ['insert', 'update'], eager: true })
   @JoinColumn({ name: 'coupon_id' })
   coupon?: Coupon;
 
