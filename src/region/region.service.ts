@@ -15,18 +15,17 @@ export class RegionService {
     ) { }
 
     async createRegion(createRegionDto: CreateRegionDto): Promise<Region> {
-        const { name, shop: shopIds } = createRegionDto;
+        const { name, shop_id } = createRegionDto;
+        const shop = await this.shopRepository.findOne({ where: { id: shop_id } })
+        const region = new Region()
 
-        // Verify that all provided shop IDs exist
-        const shops = await this.shopRepository.findByIds(shopIds);
-        if (shops.length !== shopIds.length) {
-            throw new NotFoundException('One or more shops not found');
-        }
+        region.name = name;
+        region.shops = [shop]
 
         // Create the new region and associate the shops
-        const region = this.regionRepository.create({ name, shops });
-        return await this.regionRepository.save(region);
+        return this.regionRepository.save(region);
     }
+
 
     async findAllRegionByShop(shopSlug: string): Promise<Region[]> {
         const shop = await this.shopRepository.findOne({
@@ -52,31 +51,21 @@ export class RegionService {
     }
 
     async update(id: number, updateRegionDto: UpdateRegionDto): Promise<Region> {
-        const { shop: shopIds, ...regionData } = updateRegionDto;
+        const { shop_id, name } = updateRegionDto;
 
-        let shops: Shop[] = [];
-        if (shopIds) {
-            shops = await this.shopRepository.findByIds(shopIds);
-            if (shops.length !== shopIds.length) {
-                throw new NotFoundException('One or more shops not found');
-            }
-        }
-
-        const region = await this.regionRepository.preload({
-            id,
-            ...regionData,
-            shops,  // Correctly assign `shops` as an array of `Shop` entities
-        });
+        const region = await this.regionRepository.findOne({ where: { id } });
 
         if (!region) {
             throw new NotFoundException(`Region with ID ${id} not found`);
         }
 
         try {
+
+            region.name = updateRegionDto.name
             return await this.regionRepository.save(region);
         } catch (error) {
             if (error instanceof QueryFailedError && error.message.includes('Duplicate entry')) {
-                throw new ConflictException(`Region with name '${regionData.name}' already exists`);
+                throw new ConflictException(`Region with name '${name}' already exists`);
             }
             throw error;
         }

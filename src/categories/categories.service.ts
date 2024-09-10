@@ -229,27 +229,31 @@ export class CategoriesService {
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
+    // Fetch the existing category with necessary relations
     const category = await this.categoryRepository.findOne({
       where: { id },
-      relations: ['type', 'image', 'region'],
+      relations: ['type', 'image', 'regions', 'shop', 'parent'], // Include parent in relations
     });
 
     if (!category) {
       throw new NotFoundException('Category not found');
     }
 
+    // Handle image update
     if (updateCategoryDto.image) {
       const image = await this.attachmentRepository.findOne({ where: { id: updateCategoryDto.image.id } });
       if (!image) {
         throw new NotFoundException(`Image with ID '${updateCategoryDto.image.id}' not found`);
       }
 
+      // Remove old image if it exists and is only associated with this category
       if (category.image && (await this.categoryRepository.count({ where: { image: category.image } })) === 1) {
         await this.attachmentRepository.remove(category.image);
       }
       category.image = image;
     }
 
+    // Handle type update
     if (updateCategoryDto.type_id) {
       const type = await this.typeRepository.findOne({ where: { id: updateCategoryDto.type_id } });
       if (!type) {
@@ -258,12 +262,21 @@ export class CategoriesService {
       category.type = type;
     }
 
-    // Handling regions
+    // Handle parent update
+    if (updateCategoryDto.parent) {
+      const parentCategory = await this.categoryRepository.findOne({ where: { id: updateCategoryDto.parent.id } });
+      if (!parentCategory) {
+        throw new NotFoundException(`Parent category with ID '${updateCategoryDto.parent}' not found`);
+      }
+      category.parent = parentCategory;
+    } else {
+      category.parent = null; // Handle case where parent is not provided or should be set to null
+    }
+
+    // Handle regions update
     if (updateCategoryDto.region_name && updateCategoryDto.region_name.length > 0) {
       const regions = await this.regionRepository.find({
-        where: {
-          name: In(updateCategoryDto.region_name),
-        },
+        where: { name: In(updateCategoryDto.region_name) },
       });
 
       // Check if all requested regions were found
@@ -274,19 +287,31 @@ export class CategoriesService {
         throw new NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
       }
 
-      category.regions = regions; // This should work if `regions` is of type Region[]
+      category.regions = regions; // Correctly assign an array of regions
     }
 
+    // Handle other updates
+    category.name = updateCategoryDto.name || category.name; // Retain old value if not provided
+    category.slug = updateCategoryDto.name ? await this.convertToSlug(updateCategoryDto.name) : category.slug; // Update slug if name is provided
+    category.details = updateCategoryDto.details || category.details; // Retain old value if not provided
+    category.icon = updateCategoryDto.icon || category.icon; // Retain old value if not provided
+    category.language = updateCategoryDto.language || category.language; // Retain old value if not provided
 
-    category.name = updateCategoryDto.name;
-    category.slug = await this.convertToSlug(updateCategoryDto.name);
-    category.details = updateCategoryDto.details;
-    category.parent = updateCategoryDto.parent;
-    category.icon = updateCategoryDto.icon;
-    category.language = updateCategoryDto.language;
+    // Handle shop update if required
+    if (updateCategoryDto.shop_id) {
+      const shop = await this.shopRepository.findOne({ where: { id: updateCategoryDto.shop_id } });
+      if (shop) {
+        category.shop = shop;
+      } else {
+        throw new NotFoundException(`Shop with id '${updateCategoryDto.shop_id}' not found`);
+      }
+    }
 
+    // Save and return the updated category
     return this.categoryRepository.save(category);
   }
+
+
 
   async remove(id: number): Promise<void> {
     // Find the Category instance to be removed

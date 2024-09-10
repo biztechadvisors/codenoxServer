@@ -6,10 +6,8 @@ export class CreateRegionDto {
     @IsString()
     name: string;
 
-    @IsArray()
-    @ArrayUnique()
-    @IsNumber({}, { each: true })
-    shop: number[]; // Array of shop IDs
+    @IsNumber()
+    shop_id: number; // Array of shop IDs
 }
 
 export class UpdateRegionDto extends PartialType(CreateRegionDto) { }
