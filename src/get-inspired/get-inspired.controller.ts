@@ -16,7 +16,7 @@ export class GetInspiredController {
 
     @Get('shop/:shopSlug')
     async getAllGetInspired(
-        @Param('shopSlug') shopSlug: string,
+        @Query('shopSlug') shopSlug: string,
         @Query('type') type?: string, // Optional query parameter for type
         @Query('tagIds') tagIds?: string, // Optional query parameter for tagIds (comma-separated)
         @Query('page') page: number = 1,
