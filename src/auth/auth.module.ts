@@ -6,9 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MailModule } from 'src/mail/mail.module';
 import { NotificationModule } from 'src/notifications/notifications.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import { UserRepository } from 'src/users/users.repository';
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
-import { PermissionRepository } from '../permission/permission.repository';
 import { User } from 'src/users/entities/user.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { JwtStrategy } from './auth-helper/jwt.strategy';
@@ -17,7 +15,7 @@ import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
-    TypeOrmExModule.forCustomRepository([UserRepository, PermissionRepository]),
+    TypeOrmModule.forFeature([User, Permission]),
     TypeOrmModule.forFeature([Permission, User]),
     UsersModule,
     MailModule,

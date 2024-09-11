@@ -4,7 +4,6 @@ import { CreateFeedBackDto } from './dto/create-feedback.dto';
 import { UpdateFeedBackDto } from './dto/update-feedback.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Feedback } from './entities/feedback.entity';
-import { UserRepository } from 'src/users/users.repository';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Question } from 'src/questions/entities/question.entity';

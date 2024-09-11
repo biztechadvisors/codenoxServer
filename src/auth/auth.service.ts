@@ -18,10 +18,9 @@ import {
 import * as bcrypt from 'bcrypt';
 import { User, UserType } from 'src/users/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserRepository } from 'src/users/users.repository';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
-import { FindOperator, ILike, IsNull, Not } from 'typeorm';
+import { FindOperator, ILike, IsNull, Not, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import Twilio from 'twilio';
 import { NotificationService } from 'src/notifications/services/notifications.service';
@@ -29,7 +28,6 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
-import { PermissionRepository } from '../permission/permission.repository';
 import { SessionService } from './auth-helper/session.service';
 import { UsersService } from '../users/users.service';
 
@@ -43,8 +41,8 @@ export class AuthService {
   private emailVerificationCodes: Map<string, { otp: string, createdAt: Date }> = new Map();
 
   constructor(
-    @InjectRepository(UserRepository) private readonly userRepository: UserRepository,
-    @InjectRepository(PermissionRepository) private readonly permissionRepository: PermissionRepository,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,

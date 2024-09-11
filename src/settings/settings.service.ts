@@ -24,27 +24,6 @@ import {
   SmsVendor
 } from './entities/setting.entity'
 import { InjectRepository } from '@nestjs/typeorm'
-import {
-  ContactDetailsRepository,
-  CurrencyOptionsRepository,
-  DeliveryTimeRepository,
-  EmailAdminRepository,
-  EmailCustomerRepository,
-  EmailEventRepository,
-  EmailVendorRepository,
-  LogoSettingsRepository,
-  PaymentGateWayRepository,
-  SeoSettingsRepository,
-  ServerInfoRepository,
-  SettingRepository,
-  SettingsOptionsRepository,
-  SmsAdminRepository,
-  SmsCustomerRepository,
-  SmsEventRepository,
-  SmsVendorRepository
-} from './settings.repository'
-import { LocationRepository, ShopSocialsRepository } from 'src/shops/shops.repository'
-import { AttachmentRepository } from 'src/common/common.repository'
 import { Shop } from 'src/shops/entities/shop.entity'
 import { EntityNotFoundError, Repository, UpdateValuesMissingError } from 'typeorm'
 import { Attachment } from 'src/common/entities/attachment.entity'
@@ -54,46 +33,46 @@ import { Cache } from 'cache-manager'
 @Injectable()
 export class SettingsService {
   constructor(
-    @InjectRepository(SettingRepository)
-    private settingRepository: SettingRepository,
-    @InjectRepository(SettingsOptionsRepository)
-    private settingsOptionsRepository: SettingsOptionsRepository,
-    @InjectRepository(ContactDetailsRepository)
-    private contactDetailRepository: ContactDetailsRepository,
-    @InjectRepository(LocationRepository)
-    private locationRepository: LocationRepository,
-    @InjectRepository(ShopSocialsRepository)
-    private shopSocialRepository: ShopSocialsRepository,
-    @InjectRepository(CurrencyOptionsRepository)
-    private currencyOptionRepository: CurrencyOptionsRepository,
-    @InjectRepository(EmailEventRepository)
-    private emailEventRepository: EmailEventRepository,
-    @InjectRepository(EmailAdminRepository)
-    private emailAdminRepository: EmailAdminRepository,
-    @InjectRepository(EmailVendorRepository)
-    private emailVendorRepository: EmailVendorRepository,
-    @InjectRepository(EmailCustomerRepository)
-    private emailCustomerRepository: EmailCustomerRepository,
-    @InjectRepository(SmsEventRepository)
-    private smsEventRepository: SmsEventRepository,
-    @InjectRepository(SmsAdminRepository)
-    private smsAdminRepository: SmsAdminRepository,
-    @InjectRepository(SmsVendorRepository)
-    private smsVendorRepository: SmsVendorRepository,
-    @InjectRepository(SmsCustomerRepository)
-    private smsCustomerRepository: SmsCustomerRepository,
-    @InjectRepository(SeoSettingsRepository)
-    private seoSettingsRepository: SeoSettingsRepository,
-    @InjectRepository(ServerInfoRepository)
-    private serverInfoRepository: ServerInfoRepository,
-    @InjectRepository(DeliveryTimeRepository)
-    private deliveryTimeRepository: DeliveryTimeRepository,
-    @InjectRepository(LogoSettingsRepository)
-    private logoSettingsRepository: LogoSettingsRepository,
-    @InjectRepository(PaymentGateWayRepository)
-    private paymentGatewayRepository: PaymentGateWayRepository,
-    @InjectRepository(AttachmentRepository)
-    private attachmentRepository: AttachmentRepository,
+    @InjectRepository(Setting)
+    private settingRepository: Repository<Setting>,
+    @InjectRepository(SettingsOptions)
+    private settingsOptionsRepository: Repository<SettingsOptions>,
+    @InjectRepository(ContactDetails)
+    private contactDetailRepository: Repository<ContactDetails>,
+    @InjectRepository(Location)
+    private locationRepository: Repository<Location>,
+    @InjectRepository(ShopSocials)
+    private shopSocialRepository: Repository<ShopSocials>,
+    @InjectRepository(CurrencyOptions)
+    private currencyOptionRepository: Repository<CurrencyOptions>,
+    @InjectRepository(EmailEvent)
+    private emailEventRepository: Repository<EmailEvent>,
+    @InjectRepository(EmailAdmin)
+    private emailAdminRepository: Repository<EmailAdmin>,
+    @InjectRepository(EmailVendor)
+    private emailVendorRepository: Repository<EmailVendor>,
+    @InjectRepository(EmailCustomer)
+    private emailCustomerRepository: Repository<EmailCustomer>,
+    @InjectRepository(SmsEvent)
+    private smsEventRepository: Repository<SmsEvent>,
+    @InjectRepository(SmsAdmin)
+    private smsAdminRepository: Repository<SmsAdmin>,
+    @InjectRepository(SmsVendor)
+    private smsVendorRepository: Repository<SmsVendor>,
+    @InjectRepository(SmsCustomer)
+    private smsCustomerRepository: Repository<SmsCustomer>,
+    @InjectRepository(SeoSettings)
+    private seoSettingsRepository: Repository<SeoSettings>,
+    @InjectRepository(ServerInfo)
+    private serverInfoRepository: Repository<ServerInfo>,
+    @InjectRepository(DeliveryTime)
+    private deliveryTimeRepository: Repository<DeliveryTime>,
+    @InjectRepository(LogoSettings)
+    private logoSettingsRepository: Repository<LogoSettings>,
+    @InjectRepository(PaymentGateway)
+    private paymentGatewayRepository: Repository<PaymentGateway>,
+    @InjectRepository(Attachment)
+    private attachmentRepository: Repository<Attachment>,
     @InjectRepository(Shop)
     private shopRepository: Repository<Shop>,
     @InjectRepository(ServerInfo)

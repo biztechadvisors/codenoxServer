@@ -7,9 +7,7 @@ import { Tax } from './entities/tax.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from 'src/products/entities/product.entity';
-import { ProductRepository } from 'src/products/products.repository';
 import { Category } from 'src/categories/entities/category.entity';
-import { CategoryRepository } from 'src/categories/categories.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
@@ -27,7 +25,7 @@ export class TaxesService {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Category)
-    private readonly categoryRepository: CategoryRepository,
+    private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
     @Inject(CACHE_MANAGER)

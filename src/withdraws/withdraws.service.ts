@@ -6,23 +6,22 @@ import { Withdraw, WithdrawStatus } from './entities/withdraw.entity'
 import { GetWithdrawsDto, WithdrawPaginator } from './dto/get-withdraw.dto'
 import { paginate } from 'src/common/pagination/paginate'
 import { InjectRepository } from '@nestjs/typeorm'
-import { WithdrawRepository } from './withdraws.repository'
 import Fuse from 'fuse.js'
-// import { Balance } from 'src/shops/entities/balance.entity'
-import { BalanceRepository, ShopRepository } from 'src/shops/shops.repository'
-
+import { Repository } from 'typeorm'
+import { Balance } from '../shops/entities/balance.entity'
+import { Shop } from '../shops/entities/shop.entity'
 
 @Injectable()
 export class WithdrawsService {
   constructor(
-    @InjectRepository(WithdrawRepository)
-    private withdrawRepository: WithdrawRepository,
-    @InjectRepository(BalanceRepository)
-    private balanceRepository: BalanceRepository,
-    @InjectRepository(ShopRepository)
-    private shopRepository: ShopRepository,
+    @InjectRepository(Withdraw)
+    private withdrawRepository: Repository<Withdraw>,
+    @InjectRepository(Balance)
+    private balanceRepository: Repository<Balance>,
+    @InjectRepository(Shop)
+    private shopRepository: Repository<Shop>,
   ) { }
- 
+
   async create(createWithdrawDto: CreateWithdrawDto) {
     const newWithdraw = new Withdraw()
     // const newWithdrawBalance = new Balance()
@@ -65,7 +64,7 @@ export class WithdrawsService {
         if (findBalanceId) {
 
           findBalanceId.withdrawn_amount = addWithdraw.amount
-            await this.balanceRepository.save(findBalanceId)
+          await this.balanceRepository.save(findBalanceId)
         }
 
         return addWithdraw

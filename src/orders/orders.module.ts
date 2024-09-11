@@ -17,7 +17,6 @@ import { User } from 'src/users/entities/user.entity';
 import { File, OrderProductPivot, Product, Variation } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { PaymentIntent, PaymentIntentInfo } from 'src/payment-intent/entries/payment-intent.entity';
-import { OrderProductPivotRepository } from 'src/products/products.repository';
 import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { HttpModule } from '@nestjs/axios';
@@ -39,10 +38,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     AuthModule,
     PaymentModule,
     NotificationModule,
-    TypeOrmExModule.forCustomRepository([
-      OrderProductPivotRepository
-    ]),
-    TypeOrmModule.forFeature([Order, UserAddress, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks, Variation, Notification, File]),
+    TypeOrmModule.forFeature([Order, OrderProductPivot, UserAddress, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks, Variation, Notification, File]),
     HttpModule,
     CacheModule.register()
   ],

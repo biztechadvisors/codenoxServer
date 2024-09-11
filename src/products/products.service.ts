@@ -6,21 +6,13 @@ import { File, OrderProductPivot, Product, ProductType, Variation, VariationOpti
 import { paginate } from 'src/common/pagination/paginate';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FileRepository, OrderProductPivotRepository, ProductRepository, VariationOptionRepository, VariationRepository } from './products.repository';
-import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
-import { TagRepository } from 'src/tags/tags.repository';
 import { Tag } from 'src/tags/entities/tag.entity';
 import { Type } from 'src/types/entities/type.entity';
-import { TypeRepository } from 'src/types/types.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
-import { ShopRepository } from 'src/shops/shops.repository';
-import { CategoryRepository } from 'src/categories/categories.repository';
 import { Category, SubCategory } from 'src/categories/entities/category.entity';
-import { AttributeValueRepository } from 'src/attributes/attribute.repository';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from 'src/users/entities/dealer.entity';
-import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, UserRepository } from 'src/users/users.repository';
 import { User } from 'src/users/entities/user.entity';
 import { In, Repository } from 'typeorm';
 import { Tax } from 'src/taxes/entities/tax.entity';
@@ -37,22 +29,22 @@ export class ProductsService {
   private readonly logger = new Logger(ProductsService.name);
 
   constructor(
-    @InjectRepository(Product) private readonly productRepository: ProductRepository,
-    @InjectRepository(OrderProductPivot) private readonly orderProductPivotRepository: OrderProductPivotRepository,
-    @InjectRepository(Variation) private readonly variationRepository: VariationRepository,
-    @InjectRepository(VariationOption) private readonly variationOptionRepository: VariationOptionRepository,
-    @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
-    @InjectRepository(Tag) private readonly tagRepository: TagRepository,
-    @InjectRepository(Type) private readonly typeRepository: TypeRepository,
-    @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
-    @InjectRepository(Category) private readonly categoryRepository: CategoryRepository,
+    @InjectRepository(Product) private readonly productRepository: Repository<Product>,
+    @InjectRepository(OrderProductPivot) private readonly orderProductPivotRepository: Repository<OrderProductPivot>,
+    @InjectRepository(Variation) private readonly variationRepository: Repository<Variation>,
+    @InjectRepository(VariationOption) private readonly variationOptionRepository: Repository<VariationOption>,
+    @InjectRepository(Attachment) private readonly attachmentRepository: Repository<Attachment>,
+    @InjectRepository(Tag) private readonly tagRepository: Repository<Tag>,
+    @InjectRepository(Type) private readonly typeRepository: Repository<Type>,
+    @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
+    @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
     @InjectRepository(SubCategory) private readonly subCategoryRepository: Repository<SubCategory>,
-    @InjectRepository(AttributeValue) private readonly attributeValueRepository: AttributeValueRepository,
-    @InjectRepository(File) private readonly fileRepository: FileRepository,
-    @InjectRepository(Dealer) private readonly dealerRepository: DealerRepository,
-    @InjectRepository(DealerProductMargin) private readonly dealerProductMarginRepository: DealerProductMarginRepository,
-    @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
-    @InjectRepository(User) private readonly userRepository: UserRepository,
+    @InjectRepository(AttributeValue) private readonly attributeValueRepository: Repository<AttributeValue>,
+    @InjectRepository(File) private readonly fileRepository: Repository<File>,
+    @InjectRepository(Dealer) private readonly dealerRepository: Repository<Dealer>,
+    @InjectRepository(DealerProductMargin) private readonly dealerProductMarginRepository: Repository<DealerProductMargin>,
+    @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: Repository<DealerCategoryMargin>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Tax) private readonly taxRepository: Repository<Tax>,
     @InjectRepository(Region) private readonly regionRepository: Repository<Region>,
 

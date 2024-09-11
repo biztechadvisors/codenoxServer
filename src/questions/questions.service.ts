@@ -10,10 +10,8 @@ import { GetQuestionDto } from './dto/get-questions.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProductRepository } from 'src/products/products.repository';
 import { Product } from 'src/products/entities/product.entity';
 import { User } from 'src/users/entities/user.entity';
-import { UserRepository } from 'src/users/users.repository';
 import { Repository } from 'typeorm';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 
@@ -24,9 +22,9 @@ export class QuestionService {
     @InjectRepository(Question)
     private questionRepository: Repository<Question>,
     @InjectRepository(Product)
-    private productRepository: ProductRepository,
+    private productRepository: Repository<Product>,
     @InjectRepository(User)
-    private userRepository: UserRepository,
+    private userRepository: Repository<User>,
     @InjectRepository(Feedback)
     private feedbackRepository: Repository<Feedback>,
   ) { }

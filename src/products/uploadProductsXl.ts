@@ -13,14 +13,6 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Category, SubCategory } from 'src/categories/entities/category.entity';
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from 'src/users/entities/dealer.entity';
 import { User } from 'src/users/entities/user.entity';
-import { FileRepository, OrderProductPivotRepository, ProductRepository, VariationOptionRepository, VariationRepository } from './products.repository';
-import { AttachmentRepository } from 'src/common/common.repository';
-import { TagRepository } from 'src/tags/tags.repository';
-import { TypeRepository } from 'src/types/types.repository';
-import { CategoryRepository } from 'src/categories/categories.repository';
-import { ShopRepository } from 'src/shops/shops.repository';
-import { AttributeValueRepository } from 'src/attributes/attribute.repository';
-import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, UserRepository } from 'src/users/users.repository';
 import { DeepPartial, Repository } from 'typeorm';
 import { error } from 'console';
 
@@ -29,21 +21,21 @@ export class UploadXlService {
     logger: any;
     constructor(
         private readonly productsService: ProductsService,
-        @InjectRepository(Product) private readonly productRepository: ProductRepository,
-        @InjectRepository(OrderProductPivot) private readonly orderProductPivotRepository: OrderProductPivotRepository,
-        @InjectRepository(Variation) private readonly variationRepository: VariationRepository,
-        @InjectRepository(VariationOption) private readonly variationOptionRepository: VariationOptionRepository,
-        @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
-        @InjectRepository(Tag) private readonly tagRepository: TagRepository,
-        @InjectRepository(Type) private readonly typeRepository: TypeRepository,
-        @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
-        @InjectRepository(Category) private readonly categoryRepository: CategoryRepository,
-        @InjectRepository(AttributeValue) private readonly attributeValueRepository: AttributeValueRepository,
+        @InjectRepository(Product) private readonly productRepository: Repository<Product>,
+        @InjectRepository(OrderProductPivot) private readonly orderProductPivotRepository: Repository<OrderProductPivot>,
+        @InjectRepository(Variation) private readonly variationRepository: Repository<Variation>,
+        @InjectRepository(VariationOption) private readonly variationOptionRepository: Repository<VariationOption>,
+        @InjectRepository(Attachment) private readonly attachmentRepository: Repository<Attachment>,
+        @InjectRepository(Tag) private readonly tagRepository: Repository<Tag>,
+        @InjectRepository(Type) private readonly typeRepository: Repository<Type>,
+        @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
+        @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
+        @InjectRepository(AttributeValue) private readonly attributeValueRepository: Repository<AttributeValue>,
         @InjectRepository(File) private readonly fileRepository: Repository<File>,
-        @InjectRepository(Dealer) private readonly dealerRepository: DealerRepository,
-        @InjectRepository(DealerProductMargin) private readonly dealerProductMarginRepository: DealerProductMarginRepository,
-        @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
-        @InjectRepository(User) private readonly userRepository: UserRepository,
+        @InjectRepository(Dealer) private readonly dealerRepository: Repository<Dealer>,
+        @InjectRepository(DealerProductMargin) private readonly dealerProductMarginRepository: Repository<DealerProductMargin>,
+        @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: Repository<DealerCategoryMargin>,
+        @InjectRepository(User) private readonly userRepository: Repository<User>,
         @InjectRepository(Tax) private readonly taxRepository: Repository<Tax>,
         @InjectRepository(SubCategory) private readonly subCategoryRepository: Repository<SubCategory>,
 

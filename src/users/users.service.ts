@@ -8,23 +8,16 @@ import Fuse from 'fuse.js';
 import { User, UserType } from './entities/user.entity';
 import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DealerCategoryMarginRepository, DealerProductMarginRepository, DealerRepository, SocialRepository, UserRepository } from './users.repository';
 import { Address } from 'src/addresses/entities/address.entity';
 import { Profile, Social } from './entities/profile.entity';
-import { AddressRepository } from 'src/addresses/addresses.repository';
-import { ProfileRepository } from './profile.repository';
-import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { DealerDto } from './dto/add-dealer.dto';
 import { Dealer, DealerCategoryMargin, DealerProductMargin } from './entities/dealer.entity';
 import { Product } from 'src/products/entities/product.entity';
-import { ProductRepository } from 'src/products/products.repository';
 import { Category } from 'src/categories/entities/category.entity';
-import { CategoryRepository } from 'src/categories/categories.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
-import { ShopRepository } from 'src/shops/shops.repository';
 import { RegisterDto } from 'src/auth/dto/create-auth.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { AddressesService } from 'src/addresses/addresses.service';
@@ -44,17 +37,17 @@ const options = {
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User) private readonly userRepository: UserRepository,
-    @InjectRepository(Address) private readonly addressRepository: AddressRepository,
-    @InjectRepository(Profile) private readonly profileRepository: ProfileRepository,
-    @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
-    @InjectRepository(Dealer) private readonly dealerRepository: DealerRepository,
-    @InjectRepository(Product) private readonly productRepository: ProductRepository,
-    @InjectRepository(Category) private readonly categoryRepository: CategoryRepository,
-    @InjectRepository(DealerProductMargin) private readonly dealerProductMarginRepository: DealerProductMarginRepository,
-    @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: DealerCategoryMarginRepository,
-    @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
-    @InjectRepository(Social) private readonly socialRepository: SocialRepository,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(Address) private readonly addressRepository: Repository<Address>,
+    @InjectRepository(Profile) private readonly profileRepository: Repository<Profile>,
+    @InjectRepository(Attachment) private readonly attachmentRepository: Repository<Attachment>,
+    @InjectRepository(Dealer) private readonly dealerRepository: Repository<Dealer>,
+    @InjectRepository(Product) private readonly productRepository: Repository<Product>,
+    @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(DealerProductMargin) private readonly dealerProductMarginRepository: Repository<DealerProductMargin>,
+    @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: Repository<DealerCategoryMargin>,
+    @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
+    @InjectRepository(Social) private readonly socialRepository: Repository<Social>,
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
 

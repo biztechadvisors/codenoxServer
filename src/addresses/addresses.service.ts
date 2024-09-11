@@ -4,20 +4,18 @@ import { UpdateAddressDto } from './dto/update-address.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Address, UserAddress } from './entities/address.entity';
 import { User } from 'src/users/entities/user.entity';
-import { UserRepository } from 'src/users/users.repository';
-import { AddressRepository, UserAddressRepository } from './addresses.repository';
-import { ShopRepository } from 'src/shops/shops.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AddressesService {
   constructor(
-    @InjectRepository(UserAddress) private readonly userAddressRepository: UserAddressRepository,
-    @InjectRepository(Address) private readonly addressRepository: AddressRepository,
-    @InjectRepository(User) private readonly userRepository: UserRepository,
-    @InjectRepository(Shop) private readonly shopRepository: ShopRepository,
+    @InjectRepository(UserAddress) private readonly userAddressRepository: Repository<UserAddress>,
+    @InjectRepository(Address) private readonly addressRepository: Repository<Address>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 

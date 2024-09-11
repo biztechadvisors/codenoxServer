@@ -7,12 +7,10 @@ import Fuse from 'fuse.js'
 import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto'
 import { paginate } from 'src/common/pagination/paginate'
 import { GetStaffsDto } from './dto/get-staffs.dto'
-import { AddressRepository, BalanceRepository, LocationRepository, PaymentInfoRepository, ShopRepository, ShopSettingsRepository, ShopSocialsRepository } from './shops.repository'
 import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
 import { Balance } from './entities/balance.entity'
 import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
-import { UserRepository } from 'src/users/users.repository'
 import { Address, AddressType, UserAddress } from 'src/addresses/entities/address.entity'
 import { User, UserType } from 'src/users/entities/user.entity'
 import { Attachment } from 'src/common/entities/attachment.entity'
@@ -20,7 +18,6 @@ import { AttachmentRepository } from 'src/common/common.repository'
 import { ShopSettings } from './entities/shopSettings.entity'
 import { AddressesService } from 'src/addresses/addresses.service'
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto'
-import { UserAddressRepository } from 'src/addresses/addresses.repository'
 import { Permission } from 'src/permission/entities/permission.entity'
 import { Brackets, FindOperator, ILike, Repository } from 'typeorm'
 import { UserPaginator } from 'src/users/dto/get-users.dto'
@@ -31,25 +28,25 @@ import { Cache } from 'cache-manager'
 export class ShopsService {
   constructor(
     @InjectRepository(Shop)
-    private readonly shopRepository: ShopRepository,
+    private readonly shopRepository: Repository<Shop>,
     @InjectRepository(Balance)
-    private readonly balanceRepository: BalanceRepository,
+    private readonly balanceRepository: Repository<Balance>,
     @InjectRepository(ShopSettings)
-    private readonly shopSettingsRepository: ShopSettingsRepository,
+    private readonly shopSettingsRepository: Repository<ShopSettings>,
     @InjectRepository(PaymentInfo)
-    private readonly paymentInfoRepository: PaymentInfoRepository,
+    private readonly paymentInfoRepository: Repository<PaymentInfo>,
     @InjectRepository(Address)
-    private readonly addressRepository: AddressRepository,
+    private readonly addressRepository: Repository<Address>,
     @InjectRepository(UserAddress)
-    private readonly userAddressRepository: UserAddressRepository,
+    private readonly userAddressRepository: Repository<UserAddress>,
     @InjectRepository(ShopSocials)
-    private readonly shopSocialsRepository: ShopSocialsRepository,
+    private readonly shopSocialsRepository: Repository<ShopSocials>,
     @InjectRepository(Location)
-    private readonly locationRepository: LocationRepository,
+    private readonly locationRepository: Repository<Location>,
     @InjectRepository(User)
-    private readonly userRepository: UserRepository,
+    private readonly userRepository: Repository<User>,
     @InjectRepository(Attachment)
-    private readonly attachmentRepository: AttachmentRepository,
+    private readonly attachmentRepository: Repository<Attachment>,
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
     private readonly addressesService: AddressesService,
     @Inject(CACHE_MANAGER)
