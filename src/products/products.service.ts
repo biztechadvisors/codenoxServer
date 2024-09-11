@@ -440,10 +440,20 @@ export class ProductsService {
               break;
             case 'variations':
               const variationParams = value.split(',');
-              const variationSearchTerm = variationParams.map(param => param.split('=')[1]).join('/');
-              searchConditions.push('(variation_options.title LIKE :variationSearchTerm)');
-              searchParams.variationSearchTerm = `%${variationSearchTerm}%`;
+
+              // Build dynamic LIKE search conditions for each variation
+              variationParams.forEach((param, index) => {
+                const [variationKey, variationValue] = param.split('=');
+                const variationSearchTerm = `%${variationValue}%`;
+
+                // Each variation condition is pushed into searchConditions
+                searchConditions.push(`(variation_options.${variationKey} LIKE :variationSearchTerm${index})`);
+
+                // Store each variation search term in searchParams dynamically
+                searchParams[`variationSearchTerm${index}`] = variationSearchTerm;
+              });
               break;
+
             default:
               break;
           }
