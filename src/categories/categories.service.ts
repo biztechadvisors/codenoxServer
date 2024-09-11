@@ -532,7 +532,7 @@ export class CategoriesService {
     if (updateSubCategoryDto.category_id) {
       const category = await this.categoryRepository.findOne({ where: { id: updateSubCategoryDto.category_id } });
       if (!category) {
-        throw new NotFoundException(`Category with ID '${updateSubCategoryDto.category_id}' not found`);
+        throw new NotFoundException(`subCategory with ID '${updateSubCategoryDto.category_id}' not found`);
       }
       subCategory.category = category;
     }

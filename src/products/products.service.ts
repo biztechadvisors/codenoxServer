@@ -331,7 +331,6 @@ export class ProductsService {
     return product;
   }
 
-
   async getProducts(query: GetProductsDto): Promise<ProductPaginator> {
     const {
       limit = 20,
@@ -341,23 +340,21 @@ export class ProductsService {
       dealerId,
       shop_id,
       shopName,
-      regionNames
+      regionNames, // Default to empty array if undefined
+      minPrice,
+      maxPrice
     } = query;
+
     const startIndex = (page - 1) * limit;
 
-    // Handle regionNames as a string or array
-    const regionsArray: string[] = [];
+    // Ensure regionNames has a valid type
+    const regionsArray: string[] = Array.isArray(regionNames)
+      ? regionNames
+      : (typeof regionNames === 'string' ? regionNames.split(",") : []);
 
-    if (regionNames) {
-      if (Array.isArray(regionNames)) {
-        regionsArray.push(...regionNames); // Spread the array elements into regionsArray
-      } else if (typeof regionNames === 'string') {
-        regionsArray.push(regionNames); // Push the string directly into regionsArray
-      }
-    }
-
+    console.log('first', regionsArray)
     // Generate cache key
-    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${regionsArray.join(',') || ' '}:${page}:${limit}`;
+    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${regionsArray.join(',')}:${page}:${limit}`;
     this.logger.log(`Generated cache key: ${cacheKey}`);
 
     // Check cache
@@ -381,14 +378,12 @@ export class ProductsService {
       .leftJoinAndSelect('product.variations', 'variations')
       .leftJoinAndSelect('product.variation_options', 'variation_options')
       .leftJoinAndSelect('product.gallery', 'gallery')
-      // .leftJoinAndSelect('product.pivot', 'pivot')
-      // .leftJoinAndSelect('product.orders', 'orders')
       .leftJoinAndSelect('product.my_review', 'my_review')
       .leftJoinAndSelect('product.variations', 'attributeValues')
       .leftJoinAndSelect('attributeValues.attribute', 'attribute')
       .leftJoinAndSelect('product.regions', 'regions'); // Ensure proper join with region entity
 
-    // Add filters
+    // Add filters for shop or dealer
     if (shop_id) {
       productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
     } else if (shopName) {
@@ -400,9 +395,16 @@ export class ProductsService {
     }
 
     // Add region filter
-    if (regionsArray.length >= 1) {
-      console.log('first', regionsArray.length)
+    if (regionsArray.length > 0) {
       productQueryBuilder.andWhere('regions.name IN (:...regionsArray)', { regionsArray });
+    }
+
+    // Add price filter
+    if (minPrice !== undefined) {
+      productQueryBuilder.andWhere('product.price >= :minPrice', { minPrice });
+    }
+    if (maxPrice !== undefined) {
+      productQueryBuilder.andWhere('product.price <= :maxPrice', { maxPrice });
     }
 
     // Add search and filter conditions
@@ -410,7 +412,7 @@ export class ProductsService {
       const searchConditions: string[] = [];
       const searchParams: any = {};
 
-      // Parse filters
+      // Parse filter conditions
       if (filter) {
         const parseSearchParams = filter.split(';');
         parseSearchParams.forEach(searchParam => {
@@ -435,17 +437,20 @@ export class ProductsService {
               searchParams.typeSearchTerm = searchTerm;
               break;
             case 'tags':
-              searchConditions.push('(tags.name LIKE :tagSearchTerm OR tags.slug LIKE :tagSearchTerm)');
-              searchParams.tagSearchTerm = searchTerm;
+              const tagArray = value.split(',').map(tag => tag.trim());
+              const tagConditions = tagArray.map((tag, index) =>
+                `(tags.name LIKE :tagSearchTerm${index} OR tags.slug LIKE :tagSearchTerm${index})`
+              ).join(' OR ');
+              searchConditions.push(`(${tagConditions})`);
+              tagArray.forEach((tag, index) => {
+                searchParams[`tagSearchTerm${index}`] = `%${tag}%`;
+              });
               break;
             case 'variations':
               const variationParams = value.split(',');
-              variationParams.forEach((param, index) => {
-                const [variationKey, variationValue] = param.split('=');
-                const variationSearchTerm = `%${variationValue}%`;
-                searchConditions.push(`(variation_options.${variationKey} LIKE :variationSearchTerm${index})`);
-                searchParams[`variationSearchTerm${index}`] = variationSearchTerm;
-              });
+              const variationSearchTerm = variationParams.map(param => param.split('=')[1]).join('/');
+              searchConditions.push('(variation_options.title LIKE :variationSearchTerm)');
+              searchParams.variationSearchTerm = `%${variationSearchTerm}%`;
               break;
             default:
               break;
@@ -453,7 +458,7 @@ export class ProductsService {
         });
       }
 
-      // Apply search conditions
+      // Add general search conditions
       if (search) {
         const filterTerms = search.split(' ').map(term => `%${term}%`);
         const searchTermsConditions = filterTerms.map((_, index) =>
@@ -466,7 +471,6 @@ export class ProductsService {
           `variation_options.title LIKE :filterSearchTerm${index})`
         ).join(' OR ');
 
-        // Apply search terms to query
         filterTerms.forEach((term, index) => {
           searchParams[`filterSearchTerm${index}`] = term;
         });
@@ -482,15 +486,15 @@ export class ProductsService {
       }
     }
 
-    // Execute query and handle results
     try {
       let products: Product[] = [];
       let total: number;
 
+      // Fetch products by dealer if applicable
       if (dealerId) {
         const dealer = await this.dealerRepository.findOne({
           where: { id: dealerId },
-          relations: ['dealerProductMargins', 'dealerCategoryMargins']
+          relations: ['dealerProductMargins', 'dealerCategoryMargins'],
         });
 
         if (!dealer) {
@@ -499,7 +503,7 @@ export class ProductsService {
 
         const marginFind = await this.dealerProductMarginRepository.find({
           where: { dealer: { id: dealerId } },
-          relations: ['product']
+          relations: ['product'],
         });
 
         marginFind.forEach(margin => {
@@ -510,13 +514,13 @@ export class ProductsService {
 
         const categoryMargins = await this.dealerCategoryMarginRepository.find({
           where: { dealer: { id: dealerId } },
-          relations: ['category']
+          relations: ['category'],
         });
 
         for (const categoryMargin of categoryMargins) {
           const foundCategory = await this.categoryRepository.findOne({
             where: { id: categoryMargin.category.id },
-            relations: ['products']
+            relations: ['products'],
           });
 
           if (foundCategory && foundCategory.products) {
@@ -539,6 +543,7 @@ export class ProductsService {
         products = await productQueryBuilder.getMany();
       }
 
+      // Generate pagination data
       const url = `/products?search=${search}&limit=${limit}&page=${page}`;
       const paginator = paginate(total, page, limit, products.length, url);
 
@@ -547,14 +552,17 @@ export class ProductsService {
         ...paginator,
       };
 
+      // Cache the result
       await this.cacheManager.set(cacheKey, result, 1800); // Cache for 30 minutes
       this.logger.log(`Data cached with key: ${cacheKey}`);
 
       return result;
     } catch (error) {
+      this.logger.error(`Error fetching products: ${error.message}`, error.stack);
       throw new NotFoundException(error.message);
     }
   }
+
 
   async getProductBySlug(slug: string, shop_id: number, dealerId?: number): Promise<Product | undefined> {
     try {

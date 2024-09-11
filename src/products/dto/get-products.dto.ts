@@ -26,10 +26,12 @@ export class GetProductsDto extends PaginationArgs {
   date_range?: string;
   language?: string;
   with: string;
+  minPrice: number;
+  maxPrice: number;
   dealerId?: number;
   shop_id?: number;
   shopName?: string;
-  regionNames?: string[]; // Updated to handle an array of region names
+  regionNames?: string; // Updated to handle an array of region names
 }
 
 export enum QueryProductsOrderByColumn {
