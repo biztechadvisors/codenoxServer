@@ -283,17 +283,14 @@ export class OrdersService {
       // }
 
       if (savedOrder && savedOrder.customer.id == savedOrder.dealer.id) {
-
         const createStocksDto = {
-          user_id: savedOrder.customer,
+          user_id: savedOrder.customer.id,
           order_id: savedOrder.id,
           products: createOrderInput.products,
         };
-
         if (!createStocksDto.order_id) {
           throw new Error('Order ID is required');
         }
-
         await this.stocksService.create(createStocksDto);
       }
 
