@@ -86,7 +86,7 @@ export class User extends CoreEntity {
   @Column({ default: true })
   is_active?: boolean;
 
-  @OneToMany(() => Address, address => address.customer)
+  @OneToMany(() => Address, address => address.customer, { cascade: true, eager: true })
   address?: Address[];
 
   @OneToMany(() => Order, order => order.customer)

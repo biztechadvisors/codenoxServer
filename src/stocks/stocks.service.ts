@@ -416,7 +416,10 @@ export class StocksService {
 
             // Fetch all dealers associated with the given user
             const dealerList = await this.userRepository.find({
-                where: { createdBy: { id: user_id } },
+                where: [
+                    { createdBy: { id: user_id } },
+                    { id: user_id }
+                ],
                 select: ['id']
             });
 

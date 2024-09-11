@@ -29,8 +29,8 @@ export class StocksController {
 
     // Get all stocks of a particular user
     @Get('user/:id')
-    async getAllUserStocks(@Param('id') id: string) {
-        return this.stocksService.getAllStocks(parseInt(id));
+    async getAllUserStocks(@Param('id') id: number) {
+        return this.stocksService.getAllStocks(id);
     }
 
     // Get a particular stock by user and order id

@@ -44,12 +44,12 @@ export class Address extends CoreEntity {
   @Column()
   default: boolean;
 
-  @ManyToOne(() => UserAddress, { cascade: true })
+  @ManyToOne(() => UserAddress, { cascade: true, eager: true })
   address: UserAddress;
 
   @Column()
   type: AddressType;
 
-  @ManyToOne(() => User, (user) => user.address, { cascade: true })
+  @ManyToOne(() => User, (user) => user.address)
   customer: User;
 }
