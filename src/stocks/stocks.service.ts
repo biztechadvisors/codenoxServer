@@ -16,7 +16,7 @@ import { OrderProductPivot, Product, Variation } from 'src/products/entities/pro
 import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { MailService } from 'src/mail/mail.service';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
-import { UserAddress } from 'src/addresses/entities/address.entity';
+import { UserAdd } from 'src/address/entities/address.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
 import { Permission } from 'src/permission/entities/permission.entity';
@@ -51,8 +51,8 @@ export class StocksService {
         private readonly orderStatusRepository: Repository<OrderStatus>,
         @InjectRepository(Coupon)
         private readonly couponRepository: Repository<Coupon>,
-        @InjectRepository(UserAddress)
-        private readonly userAddressRepository: Repository<UserAddress>,
+        @InjectRepository(UserAdd)
+        private readonly userAddressRepository: Repository<UserAdd>,
         @InjectRepository(Shop)
         private readonly shopRepository: Repository<Shop>,
         @InjectRepository(Permission)
@@ -915,7 +915,6 @@ export class StocksService {
                     created_at: order.customer.created_at,
                     updated_at: order.customer.updated_at,
                     is_active: order.customer.is_active,
-                    shop_id: order.customer.shop_id
                 },
                 dealer: order.customer ? order.customer : null,
                 products: await Promise.all(order.products.map(async (product) => {

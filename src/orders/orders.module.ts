@@ -24,7 +24,6 @@ import { MailService } from 'src/mail/mail.service';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { Dealer } from 'src/users/entities/dealer.entity';
-import { UserAddress } from 'src/addresses/entities/address.entity';
 import { StocksService } from 'src/stocks/stocks.service';
 import { InventoryStocks, Stocks } from 'src/stocks/entities/stocks.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
@@ -32,13 +31,14 @@ import { NotificationService } from 'src/notifications/services/notifications.se
 import { NotificationModule } from 'src/notifications/notifications.module';
 import { Notification } from 'src/notifications/entities/notifications.entity';
 import { CacheModule } from '@nestjs/cache-manager';
+import { UserAdd } from '../address/entities/address.entity';
 
 @Module({
   imports: [
     AuthModule,
     PaymentModule,
     NotificationModule,
-    TypeOrmModule.forFeature([Order, OrderProductPivot, UserAddress, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks, Variation, Notification, File]),
+    TypeOrmModule.forFeature([Order, OrderProductPivot, UserAdd, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks, Variation, Notification, File]),
     HttpModule,
     CacheModule.register()
   ],

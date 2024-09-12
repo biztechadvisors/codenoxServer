@@ -295,7 +295,7 @@ export class ContactDetails {
   id: number;
 
   @ManyToMany(() => ShopSocials, { cascade: true })
-  @JoinTable()
+  @JoinTable({ name: "contaCtdetails_shopSocils" })
   socials: ShopSocials[];
 
   @Column()
@@ -332,7 +332,7 @@ export class SettingsOptions extends CoreEntity {
   defaultPaymentGateway: string;
 
   @ManyToMany(() => DeliveryTime, { cascade: true })
-  @JoinTable()
+  @JoinTable({ name: "settingsOptions_deliveryTime" })
   deliveryTime: DeliveryTime[];
 
   @ManyToOne(() => EmailEvent)
@@ -364,7 +364,7 @@ export class SettingsOptions extends CoreEntity {
   minimumOrderAmount: number;
 
   @ManyToMany(() => PaymentGateway)
-  @JoinTable()
+  @JoinTable({ name: "settingsOptions_paymentGateway" })
   paymentGateway: PaymentGateway[];
 
   @ManyToOne(() => SeoSettings)

@@ -11,7 +11,7 @@ export class Report extends CoreEntity {
   @Column()
   user_id?: number;
   @ManyToMany(() => User)
-  @JoinTable()
+  @JoinTable({ name: "report_user" })
   user: User[];
   @Column()
   model_id: number;

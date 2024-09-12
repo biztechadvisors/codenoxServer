@@ -15,7 +15,7 @@ export class ShopSettings {
   id: number;
 
   @ManyToMany(() => ShopSocials, { cascade: true, eager: true })
-  @JoinTable()
+  @JoinTable({ name: "shopSettings_shopSocials" })
   socials: ShopSocials[];
 
   @Column()

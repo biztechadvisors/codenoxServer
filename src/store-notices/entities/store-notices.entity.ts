@@ -2,7 +2,7 @@
 import { CoreEntity } from 'src/common/entities/core.entity'
 import { Shop } from 'src/shops/entities/shop.entity'
 import { User } from 'src/users/entities/user.entity'
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm'
 
 enum StoreNoticePriorityType {
   High = 'high',
@@ -29,8 +29,10 @@ export class StoreNotice extends CoreEntity {
   @Column()
   is_read?: boolean
   @ManyToMany(() => Shop)
+  @JoinTable({ name: "storeNotice_shops" })
   shops?: Shop[]
-  @ManyToMany(() => Shop)
+  @ManyToMany(() => User)
+  @JoinTable({ name: "storeNotice_users" })
   users?: User[]
   @Column()
   received_by?: string

@@ -11,7 +11,7 @@ export class Author extends CoreEntity {
 
   @Column()
   bio?: string;
-  
+
   @Column()
   born?: string;
 
@@ -45,7 +45,7 @@ export class Author extends CoreEntity {
   slug?: string;
 
   @ManyToMany(() => ShopSocials, { cascade: true })
-  @JoinTable()
+  @JoinTable({ name: "author_shopSocils" })
   socials: ShopSocials[]
 
   @Column()

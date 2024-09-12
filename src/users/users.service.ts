@@ -8,7 +8,6 @@ import Fuse from 'fuse.js';
 import { User, UserType } from './entities/user.entity';
 import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Address } from 'src/addresses/entities/address.entity';
 import { Profile, Social } from './entities/profile.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
@@ -20,14 +19,15 @@ import { Category } from 'src/categories/entities/category.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { RegisterDto } from 'src/auth/dto/create-auth.dto';
 import { AuthService } from 'src/auth/auth.service';
-import { AddressesService } from 'src/addresses/addresses.service';
-import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
-import { UpdateAddressDto } from 'src/addresses/dto/update-address.dto';
 import { Brackets, Equal, FindManyOptions, FindOptionsWhere, In, Like, Repository, SelectQueryBuilder } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { Add } from '../address/entities/address.entity';
+import { AddressesService } from '../address/addresses.service';
+import { CreateAddressDto } from '../address/dto/create-address.dto';
+import { UpdateAddressDto } from '../address/dto/update-address.dto';
 
 const options = {
   keys: ['name', 'type.slug', 'categories.slug', 'status'],
@@ -38,7 +38,7 @@ const options = {
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    @InjectRepository(Address) private readonly addressRepository: Repository<Address>,
+    @InjectRepository(Add) private readonly addressRepository: Repository<Add>,
     @InjectRepository(Profile) private readonly profileRepository: Repository<Profile>,
     @InjectRepository(Attachment) private readonly attachmentRepository: Repository<Attachment>,
     @InjectRepository(Dealer) private readonly dealerRepository: Repository<Dealer>,

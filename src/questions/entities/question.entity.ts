@@ -3,7 +3,7 @@ import { CoreEntity } from 'src/common/entities/core.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Feedback } from '../../feedbacks/entities/feedback.entity';
-import { Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Question extends CoreEntity {
@@ -30,6 +30,7 @@ export class Question extends CoreEntity {
   @JoinColumn()
   user: number;
   @ManyToMany(() => Feedback, { cascade: true })
+  @JoinTable({ name: "question_feedback" })
   feedbacks?: Feedback[];
   @OneToOne(() => Feedback, { cascade: true })
   my_feedback?: Feedback;

@@ -22,17 +22,18 @@ export class GetProductsDto extends PaginationArgs {
   sortedBy?: string;
   searchJoin?: string;
   search?: string;
-  filter?: string;
+  filter?: string; // This will hold the filter parameters like category, subcategory, tags, etc.
   date_range?: string;
   language?: string;
-  with: string;
-  minPrice: number;
-  maxPrice: number;
+  with?: string;
+  minPrice?: number;
+  maxPrice?: number;
   dealerId?: number;
   shop_id?: number;
   shopName?: string;
-  regionNames?: string; // Updated to handle an array of region names
+  regionNames?: string; // To handle an array of region names
 }
+
 
 export enum QueryProductsOrderByColumn {
   CREATED_AT = 'CREATED_AT',

@@ -26,12 +26,10 @@ export class AddressesController {
     return this.addressesService.findAll(userId);
   }
 
-
   @Get(':id')
   async address(@Param('id') id: string) {
     return this.addressesService.findOne(+id);
   }
-
 
   @Put(':id')
   updateAddress(

@@ -11,13 +11,13 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
 import { Balance } from './entities/balance.entity'
 import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
-import { Address, AddressType, UserAddress } from 'src/addresses/entities/address.entity'
+import { Add, AddressType, UserAdd } from 'src/address/entities/address.entity'
 import { User, UserType } from 'src/users/entities/user.entity'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { AttachmentRepository } from 'src/common/common.repository'
 import { ShopSettings } from './entities/shopSettings.entity'
-import { AddressesService } from 'src/addresses/addresses.service'
-import { CreateAddressDto } from 'src/addresses/dto/create-address.dto'
+import { AddressesService } from 'src/address/addresses.service'
+import { CreateAddressDto } from 'src/address/dto/create-address.dto'
 import { Permission } from 'src/permission/entities/permission.entity'
 import { Brackets, FindOperator, ILike, Repository } from 'typeorm'
 import { UserPaginator } from 'src/users/dto/get-users.dto'
@@ -35,10 +35,10 @@ export class ShopsService {
     private readonly shopSettingsRepository: Repository<ShopSettings>,
     @InjectRepository(PaymentInfo)
     private readonly paymentInfoRepository: Repository<PaymentInfo>,
-    @InjectRepository(Address)
-    private readonly addressRepository: Repository<Address>,
-    @InjectRepository(UserAddress)
-    private readonly userAddressRepository: Repository<UserAddress>,
+    @InjectRepository(Add)
+    private readonly addressRepository: Repository<Add>,
+    @InjectRepository(UserAdd)
+    private readonly userAddressRepository: Repository<UserAdd>,
     @InjectRepository(ShopSocials)
     private readonly shopSocialsRepository: Repository<ShopSocials>,
     @InjectRepository(Location)
@@ -83,8 +83,7 @@ export class ShopsService {
         createAddressDto.address = createShopDto.address;
         createAddressDto.customer_id = createShopDto.user.id;
 
-        const savedAddress = await this.addressesService.create(createAddressDto);
-        addressId = savedAddress.address.id;
+        addressId = createAddressDto;
 
         const addressExists = await this.userAddressRepository.findOne({ where: { id: addressId } });
         if (!addressExists) {
@@ -500,13 +499,15 @@ export class ShopsService {
         address: existShop.address
           ? {
             id: existShop.address.id,
-            name: existShop.address.name, // Ensure these match UserAddress properties
+            firstName: existShop.address.firstName, // Ensure these match UserAddress properties
             lastName: existShop.address.lastName, // Ensure these match UserAddress properties
             street_address: existShop.address.street_address,
             country: existShop.address.country,
             city: existShop.address.city,
             state: existShop.address.state,
             zip: existShop.address.zip,
+            created_at: existShop.address.created_at,
+            updated_at: existShop.address.updated_at
           }
           : null,
         settings: existShop.settings

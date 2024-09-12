@@ -53,7 +53,7 @@ export class InventoryStocks {
     inStock: boolean;
 
     @ManyToMany(() => Variation, { cascade: true })
-    @JoinTable()
+    @JoinTable({ name: "inventoryStocks_variation_options" })
     variation_options: Variation[];
 
     @ManyToOne(() => Product)

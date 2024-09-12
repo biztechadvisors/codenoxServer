@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { UserAddress } from 'src/addresses/entities/address.entity'
+import { UserAdd } from 'src/address/entities/address.entity'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { CoreEntity } from 'src/common/entities/core.entity'
 import { User } from 'src/users/entities/user.entity'
@@ -74,9 +74,9 @@ export class Shop extends CoreEntity {
   @JoinColumn()
   logo?: Attachment;
 
-  @ManyToOne(() => UserAddress, { cascade: ['insert', 'update'] })
+  @ManyToOne(() => UserAdd, { cascade: ['insert', 'update'] })
   @JoinColumn()
-  address: UserAddress;
+  address: UserAdd;
 
   @OneToOne(() => ShopSettings, { cascade: ['insert', 'update'] })
   @JoinColumn()
@@ -99,7 +99,7 @@ export class Shop extends CoreEntity {
   permission: Permission;
 
   @ManyToMany(() => Permission, (permission) => permission.shops, { cascade: ['insert', 'update'] })
-  @JoinTable({ name: 'shop_permission' })
+  @JoinTable({ name: 'shop_additionalPermission' })
   additionalPermissions: Permission[];
 
   @Column({ nullable: true })

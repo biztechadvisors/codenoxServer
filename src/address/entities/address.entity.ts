@@ -1,15 +1,15 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn, ManyToOne, JoinTable, JoinColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, JoinColumn } from 'typeorm';
 
 export enum AddressType {
   BILLING = 'billing',
   SHIPPING = 'shipping',
-  SHOP = 'Shop',
+  SHOP = 'shop', // Consistent casing for enum values
 }
 
 @Entity()
-export class UserAddress {
+export class UserAdd extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -29,25 +29,31 @@ export class UserAddress {
   zip: string;
 
   @Column({ nullable: true })
-  name: string;
+  firstName: string; // Corrected name field for consistency
 
   @Column({ nullable: true })
   lastName: string;
 }
 
 @Entity()
-export class Address extends CoreEntity {
+export class Add extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   title: string;
-  @Column()
+
+  @Column({ default: true })
   default: boolean;
 
-  @ManyToOne(() => UserAddress, { cascade: true, eager: true })
-  address: UserAddress;
+  @ManyToOne(() => UserAdd, { cascade: true, eager: true })
+  @JoinColumn()
+  address: UserAdd;
 
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: AddressType,
+  })
   type: AddressType;
 
   @ManyToOne(() => User, (user) => user.address)

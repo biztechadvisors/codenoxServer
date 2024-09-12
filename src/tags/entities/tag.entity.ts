@@ -43,7 +43,6 @@ export class Tag extends CoreEntity {
   regions: Region[];
 
   @ManyToMany(() => Product, (product) => product.tags, { cascade: true })
-  @JoinTable({ name: 'product_tags' })
   products: Product[];
 
   @ManyToOne(() => Shop, { cascade: true, onDelete: 'CASCADE' })

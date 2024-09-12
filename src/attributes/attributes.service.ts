@@ -4,7 +4,6 @@ import { AttributeValueDto, CreateAttributeDto } from './dto/create-attribute.dt
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
 import { Attribute } from './entities/attribute.entity';
 import { plainToClass } from 'class-transformer';
-import { AttributeRepository, AttributeValueRepository } from './attribute.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AttributeValue } from './entities/attribute-value.entity';
 import { convertToSlug } from '../helpers';
@@ -19,8 +18,8 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 export class AttributesService {
   private readonly logger = new Logger(AttributesService.name);
   constructor(
-    @InjectRepository(AttributeRepository) private attributeRepository: AttributeRepository,
-    @InjectRepository(AttributeValueRepository) private attributeValueRepository: AttributeValueRepository,
+    @InjectRepository(Attribute) private attributeRepository: Repository<Attribute>,
+    @InjectRepository(AttributeValue) private attributeValueRepository: Repository<AttributeValue>,
     @InjectRepository(Shop) private shopRepository: Repository<Shop>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }

@@ -25,7 +25,6 @@ import { WithdrawsModule } from './withdraws/withdraws.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { SettingsModule } from './settings/settings.module';
 import { CouponsModule } from './coupons/coupons.module';
-import { AddressesModule } from './addresses/addresses.module';
 import { ImportsModule } from './imports/imports.module';
 import { AuthModule } from './auth/auth.module';
 import { RefundsModule } from './refunds/refunds.module';
@@ -60,6 +59,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { CareerModule } from './career/career.module';
 import { ContactModule } from './contact/contact.module';
 import { RegionModule } from './region/region.module';
+import { AddModule } from './address/addresses.module';
 
 @Module({
   imports: [
@@ -126,7 +126,7 @@ import { RegionModule } from './region/region.module';
     UploadsModule,
     SettingsModule,
     CouponsModule,
-    AddressesModule,
+    AddModule,
     ImportsModule,
     AuthModule,
     RefundsModule,

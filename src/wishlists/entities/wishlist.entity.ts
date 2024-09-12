@@ -14,7 +14,7 @@ export class Wishlist extends CoreEntity {
   @Column()
   product_id: number;
   @ManyToMany(() => User)
-  @JoinTable()
+  @JoinTable({ name: "wishlist_user" })
   user: User[];
   @Column()
   user_id: number;

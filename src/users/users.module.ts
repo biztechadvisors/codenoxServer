@@ -11,19 +11,19 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { AuthService } from 'src/auth/auth.service';
 import { MailService } from 'src/mail/mail.service';
-import { AddressesService } from 'src/addresses/addresses.service';
-import { Address, UserAddress } from 'src/addresses/entities/address.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { JwtStrategy } from '@db/src/auth/auth-helper/jwt.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { NotificationModule } from 'src/notifications/notifications.module'; // Ensure this is imported
 import { CacheModule } from '@nestjs/cache-manager';
 import { SessionService } from '../auth/auth-helper/session.service';
+import { Add, UserAdd } from '../address/entities/address.entity';
+import { AddressesService } from '../address/addresses.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      User, Address, UserAddress, Profile, Dealer, Social, Product, Category,
+      User, Add, UserAdd, Profile, Dealer, Social, Product, Category,
       Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission
     ]),
     JwtModule.register({}),

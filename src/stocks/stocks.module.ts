@@ -8,7 +8,7 @@ import { OrderProductPivot, Product, Variation } from 'src/products/entities/pro
 import { InventoryStocks, Stocks } from './entities/stocks.entity'
 import { StocksService } from './stocks.service'
 import { Dealer } from 'src/users/entities/dealer.entity'
-import { UserAddress } from 'src/addresses/entities/address.entity'
+import { UserAdd } from 'src/address/entities/address.entity'
 import { Shop } from 'src/shops/entities/shop.entity'
 import { OrderStatus } from 'src/orders/entities/order-status.entity'
 import { Coupon } from 'src/coupons/entities/coupon.entity'
@@ -22,7 +22,7 @@ import { Notification } from 'src/notifications/entities/notifications.entity'
 import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Attachment, Permission, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAddress, Shop, InventoryStocks, Variation, Order, Notification]),
+    imports: [TypeOrmModule.forFeature([Attachment, Permission, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAdd, Shop, InventoryStocks, Variation, Order, Notification]),
     CacheModule.register()
     ],
     controllers: [

@@ -64,11 +64,11 @@ export class Product extends CoreEntity {
   tags: Tag[];
 
   @ManyToMany(() => AttributeValue, { cascade: true, })
-  @JoinTable()
+  @JoinTable({ name: "products_attributeValue" })
   variations?: AttributeValue[];
 
   @ManyToMany(() => Variation, { cascade: true })
-  @JoinTable()
+  @JoinTable({ name: "products_variationOptions" })
   variation_options: Variation[];
 
   @OneToMany(() => OrderProductPivot, orderProductPivot => orderProductPivot.product)
@@ -87,7 +87,7 @@ export class Product extends CoreEntity {
   shop_id: number;
 
   @ManyToMany(() => Product, { cascade: true, })
-  @JoinTable()
+  @JoinTable({ name: "products_relatedProducts" })
   related_products?: Product[];
 
   @OneToMany(() => Review, review => review.product, { eager: true })
@@ -97,7 +97,7 @@ export class Product extends CoreEntity {
   taxes: Tax;
 
   @ManyToMany(() => Attachment, { cascade: true, eager: true })
-  @JoinTable({ name: 'gallery' })
+  @JoinTable({ name: 'products_gallery' })
   gallery?: Attachment[];
 
   @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
@@ -208,7 +208,7 @@ export class Variation {
   quantity: number;
 
   @ManyToMany(() => VariationOption, { cascade: true, eager: true })
-  @JoinTable()
+  @JoinTable({ name: "variation_variationOption" })
   options: VariationOption[];
 
   @ManyToOne(() => File)

@@ -29,7 +29,7 @@ export class Review extends CoreEntity {
   order: Order;
 
   @ManyToMany(() => Attachment, { cascade: true, eager: true })
-  @JoinTable()
+  @JoinTable({ name: "review_attachment" })
   photos: Attachment[];
 
   @ManyToOne(() => User)
@@ -40,7 +40,7 @@ export class Review extends CoreEntity {
   product: Product;
 
   @ManyToMany(() => Feedback)
-  @JoinTable()
+  @JoinTable({ name: "review_feedback" })
   feedbacks: Feedback[];
 
   @OneToOne(() => Feedback)
@@ -57,7 +57,7 @@ export class Review extends CoreEntity {
   product_id: number;
 
   @ManyToMany(() => Report)
-  @JoinTable()
+  @JoinTable({ name: "review_report" })
   abusive_reports: Report[];
 
   @Column()

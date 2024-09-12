@@ -9,11 +9,8 @@ import { plainToClass } from 'class-transformer';
 import Fuse from 'fuse.js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOneOptions, ILike, In, Repository, SelectQueryBuilder } from 'typeorm';
-import { TypeRepository } from 'src/types/types.repository';
 import { Type } from 'src/types/entities/type.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
-import { AttachmentRepository } from 'src/common/common.repository';
-import { TagRepository } from './tags.repository';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
@@ -22,9 +19,9 @@ import { Region } from '../region/entities/region.entity';
 @Injectable()
 export class TagsService {
   constructor(
-    @InjectRepository(Tag) private tagRepository: TagRepository,
-    @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
-    @InjectRepository(Type) private typeRepository: TypeRepository,
+    @InjectRepository(Tag) private tagRepository: Repository<Tag>,
+    @InjectRepository(Attachment) private readonly attachmentRepository: Repository<Attachment>,
+    @InjectRepository(Type) private typeRepository: Repository<Type>,
     @InjectRepository(Shop) private shopRepository: Repository<Shop>,
     @InjectRepository(Region) private regionRepository: Repository<Region>,
 

@@ -429,14 +429,9 @@ export class ProductsService {
               searchParams.typeSearchTerm = searchTerm;
               break;
             case 'tags':
-              const tagArray = value.split(',').map(tag => tag.trim());
-              const tagConditions = tagArray.map((tag, index) =>
-                `(tags.name LIKE :tagSearchTerm${index} OR tags.slug LIKE :tagSearchTerm${index})`
-              ).join(' OR ');
-              searchConditions.push(`(${tagConditions})`);
-              tagArray.forEach((tag, index) => {
-                searchParams[`tagSearchTerm${index}`] = `%${tag}%`;
-              });
+              const tagsArray = value.split(','); // Assuming the tags are comma-separated
+              searchConditions.push('tags.name IN (:...tagsArray)');
+              searchParams.tagsArray = tagsArray; // Use the tagsArray directly in the query
               break;
             case 'variations':
               const variationParams = value.split(',');

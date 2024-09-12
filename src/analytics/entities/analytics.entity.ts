@@ -19,7 +19,6 @@ export class TotalYearSaleByMonth extends CoreEntity {
     type => Analytics,
     analytics => analytics.totalYearSaleByMonth,
   )
-  @JoinTable()
   analytics: Promise<Analytics[]>;
 }
 
@@ -53,6 +52,6 @@ export class Analytics extends CoreEntity {
     totalYearSaleByMonth => totalYearSaleByMonth.analytics,
     { eager: true, cascade: true },
   )
-  @JoinTable()
+  @JoinTable({ name: "analytics_totalYearSaleByMonth" })
   totalYearSaleByMonth?: Promise<TotalYearSaleByMonth[]>;
 }

@@ -23,7 +23,6 @@ export class Permission {
   shop: number;
 
   @ManyToMany(() => Shop, (shop) => shop.additionalPermissions)
-  @JoinTable({ name: 'shop_permission' })
   shops?: Shop[];
 }
 

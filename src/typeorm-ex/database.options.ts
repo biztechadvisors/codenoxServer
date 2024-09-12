@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common'
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm'
 import { Banner, Type, TypeSettings } from 'src/types/entities/type.entity'
-import { Address, UserAddress } from 'src/addresses/entities/address.entity'
+import { Add, UserAdd } from 'src/address/entities/address.entity'
 import { Category } from 'src/categories/entities/category.entity'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { Order } from 'src/orders/entities/order.entity'
@@ -80,13 +80,14 @@ export class DatabaseOptions implements TypeOrmOptionsFactory {
       username: 'pzqjchtu_remote',
       password: 'h!Ibz6eSn!-S',
       database: 'pzqjchtu_CodenoxxAdmin',
+      synchronize: false,
       //   entities: ["src/**/*.entities/*.entity.ts"],
       entities: [
         User,
         Shop,
         Attachment,
-        UserAddress,
-        Address,
+        UserAdd,
+        Add,
         Order,
         Balance,
         PaymentInfo,

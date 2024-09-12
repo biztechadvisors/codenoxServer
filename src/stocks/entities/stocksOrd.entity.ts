@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { UserAddress } from 'src/addresses/entities/address.entity';
+import { UserAdd } from 'src/address/entities/address.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
@@ -64,17 +64,17 @@ export class StocksSellOrd extends CoreEntity {
     delivery_time: string;
 
     @ManyToMany(() => Product, product => product.stocksSellOrders)
-    @JoinTable()
+    @JoinTable({ name: "stocksSellOrd_products" })
     products: Product[];
 
     @ManyToOne(() => User, (user) => user.stockOrd)
     soldBy: User;
 
-    @ManyToOne(() => UserAddress)
-    billing_address: UserAddress;
+    @ManyToOne(() => UserAdd)
+    billing_address: UserAdd;
 
-    @ManyToOne(() => UserAddress)
-    shipping_address: UserAddress;
+    @ManyToOne(() => UserAdd)
+    shipping_address: UserAdd;
 
     @Column()
     language: string;
@@ -88,8 +88,8 @@ export class StocksSellOrd extends CoreEntity {
     @Column('json', { nullable: true })
     logistics_provider: object;
 
-    @ManyToOne(() => UserAddress)
-    soldByUserAddress: UserAddress;
+    @ManyToOne(() => UserAdd, { cascade: true })
+    soldByUserAddress: UserAdd;
 
     @Column('decimal', { precision: 5, scale: 2, nullable: true })
     cancelled_amount: number;

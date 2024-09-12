@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Address } from 'src/addresses/entities/address.entity';
+
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
@@ -10,6 +10,7 @@ import { Permission } from 'src/permission/entities/permission.entity';
 import { InventoryStocks, Stocks } from 'src/stocks/entities/stocks.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 import { Notification } from 'src/notifications/entities/notifications.entity';
+import { Add } from '@db/src/address/entities/address.entity';
 
 export enum UserType {
   Super_Admin = 'Super_Admin',
@@ -86,8 +87,8 @@ export class User extends CoreEntity {
   @Column({ default: true })
   is_active?: boolean;
 
-  @OneToMany(() => Address, address => address.customer, { cascade: true, eager: true })
-  address?: Address[];
+  @OneToMany(() => Add, add => add.customer, { cascade: true, eager: true })
+  address?: Add[];
 
   @OneToMany(() => Order, order => order.customer)
   orders: Order[];

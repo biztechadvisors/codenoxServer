@@ -44,7 +44,7 @@ import { StocksService } from 'src/stocks/stocks.service';
 import { NotificationService } from 'src/notifications/services/notifications.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { UserAddress } from '../addresses/entities/address.entity';
+import { UserAdd } from '../address/entities/address.entity';
 
 @Injectable()
 export class OrdersService {
@@ -63,8 +63,8 @@ export class OrdersService {
     private readonly orderStatusRepository: Repository<OrderStatus>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(UserAddress)
-    private readonly userAddressRepository: Repository<UserAddress>,
+    @InjectRepository(UserAdd)
+    private readonly userAddressRepository: Repository<UserAdd>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     @InjectRepository(OrderFiles)

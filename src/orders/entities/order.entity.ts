@@ -1,5 +1,4 @@
 /* eslint-disable prettier/prettier */
-import { UserAddress } from 'src/addresses/entities/address.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { PaymentIntent } from 'src/payment-intent/entries/payment-intent.entity';
@@ -10,6 +9,7 @@ import { OrderStatus } from './order-status.entity';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { join } from 'path';
 import { Stocks } from 'src/stocks/entities/stocks.entity';
+import { UserAdd } from '@db/src/address/entities/address.entity';
 
 export enum PaymentGatewayType {
   STRIPE = 'STRIPE',
@@ -128,13 +128,13 @@ export class Order extends CoreEntity {
   @OneToMany(() => OrderProductPivot, (pivot) => pivot.order, { cascade: ['insert', 'update'] })
   orderProductPivots: OrderProductPivot[];
 
-  @ManyToOne(() => UserAddress, { nullable: false, cascade: ['insert', 'update'] })
+  @ManyToOne(() => UserAdd, { nullable: false, cascade: true })
   @JoinColumn({ name: 'billingAddressId' })
-  billing_address: UserAddress;
+  billing_address: UserAdd;
 
-  @ManyToOne(() => UserAddress, { nullable: false, cascade: ['insert', 'update'] })
+  @ManyToOne(() => UserAdd, { nullable: false, cascade: true })
   @JoinColumn({ name: 'shippingAddressId' })
-  shipping_address: UserAddress;
+  shipping_address: UserAdd;
 
   @Column()
   language: string;
@@ -142,7 +142,7 @@ export class Order extends CoreEntity {
   translated_languages: any[] | null;
 
 
-  @OneToOne(() => PaymentIntent, { nullable: true, cascade: ['insert', 'update'] })
+  @OneToOne(() => PaymentIntent, { nullable: true, cascade: true })
   @JoinColumn({ name: 'paymentIntentId' })
   payment_intent: PaymentIntent;
 
@@ -152,8 +152,8 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   logistics_provider: string;
 
-  @ManyToOne(() => UserAddress, { cascade: ['insert', 'update'] })
-  soldByUserAddress: UserAddress;
+  @ManyToOne(() => UserAdd, { cascade: ['insert', 'update'] })
+  soldByUserAddress: UserAdd;
 
   @Column('decimal', { precision: 5, scale: 2, nullable: true })
   cancelled_amount: number;
