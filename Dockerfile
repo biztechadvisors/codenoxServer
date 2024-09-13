@@ -1,4 +1,4 @@
-FROM node:16-alpine AS builder
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ RUN npm run build
 
 RUN npm prune --production
 
-FROM node:16-alpine
+FROM node:18-alpine
 
 WORKDIR /app
 
@@ -22,6 +22,6 @@ COPY --from=builder /app/package*.json ./
 
 COPY .env ./
 
-EXPOSE 3000
+EXPOSE 5003
 
 CMD ["npm", "run", "start:prod"]
