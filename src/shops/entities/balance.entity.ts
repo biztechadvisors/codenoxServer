@@ -11,30 +11,32 @@ import {
 } from 'typeorm'
 import { PaymentInfo, Shop } from './shop.entity'
 
+
 @Entity()
 export class Balance {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   admin_commission_rate: number;
 
-  @OneToOne(() => Shop, shop => shop.balance)
+  @OneToOne(() => Shop, (shop) => shop.balance, { cascade: true, onDelete: 'CASCADE' })
+  @JoinColumn()
   shop: Shop;
 
-  @ManyToOne(() => Dealer, (dealer) => dealer.balance)
+  @ManyToOne(() => Dealer, (dealer) => dealer.balance, { nullable: true, onDelete: 'SET NULL' })
   dealer: Dealer;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   total_earnings: number;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   withdrawn_amount: number;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   current_balance: number;
 
-  @OneToOne(() => PaymentInfo, { cascade: true })
+  @OneToOne(() => PaymentInfo, { cascade: ['insert', 'update'], nullable: true })
   @JoinColumn()
-  payment_info: PaymentInfo;
+  payment_info?: PaymentInfo;
 }

@@ -62,9 +62,12 @@ export class ShopsService {
   async create(createShopDto: CreateShopDto): Promise<Shop> {
     const newShop = new Shop();
     const newBalance = new Balance();
-    const newSetting = new ShopSettings();
+
     try {
-      const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id }, relations: ['permission'] });
+      const userToUpdate = await this.userRepository.findOne({
+        where: { id: createShopDto.user.id },
+        relations: ['permission'],
+      });
 
       if (!userToUpdate) {
         throw new Error('User does not exist');
@@ -74,24 +77,39 @@ export class ShopsService {
         throw new Error('User is not a vendor');
       }
 
-      let addressId;
+      let addressId: UserAdd | undefined;
+
       if (createShopDto.address) {
-        const createAddressDto = new CreateAddressDto();
-        createAddressDto.title = createShopDto.address.street_address;
-        createAddressDto.type = AddressType.SHOP;
-        createAddressDto.default = true;
-        createAddressDto.address = createShopDto.address;
-        createAddressDto.customer_id = createShopDto.user.id;
+        const addressExists = await this.userAddressRepository.findOne({
+          where: { customer_id: createShopDto.user.id }, // Assuming customer_id is used to identify addresses
+        });
 
-        addressId = createAddressDto;
-
-        const addressExists = await this.userAddressRepository.findOne({ where: { id: addressId } });
         if (!addressExists) {
-          throw new Error('Address does not exist in the user_address table');
+          const userAdd = new UserAdd()
+          userAdd.city = createShopDto.address.city;
+          userAdd.country = createShopDto.address.country;
+          userAdd.customer_id = userToUpdate?.id;
+          userAdd.state = createShopDto.address.state;
+          userAdd.street_address = createShopDto.address.street_address;
+          userAdd.zip = createShopDto.address?.zip;
+          userAdd.created_at = createShopDto.address.created_at;
+          userAdd.updated_at = createShopDto.address.updated_at;
+          addressId = await this.userAddressRepository.save(userAdd)
+
+          const address = new Add()
+          address.address = addressId;
+          address.title = `${createShopDto.address.street_address + " " + createShopDto.address.city + " " + createShopDto.address.state}`
+          address.customer = userToUpdate;
+          address.default = true;
+          address.type = AddressType.SHOP;
+          address.created_at = new Date();
+          address.updated_at = new Date();
+          this.addressRepository.save(address)
         }
+        addressId = addressExists;
       }
 
-      let settingId;
+      let settingId: ShopSettings | undefined;
 
       if (createShopDto.settings) {
         const newSettings = this.shopSettingsRepository.create(createShopDto.settings);
@@ -106,10 +124,9 @@ export class ShopsService {
           newSettings.socials = socials;
         }
 
-        let savedLocation;
         if (createShopDto.settings.location) {
           const newLocation = this.locationRepository.create(createShopDto.settings.location);
-          savedLocation = await this.locationRepository.save(newLocation);
+          const savedLocation = await this.locationRepository.save(newLocation);
           newSettings.location = savedLocation;
         }
 
@@ -119,7 +136,7 @@ export class ShopsService {
         settingId = await this.shopSettingsRepository.save(newSettings);
 
         if (settingId.socials) {
-          const socialIds = settingId.socials.map((social) => social.id);
+          const socialIds = settingId.socials.map((social) => social);
           settingId.socials = socialIds;
         }
       }
@@ -127,50 +144,46 @@ export class ShopsService {
       newShop.name = createShopDto.name;
       newShop.slug = await this.convertToSlug(createShopDto.name);
       newShop.description = createShopDto.description;
-      newShop.owner = createShopDto.user;
+      newShop.owner = userToUpdate;
       newShop.owner_id = createShopDto.user.id;
+
       // Handle cover_image relationship
       if (createShopDto.cover_image && createShopDto.cover_image.length > 0) {
         const attachments = await this.attachmentRepository.findByIds(createShopDto.cover_image);
         newShop.cover_image = attachments;
       }
-      newShop.logo = createShopDto.logo;
+
+      newShop.logo = createShopDto.logo ? await this.attachmentRepository.findOne({ where: { id: createShopDto.logo.id } }) : undefined;
       newShop.address = addressId;
       newShop.settings = settingId;
       newShop.created_at = new Date();
+
       const shop = await this.shopRepository.save(newShop);
 
       if (createShopDto.balance) {
-        let savedPaymentInfo;
+        let savedPaymentInfo: PaymentInfo | undefined;
         if (createShopDto.balance.payment_info) {
           const newPaymentInfo = this.paymentInfoRepository.create(createShopDto.balance.payment_info);
           savedPaymentInfo = await this.paymentInfoRepository.save(newPaymentInfo);
         }
         newBalance.admin_commission_rate = createShopDto.balance.admin_commission_rate;
         newBalance.current_balance = createShopDto.balance.current_balance;
-        // Ensure savedPaymentInfo is defined before accessing its id property
+
         if (savedPaymentInfo) {
-          newBalance.payment_info = savedPaymentInfo.id;
+          newBalance.payment_info = savedPaymentInfo;
         }
+
         newBalance.total_earnings = createShopDto.balance.total_earnings;
         newBalance.withdrawn_amount = createShopDto.balance.withdrawn_amount;
         newBalance.shop = shop;
-        const balanceId = await this.balanceRepository.save(newBalance);
-        newShop.balance = balanceId;
+        const balance = await this.balanceRepository.save(newBalance);
+        shop.balance = balance;
       }
 
       if (createShopDto.user) {
-        const shp = new User();
-        shp.shop_id = shop.id;
-        shp.managed_shop = shop;
-
-        const userToUpdate = await this.userRepository.findOne({ where: { id: createShopDto.user.id }, relations: ['permission'] });
-
-        if (userToUpdate) {
-          userToUpdate.shop_id = shp.shop_id;
-          userToUpdate.managed_shop = shp.managed_shop;
-          await this.userRepository.save(userToUpdate);
-        }
+        userToUpdate.shop_id = shop.id;
+        userToUpdate.managed_shop = shop;
+        await this.userRepository.save(userToUpdate);
       }
 
       if (createShopDto.permission) {
@@ -180,13 +193,12 @@ export class ShopsService {
 
         if (permission) {
           newShop.permission = permission;
-        }
 
-        // Set dealerCount only if the user is of type Company
-        if (permission.type_name === UserType.Company) {
-          createShopDto.dealerCount = createShopDto.dealerCount || 0;
+          // Set dealerCount only if the user is of type Company
+          if (permission.type_name === UserType.Company) {
+            createShopDto.dealerCount = createShopDto.dealerCount || 0;
+          }
         }
-
       }
 
       if (createShopDto.additionalPermissions) {
@@ -200,7 +212,10 @@ export class ShopsService {
       }
 
       await this.shopRepository.save(newShop);
-      const createdShop = await this.shopRepository.findOne({ where: { id: shop.id }, relations: ['balance'] });
+      const createdShop = await this.shopRepository.findOne({
+        where: { id: shop.id },
+        relations: ['balance'],
+      });
       return createdShop;
     } catch (error) {
       console.error(error);
@@ -499,13 +514,12 @@ export class ShopsService {
         address: existShop.address
           ? {
             id: existShop.address.id,
-            firstName: existShop.address.firstName, // Ensure these match UserAddress properties
-            lastName: existShop.address.lastName, // Ensure these match UserAddress properties
             street_address: existShop.address.street_address,
             country: existShop.address.country,
             city: existShop.address.city,
             state: existShop.address.state,
             zip: existShop.address.zip,
+            customer_id: existShop.address.customer_id,
             created_at: existShop.address.created_at,
             updated_at: existShop.address.updated_at
           }
@@ -532,9 +546,9 @@ export class ShopsService {
           }
           : null,
         gst_number: existShop.gst_number ?? '',
-        category: existShop.category ?? [],
+        categories: existShop.categories ?? [],
         subCategories: existShop.subCategories ?? [],
-        order: existShop.order ?? [],
+        orders: existShop.orders ?? [],
         additionalPermissions: existShop.additionalPermissions ?? [],
         permission: existShop.permission ?? null,
         dealerCount: existShop.dealerCount ?? 0,
@@ -555,7 +569,7 @@ export class ShopsService {
       where: { id: id },
       relations: ["balance", "address", "settings", "settings.socials", "settings.location",
         'permission',
-        'permission.permissions']
+        'permission.permissions', "owner"]
     });
 
     if (!existingShop) {
@@ -598,8 +612,27 @@ export class ShopsService {
     existingShop.owner_id = updateShopDto.user.id;
 
     if (updateShopDto.address) {
-      const updatedAddress = this.addressRepository.create(updateShopDto.address);
-      existingShop.address = await this.addressRepository.save({ ...existingShop.address, ...updatedAddress });
+      const userAdd = new UserAdd()
+      userAdd.city = updateShopDto.address.city;
+      userAdd.country = updateShopDto.address.country;
+      userAdd.customer_id = existingShop?.owner.id;
+      userAdd.state = updateShopDto.address.state;
+      userAdd.street_address = updateShopDto.address.street_address;
+      userAdd.zip = updateShopDto.address?.zip;
+      userAdd.created_at = updateShopDto.address.created_at;
+      userAdd.updated_at = updateShopDto.address.updated_at;
+      const updatedAddress = await this.userAddressRepository.save(userAdd)
+
+      const address = new Add()
+      address.address = updatedAddress;
+      address.title = `${updateShopDto.address.street_address + " " + updateShopDto.address.city + " " + updateShopDto.address.state}`
+      address.customer = existingShop?.owner;
+      address.default = true;
+      address.type = AddressType.SHOP;
+      address.created_at = new Date();
+      address.updated_at = new Date();
+      this.addressRepository.save(address)
+      existingShop.address = await this.userAddressRepository.save({ ...existingShop.address, ...updatedAddress });
     }
 
     if (updateShopDto.settings) {

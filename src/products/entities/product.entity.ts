@@ -80,7 +80,7 @@ export class Product extends CoreEntity {
   @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
   stocksSellOrders: StocksSellOrd[];
 
-  @ManyToOne(() => Shop, (shop) => shop.product)
+  @ManyToOne(() => Shop, (shop) => shop.products)
   shop: Shop;
 
   @Column()

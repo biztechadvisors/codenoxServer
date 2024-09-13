@@ -104,7 +104,7 @@ export class Order extends CoreEntity {
   @JoinColumn({ name: 'coupon_id' })
   coupon?: Coupon;
 
-  @ManyToMany(() => Shop, (shop) => shop.order, { cascade: ['insert', 'update'] })
+  @ManyToMany(() => Shop, (shop) => shop.orders, { cascade: ['insert', 'update'] })
   @JoinTable({ name: 'shop_order' })
   shop: Shop[];
 

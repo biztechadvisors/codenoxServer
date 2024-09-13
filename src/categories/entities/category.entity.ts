@@ -53,7 +53,7 @@ export class Category extends CoreEntity {
   @ManyToMany(() => Product, (product) => product.categories)
   products: Product[];
 
-  @ManyToOne(() => Shop, (shop) => shop.category)
+  @ManyToOne(() => Shop, (shop) => shop.categories)
   shop?: Shop;
 
   @Column()

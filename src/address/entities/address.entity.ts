@@ -29,10 +29,8 @@ export class UserAdd extends CoreEntity {
   zip: string;
 
   @Column({ nullable: true })
-  firstName: string; // Corrected name field for consistency
+  customer_id: number;
 
-  @Column({ nullable: true })
-  lastName: string;
 }
 
 @Entity()
