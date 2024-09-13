@@ -13,7 +13,7 @@ export class CreateFAQDto {
 
     @IsNotEmpty()
     @IsNumber()
-    shopId: number;
+    shop_id: number;
 
     @IsOptional()
     @IsArray()
@@ -34,9 +34,9 @@ export class UpdateFAQDto {
     @IsString()
     description?: string;
 
-    @IsOptional()
+    @IsNotEmpty()
     @IsNumber()
-    shopId?: number;
+    shop_id: number;
 
     @IsOptional()
     @IsArray()

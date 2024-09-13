@@ -213,7 +213,7 @@ export class OrdersService {
       if (productEntities.length !== createOrderInput.products.length) {
         throw new NotFoundException('Some products not found for this order');
       }
-      console.log("createOrderInput.coupon_id ")
+
       // Apply coupon if provided
       if (createOrderInput.coupon_id) {
         await this.applyCoupon(createOrderInput.coupon_id, order);
@@ -480,6 +480,7 @@ export class OrdersService {
       payment_method: createOrderInput.payment_gateway,
       shipping_charges: createOrderInput.delivery_fee || 0,
       giftwrap_charges: 0,
+      logistics_provider: createOrderInput?.logistics_provider || "Other",
       transaction_charges: 0,
       total_discount: createOrderInput.discount || 0,
       sub_total: createOrderInput.total,

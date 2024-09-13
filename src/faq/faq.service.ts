@@ -21,12 +21,12 @@ export class FAQService {
     ) { }
 
     async createFAQ(createFAQDto: any): Promise<FAQ> {
-        const { title, description, shopId, imageIds, qnas } = createFAQDto;
-
+        const { title, description, shop_id, imageIds, qnas } = createFAQDto;
+        console.log(title, description, shop_id, imageIds, qnas)
         const faq = this.faqRepository.create({
             title,
             description,
-            shop: { id: shopId },
+            shop: { id: shop_id },
             images: imageIds ? await this.attachmentRepository.findByIds(imageIds) : [],
             qnas: qnas ? await Promise.all(qnas.map(qna => this.qnaRepository.create(qna))) : [],
         });
@@ -91,7 +91,7 @@ export class FAQService {
 
         if (updateFAQDto.title) faq.title = updateFAQDto.title;
         if (updateFAQDto.description) faq.description = updateFAQDto.description;
-        if (updateFAQDto.shopId) faq.shop = updateFAQDto.shopId;
+        if (updateFAQDto.shopId) faq.shop = updateFAQDto.shop_id;
         if (updateFAQDto.imageIds) faq.images = await this.attachmentRepository.findByIds(updateFAQDto.imageIds);
         if (updateFAQDto.qnas) faq.qnas = await Promise.all(updateFAQDto.qnas.map(qna => this.qnaRepository.create(qna)));
 
