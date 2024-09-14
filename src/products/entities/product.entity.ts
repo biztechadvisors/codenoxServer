@@ -104,9 +104,9 @@ export class Product extends CoreEntity {
   @JoinColumn({ name: 'image_id' })
   image?: Attachment;
 
-  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'addedByUserId' })
-  addedByUser?: User;
+  // @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  // @JoinColumn({ name: 'addedByUserId' })
+  // addedByUser?: User;
 
   // @ManyToOne(() => Unit, (unit) => unit.products, { nullable: true, onDelete: 'SET NULL' })
   // @JoinColumn({ name: 'unitId' })

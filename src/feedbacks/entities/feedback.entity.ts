@@ -9,7 +9,7 @@ export class Feedback extends CoreEntity {
   id: number;
 
   // Define foreign key explicitly with cascading options if needed
-  @ManyToOne(() => User, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+  @ManyToOne(() => User, { cascade: true })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
@@ -26,7 +26,7 @@ export class Feedback extends CoreEntity {
   negative?: boolean;
 
   // Define foreign key explicitly with cascading options if needed
-  @ManyToOne(() => Shop, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
+  @ManyToOne(() => Shop, { cascade: true })
   @JoinColumn({ name: 'shop_id' })
   shop: Shop;
 }

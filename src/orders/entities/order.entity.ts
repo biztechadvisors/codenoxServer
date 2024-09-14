@@ -61,11 +61,11 @@ export class Order extends CoreEntity {
   @Column()
   customer_contact: string;
 
-  @ManyToOne(() => User, (user) => user.orders, { eager: true, cascade: ['insert', 'update'] })
+  @ManyToOne(() => User, (user) => user.orders, { cascade: true })
   @JoinColumn({ name: 'customerId' })
   customer: User;
 
-  @ManyToOne(() => Order, (order) => order.children, { nullable: true, cascade: ['insert', 'update'] })
+  @ManyToOne(() => Order, (order) => order.children, { nullable: true, cascade: true })
   @JoinColumn({ name: 'parentOrderId' })
   parentOrder: Order;
 
@@ -100,7 +100,7 @@ export class Order extends CoreEntity {
   @Column()
   payment_gateway: PaymentGatewayType;
 
-  @ManyToOne(() => Coupon, (coupon) => coupon.orders, { nullable: true, cascade: ['insert', 'update'], eager: true })
+  @ManyToOne(() => Coupon, (coupon) => coupon.orders, { nullable: true, cascade: true })
   @JoinColumn({ name: 'coupon_id' })
   coupon?: Coupon;
 
