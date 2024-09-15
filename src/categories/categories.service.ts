@@ -8,8 +8,6 @@ import { Category, SubCategory } from './entities/category.entity';
 import Fuse from 'fuse.js';
 import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CategoryRepository } from './categories.repository';
-import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { convertToSlug } from 'src/helpers';
 import { TypeRepository } from 'src/types/types.repository';
@@ -18,6 +16,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Region } from '../region/entities/region.entity';
+import { Type } from '../types/entities/type.entity';
 
 const options = {
   keys: ['name', 'type.slug'],
@@ -27,11 +26,11 @@ const options = {
 @Injectable()
 export class CategoriesService {
   constructor(
-    @InjectRepository(CategoryRepository)
-    private categoryRepository: CategoryRepository,
-    @InjectRepository(AttachmentRepository)
-    private attachmentRepository: AttachmentRepository,
-    @InjectRepository(TypeRepository) private typeRepository: TypeRepository,
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
+    @InjectRepository(Attachment)
+    private attachmentRepository: Repository<Attachment>,
+    @InjectRepository(Type) private typeRepository: Repository<Type>,
     @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
     @InjectRepository(SubCategory) private readonly subCategoryRepository: Repository<SubCategory>,
     @InjectRepository(Region) private readonly regionRepository: Repository<Region>,

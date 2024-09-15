@@ -22,20 +22,9 @@ import { Permission } from 'src/permission/entities/permission.entity'
 import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    Shop,
-    Balance,
-    ShopSettings,
-    PaymentInfo,
-    Add,
-    Location,
-    ShopSocials,
-    User,
-    Attachment,
-    UserAdd,
-  ]),
-  TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Add, Location, ShopSocials, User, ShopSettings, Attachment, UserAdd, Permission]),
-  CacheModule.register(),
+  imports: [
+    TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Add, Location, ShopSocials, User, ShopSettings, Attachment, UserAdd, Permission]),
+    CacheModule.register(),
   ],
   controllers: [
     ShopsController,

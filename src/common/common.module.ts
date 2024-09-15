@@ -7,10 +7,9 @@ import { Attachment } from './entities/attachment.entity'
 
 @Module({
   imports: [
-    TypeOrmExModule.forCustomRepository([AttachmentRepository]),
     TypeOrmModule.forFeature([Attachment]),
   ],
   controllers: [],
   providers: [],
 })
-export class CommonModule {}
+export class CommonModule { }

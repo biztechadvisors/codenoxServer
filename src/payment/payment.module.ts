@@ -11,10 +11,7 @@ import { OrderProductPivot } from '../products/entities/product.entity';
 @Module({
   imports: [
     AuthModule,
-    TypeOrmModule.forFeature([
-      OrderProductPivot,
-    ]),
-    TypeOrmModule.forFeature([Card, Payment]),
+    TypeOrmModule.forFeature([Card, Payment, OrderProductPivot]),
   ],
   providers: [
     StripePaymentService,

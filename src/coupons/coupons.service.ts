@@ -25,8 +25,8 @@ export class CouponsService {
   constructor(
     @InjectRepository(Coupon)
     private readonly couponRepository: Repository<Coupon>,
-    // @InjectRepository(Attachment)
-    // private readonly attachmentRepository:AttachmentRepository
+    @InjectRepository(Attachment)
+    private readonly attachmentRepository: Repository<Attachment>
   ) { }
 
   async create(createCouponDto: CreateCouponDto): Promise<Coupon> {

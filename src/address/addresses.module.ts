@@ -10,7 +10,7 @@ import { AddressesService } from './addresses.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Add, UserAdd, User, Shop]),
-    CacheModule.register(), // CacheModule is ready to cache data
+    CacheModule.register(),
   ],
   controllers: [AddressesController],
   providers: [AddressesService],

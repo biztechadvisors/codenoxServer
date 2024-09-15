@@ -21,6 +21,6 @@ import { Region } from '../region/entities/region.entity';
     CacheModule.register()
   ],
   controllers: [TypesController],
-  providers: [TypesService, UploadsService, TypeRepository, TypeSettingsRepository, BannerRepository, AttachmentRepository],
+  providers: [TypesService, UploadsService],
 })
 export class TypesModule { }
