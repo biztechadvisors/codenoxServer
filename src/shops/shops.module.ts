@@ -26,12 +26,7 @@ import { CacheModule } from '@nestjs/cache-manager'
     TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Add, Location, ShopSocials, User, ShopSettings, Attachment, UserAdd, Permission]),
     CacheModule.register(),
   ],
-  controllers: [
-    ShopsController,
-    StaffsController,
-    DisapproveShopController,
-    ApproveShopController,
-  ],
+  controllers: [ShopsController, StaffsController, DisapproveShopController, ApproveShopController],
   providers: [ShopsService, AddressesService],
 })
 export class ShopsModule { }

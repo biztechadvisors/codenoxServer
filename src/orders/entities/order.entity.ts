@@ -61,7 +61,7 @@ export class Order extends CoreEntity {
   @Column()
   customer_contact: string;
 
-  @ManyToOne(() => User, (user) => user.orders, { eager: true, cascade: ['insert', 'update'] })
+  @ManyToOne(() => User, (user) => user.orders, { eager: true, cascade: true })
   @JoinColumn({ name: 'customerId' })
   customer: User;
 
@@ -152,7 +152,7 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   logistics_provider: string;
 
-  @ManyToOne(() => UserAdd, { cascade: ['insert', 'update'] })
+  @ManyToOne(() => UserAdd, { cascade: true })
   soldByUserAddress: UserAdd;
 
   @Column('decimal', { precision: 5, scale: 2, nullable: true })
@@ -161,11 +161,11 @@ export class Order extends CoreEntity {
   @Column({ nullable: true })
   wallet_point: number;
 
-  @ManyToOne(() => User, { nullable: true, cascade: ['insert', 'update'] })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'dealerId' })
   dealer: User;
 
-  @OneToMany(() => Stocks, (stocks) => stocks.order, { cascade: ['insert', 'update'] })
+  @OneToMany(() => Stocks, (stocks) => stocks.order)
   stocks: Stocks[];
 }
 
@@ -186,9 +186,9 @@ export class OrderFiles extends CoreEntity {
   @Column({ nullable: true })
   customer_id: number;
 
-  @ManyToOne(() => File, { nullable: true, cascade: ['insert', 'update'] })
+  @ManyToOne(() => File, { nullable: true, cascade: true })
   file: File;
 
-  @ManyToOne(() => Product, { nullable: true, cascade: ['insert', 'update'] })
+  @ManyToOne(() => Product, { nullable: true, cascade: true })
   fileable: Product;
 }

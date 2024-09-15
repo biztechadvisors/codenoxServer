@@ -18,17 +18,17 @@ export class Category extends CoreEntity {
   @Column()
   slug: string;
 
-  @OneToOne(() => Category, { nullable: true })
+  @OneToOne(() => Category, { nullable: true, onDelete: "CASCADE" })
   @JoinColumn()
   parent?: Category;
 
-  @OneToMany(() => Category, (category) => category.parent)
+  @OneToMany(() => Category, (category) => category.parent, { onDelete: "CASCADE" })
   children?: Category[];
 
-  @OneToMany(() => SubCategory, (subCategory) => subCategory.category)
+  @OneToMany(() => SubCategory, (subCategory) => subCategory.category, { onDelete: "CASCADE" })
   subCategories: SubCategory[];
 
-  @ManyToMany(() => Region, (region) => region.categories, { nullable: true, cascade: true })
+  @ManyToMany(() => Region, (region) => region.categories, { nullable: true, onDelete: "CASCADE", onUpdate: "CASCADE" })
   @JoinTable({
     name: 'categories_regions',
     joinColumn: { name: 'categoryId', referencedColumnName: 'id' },
@@ -39,21 +39,21 @@ export class Category extends CoreEntity {
   @Column({ nullable: true })
   details?: string;
 
-  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true, nullable: true })
   @JoinColumn()
   image?: Attachment;
 
   @Column({ nullable: true })
   icon?: string;
 
-  @ManyToOne(() => Type, (type) => type.categories, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Type, (type) => type.categories, { nullable: true, onDelete: 'SET NULL', onUpdate: "CASCADE" })
   @JoinColumn({ name: 'typeId' })
   type: Type | null;
 
-  @ManyToMany(() => Product, (product) => product.categories)
+  @ManyToMany(() => Product, (product) => product.categories, { onDelete: "CASCADE" })
   products: Product[];
 
-  @ManyToOne(() => Shop, (shop) => shop.categories)
+  @ManyToOne(() => Shop, (shop) => shop.categories, { onDelete: "CASCADE", onUpdate: "CASCADE" })
   shop?: Shop;
 
   @Column()
@@ -77,13 +77,13 @@ export class SubCategory extends CoreEntity {
   @Column()
   slug: string;
 
-  @ManyToOne(() => Category, (category) => category.subCategories)
+  @ManyToOne(() => Category, (category) => category.subCategories, { onDelete: "CASCADE", onUpdate: "CASCADE" })
   category: Category;
 
-  @ManyToMany(() => Product, (product) => product.subCategories, { cascade: true })
+  @ManyToMany(() => Product, (product) => product.subCategories, { onDelete: "CASCADE" })
   products: Product[];
 
-  @ManyToOne(() => Shop, (shop) => shop.subCategories)
+  @ManyToOne(() => Shop, (shop) => shop.subCategories, { onDelete: "CASCADE", onUpdate: "CASCADE" })
   shop: Shop;
 
   @ManyToMany(() => Region, (region) => region.subCategories, { nullable: true, onDelete: 'CASCADE' })
@@ -97,7 +97,7 @@ export class SubCategory extends CoreEntity {
   @Column()
   details?: string;
 
-  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true, nullable: true })
   @JoinColumn()
   image?: Attachment;
 

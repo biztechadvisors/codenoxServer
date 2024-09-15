@@ -19,10 +19,10 @@ export class Blog {
     @Column({ type: 'date' })
     date: string;
 
-    @ManyToOne(() => Shop, { nullable: false, onDelete: 'CASCADE' })
+    @ManyToOne(() => Shop, { nullable: false, onDelete: 'CASCADE', onUpdate: "CASCADE" })
     shop: Shop;
 
-    @ManyToMany(() => Attachment, { cascade: true, eager: true })
+    @ManyToMany(() => Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true })
     @JoinTable({
         name: 'blog_attachments',
         joinColumn: { name: 'blogId', referencedColumnName: 'id' },
@@ -30,10 +30,10 @@ export class Blog {
     })
     attachments?: Attachment[];
 
-    @ManyToOne(() => Region, (region) => region.blogs, { nullable: true, onDelete: 'CASCADE' })
+    @ManyToOne(() => Region, (region) => region.blogs, { nullable: true, onDelete: "CASCADE", onUpdate: "CASCADE" })
     region: Region;
 
-    @ManyToMany(() => Tag, { cascade: true, eager: true })
+    @ManyToMany(() => Tag, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true })
     @JoinTable({
         name: 'blog_tags',
         joinColumn: { name: 'blogId', referencedColumnName: 'id' },

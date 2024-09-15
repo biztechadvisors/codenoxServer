@@ -7,9 +7,7 @@ import { Banner, Type, TypeSettings } from './entities/type.entity';
 import Fuse from 'fuse.js';
 import { GetTypesDto } from './dto/get-types.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { BannerRepository, TypeRepository, TypeSettingsRepository } from './types.repository';
 import { convertToSlug } from 'src/helpers';
-import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { UploadsService } from 'src/uploads/uploads.service';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
@@ -27,10 +25,10 @@ export class TypesService {
   constructor(
     private readonly uploadsService: UploadsService,
 
-    @InjectRepository(Type) private readonly typeRepository: TypeRepository,
-    @InjectRepository(TypeSettings) private readonly typeSettingsRepository: TypeSettingsRepository,
-    @InjectRepository(Banner) private readonly bannerRepository: BannerRepository,
-    @InjectRepository(Attachment) private readonly attachmentRepository: AttachmentRepository,
+    @InjectRepository(Type) private readonly typeRepository: Repository<Type>,
+    @InjectRepository(TypeSettings) private readonly typeSettingsRepository: Repository<TypeSettings>,
+    @InjectRepository(Banner) private readonly bannerRepository: Repository<Banner>,
+    @InjectRepository(Attachment) private readonly attachmentRepository: Repository<Attachment>,
     @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
     @InjectRepository(Tag) private readonly tagRepository: Repository<Tag>,
     @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,

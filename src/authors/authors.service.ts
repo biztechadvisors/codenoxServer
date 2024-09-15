@@ -11,7 +11,6 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { convertToSlug } from 'src/helpers'
 import { ShopSocials } from 'src/settings/entities/setting.entity'
 import { Social } from 'src/users/entities/profile.entity'
-import { AttachmentRepository } from 'src/common/common.repository'
 import { Repository } from 'typeorm'
 import { Attachment } from '../common/entities/attachment.entity'
 

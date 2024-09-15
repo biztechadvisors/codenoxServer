@@ -21,7 +21,7 @@ export class Profile extends CoreEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
+    @ManyToOne(() => Attachment, { eager: true, nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'avatarId' })
     avatar: Attachment;
 
@@ -34,6 +34,6 @@ export class Profile extends CoreEntity {
     @Column()
     contact?: string;
 
-    @OneToOne(() => User, user => user.profile, { onDelete: 'CASCADE' })
+    @OneToOne(() => User, user => user.profile, { onDelete: "SET NULL" })
     customer?: User;
 }

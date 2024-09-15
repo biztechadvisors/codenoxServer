@@ -4,11 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { AttachmentDTO } from 'src/common/dto/attachment.dto';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AttachmentRepository } from 'src/common/common.repository';
 import sharp from 'sharp';
 import * as mime from 'mime-types';
 import * as stream from 'stream';
 import { promisify } from 'util';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UploadsService {
@@ -16,8 +16,8 @@ export class UploadsService {
   private readonly multipartChunkSize = 5 * 1024 * 1024; // Set chunk size for multipart upload, e.g., 5 MB
 
   constructor(
-    @InjectRepository(AttachmentRepository)
-    private attachmentRepository: AttachmentRepository,
+    @InjectRepository(Attachment)
+    private attachmentRepository: Repository<Attachment>,
     private readonly configService: ConfigService,
   ) { }
 

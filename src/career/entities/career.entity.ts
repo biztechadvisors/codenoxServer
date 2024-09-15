@@ -22,9 +22,9 @@ export class Career {
     location: string;
 
     @Column({ nullable: true })
-    cv_resume?: string;  // You can store the path or URL of the uploaded CV/Resume
+    cv_resume?: string;
 
-    @ManyToOne(() => Shop, { eager: true }) // Load related Shop data eagerly
-    @JoinColumn({ name: 'shop_id' }) // Name of the foreign key column in the Contact table
+    @ManyToOne(() => Shop, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+    @JoinColumn({ name: 'shop_id' })
     shop: Shop;
 }

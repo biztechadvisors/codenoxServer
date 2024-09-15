@@ -15,7 +15,7 @@ export class Region {
     @Column({ unique: true })
     name: string;
 
-    @ManyToMany(() => Shop, (shop) => shop.regions, { cascade: true })
+    @ManyToMany(() => Shop, (shop) => shop.regions, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinTable({
         name: 'shop_regions',
         joinColumn: { name: 'regionId', referencedColumnName: 'id' },

@@ -26,7 +26,7 @@ export class Dealer {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @OneToOne(() => User, user => user.dealer)
+    @OneToOne(() => User, user => user.dealer, { onDelete: "SET NULL" })
     @JoinColumn()
     user: User;
 

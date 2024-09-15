@@ -2,11 +2,11 @@
 import { Module } from '@nestjs/common'
 import { UploadsService } from './uploads.service'
 import { UploadsController } from './uploads.controller'
-import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
-import { AttachmentRepository } from 'src/common/common.repository'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { Attachment } from '../common/entities/attachment.entity'
 
 @Module({
-  imports: [TypeOrmExModule.forCustomRepository([AttachmentRepository])],
+  imports: [TypeOrmModule.forFeature([Attachment])],
   controllers: [UploadsController],
   providers: [UploadsService],
 })

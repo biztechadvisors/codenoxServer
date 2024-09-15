@@ -10,7 +10,6 @@ import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { convertToSlug } from 'src/helpers';
-import { TypeRepository } from 'src/types/types.repository';
 import { ILike, In, IsNull, Like, Repository } from 'typeorm';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
@@ -27,10 +26,10 @@ const options = {
 export class CategoriesService {
   constructor(
     @InjectRepository(Category)
-    private categoryRepository: Repository<Category>,
+    private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Attachment)
-    private attachmentRepository: Repository<Attachment>,
-    @InjectRepository(Type) private typeRepository: Repository<Type>,
+    private readonly attachmentRepository: Repository<Attachment>,
+    @InjectRepository(Type) private readonly typeRepository: Repository<Type>,
     @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
     @InjectRepository(SubCategory) private readonly subCategoryRepository: Repository<SubCategory>,
     @InjectRepository(Region) private readonly regionRepository: Repository<Region>,

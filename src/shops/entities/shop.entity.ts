@@ -31,11 +31,15 @@ export class Shop extends CoreEntity {
   @Column()
   owner_id: number;
 
-  @ManyToOne(() => User, (user) => user.owned_shops, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.owned_shops, {
+    cascade: true,
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
   @JoinColumn({ name: 'owner_id' })
   owner: User;
 
-  @OneToMany(() => User, (user) => user.managed_shop)
+  @OneToMany(() => User, (user) => user.managed_shop, { onDelete: 'CASCADE', })
   staffs?: User[];
 
   @Column({ default: true })
@@ -47,11 +51,11 @@ export class Shop extends CoreEntity {
   @Column({ default: 0 })
   products_count: number;
 
-  @OneToOne(() => Balance, (balance) => balance.shop, { onDelete: 'CASCADE' })
+  @OneToOne(() => Balance, (balance) => balance.shop, { onDelete: "CASCADE" })
   @JoinColumn()
   balance?: Balance;
 
-  @OneToMany(() => Product, (product) => product.shop, { cascade: true })
+  @OneToMany(() => Product, (product) => product.shop, { onDelete: "CASCADE" })
   products?: Product[];
 
   @Column()
@@ -63,7 +67,7 @@ export class Shop extends CoreEntity {
   @Column({ nullable: true, type: 'text' })
   description?: string;
 
-  @ManyToMany(() => Attachment, { cascade: ['insert', 'update'], eager: true })
+  @ManyToMany(() => Attachment, { cascade: true, eager: true })
   @JoinTable({
     name: 'shop_cover_image',
     joinColumn: { name: 'shopId', referencedColumnName: 'id' },
@@ -71,45 +75,45 @@ export class Shop extends CoreEntity {
   })
   cover_image?: Attachment[];
 
-  @ManyToOne(() => Attachment, { cascade: ['insert', 'update'], nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Attachment, { cascade: true, nullable: true, eager: true })
   @JoinColumn()
   logo?: Attachment;
 
-  @ManyToOne(() => UserAdd, { cascade: ['insert', 'update'], nullable: true })
+  @ManyToOne(() => UserAdd, { onDelete: "CASCADE", nullable: true })
   @JoinColumn()
   address?: UserAdd;
 
-  @OneToOne(() => ShopSettings, { cascade: ['insert', 'update'], nullable: true })
+  @OneToOne(() => ShopSettings, { cascade: true, nullable: true })
   @JoinColumn()
   settings?: ShopSettings;
 
   @Column({ nullable: true })
   gst_number?: string;
 
-  @OneToMany(() => Category, (category) => category.shop, { cascade: true })
+  @OneToMany(() => Category, (category) => category.shop, { onDelete: "CASCADE" })
   categories: Category[];
 
-  @OneToMany(() => SubCategory, (subCategory) => subCategory.shop, { cascade: true })
+  @OneToMany(() => SubCategory, (subCategory) => subCategory.shop, { onDelete: "CASCADE" })
   subCategories: SubCategory[];
 
   @ManyToMany(() => Order, (order) => order.shop, { nullable: true })
   orders: Order[];
 
-  @ManyToOne(() => Permission, (permission) => permission.shop, { nullable: true })
+  @ManyToOne(() => Permission, (permission) => permission.shop, { onDelete: "CASCADE", eager: true })
   @JoinColumn({ name: 'permission_id' })
   permission?: Permission;
 
-  @ManyToMany(() => Permission, (permission) => permission.shops, { cascade: ['insert', 'update'] })
+  @ManyToMany(() => Permission, (permission) => permission.shops, { onDelete: "CASCADE", eager: true })
   @JoinTable({ name: 'shop_additionalPermission' })
   additionalPermissions: Permission[];
 
-  @Column({ nullable: true })
-  dealerCount?: number;
+  @Column({ type: 'int', default: 0 })
+  dealerCount: number;
 
-  @OneToMany(() => Event, (event) => event.shop, { cascade: true })
+  @OneToMany(() => Event, (event) => event.shop, { onDelete: "CASCADE" })
   events: Event[];
 
-  @ManyToMany(() => Region, (region) => region.shops)
+  @ManyToMany(() => Region, (region) => region.shops, { onDelete: "CASCADE", eager: true })
   regions: Region[];
 }
 

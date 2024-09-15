@@ -15,10 +15,7 @@ export class TotalYearSaleByMonth extends CoreEntity {
   @Column()
   month: string;
 
-  @ManyToMany(
-    type => Analytics,
-    analytics => analytics.totalYearSaleByMonth,
-  )
+  @ManyToMany((type) => Analytics, analytics => analytics.totalYearSaleByMonth, { onDelete: "CASCADE" })
   analytics: Promise<Analytics[]>;
 }
 
@@ -47,10 +44,8 @@ export class Analytics extends CoreEntity {
   @Column()
   newCustomers?: number;
 
-  @ManyToMany(
-    type => TotalYearSaleByMonth,
-    totalYearSaleByMonth => totalYearSaleByMonth.analytics,
-    { eager: true, cascade: true },
+  @ManyToMany((type) => TotalYearSaleByMonth, totalYearSaleByMonth => totalYearSaleByMonth.analytics,
+    { eager: true, onDelete: "CASCADE", onUpdate: "CASCADE" },
   )
   @JoinTable({ name: "analytics_totalYearSaleByMonth" })
   totalYearSaleByMonth?: Promise<TotalYearSaleByMonth[]>;

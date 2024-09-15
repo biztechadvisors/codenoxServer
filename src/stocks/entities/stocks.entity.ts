@@ -21,18 +21,19 @@ export class Stocks {
     @Column()
     receivedQuantity: number;
 
-    @ManyToOne(() => Product)
+    @ManyToOne(() => Product, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinColumn() // Specify the join column
     product: Product;
 
-    @ManyToOne(() => Variation, { cascade: true })
+    @ManyToOne(() => Variation, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+    @JoinColumn()
     variation_options: Variation;
 
-    @ManyToOne(() => User, { eager: true })
+    @ManyToOne(() => User, { eager: true, onDelete: "SET NULL", onUpdate: "CASCADE" })
     @JoinColumn() // Specify the join column
     user: User;
 
-    @ManyToOne(() => Order)
+    @ManyToOne(() => Order, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinColumn() // Specify the join column
     order: Order;
 }
@@ -52,15 +53,15 @@ export class InventoryStocks {
     @Column()
     inStock: boolean;
 
-    @ManyToMany(() => Variation, { cascade: true })
+    @ManyToMany(() => Variation, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinTable({ name: "inventoryStocks_variation_options" })
     variation_options: Variation[];
 
-    @ManyToOne(() => Product)
+    @ManyToOne(() => Product, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinColumn() // Specify the join column
     product: Product;
 
-    @ManyToOne(() => User, { eager: true })
+    @ManyToOne(() => User, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinColumn() // Specify the join column
     user: User;
 }

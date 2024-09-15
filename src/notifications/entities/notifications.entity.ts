@@ -16,8 +16,8 @@ export class Notification {
     seen: boolean; // Track if the notification has been seen
 
     @ManyToOne(() => User, user => user.notifications, {
-        onDelete: 'CASCADE', // Automatically delete child rows when parent is deleted
-        onUpdate: 'CASCADE', // Automatically update child rows when parent is updated
+        onDelete: "SET NULL",
+        cascade: true
     })
     user: User;
 

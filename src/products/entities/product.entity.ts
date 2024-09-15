@@ -39,11 +39,11 @@ export class Product extends CoreEntity {
   @Column()
   product_type: ProductType;
 
-  @ManyToOne(() => Type, (type) => type.products, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Type, (type) => type.products, { nullable: true, cascade: true })
   @JoinColumn({ name: 'typeId' })
   type: Type | null;
 
-  @ManyToMany(() => Region, (region) => region.products, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToMany(() => Region, (region) => region.products, { nullable: true, cascade: true })
   @JoinTable({
     name: 'product_regions',
     joinColumn: { name: 'productId', referencedColumnName: 'id' },
@@ -51,15 +51,15 @@ export class Product extends CoreEntity {
   })
   regions: Region[];
 
-  @ManyToMany(() => Category, category => category.products, { eager: true, cascade: true })
+  @ManyToMany(() => Category, category => category.products, { eager: true, onDelete: "CASCADE", onUpdate: "CASCADE" })
   @JoinTable({ name: "product_category" })
   categories: Category[];
 
-  @ManyToMany(() => SubCategory, subCategory => subCategory.products)
+  @ManyToMany(() => SubCategory, subCategory => subCategory.products, { cascade: true })
   @JoinTable({ name: "product_subcategory" })
   subCategories: SubCategory[];
 
-  @ManyToMany(() => Tag, tag => tag.products)
+  @ManyToMany(() => Tag, tag => tag.products, { cascade: true })
   @JoinTable({ name: "product_tags" })
   tags: Tag[];
 
@@ -77,10 +77,10 @@ export class Product extends CoreEntity {
   @ManyToMany(() => Order, (order) => order.products)
   orders: Order[];
 
-  @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
+  @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products, { onDelete: "CASCADE" })
   stocksSellOrders: StocksSellOrd[];
 
-  @ManyToOne(() => Shop, (shop) => shop.products)
+  @ManyToOne(() => Shop, (shop) => shop.products, { cascade: true })
   shop: Shop;
 
   @Column()
@@ -100,13 +100,13 @@ export class Product extends CoreEntity {
   @JoinTable({ name: 'products_gallery' })
   gallery?: Attachment[];
 
-  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true })
   @JoinColumn({ name: 'image_id' })
   image?: Attachment;
 
-  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'addedByUserId' })
-  addedByUser?: User;
+  // @ManyToOne(() => User, { nullable: true, cascade: true })
+  // @JoinColumn({ name: 'addedByUserId' })
+  // addedByUser?: User;
 
   // @ManyToOne(() => Unit, (unit) => unit.products, { nullable: true, onDelete: 'SET NULL' })
   // @JoinColumn({ name: 'unitId' })
@@ -164,11 +164,11 @@ export class OrderProductPivot extends CoreEntity {
   unit_price: number;
   @Column()
   subtotal: number;
-  @ManyToOne(() => Order, (order) => order.orderProductPivots, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Order, (order) => order.orderProductPivots, { cascade: true })
   @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  @ManyToOne(() => Product, (product) => product.pivot, { onDelete: 'CASCADE', eager: true })
+  @ManyToOne(() => Product, (product) => product.pivot, { cascade: true, eager: true })
   @JoinColumn({ name: 'product_id' })
   product: Product;
   @ManyToOne(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)

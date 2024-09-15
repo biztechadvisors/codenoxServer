@@ -20,11 +20,10 @@ export class Balance {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   admin_commission_rate: number;
 
-  @OneToOne(() => Shop, (shop) => shop.balance, { cascade: true, onDelete: 'CASCADE' })
-  @JoinColumn()
+  @OneToOne(() => Shop, (shop) => shop.balance, { onDelete: "CASCADE" })
   shop: Shop;
 
-  @ManyToOne(() => Dealer, (dealer) => dealer.balance, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Dealer, (dealer) => dealer.balance, { nullable: true })
   dealer: Dealer;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
@@ -36,7 +35,7 @@ export class Balance {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   current_balance: number;
 
-  @OneToOne(() => PaymentInfo, { cascade: ['insert', 'update'], nullable: true })
+  @OneToOne(() => PaymentInfo, { onDelete: "CASCADE", nullable: true })
   @JoinColumn()
   payment_info?: PaymentInfo;
 }
