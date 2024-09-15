@@ -3,7 +3,7 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
-import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum CouponType {
   FIXED_COUPON = 'fixed',
@@ -35,7 +35,7 @@ export class Coupon extends CoreEntity {
   @Column()
   type: CouponType;
 
-  @OneToOne(() => Attachment, { cascade: ['insert', 'update'], eager: true, nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Attachment, { cascade: true, nullable: true })
   @JoinColumn()
   image?: Attachment;  // Make this optional to match the `nullable: true` setting
 

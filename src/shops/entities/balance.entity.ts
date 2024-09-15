@@ -20,7 +20,7 @@ export class Balance {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   admin_commission_rate: number;
 
-  @OneToOne(() => Shop, (shop) => shop.balance, { cascade: true })
+  @OneToMany(() => Shop, (shop) => shop.balance, { cascade: true })
   @JoinColumn()
   shop: Shop;
 

@@ -81,6 +81,7 @@ import { AddModule } from './address/addresses.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: ['error'],
         extra: {
+          
           connectionLimit: 50,
           waitForConnections: true,
           queueLimit: 0,
