@@ -35,7 +35,7 @@ export class Coupon extends CoreEntity {
   @Column()
   type: CouponType;
 
-  @OneToOne(() => Attachment, { cascade: ['insert', 'update'], eager: true, nullable: true, onDelete: 'SET NULL' })
+  @OneToOne(() => Attachment, { cascade: true, nullable: true })
   @JoinColumn()
   image?: Attachment;  // Make this optional to match the `nullable: true` setting
 

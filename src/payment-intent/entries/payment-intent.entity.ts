@@ -36,9 +36,6 @@ export class PaymentIntent {
   @Column()
   payment_gateway: string;
 
-  @Column({ nullable: true })
-  payment_intent_info_id: number;
-
   @ManyToOne(() => PaymentIntentInfo, { nullable: true, cascade: true })
   @JoinColumn({ name: 'payment_intent_info_id' })
   payment_intent_info?: PaymentIntentInfo;

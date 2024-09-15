@@ -16,7 +16,6 @@ import { UsersModule } from '../users/users.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Permission]),
-    TypeOrmModule.forFeature([Permission, User]),
     UsersModule,
     MailModule,
     NotificationModule,

@@ -233,17 +233,17 @@ export class AuthService {
           throw new BadRequestException('Invalid creator user.');
         }
 
-        // if (parentUsr.permission.type_name === UserType.Company && permission?.type_name === UserType.Dealer) {
-        //   const existingDealerCount = await this.userRepository.createQueryBuilder('user')
-        //     .innerJoin('user.permission', 'permission')
-        //     .where('user.createdBy = :createdBy', { createdBy: parentUsr.id })
-        //     .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
-        //     .getCount();
+        if (parentUsr.permission.type_name === UserType.Company && permission?.type_name === UserType.Dealer) {
+          const existingDealerCount = await this.userRepository.createQueryBuilder('user')
+            .innerJoin('user.permission', 'permission')
+            .where('user.createdBy = :createdBy', { createdBy: parentUsr.id })
+            .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
+            .getCount();
 
-        //   if (existingDealerCount >= parentUsr.managed_shop.dealerCount) {
-        //     throw new BadRequestException('Dealer count limit reached.');
-        //   }
-        // }
+          if (existingDealerCount >= parentUsr.managed_shop.dealerCount) {
+            throw new BadRequestException('Dealer count limit reached.');
+          }
+        }
       }
 
       userData.permission = permission || null;
@@ -802,18 +802,18 @@ export class AuthService {
         relations: ['permission'],
       });
 
-      // if (parentUsr?.permission?.type_name === UserType.Company) {
-      //   const existingDealerCount = await this.userRepository.createQueryBuilder('user')
-      //     .innerJoin('user.permission', 'permission')
-      //     .where('user.createdBy = :createdBy', { createdBy: parentUsr.id })
-      //     .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
-      //     .getCount();
+      if (parentUsr?.permission?.type_name === UserType.Company) {
+        const existingDealerCount = await this.userRepository.createQueryBuilder('user')
+          .innerJoin('user.permission', 'permission')
+          .where('user.createdBy = :createdBy', { createdBy: parentUsr.id })
+          .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
+          .getCount();
 
-      //   console.log("first 752 ", parentUsr)
-      //   if (existingDealerCount >= (parentUsr.managed_shop.dealerCount || 0)) {
-      //     throw new BadRequestException('Cannot add more users, dealerCount limit reached.');
-      //   }
-      // }
+        console.log("first 752 ", parentUsr)
+        if (existingDealerCount >= (parentUsr.managed_shop.dealerCount || 0)) {
+          throw new BadRequestException('Cannot add more users, dealerCount limit reached.');
+        }
+      }
 
       user.createdBy = parentUsr;
     }
@@ -824,16 +824,16 @@ export class AuthService {
         where: { permission_name: ILike(updateUserInput.permission) as unknown as FindOperator<string> },
       });
 
-      // if (permission) {
-      //   user.permission = permission;
+      if (permission) {
+        user.permission = permission;
 
-      //   // Set dealerCount only if the user is of type Company
-      //   if (permission.type_name === UserType.Company) {
-      //     user.managed_shop.dealerCount = updateUserInput.dealerCount || 0;
-      //   } else {
-      //     user.managed_shop.dealerCount = null; // Reset dealerCount if type changes to something else
-      //   }
-      // }
+        // Set dealerCount only if the user is of type Company
+        if (permission.type_name === UserType.Company) {
+          user.managed_shop.dealerCount = updateUserInput.dealerCount || 0;
+        } else {
+          user.managed_shop.dealerCount = null; // Reset dealerCount if type changes to something else
+        }
+      }
     }
 
     // Update other user properties
