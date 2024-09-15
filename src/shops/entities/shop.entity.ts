@@ -95,7 +95,7 @@ export class Shop extends CoreEntity {
   @ManyToMany(() => Order, (order) => order.shop, { nullable: true })
   orders: Order[];
 
-  @ManyToOne(() => Permission, (permission) => permission.shop, { nullable: true })
+  @ManyToOne(() => Permission, { nullable: true })
   @JoinColumn({ name: 'permission_id' })
   permission?: Permission;
 
@@ -103,8 +103,8 @@ export class Shop extends CoreEntity {
   @JoinTable({ name: 'shop_additionalPermission' })
   additionalPermissions: Permission[];
 
-  @Column({ nullable: true })
-  dealerCount?: number;
+  // @Column({ nullable: true })
+  // dealerCount?: number;
 
   @OneToMany(() => Event, (event) => event.shop, { cascade: true })
   events: Event[];

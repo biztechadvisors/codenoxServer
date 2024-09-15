@@ -196,7 +196,7 @@ export class ShopsService {
 
           // Set dealerCount only if the user is of type Company
           if (permission.type_name === UserType.Company) {
-            createShopDto.dealerCount = createShopDto.dealerCount || 0;
+            // createShopDto.dealerCount = createShopDto?.dealerCount || 0;
           }
         }
       }
@@ -342,6 +342,7 @@ export class ShopsService {
       staffs: shop.staffs || [],
       additionalPermissions: shop.additionalPermissions || [],
       permission: shop.permission || null,
+      // delaerCount: shop?.dealerCount || null,
     }));
 
     return {
@@ -551,7 +552,7 @@ export class ShopsService {
         orders: existShop.orders ?? [],
         additionalPermissions: existShop.additionalPermissions ?? [],
         permission: existShop.permission ?? null,
-        dealerCount: existShop.dealerCount ?? 0,
+        // dealerCount: existShop?.dealerCount ?? 0,
         regions: existShop.regions ?? [],
         events: existShop.events ?? [],
       };
@@ -599,7 +600,7 @@ export class ShopsService {
 
     // Set dealerCount only if the user is of type Company
     if (existingShop.permission.type_name === UserType.Company) {
-      existingShop.dealerCount = updateShopDto.dealerCount || 0;
+      // existingShop.dealerCount = updateShopDto?.dealerCount || 0;
     }
 
     // Update fields
