@@ -342,6 +342,7 @@ export class ShopsService {
       staffs: shop.staffs || [],
       additionalPermissions: shop.additionalPermissions || [],
       permission: shop.permission || null,
+      delaerCount: shop.dealerCount || null,
     }));
 
     return {

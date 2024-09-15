@@ -95,7 +95,7 @@ export class Shop extends CoreEntity {
   @ManyToMany(() => Order, (order) => order.shop, { nullable: true })
   orders: Order[];
 
-  @ManyToOne(() => Permission, (permission) => permission.shop, { nullable: true })
+  @ManyToOne(() => Permission, { nullable: true })
   @JoinColumn({ name: 'permission_id' })
   permission?: Permission;
 
