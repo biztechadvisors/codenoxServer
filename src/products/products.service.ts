@@ -339,10 +339,12 @@ export class ProductsService {
 
     const startIndex = (page - 1) * limit;
 
-    // Ensure regionNames has a valid type
-    const regionsArray: string[] = Array.isArray(regionNames)
-      ? regionNames
-      : (typeof regionNames === 'string' ? regionNames.split(",") : []);
+    const regionsArray: string[] =
+      Array.isArray(regionNames)
+        ? regionNames
+        : (typeof regionNames === 'string' && regionNames.length > 0
+          ? regionNames.split(",")
+          : []);
 
     // Generate cache key
     const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${regionsArray.join(',')}:${page}:${limit}`;
@@ -539,7 +541,7 @@ export class ProductsService {
       };
 
       // Cache the result
-      await this.cacheManager.set(cacheKey, result, 1800); // Cache for 30 minutes
+      await this.cacheManager.set(cacheKey, result, 120); // Cache for 30 minutes
       this.logger.log(`Data cached with key: ${cacheKey}`);
 
       return result;

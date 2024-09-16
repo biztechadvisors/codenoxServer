@@ -72,7 +72,7 @@ export class Order extends CoreEntity {
   @OneToMany(() => Order, (order) => order.parentOrder)
   children?: Order[];
 
-  @ManyToOne(() => OrderStatus, (orderStatus) => orderStatus.order, { nullable: true, cascade: ['insert', 'update'] })
+  @ManyToOne(() => OrderStatus, (orderStatus) => orderStatus.order, { eager: true, nullable: true, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'statusId' })
   status: OrderStatus;
 
@@ -125,7 +125,7 @@ export class Order extends CoreEntity {
   })
   products: Product[];
 
-  @OneToMany(() => OrderProductPivot, (pivot) => pivot.order, { cascade: ['insert', 'update'] })
+  @OneToMany(() => OrderProductPivot, (pivot) => pivot.order, { eager: true, cascade: ['insert', 'update'] })
   orderProductPivots: OrderProductPivot[];
 
   @ManyToOne(() => UserAdd, { nullable: false, cascade: true })
