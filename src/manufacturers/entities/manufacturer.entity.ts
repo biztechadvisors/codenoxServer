@@ -10,14 +10,14 @@ export class Manufacturer extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => Attachment)
+  @OneToOne(() => Attachment, { cascade: true })
   @JoinColumn()
   cover_image?: Attachment;
 
   @Column()
   description?: string;
 
-  @OneToOne(() => Attachment)
+  @OneToOne(() => Attachment, { cascade: true })
   @JoinColumn()
   image?: Attachment;
 
@@ -33,10 +33,10 @@ export class Manufacturer extends CoreEntity {
   @ManyToOne(() => ShopSocials)
   socials?: ShopSocials;
 
-  @OneToOne(() => Type)
+  @OneToOne(() => Type, { cascade: true })
   @JoinColumn()
   type: Type;
-  
+
   @Column()
   type_id?: string
   @Column()

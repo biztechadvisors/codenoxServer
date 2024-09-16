@@ -174,7 +174,6 @@ export class ShopsService {
 
         newBalance.total_earnings = createShopDto.balance.total_earnings;
         newBalance.withdrawn_amount = createShopDto.balance.withdrawn_amount;
-        newBalance.shop = shop;
         const balance = await this.balanceRepository.save(newBalance);
         shop.balance = balance;
       }
@@ -290,7 +289,6 @@ export class ShopsService {
         total_earnings: shop.balance.total_earnings,
         withdrawn_amount: shop.balance.withdrawn_amount,
         current_balance: shop.balance.current_balance,
-        shop: shop.balance.shop,
         dealer: null,
         payment_info: shop.balance.payment_info ? {
           id: shop.balance.payment_info.id,
@@ -488,7 +486,6 @@ export class ShopsService {
             total_earnings: existShop.balance.total_earnings,
             withdrawn_amount: existShop.balance.withdrawn_amount,
             current_balance: existShop.balance.current_balance,
-            shop: existShop.balance.shop ?? null,
             dealer: null,
             payment_info: existShop.balance.payment_info
               ? {

@@ -26,10 +26,10 @@ export class Coupon extends CoreEntity {
   @Column()
   minimum_cart_amount: number;
 
-  @OneToMany(() => Order, (order) => order.coupon)
+  @OneToMany(() => Order, (order) => order.coupon, { onDelete: "SET NULL" })
   orders?: Order[];
 
-  @OneToMany(() => StocksSellOrd, (stocksSellOrd) => stocksSellOrd.coupon, { onDelete: "CASCADE" })
+  @OneToMany(() => StocksSellOrd, (stocksSellOrd) => stocksSellOrd.coupon, { onDelete: "SET NULL" })
   stockOrders?: StocksSellOrd[];
 
   @Column()

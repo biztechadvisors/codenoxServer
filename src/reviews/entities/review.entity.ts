@@ -13,58 +13,57 @@ import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne,
 export class Review extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   rating: number;
+
   @Column()
   name: string;
+
   @Column()
   comment: string;
 
-  @OneToOne(() => Shop)
-  @JoinColumn()
+  @ManyToOne(() => Shop, { nullable: true })
+  @JoinColumn({ name: 'shop_id' })
   shop: Shop;
 
-  @OneToOne(() => Order)
-  @JoinColumn()
+  @ManyToOne(() => Order, { nullable: true })
+  @JoinColumn({ name: 'order_id' }) // Since this should refer to one specific order, use ManyToOne
   order: Order;
 
   @ManyToMany(() => Attachment, { cascade: true, eager: true })
-  @JoinTable({ name: "review_attachment" })
+  @JoinTable({ name: 'review_attachment' })
   photos: Attachment[];
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Product, product => product.my_review)
+  @ManyToOne(() => Product, product => product.my_review, { nullable: true })
+  @JoinColumn({ name: 'product_id' })
   product: Product;
 
   @ManyToMany(() => Feedback)
-  @JoinTable({ name: "review_feedback" })
+  @JoinTable({ name: 'review_feedback' })
   feedbacks: Feedback[];
 
-  @OneToOne(() => Feedback)
-  @JoinColumn()
+  @OneToOne(() => Feedback, { nullable: true })
+  @JoinColumn({ name: 'my_feedback_id' })
   my_feedback: Feedback;
 
-  @Column()
+  @Column({ default: 0 })
   positive_feedbacks_count: number;
-  @Column()
+
+  @Column({ default: 0 })
   negative_feedbacks_count: number;
-  @Column()
-  user_id: number;
-  @Column()
-  product_id: number;
 
   @ManyToMany(() => Report)
-  @JoinTable({ name: "review_report" })
+  @JoinTable({ name: 'review_report' })
   abusive_reports: Report[];
 
-  @Column()
-  shop_id: string;
-  @Column()
-  variation_option_id: string;
-  @Column()
+  @Column({ nullable: true })
+  variation_option_id?: string;
+
+  @Column({ default: 0 })
   abusive_reports_count?: number;
-  review: { id: number; };
 }

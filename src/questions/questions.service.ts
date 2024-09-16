@@ -71,7 +71,7 @@ export class QuestionService {
         }
       }
 
-      if (product_id && question.product_id !== Number(product_id)) {
+      if (product_id && question.product.id !== Number(product_id)) {
         return null;
       }
     }
@@ -128,8 +128,7 @@ export class QuestionService {
       })
       if (existingProduct) {
         for (const data of existingProduct) {
-          question.product = data.id
-          question.product_id = data.id
+          question.product.id = data.id
         }
       }
     }
@@ -141,8 +140,7 @@ export class QuestionService {
       })
       if (existingUser) {
         for (const data of existingUser) {
-          question.user = data.id
-          question.user_id = data.id
+          question.user.id = data.id
         }
       }
     }
@@ -175,8 +173,7 @@ export class QuestionService {
         })
         if (existingProduct) {
           for (const data of existingProduct) {
-            existingQuestion.product = data.id
-            existingQuestion.product_id = data.id
+            existingQuestion.product.id = data.id
           }
         }
       }
@@ -188,8 +185,7 @@ export class QuestionService {
         })
         if (existingUser) {
           for (const data of existingUser) {
-            existingQuestion.user = data.id
-            existingQuestion.user_id = data.id
+            existingQuestion.user.id = data.id
           }
         }
 

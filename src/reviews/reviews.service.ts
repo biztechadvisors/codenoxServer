@@ -162,7 +162,7 @@ export class ReviewService {
       }
 
       if (product_id) {
-        reviews = reviews.filter((p) => p.product_id === Number(product_id));
+        reviews = reviews.filter((p) => p.product.id === Number(product_id));
       }
 
       if (shopSlug) {

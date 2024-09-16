@@ -13,7 +13,7 @@ export class Permission {
   @Column()
   permission_name: string;
 
-  @OneToMany(() => PermissionType, (permissionType) => permissionType.permissions)
+  @OneToMany(() => PermissionType, (permissionType) => permissionType.permissions, { eager: true, cascade: true, onDelete: "CASCADE" })
   permissions: PermissionType[];
 
   @Column()
@@ -22,7 +22,7 @@ export class Permission {
   @Column()
   shop: number;
 
-  @ManyToMany(() => Shop, (shop) => shop.additionalPermissions, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+  @ManyToMany(() => Shop, (shop) => shop.additionalPermissions, { onUpdate: "CASCADE" })
   shops?: Shop[];
 }
 
@@ -40,6 +40,6 @@ export class PermissionType {
   @Column()
   write: boolean;
 
-  @ManyToOne(() => Permission, permission => permission.permissions, { eager: true, onDelete: "CASCADE" })
+  @ManyToOne(() => Permission, permission => permission.permissions, { onDelete: "SET NULL" })
   permissions: Permission;
 }

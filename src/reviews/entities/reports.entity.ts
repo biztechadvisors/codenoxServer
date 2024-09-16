@@ -10,9 +10,11 @@ export class Report extends CoreEntity {
   id: number;
   @Column()
   user_id?: number;
+
   @ManyToMany(() => User)
   @JoinTable({ name: "report_user" })
   user: User[];
+
   @Column()
   model_id: number;
   @Column()

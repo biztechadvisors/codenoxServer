@@ -27,7 +27,7 @@ export class StocksSellOrd extends CoreEntity {
     @JoinColumn()
     status: OrderStatus;
 
-    @ManyToOne(() => Coupon, coupon => coupon.stockOrders, { onDelete: "CASCADE", onUpdate: "CASCADE", nullable: true })
+    @ManyToOne(() => Coupon, coupon => coupon.stockOrders)
     coupon?: Coupon;
 
     @Column()
@@ -63,11 +63,11 @@ export class StocksSellOrd extends CoreEntity {
     @Column({ nullable: true })
     delivery_time: string;
 
-    @ManyToMany(() => Product, product => product.stocksSellOrders, { onDelete: "CASCADE", onUpdate: "CASCADE" })
-    @JoinTable({ name: "stocksSellOrd_products" })
+    @ManyToMany(() => Product, product => product.stocksSellOrders)
+    @JoinTable({ name: "stocks_sell_Order_products" })
     products: Product[];
 
-    @ManyToOne(() => User, (user) => user.stockOrd, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+    @ManyToOne(() => User, (user) => user.stockOrd)
     soldBy: User;
 
     @ManyToOne(() => UserAdd, { onDelete: "CASCADE", onUpdate: "CASCADE" })
@@ -88,7 +88,7 @@ export class StocksSellOrd extends CoreEntity {
     @Column('json', { nullable: true })
     logistics_provider: object;
 
-    @ManyToOne(() => UserAdd, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+    @ManyToOne(() => UserAdd, { onDelete: "CASCADE" })
     soldByUserAddress: UserAdd;
 
     @Column('decimal', { precision: 5, scale: 2, nullable: true })
@@ -97,6 +97,6 @@ export class StocksSellOrd extends CoreEntity {
     @Column()
     wallet_point: number;
 
-    @ManyToOne(() => User, user => user.stocksSellOrd, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true })
+    @ManyToOne(() => User, user => user.stocksSellOrd)
     customer: User;
 }

@@ -39,7 +39,7 @@ export class Product extends CoreEntity {
   @Column()
   product_type: ProductType;
 
-  @ManyToOne(() => Type, (type) => type.products, { nullable: true, cascade: true })
+  @ManyToOne(() => Type, (type) => type.products, { onDelete: "SET NULL" })
   @JoinColumn({ name: 'typeId' })
   type: Type | null;
 
@@ -77,7 +77,7 @@ export class Product extends CoreEntity {
   @ManyToMany(() => Order, (order) => order.products)
   orders: Order[];
 
-  @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products, { onDelete: "CASCADE" })
+  @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
   stocksSellOrders: StocksSellOrd[];
 
   @ManyToOne(() => Shop, (shop) => shop.products, { cascade: true })

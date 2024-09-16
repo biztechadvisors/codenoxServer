@@ -50,33 +50,30 @@ export class User extends CoreEntity {
   @JoinColumn()
   profile?: Profile;
 
-  @OneToOne(() => Dealer, (dealer) => dealer.user, { onDelete: 'CASCADE' })
+  @OneToOne(() => Dealer, (dealer) => dealer.user, { onDelete: 'CASCADE', onUpdate: "CASCADE" })
   @JoinColumn()
   dealer?: Dealer;
 
-  @ManyToOne(() => User, (user) => user.createdUsers, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => User, (user) => user.createdUsers, { onDelete: 'CASCADE' })
   createdBy?: User;
 
   @OneToMany(() => User, (user) => user.createdBy, { onDelete: "SET NULL" })
   createdUsers?: User[];
 
-  @OneToMany(() => Shop, shop => shop.owner, { onDelete: "SET NULL" })
+  @OneToMany(() => Shop, shop => shop.owner, { onDelete: "CASCADE", onUpdate: "CASCADE" })
   owned_shops?: Shop[];
 
   @OneToMany(() => Notification, (notification) => notification.user, { onDelete: "CASCADE" })
   notifications: Notification[];
 
   @ManyToOne(() => Shop, shop => shop.staffs, {
-    onDelete: 'CASCADE',
+    onDelete: "SET NULL",
     cascade: true,
-    nullable: true,
   })
   @JoinColumn({ name: 'shop_id' })
   managed_shop?: Shop;
 
-  @OneToMany(() => InventoryStocks, inventoryStocks => inventoryStocks.user)
+  @OneToMany(() => InventoryStocks, inventoryStocks => inventoryStocks.user, { onDelete: "CASCADE" })
   inventoryStocks?: InventoryStocks[];
 
   @OneToMany(() => Stocks, stocks => stocks.user, { onDelete: "CASCADE" })
@@ -98,7 +95,6 @@ export class User extends CoreEntity {
   stocksSellOrd: StocksSellOrd[];
 
   @ManyToOne(() => Permission, {
-    onDelete: 'CASCADE',
     nullable: true,
     eager: true
   })

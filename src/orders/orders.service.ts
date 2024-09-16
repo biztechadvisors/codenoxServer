@@ -1123,7 +1123,7 @@ export class OrdersService {
       // Handle payment intent based on the payment gateway
       switch (order.payment_gateway) {
         case PaymentGatewayType.STRIPE:
-          const stripeParams = await this.stripeService.makePaymentIntentParam(order, authUser);
+          const stripeParams = await this.stripeService.createPaymentIntentParams(order, authUser);
           return this.stripeService.createPaymentIntent(stripeParams);
 
         case PaymentGatewayType.PAYPAL:

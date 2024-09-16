@@ -46,14 +46,14 @@ export class Category extends CoreEntity {
   @Column({ nullable: true })
   icon?: string;
 
-  @ManyToOne(() => Type, (type) => type.categories, { nullable: true, onDelete: 'SET NULL', onUpdate: "CASCADE" })
+  @ManyToOne(() => Type, (type) => type.categories, { onUpdate: "CASCADE", onDelete: "CASCADE" })
   @JoinColumn({ name: 'typeId' })
   type: Type | null;
 
   @ManyToMany(() => Product, (product) => product.categories, { onDelete: "CASCADE" })
   products: Product[];
 
-  @ManyToOne(() => Shop, (shop) => shop.categories, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+  @ManyToOne(() => Shop, (shop) => shop.categories)
   shop?: Shop;
 
   @Column()
@@ -77,16 +77,16 @@ export class SubCategory extends CoreEntity {
   @Column()
   slug: string;
 
-  @ManyToOne(() => Category, (category) => category.subCategories, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+  @ManyToOne(() => Category, (category) => category.subCategories)
   category: Category;
 
   @ManyToMany(() => Product, (product) => product.subCategories, { onDelete: "CASCADE" })
   products: Product[];
 
-  @ManyToOne(() => Shop, (shop) => shop.subCategories, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+  @ManyToOne(() => Shop, (shop) => shop.subCategories)
   shop: Shop;
 
-  @ManyToMany(() => Region, (region) => region.subCategories, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToMany(() => Region, (region) => region.subCategories, { onDelete: 'CASCADE' })
   @JoinTable({
     name: 'subcategories_regions', // Table name
     joinColumn: { name: 'subCategoryId', referencedColumnName: 'id' }, // Correct the column name

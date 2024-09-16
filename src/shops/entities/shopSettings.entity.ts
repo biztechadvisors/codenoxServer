@@ -14,16 +14,16 @@ export class ShopSettings {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToMany(() => ShopSocials, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true })
+  @ManyToMany(() => ShopSocials, { onUpdate: "CASCADE", eager: true })
   @JoinTable({ name: "shopSettings_shopSocials" })
   socials: ShopSocials[];
 
-  @Column()
+  @Column({ nullable: true })
   contact: string;
 
-  @ManyToOne(() => Location, { onDelete: "CASCADE" })
+  @ManyToOne(() => Location, { onDelete: "CASCADE", nullable: true })
   location: Location;
 
-  @Column()
+  @Column({ nullable: true })
   website: string;
 }

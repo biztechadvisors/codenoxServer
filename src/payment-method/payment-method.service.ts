@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { AuthService } from 'src/auth/auth.service';
 import { StripeCustomer, StripePaymentMethod } from 'src/payment/entity/stripe.entity';
 import { StripePaymentService } from 'src/payment/stripe-payment.service';
@@ -125,32 +125,42 @@ export class PaymentMethodService {
   ) {
     const { method_key, default_card } = createPaymentMethodDto;
     const { id: user_id, name, email } = await this.authService.me(user.email, user.id);
-    const listofCustomer = await this.stripeService.listAllCustomer();
-    let currentCustomer = listofCustomer.data.find(
-      (customer: StripeCustomer) => customer.email === email,
-    );
-    if (!currentCustomer) {
-      const newCustomer = await this.stripeService.createCustomer({ name, email });
-      currentCustomer = newCustomer;
+
+    let currentCustomer: StripeCustomer | undefined;
+
+    try {
+      const listofCustomer = await this.stripeService.listAllCustomers();
+      currentCustomer = listofCustomer.find((customer: StripeCustomer) => customer.email === email);
+
+      if (!currentCustomer) {
+        currentCustomer = await this.stripeService.createCustomer({
+          name,
+          email,
+        });
+      }
+
+      const attachedPaymentMethod = await this.stripeService.attachPaymentMethodToCustomer(method_key, currentCustomer.id);
+
+      const paymentMethod = {
+        id: Number(Date.now()), // Ensure unique ID; use UUID or another approach for production
+        method_key,
+        payment_gateway_id: 1, // Adjust based on actual logic
+        default_card,
+        fingerprint: attachedPaymentMethod.card?.fingerprint,
+        owner_name: attachedPaymentMethod.billing_details?.name,
+        last4: attachedPaymentMethod.card?.last4,
+        expires: `${attachedPaymentMethod.card?.exp_month}/${attachedPaymentMethod.card?.exp_year}`,
+        network: attachedPaymentMethod.card?.brand,
+        type: attachedPaymentMethod.card?.funding,
+        origin: attachedPaymentMethod.card?.country,
+        verification_check: attachedPaymentMethod.card?.checks?.cvc_check,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      return paymentMethod;
+    } catch (error) {
+      throw new HttpException(`Failed to process payment method: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    const attachedPaymentMethod: StripePaymentMethod =
-      await this.stripeService.attachPaymentMethodToCustomer(method_key, currentCustomer.id);
-    const paymentMethod: PaymentMethod = {
-      id: Number(Date.now()),
-      method_key: method_key,
-      payment_gateway_id: 1, // Adjust based on actual logic
-      default_card: default_card,
-      fingerprint: attachedPaymentMethod.card.fingerprint,
-      owner_name: attachedPaymentMethod.billing_details.name,
-      last4: attachedPaymentMethod.card.last4,
-      expires: `${attachedPaymentMethod.card.exp_month}/${attachedPaymentMethod.card.exp_year}`,
-      network: attachedPaymentMethod.card.brand,
-      type: attachedPaymentMethod.card.funding,
-      origin: attachedPaymentMethod.card.country,
-      verification_check: attachedPaymentMethod.card.checks.cvc_check,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-    return paymentMethod;
   }
 }

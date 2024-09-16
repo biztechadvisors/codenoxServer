@@ -24,17 +24,17 @@ export class Tag extends CoreEntity {
   @Column({ nullable: true })
   details: string;
 
-  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Attachment, { cascade: true, eager: true, onDelete: "CASCADE" })
   @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
   image: Attachment | null;
 
   @Column({ nullable: true })
   icon: string;
 
-  @ManyToOne(() => Type, (type) => type.tags, { nullable: true, eager: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Type, (type) => type.tags, { onDelete: 'SET NULL' })
   type: Type | null;
 
-  @ManyToMany(() => Region, (region) => region.tags, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToMany(() => Region, (region) => region.tags)
   @JoinTable({
     name: 'tags_regions',
     joinColumn: { name: 'tagsId', referencedColumnName: 'id' },
@@ -45,7 +45,7 @@ export class Tag extends CoreEntity {
   @ManyToMany(() => Product, (product) => product.tags)
   products: Product[];
 
-  @ManyToOne(() => Shop, { cascade: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Shop, { onDelete: "SET NULL" })
   @JoinColumn()
   shop?: Shop;
 

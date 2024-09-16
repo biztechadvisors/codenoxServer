@@ -64,23 +64,23 @@ export class Type extends CoreEntity {
   @JoinColumn()
   settings?: TypeSettings;
 
-  @OneToMany(() => Product, (product) => product.type)
+  @OneToMany(() => Product, (product) => product.type, { onDelete: "SET NULL" })
   products?: Product[];
 
-  @OneToMany(() => Tag, (tag) => tag.type, { cascade: ['insert', 'update', 'remove'] })
+  @OneToMany(() => Tag, (tag) => tag.type, { onDelete: "SET NULL" })
   tags?: Tag[];
 
-  @OneToMany(() => Category, (category) => category.type)
+  @OneToMany(() => Category, (category) => category.type, { onDelete: "SET NULL" })
   categories?: Category[];
 
-  @ManyToOne(() => Shop, { cascade: true })
+  @ManyToOne(() => Shop)
   @JoinColumn()
   shop?: Shop;
 
-  @ManyToMany(() => Region, (region) => region.types, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToMany(() => Region, (region) => region.types, { onDelete: "CASCADE" })
   @JoinTable({
-    name: 'types_regions', // Table name
-    joinColumn: { name: 'typeId', referencedColumnName: 'id' }, // Correct the column name
+    name: 'types_regions',
+    joinColumn: { name: 'typeId', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'regionId', referencedColumnName: 'id' },
   })
   regions: Region[];
@@ -101,10 +101,10 @@ export class Banner {
   title?: string
   @Column({ nullable: true })
   description?: string
-  @ManyToOne(() => Type, (type) => type.banners, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Type, (type) => type.banners, { onDelete: "SET NULL" })
   type: Type;
 
-  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Attachment, { cascade: true, eager: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'imageId' })
   image: Attachment | null;
 }
