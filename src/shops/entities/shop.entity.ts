@@ -51,7 +51,7 @@ export class Shop extends CoreEntity {
   @Column({ default: 0 })
   products_count: number;
 
-  @OneToOne(() => Balance, { onDelete: "CASCADE" })
+  @OneToOne(() => Balance, (balance) => balance.shop, { onDelete: "CASCADE" })
   @JoinColumn()
   balance?: Balance;
 

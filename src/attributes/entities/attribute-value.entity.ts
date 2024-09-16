@@ -16,7 +16,7 @@ export class AttributeValue extends CoreEntity {
   @Column()
   meta?: string;
 
-  @ManyToOne(() => Attribute, (attribute) => attribute.values, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+  @ManyToOne(() => Attribute, (attribute) => attribute.values)
   attribute: Attribute;
 
   @Column()
