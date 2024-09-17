@@ -435,6 +435,7 @@ export class ShopsService {
 
   async getShop(slug: string): Promise<Shop | null> {
     try {
+      console.log('first', slug)
       // Construct a unique cache key based on the shop slug
       const cacheKey = `shop_${slug}`;
 
@@ -444,7 +445,7 @@ export class ShopsService {
       if (!existShop) {
         // If the data is not in the cache, fetch it from the database
         existShop = await this.shopRepository.findOne({
-          where: { slug },
+          where: { slug: slug },
           relations: [
             'balance',
             'balance.payment_info',
