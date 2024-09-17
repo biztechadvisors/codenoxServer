@@ -104,6 +104,9 @@ export class Order extends CoreEntity {
   @JoinColumn({ name: 'coupon_id' })
   coupon?: Coupon;
 
+  @Column({ type: 'int' })
+  shop_id: number;
+
   @ManyToMany(() => Shop, (shop) => shop.orders, { cascade: ['insert', 'update'] })
   @JoinTable({ name: 'shop_order' })
   shop: Shop[];
@@ -140,7 +143,6 @@ export class Order extends CoreEntity {
   language: string;
   @Column({ type: 'json', nullable: true })
   translated_languages: any[] | null;
-
 
   @OneToOne(() => PaymentIntent, { nullable: true, cascade: true })
   @JoinColumn({ name: 'paymentIntentId' })

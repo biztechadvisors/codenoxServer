@@ -3,7 +3,7 @@ import { CoreEntity } from 'src/common/entities/core.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum RefundStatus {
   APPROVED = 'Approved',
@@ -17,7 +17,7 @@ export class Refund extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })  // To handle monetary values accurately
+  @Column('decimal', { precision: 10, scale: 2 })
   amount: number;
 
   @Column({
@@ -27,8 +27,8 @@ export class Refund extends CoreEntity {
   })
   status: RefundStatus;
 
-  @OneToOne(() => Shop, { nullable: true })
-  @JoinColumn({ name: 'shop_id' })  // Ensuring proper FK management
+  @ManyToOne(() => Shop, { nullable: true })
+  @JoinColumn({ name: 'shop_id' })
   shop: Shop;
 
   @OneToOne(() => Order, { nullable: true })

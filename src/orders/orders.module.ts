@@ -32,13 +32,16 @@ import { NotificationModule } from 'src/notifications/notifications.module';
 import { Notification } from 'src/notifications/entities/notifications.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { UserAdd } from '../address/entities/address.entity';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { Analytics, TotalYearSaleByMonth } from '../analytics/entities/analytics.entity';
+import { Refund } from '../refunds/entities/refund.entity';
 
 @Module({
   imports: [
     AuthModule,
     PaymentModule,
     NotificationModule,
-    TypeOrmModule.forFeature([Order, OrderProductPivot, UserAdd, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks, Variation, Notification, File]),
+    TypeOrmModule.forFeature([Order, OrderProductPivot, UserAdd, Dealer, OrderStatus, User, Product, OrderFiles, Coupon, PaymentIntent, OrderProductPivot, PaymentIntentInfo, Shop, Permission, Stocks, StocksSellOrd, InventoryStocks, Variation, Notification, File, Analytics, Permission, StocksSellOrd, TotalYearSaleByMonth, Refund]),
     HttpModule,
     CacheModule.register()
   ],
@@ -50,7 +53,7 @@ import { UserAdd } from '../address/entities/address.entity';
     DownloadInvoiceController,
     ShiprocketController,
   ],
-  providers: [OrdersService, ShiprocketService, MailService, StocksService, NotificationService],  // Ensure NotificationService is listed as a provider
+  providers: [OrdersService, AnalyticsService, ShiprocketService, MailService, StocksService, NotificationService],  // Ensure NotificationService is listed as a provider
   exports: [OrdersService],
 })
 export class OrdersModule { }

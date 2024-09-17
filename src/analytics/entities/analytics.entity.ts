@@ -13,9 +13,13 @@ export class TotalYearSaleByMonth extends CoreEntity {
   @Column({ type: 'varchar', length: 20 })
   month: string;
 
-  @ManyToMany(() => Analytics, (analytics) => analytics.totalYearSaleByMonth, { onDelete: 'CASCADE', eager: false })
+  @ManyToMany(() => Analytics, (analytics) => analytics.totalYearSaleByMonth, {
+    onDelete: 'CASCADE',
+    eager: false,
+  })
   analytics: Analytics[];
 }
+
 
 @Entity('analytics')
 export class Analytics extends CoreEntity {
@@ -26,19 +30,25 @@ export class Analytics extends CoreEntity {
   totalRevenue?: number;
 
   @Column({ type: 'int', default: 0 })
-  totalRefunds: number;
+  totalOrders: number;
 
-  @Column({ type: 'int', nullable: true })
-  totalShops?: number;
+  @Column({ type: 'int' })
+  user_id: number;
+
+  @Column({ type: 'int' })
+  shop_id: number;  // Ensure this is a number
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   todaysRevenue?: number;
 
-  @Column({ type: 'int', nullable: true })
-  totalOrders?: number;
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  totalRefunds?: number;
 
-  @Column({ type: 'int', nullable: true })
-  newCustomers?: number;
+  @Column({ type: 'int', default: 0 })
+  totalShops: number;
+
+  @Column({ type: 'int', default: 0 })
+  newCustomers: number;
 
   @ManyToMany(() => TotalYearSaleByMonth, (totalYearSaleByMonth) => totalYearSaleByMonth.analytics, {
     eager: true,
@@ -48,3 +58,4 @@ export class Analytics extends CoreEntity {
   @JoinTable({ name: 'analytics_total_year_sale_by_month' })
   totalYearSaleByMonth?: TotalYearSaleByMonth[];
 }
+

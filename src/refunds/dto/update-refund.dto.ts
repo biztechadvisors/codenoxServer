@@ -1,5 +1,4 @@
-/* eslint-disable prettier/prettier */
-import { PartialType } from '@nestjs/swagger'
-import { CreateRefundDto } from './create-refund.dto'
+import { PartialType } from '@nestjs/swagger';
+import { CreateRefundDto } from './create-refund.dto';
 
-export class UpdateRefundDto extends PartialType(CreateRefundDto) {}
+export class UpdateRefundDto extends PartialType(CreateRefundDto) { }

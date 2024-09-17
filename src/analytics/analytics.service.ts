@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
 import { Order } from 'src/orders/entities/order.entity';
@@ -9,11 +9,15 @@ import { Permission } from 'src/permission/entities/permission.entity';
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Analytics, TotalYearSaleByMonth } from './entities/analytics.entity';
+import { Refund } from '../refunds/entities/refund.entity';
+import { format } from 'date-fns';
+import { CreateTotalYearSaleByMonthDto } from './dto/create-analytics.dto';
 
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
-  refundRepository: any;
+
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -21,10 +25,16 @@ export class AnalyticsService {
     private readonly shopRepository: Repository<Shop>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Analytics)
+    private readonly analyticsRepository: Repository<Analytics>,
+    @InjectRepository(Refund)
+    private readonly refundRepository: Repository<Refund>,
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
     @InjectRepository(StocksSellOrd)
     private readonly stocksSellOrdRepository: Repository<StocksSellOrd>,
+    @InjectRepository(TotalYearSaleByMonth)
+    private readonly totalYearSaleByMonthRepository: Repository<TotalYearSaleByMonth>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 
@@ -38,8 +48,8 @@ export class AnalyticsService {
         this.logger.log(`Cache hit for key: ${cacheKey}`);
         return cachedResult;
       }
-
-      if (!customerId && !shop_id) {
+      console.log("first: ", customerId + " " + shop_id)
+      if (!customerId || !shop_id) {
         return { message: 'Customer ID or Shop ID is required' };
       }
 
@@ -92,58 +102,73 @@ export class AnalyticsService {
       }));
 
       // Cache the result for future requests
-      await this.cacheManager.set(cacheKey, analyticsResponse, 1800); // Cache for 30 minutes
+      await this.cacheManager.set(cacheKey, analyticsResponse, 120); // Cache for 30 minutes
       this.logger.log(`Data cached with key: ${cacheKey}`);
 
       return analyticsResponse;
 
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      this.logger.error('Error fetching analytics:', error.message);
       return { message: `Error fetching analytics: ${error.message}` };
     }
   }
 
-
   private async calculateTotalRevenue(userId: number, permissionName: string, state: string): Promise<number> {
     try {
+      // Find users created by the given user
       const createdByUsers = await this.userRepository.find({
         where: { createdBy: { id: userId } },
       });
 
       const userIds = [userId, ...createdByUsers.map(u => u.id)];
 
-      let queryBuilder: SelectQueryBuilder<Order> | SelectQueryBuilder<StocksSellOrd>;
-      if (permissionName === UserType.Dealer) {
-        queryBuilder = this.stocksSellOrdRepository.createQueryBuilder('order');
-      } else {
-        queryBuilder = this.orderRepository.createQueryBuilder('order');
-      }
+      let totalRevenue = 0;
 
-      queryBuilder = queryBuilder.innerJoin('order.shipping_address', 'shipping_address');
+      // Handle "Dealer" permissions with StocksSellOrd repository
+      if (permissionName === 'Dealer') {
+        const queryBuilder = this.stocksSellOrdRepository.createQueryBuilder('order')
+          .innerJoin('order.shipping_address', 'shipping_address');
 
-      if (state?.trim()) {
-        queryBuilder = queryBuilder
-          .andWhere('shipping_address.state = :state', { state })
-          .andWhere('order.customer_id IN (:...userIds)', { userIds });
-      } else {
-        if (permissionName === UserType.Dealer) {
-          queryBuilder = queryBuilder
-            .andWhere('order.soldBy IN (:...userIds)', { userIds });
-        } else {
-          queryBuilder = queryBuilder
+        // Apply filtering based on the state and userIds
+        if (state?.trim()) {
+          queryBuilder
+            .andWhere('shipping_address.state = :state', { state })
             .andWhere('order.customer_id IN (:...userIds)', { userIds });
+        } else {
+          queryBuilder.andWhere('order.customer_id IN (:...userIds)', { userIds });
         }
-      }
 
-      const orders = await queryBuilder.getMany();
-      const totalRevenue = (orders as any[]).reduce((sum, order) => sum + (order.total || 0), 0);
+        const stockOrders: StocksSellOrd[] = await queryBuilder.getMany();
+
+        // Safely calculate total revenue for StocksSellOrd
+        totalRevenue = stockOrders.reduce((sum, order) => sum + (order.total ?? 0), 0);
+      } else {
+        // Handle other permissions with Order repository
+        const queryBuilder = this.orderRepository.createQueryBuilder('order')
+          .innerJoin('order.shipping_address', 'shipping_address');
+
+        // Apply filtering based on the state and userIds
+        if (state?.trim()) {
+          queryBuilder
+            .andWhere('shipping_address.state = :state', { state })
+            .andWhere('order.customer_id IN (:...userIds)', { userIds });
+        } else {
+          queryBuilder.andWhere('order.customer_id IN (:...userIds)', { userIds });
+        }
+
+        const orders: Order[] = await queryBuilder.getMany();
+
+        // Safely calculate total revenue for Orders
+        totalRevenue = orders.reduce((sum, order) => sum + (order.total ?? 0), 0);
+      }
 
       return totalRevenue;
     } catch (error) {
-      console.error('Error calculating total revenue:', error.message);
+      this.logger.error('Error calculating total revenue:', error.message);
       return 0;
     }
   }
+
 
   private async calculateTotalRefunds(permissionName: string, state: string): Promise<number> {
     try {
@@ -157,7 +182,7 @@ export class AnalyticsService {
       return result?.totalRefunds || 0;
 
     } catch (error) {
-      console.error('Error calculating total refunds:', error.message);
+      this.logger.error('Error calculating total refunds:', error.message);
       return 0;
     }
   }
@@ -178,7 +203,7 @@ export class AnalyticsService {
       return await queryBuilder.getCount();
 
     } catch (error) {
-      console.error('Error calculating total shops:', error.message);
+      this.logger.error('Error calculating total shops:', error.message);
       return 0;
     }
   }
@@ -209,70 +234,72 @@ export class AnalyticsService {
       return todayOrders.reduce((total, order) => total + order.total, 0);
 
     } catch (error) {
-      console.error("Error calculating today's revenue:", error.message);
+      this.logger.error("Error calculating today's revenue:", error.message);
       return 0;
     }
   }
 
   private async calculateTotalOrders(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-      const createdByUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
-      const userIds = [userId, ...createdByUsers.map((usr) => usr.id)];
+      const createdByUsers = await this.userRepository.find({
+        where: { createdBy: { id: userId } }
+      });
 
-      let query = permissionName === UserType.Dealer
-        ? this.stocksSellOrdRepository.createQueryBuilder('order')
-        : this.orderRepository.createQueryBuilder('order');
+      const userIds = [userId, ...createdByUsers.map(u => u.id)];
 
-      query = query.innerJoin('order.shipping_address', 'shipping_address');
+      let queryBuilder = this.orderRepository.createQueryBuilder('order')
+        .innerJoin('order.shipping_address', 'shipping_address');
 
       if (state?.trim()) {
-        query = query.where('shipping_address.state = :state', { state });
-
-        if (!['Company', 'Staff'].includes(permissionName)) {
-          query = query.andWhere('order.customer_id IN (:...userIds)', { userIds });
-        }
-      } else if (!['Company', 'Staff'].includes(permissionName)) {
-        query = permissionName === UserType.Dealer
-          ? query.where('order.soldBy IN (:...userIds)', { userIds })
-          : query.where('order.customer_id IN (:...userIds)', { userIds });
+        queryBuilder.andWhere('shipping_address.state = :state', { state }).andWhere('order.customer_id IN (:...userIds)', { userIds });
+      } else {
+        queryBuilder.andWhere('order.customer_id IN (:...userIds)', { userIds });
       }
 
-      return await query.getCount();
-
+      return await queryBuilder.getCount();
     } catch (error) {
-      console.error(`Error calculating total orders: ${error.message}`);
+      this.logger.error('Error calculating total orders:', error.message);
       return 0;
     }
   }
 
   private async calculateNewCustomers(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      if (permissionName === 'Dealer') return 0;
 
-      let query = this.shopRepository.createQueryBuilder('shop').where({
-        created_at: MoreThanOrEqual(thirtyDaysAgo),
+      const createdByUsers = await this.userRepository.find({
+        where: { createdBy: { id: userId } },
       });
 
-      if (['Company', 'Staff'].includes(permissionName)) {
-        if (state?.trim()) {
-          query = query.andWhere('shop.shipping_address.state = :state', { state });
-        }
-      } else {
-        query = query.andWhere('shop.owner_id = :userId', { userId });
-        if (state?.trim()) {
-          query = query.andWhere('shop.shipping_address.state = :state', { state });
-        }
+      const userIds = [userId, ...createdByUsers.map(u => u.id)];
+
+      let queryBuilder = this.userRepository.createQueryBuilder('user');
+
+      if (state?.trim()) {
+        queryBuilder = queryBuilder.innerJoin('user.billing_address', 'billing_address').where('billing_address.state = :state', { state });
       }
 
-      const newShops = await query.getMany();
-      return newShops.length;
-
+      return await queryBuilder.andWhere('user.id IN (:...userIds)', { userIds }).getCount();
     } catch (error) {
-      console.error('Error calculating new customers:', error.message);
+      this.logger.error('Error calculating new customers:', error.message);
       return 0;
     }
   }
+
+  // private async calculateTotalYearSaleByMonth(userId: number, permissionName: string, state: string): Promise<any[]> {
+  //   try {
+  //     if (permissionName === 'Dealer') {
+  //       const totalYearSaleByMonth = await this.totalYearSaleByMonthRepository.find();
+  //       return totalYearSaleByMonth;
+  //     }
+  //     return [];
+  //   } catch (error) {
+  //     this.logger.error('Error calculating total year sale by month:', error.message);
+  //     return [];
+  //   }
+  // }
+
+  // ***********************************************************
 
   private async calculateTotalYearSaleByMonth(userId: number, permissionName: string, state: string): Promise<TotalYearSaleByMonthDTO[]> {
     const months = [
@@ -449,31 +476,130 @@ export class AnalyticsService {
     }
   }
 
+  // **************** Create And Get Analytics *********************
 
-  // async calculateOrderByODSC(filters: Record<string, any>): Promise<{ month: string; orderCount: number }[]> {
+  // async createAnalyticsWithTotalYearSale(
+  //   analyticsData: Partial<Analytics>,
+  //   saleData: CreateTotalYearSaleByMonthDto[],
+  // ): Promise<Analytics> {
   //   try {
-  //     const queryBuilder = this.orderRepository.createQueryBuilder('order');
-  //     queryBuilder.leftJoinAndSelect('order.shipping_address', 'shipping_address');
-
-  //     Object.keys(filters).forEach((key) => {
-  //       if (filters[key]) {
-  //         if (key === 'startDate') {
-  //           queryBuilder.andWhere(`order.created_at >= :${key}`, { [key]: filters[key] });
-  //         } else {
-  //           queryBuilder.andWhere(`${key} = :${key}`, { [key]: filters[key] });
-  //         }
-  //       }
+  //     const saleEntities = saleData.map(dto => {
+  //       const sale = new TotalYearSaleByMonth();
+  //       sale.total = dto.total;
+  //       sale.month = dto.month;
+  //       return sale;
   //     });
 
-  //     queryBuilder.select('DATE_FORMAT(order.created_at, "%Y-%m") AS month');
-  //     queryBuilder.addSelect('COUNT(order.id) AS orderCount');
-  //     queryBuilder.groupBy('month');
+  //     const totalYearSaleByMonthRecords = await Promise.all(
+  //       saleEntities.map(sale => this.totalYearSaleByMonthRepository.save(sale))
+  //     );
 
-  //     const result = await queryBuilder.getRawMany();
+  //     const newAnalytics = this.analyticsRepository.create({
+  //       ...analyticsData,
+  //       totalYearSaleByMonth: totalYearSaleByMonthRecords,
+  //     });
 
-  //     return result.map(item => ({ month: item.month, orderCount: parseInt(item.orderCount) }));
+  //     return await this.analyticsRepository.save(newAnalytics);
   //   } catch (error) {
-  //     throw new Error(`Failed to calculate order by ODSC: ${error.message}`);
+  //     this.logger.error('Error creating analytics with total year sale by month:', error.message);
+  //     throw new InternalServerErrorException('Failed to create analytics with total year sale by month');
   //   }
   // }
+
+  // async getAnalyticsById(analyticsId: number): Promise<Analytics> {
+  //   const analytics = await this.analyticsRepository.findOne({
+  //     where: { id: analyticsId },
+  //     relations: ['totalYearSaleByMonth'],
+  //   });
+
+  //   if (!analytics) {
+  //     throw new NotFoundException(`Analytics with ID ${analyticsId} not found`);
+  //   }
+
+  //   return analytics;
+  // }
+
+  // async updateAnalytics(
+  //   order?: Order,
+  //   refund?: Refund,
+  //   shop?: Shop
+  // ): Promise<void> {
+  //   try {
+  //     if (!order && !refund && !shop) {
+  //       throw new BadRequestException('Order, Refund, or Shop must be provided');
+  //     }
+
+  //     const shopId = shop ? shop.id : (order ? order.shop_id : null);
+  //     const userId = shop ? shop.owner_id : (order ? order.customer_id : null);
+
+  //     if (!shopId || !userId) {
+  //       throw new BadRequestException('Shop ID and User ID must be provided');
+  //     }
+
+  //     // Fetch or create analytics record for the shop
+  //     let analytics = await this.analyticsRepository.findOne({ where: { shop_id: shopId } });
+
+  //     if (!analytics) {
+  //       analytics = this.analyticsRepository.create({
+  //         totalRevenue: 0,
+  //         totalOrders: 0,
+  //         totalRefunds: 0,
+  //         totalShops: shop ? 1 : 0,
+  //         todaysRevenue: 0,
+  //         newCustomers: 0,
+  //         shop_id: shopId,
+  //         user_id: userId,
+  //       });
+  //     }
+
+  //     // Update analytics based on order
+  //     if (order) {
+  //       analytics.totalOrders = (analytics.totalOrders || 0) + 1;
+  //       analytics.totalRevenue = (analytics.totalRevenue || 0) + order.total;
+
+  //       const today = format(new Date(), 'yyyy-MM-dd');
+  //       const orderDate = format(order.created_at, 'yyyy-MM-dd');
+  //       if (today === orderDate) {
+  //         analytics.todaysRevenue = (analytics.todaysRevenue || 0) + order.total;
+  //       }
+  //     }
+
+  //     // Update analytics based on refund
+  //     if (refund) {
+  //       analytics.totalRefunds = (analytics.totalRefunds || 0) + refund.amount;
+  //       analytics.totalRevenue = (analytics.totalRevenue || 0) - refund.amount;
+
+  //       const today = format(new Date(), 'yyyy-MM-dd');
+  //       const refundDate = format(refund.created_at, 'yyyy-MM-dd');
+  //       if (today === refundDate) {
+  //         analytics.todaysRevenue = (analytics.todaysRevenue || 0) - refund.amount;
+  //       }
+  //     }
+
+  //     // Update or create monthly sales record
+  //     const currentMonth = format(new Date(), 'MMMM');
+  //     let monthlySale = await this.totalYearSaleByMonthRepository.findOne({ where: { month: currentMonth } });
+
+  //     if (!monthlySale) {
+  //       monthlySale = this.totalYearSaleByMonthRepository.create({
+  //         month: currentMonth,
+  //         total: (order ? order.total : 0) - (refund ? refund.amount : 0),
+  //       });
+  //     } else {
+  //       monthlySale.total += (order ? order.total : 0) - (refund ? refund.amount : 0);
+  //     }
+
+  //     await this.totalYearSaleByMonthRepository.save(monthlySale);
+
+  //     analytics.totalYearSaleByMonth = [monthlySale];
+
+  //     await this.analyticsRepository.save(analytics);
+
+  //   } catch (error) {
+  //     this.logger.error('Error updating analytics:', error.message);
+  //     throw new InternalServerErrorException('Failed to update analytics');
+  //   }
+  // }
+
+
 }
