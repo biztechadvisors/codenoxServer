@@ -332,7 +332,7 @@ export class ProductsService {
       dealerId,
       shop_id,
       shopName,
-      regionNames, // Default to empty array if undefined
+      regionNames,
       minPrice,
       maxPrice
     } = query;
@@ -344,7 +344,6 @@ export class ProductsService {
       ? regionNames
       : (typeof regionNames === 'string' ? regionNames.split(",") : []);
 
-    console.log('first', regionsArray)
     // Generate cache key
     const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${regionsArray.join(',')}:${page}:${limit}`;
     this.logger.log(`Generated cache key: ${cacheKey}`);

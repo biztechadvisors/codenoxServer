@@ -8,9 +8,7 @@ import { Coupon, CouponType } from './entities/coupon.entity';
 import { GetCouponsDto } from './dto/get-coupons.dto';
 // import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CouponRepository } from './coupon.repository';
 import { Repository } from 'typeorm';
-import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 
 // const coupons = plainToClass(Coupon, couponsJson);
@@ -25,8 +23,8 @@ export class CouponsService {
   constructor(
     @InjectRepository(Coupon)
     private readonly couponRepository: Repository<Coupon>,
-    // @InjectRepository(Attachment)
-    // private readonly attachmentRepository:AttachmentRepository
+    @InjectRepository(Attachment)
+    private readonly attachmentRepository: Repository<Attachment>
   ) { }
 
   async create(createCouponDto: CreateCouponDto): Promise<Coupon> {

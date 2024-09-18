@@ -22,7 +22,7 @@ export class Attribute extends CoreEntity {
   slug: string;
 
   @OneToMany(() => AttributeValue, attributeValue => attributeValue.attribute, {
-    onDelete: 'CASCADE',
+    onDelete: 'CASCADE', eager: true
   })
   values: AttributeValue[];
 

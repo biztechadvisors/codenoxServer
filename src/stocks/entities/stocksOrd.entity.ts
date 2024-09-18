@@ -23,11 +23,11 @@ export class StocksSellOrd extends CoreEntity {
     @Column()
     customer_contact: string;
 
-    @ManyToOne(() => OrderStatus)
+    @ManyToOne(() => OrderStatus, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinColumn()
     status: OrderStatus;
 
-    @ManyToOne(() => Coupon, coupon => coupon.stockOrders, { cascade: true, nullable: true })
+    @ManyToOne(() => Coupon, coupon => coupon.stockOrders, { onDelete: "CASCADE", onUpdate: "CASCADE", nullable: true })
     coupon?: Coupon;
 
     @Column()
@@ -63,17 +63,17 @@ export class StocksSellOrd extends CoreEntity {
     @Column({ nullable: true })
     delivery_time: string;
 
-    @ManyToMany(() => Product, product => product.stocksSellOrders)
+    @ManyToMany(() => Product, product => product.stocksSellOrders, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinTable({ name: "stocksSellOrd_products" })
     products: Product[];
 
-    @ManyToOne(() => User, (user) => user.stockOrd)
+    @ManyToOne(() => User, (user) => user.stockOrd, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     soldBy: User;
 
-    @ManyToOne(() => UserAdd)
+    @ManyToOne(() => UserAdd, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     billing_address: UserAdd;
 
-    @ManyToOne(() => UserAdd)
+    @ManyToOne(() => UserAdd, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     shipping_address: UserAdd;
 
     @Column()
@@ -88,7 +88,7 @@ export class StocksSellOrd extends CoreEntity {
     @Column('json', { nullable: true })
     logistics_provider: object;
 
-    @ManyToOne(() => UserAdd, { cascade: true })
+    @ManyToOne(() => UserAdd, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     soldByUserAddress: UserAdd;
 
     @Column('decimal', { precision: 5, scale: 2, nullable: true })
@@ -97,6 +97,6 @@ export class StocksSellOrd extends CoreEntity {
     @Column()
     wallet_point: number;
 
-    @ManyToOne(() => User, user => user.stocksSellOrd, { eager: true })
+    @ManyToOne(() => User, user => user.stocksSellOrd, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true })
     customer: User;
 }

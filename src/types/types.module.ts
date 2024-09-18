@@ -4,9 +4,7 @@ import { TypesService } from './types.service';
 import { TypesController } from './types.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Banner, Type, TypeSettings } from './entities/type.entity';
-import { BannerRepository, TypeRepository, TypeSettingsRepository } from './types.repository';
 import { UploadsService } from 'src/uploads/uploads.service';
-import { AttachmentRepository } from 'src/common/common.repository';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
@@ -21,6 +19,6 @@ import { Region } from '../region/entities/region.entity';
     CacheModule.register()
   ],
   controllers: [TypesController],
-  providers: [TypesService, UploadsService, TypeRepository, TypeSettingsRepository, BannerRepository, AttachmentRepository],
+  providers: [TypesService, UploadsService],
 })
 export class TypesModule { }

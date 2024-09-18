@@ -29,15 +29,15 @@ export class Coupon extends CoreEntity {
   @OneToMany(() => Order, (order) => order.coupon)
   orders?: Order[];
 
-  @OneToMany(() => StocksSellOrd, (stocksSellOrd) => stocksSellOrd.coupon)
+  @OneToMany(() => StocksSellOrd, (stocksSellOrd) => stocksSellOrd.coupon, { onDelete: "CASCADE" })
   stockOrders?: StocksSellOrd[];
 
   @Column()
   type: CouponType;
 
-  @ManyToOne(() => Attachment, { cascade: true, nullable: true })
+  @OneToOne(() => Attachment, { cascade: true, eager: true })
   @JoinColumn()
-  image?: Attachment;  // Make this optional to match the `nullable: true` setting
+  image?: Attachment;
 
   @Column()
   is_valid: boolean;

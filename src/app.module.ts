@@ -77,7 +77,7 @@ import { AddModule } from './address/addresses.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        synchronize: configService.get('DB_SYNC'),
+        synchronize: true,
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: ['error'],
         extra: {
@@ -92,7 +92,8 @@ import { AddModule } from './address/addresses.module';
         autoLoadEntities: true,
       }),
       inject: [ConfigService],
-    }),
+    })
+    ,
     StripeModule.forRoot({
       apiKey: process.env.STRIPE_API_KEY,
       apiVersion: '2022-11-15',
@@ -110,6 +111,7 @@ import { AddModule } from './address/addresses.module';
       }),
       inject: [ConfigService],
     }),
+    // Import all feature modules
     UsersModule,
     MailModule,
     CommonModule,
@@ -161,16 +163,16 @@ import { AddModule } from './address/addresses.module';
   ],
   controllers: [],
   providers: [
-    // {
-    //   provide: APP_INTERCEPTOR,
-    //   useClass: CacheInterceptor
-    // },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
+    },
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(NotificationsMiddleware)
-      .forRoutes({ path: 'notify/send', method: RequestMethod.POST }); // Apply to the correct route
+      .forRoutes({ path: 'notify/send', method: RequestMethod.POST });
   }
 }

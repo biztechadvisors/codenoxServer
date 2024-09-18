@@ -44,7 +44,7 @@ export class Add extends CoreEntity {
   @Column({ default: true })
   default: boolean;
 
-  @ManyToOne(() => UserAdd, { cascade: true, eager: true })
+  @ManyToOne(() => UserAdd, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true })
   @JoinColumn()
   address: UserAdd;
 
@@ -54,6 +54,6 @@ export class Add extends CoreEntity {
   })
   type: AddressType;
 
-  @ManyToOne(() => User, (user) => user.address)
+  @ManyToOne(() => User, (user) => user.address, { onDelete: "CASCADE", onUpdate: "CASCADE" })
   customer: User;
 }

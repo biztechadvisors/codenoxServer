@@ -8,8 +8,7 @@ export class Feedback extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // Define foreign key explicitly with cascading options if needed
-  @ManyToOne(() => User, { cascade: true })
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user: User;
 
@@ -25,7 +24,6 @@ export class Feedback extends CoreEntity {
   @Column({ nullable: true })
   negative?: boolean;
 
-  // Define foreign key explicitly with cascading options if needed
   @ManyToOne(() => Shop, { cascade: true })
   @JoinColumn({ name: 'shop_id' })
   shop: Shop;

@@ -14,7 +14,6 @@ import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
 import { Add, AddressType, UserAdd } from 'src/address/entities/address.entity'
 import { User, UserType } from 'src/users/entities/user.entity'
 import { Attachment } from 'src/common/entities/attachment.entity'
-import { AttachmentRepository } from 'src/common/common.repository'
 import { ShopSettings } from './entities/shopSettings.entity'
 import { AddressesService } from 'src/address/addresses.service'
 import { CreateAddressDto } from 'src/address/dto/create-address.dto'
@@ -240,23 +239,23 @@ export class ShopsService {
         relations: [
           'balance',
           'balance.shop',
-          'balance.dealer',
-          'balance.payment_info',
-          'settings',
-          'settings.socials',
-          'settings.location',
-          'address',
+          'staffs',
           'owner',
           'owner.profile',
           'cover_image',
           'logo',
-          'staffs',
+          'address',
+          'settings',
+          'settings.socials',
+          'settings.location',
+          'permission',
           'additionalPermissions',
           'additionalPermissions.permissions',
-          'permission',
-          'permission.permissions',
+          'events',
+          'regions',
         ],
       });
+
 
       // Apply search filtering if the search parameter is provided
       if (search) {
@@ -552,7 +551,7 @@ export class ShopsService {
         orders: existShop.orders ?? [],
         additionalPermissions: existShop.additionalPermissions ?? [],
         permission: existShop.permission ?? null,
-        // dealerCount: existShop?.dealerCount ?? 0,
+        dealerCount: existShop?.dealerCount ?? 0,
         regions: existShop.regions ?? [],
         events: existShop.events ?? [],
       };
