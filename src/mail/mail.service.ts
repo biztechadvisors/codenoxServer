@@ -20,22 +20,22 @@ export class MailService {
 
       await this.mailerService.sendMail({
         to: data.finalEmail,
-        from: '"Codenox Purchase" <info@codenoxx.tech>',
-        subject: 'Your Codenox Order Confirmation. Please share your feedback',
+        from: '"Codenox Purchase" <' + process.env.MAIL_FROM + '>',
+        subject: 'Your Codenox Order Confirmation',
         html: renderedTemplate,
         attachments: [
           {
             filename: 'invoice.pdf',
-            // content: pdfBuffer,
+            // content: pdfBuffer, // dynamically provide pdf buffer content
             encoding: 'base64',
             contentType: 'application/pdf',
           },
         ],
       });
-      return templateContent;
+      return renderedTemplate;
     } catch (err) {
-      console.error('Error reading or sending email:', err);
-      return null;
+      console.error('Error rendering or sending email:', err);
+      throw new InternalServerErrorException('Failed to send email');
     }
   }
 
@@ -67,26 +67,24 @@ export class MailService {
     }
   }
 
-  async sendUserConfirmation(userOrEmail: User | string, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`;
-    try {
-      let email: string;
-      let name: string;
-      console.log("first-email")
-      // Determine if the input is a User object or a string (email)
-      if (typeof userOrEmail === 'string') {
-        email = userOrEmail;
-        name = email.substring(0, email.indexOf('@'));
-      } else {
-        email = userOrEmail.email;
-        name = userOrEmail.name;
-      }
-      console.log("second-email", email)
+  async sendUserConfirmation(userOrEmail: string | { email: string; name: string }, token: string) {
+    const url = `https://example.com/auth/confirm?token=${token}`;
+    let email, name;
 
+    // Determine if it's a User object or email string
+    if (typeof userOrEmail === 'string') {
+      email = userOrEmail;
+      name = email.split('@')[0];
+    } else {
+      email = userOrEmail.email;
+      name = userOrEmail.name;
+    }
+
+    try {
       await this.mailerService.sendMail({
         to: email,
-        from: '"Support Team" <info@codenoxx.tech>', // Update with your verified domain email
-        subject: `Welcome to Codenoxx! Confirm your OTP: ${token}`,
+        from: '"Support Team" <' + process.env.MAIL_FROM + '>',
+        subject: `Welcome to Codenox! Confirm your OTP: ${token}`,
         template: './confirmation',
         context: {
           name,
@@ -96,6 +94,7 @@ export class MailService {
       });
     } catch (error) {
       console.error('Error sending confirmation email:', error);
+      throw new InternalServerErrorException('Failed to send confirmation email');
     }
   }
 
