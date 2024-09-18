@@ -186,16 +186,18 @@ export class AuthService {
           existingUser.created_at = new Date();
           await this.userRepository.save(existingUser);
 
+          console.log("first")
           if (![UserType.Dealer, UserType.Company, UserType.Staff].includes(existingUser.permission?.type_name as UserType)) {
             await this.mailService.sendUserConfirmation(existingUser, otp.toString());
           }
+          console.log("second")
 
           return { message: 'OTP sent to your email.' };
         } else {
           throw new ConflictException('User already registered and verified.');
         }
       }
-
+      console.log("third")
       let permission: Permission | null = null;
       if (createUserInput.permission) {
         try {
@@ -211,6 +213,7 @@ export class AuthService {
           throw new InternalServerErrorException('Error retrieving permission.');
         }
       }
+      console.log("fourth")
 
       const hashPass = createUserInput.password ? await bcrypt.hash(createUserInput.password, 12) : null;
 
@@ -223,6 +226,8 @@ export class AuthService {
       userData.createdBy = createUserInput.createdBy || null;
       userData.isVerified = !!createUserInput.createdBy;
 
+      console.log("fifth")
+
       if (createUserInput.createdBy) {
         const parentUsr = await this.userRepository.findOne({
           where: { id: createUserInput.createdBy.id },
@@ -232,6 +237,8 @@ export class AuthService {
         if (!parentUsr) {
           throw new BadRequestException('Invalid creator user.');
         }
+
+        console.log("sixth")
 
         if (parentUsr.permission.type_name === UserType.Company && permission?.type_name === UserType.Dealer) {
           const existingDealerCount = await this.userRepository.createQueryBuilder('user')
@@ -245,15 +252,19 @@ export class AuthService {
           }
         }
       }
+      console.log("seventh")
 
       userData.permission = permission || null;
 
       const otpToken = await this.generateOtp();
 
       if (createUserInput.email) {
+        console.log("eight")
+
         userData.otp = parseInt(otpToken);
         await this.mailService.sendUserConfirmation(userData, otpToken.toString());
       } else if (createUserInput.contact) {
+        console.log("nine")
         const otpDto: OtpDto = { phone_number: createUserInput.contact };
         try {
           const response = await this.sendOtpCode(otpDto);
@@ -265,6 +276,7 @@ export class AuthService {
           throw new InternalServerErrorException('Error sending OTP');
         }
       }
+      console.log("ten")
 
       await this.userRepository.save(userData);
 
@@ -286,6 +298,7 @@ export class AuthService {
         notificationTitle,
         notificationMessage,
       );
+      console.log("eleven")
 
       return { message: 'Registered successfully. OTP sent to your email.' };
     } catch (error) {

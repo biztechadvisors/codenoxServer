@@ -72,7 +72,7 @@ export class MailService {
     try {
       let email: string;
       let name: string;
-
+      console.log("first-email")
       // Determine if the input is a User object or a string (email)
       if (typeof userOrEmail === 'string') {
         email = userOrEmail;
@@ -81,14 +81,15 @@ export class MailService {
         email = userOrEmail.email;
         name = userOrEmail.name;
       }
+      console.log("second-email", email)
 
       await this.mailerService.sendMail({
         to: email,
-        from: '"Support Team" <info@codenoxx.tech>',
-        subject: `Welcome to Codenox! Confirm your OTP: ${token}`,
+        from: '"Support Team" <info@codenoxx.tech>', // Update with your verified domain email
+        subject: `Welcome to Codenoxx! Confirm your OTP: ${token}`,
         template: './confirmation',
         context: {
-          name: name,
+          name,
           otp: token,
           url,
         },
@@ -97,7 +98,6 @@ export class MailService {
       console.error('Error sending confirmation email:', error);
     }
   }
-
 
   async resendUserConfirmation(user: User, token: string) {
     const url = `example.com/auth/confirm?token=${token}`;
