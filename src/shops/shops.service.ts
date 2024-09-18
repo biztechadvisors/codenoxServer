@@ -22,10 +22,13 @@ import { Brackets, FindOperator, ILike, Repository } from 'typeorm'
 import { UserPaginator } from 'src/users/dto/get-users.dto'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
+import { AnalyticsService } from '../analytics/analytics.service'
 
 @Injectable()
 export class ShopsService {
   constructor(
+    private readonly analyticsService: AnalyticsService,
+
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
     @InjectRepository(Balance)
@@ -215,6 +218,10 @@ export class ShopsService {
         where: { id: shop.id },
         relations: ['balance'],
       });
+
+      // Update analytics with the new shop
+      // await this.analyticsService.updateAnalytics(undefined, undefined, createdShop);
+
       return createdShop;
     } catch (error) {
       console.error(error);
@@ -436,6 +443,7 @@ export class ShopsService {
 
   async getShop(slug: string): Promise<Shop | null> {
     try {
+      console.log('first', slug)
       // Construct a unique cache key based on the shop slug
       const cacheKey = `shop_${slug}`;
 
@@ -445,7 +453,7 @@ export class ShopsService {
       if (!existShop) {
         // If the data is not in the cache, fetch it from the database
         existShop = await this.shopRepository.findOne({
-          where: { slug },
+          where: { slug: slug },
           relations: [
             'balance',
             'balance.payment_info',

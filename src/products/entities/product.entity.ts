@@ -39,11 +39,11 @@ export class Product extends CoreEntity {
   @Column()
   product_type: ProductType;
 
-  @ManyToOne(() => Type, (type) => type.products, { nullable: true, cascade: true })
+  @ManyToOne(() => Type, (type) => type.products, { eager: true, onDelete: "SET NULL" })
   @JoinColumn({ name: 'typeId' })
   type: Type | null;
 
-  @ManyToMany(() => Region, (region) => region.products, { nullable: true, cascade: true })
+  @ManyToMany(() => Region, (region) => region.products, { eager: true, nullable: true, cascade: true })
   @JoinTable({
     name: 'product_regions',
     joinColumn: { name: 'productId', referencedColumnName: 'id' },
@@ -55,19 +55,19 @@ export class Product extends CoreEntity {
   @JoinTable({ name: "product_category" })
   categories: Category[];
 
-  @ManyToMany(() => SubCategory, subCategory => subCategory.products, { cascade: true })
+  @ManyToMany(() => SubCategory, subCategory => subCategory.products, { eager: true, cascade: true })
   @JoinTable({ name: "product_subcategory" })
   subCategories: SubCategory[];
 
-  @ManyToMany(() => Tag, tag => tag.products, { cascade: true })
+  @ManyToMany(() => Tag, tag => tag.products, { eager: true, cascade: true })
   @JoinTable({ name: "product_tags" })
   tags: Tag[];
 
-  @ManyToMany(() => AttributeValue, { cascade: true, })
+  @ManyToMany(() => AttributeValue, { eager: true, cascade: true, })
   @JoinTable({ name: "products_attributeValue" })
   variations?: AttributeValue[];
 
-  @ManyToMany(() => Variation, { cascade: true })
+  @ManyToMany(() => Variation, { eager: true, cascade: true })
   @JoinTable({ name: "products_variationOptions" })
   variation_options: Variation[];
 
@@ -77,7 +77,7 @@ export class Product extends CoreEntity {
   @ManyToMany(() => Order, (order) => order.products)
   orders: Order[];
 
-  @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products, { onDelete: "CASCADE" })
+  @ManyToMany(() => StocksSellOrd, stocksSellOrd => stocksSellOrd.products)
   stocksSellOrders: StocksSellOrd[];
 
   @ManyToOne(() => Shop, (shop) => shop.products, { cascade: true })

@@ -18,26 +18,23 @@ export class AddressesService {
     private readonly addressRepository: Repository<Add>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Shop)
-    private readonly shopRepository: Repository<Shop>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
   ) { }
 
+  // Create new address
   async create(createAddressDto: CreateAddressDto): Promise<Add> {
-    const user = await this.userRepository.findOne({
-      where: { id: createAddressDto.customer_id },
-    });
+    const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id } });
 
     if (!user) {
       throw new NotFoundException('User does not exist');
     }
 
-    // Create UserAddress
+    // Create UserAdd (Address details)
     const userAddress = this.userAddressRepository.create(createAddressDto.address);
     const savedUserAddress = await this.userAddressRepository.save(userAddress);
 
-    // Create Address
+    // Create Add (Address entity linked to User and UserAdd)
     const address = this.addressRepository.create({
       title: createAddressDto.title,
       type: createAddressDto.type,
@@ -48,13 +45,13 @@ export class AddressesService {
 
     const savedAddress = await this.addressRepository.save(address);
 
-    // Invalidate cache after creating new address
-    const cacheKey = `addresses:userId:${user.id}`;
-    await this.cacheManager.del(cacheKey);
+    // Invalidate cache for user addresses
+    await this.cacheManager.del(`addresses:userId:${user.id}`);
 
     return savedAddress;
   }
 
+  // Fetch all addresses for a user with caching
   async findAll(userId: number): Promise<Add[]> {
     const cacheKey = `addresses:userId:${userId}`;
     let addresses = await this.cacheManager.get<Add[]>(cacheKey);
@@ -65,12 +62,15 @@ export class AddressesService {
         relations: ['address'],
       });
 
-      await this.cacheManager.set(cacheKey, addresses, 1800);
+      if (addresses.length) {
+        await this.cacheManager.set(cacheKey, addresses, 120);
+      }
     }
 
     return addresses;
   }
 
+  // Fetch a specific address by ID with caching
   async findOne(id: number): Promise<Add> {
     const cacheKey = `address:id:${id}`;
     let address = await this.cacheManager.get<Add>(cacheKey);
@@ -85,12 +85,13 @@ export class AddressesService {
         throw new NotFoundException(`Address with ID ${id} not found`);
       }
 
-      await this.cacheManager.set(cacheKey, address, 1800);
+      await this.cacheManager.set(cacheKey, address, 120);
     }
 
     return address;
   }
 
+  // Update an address by ID
   async update(id: number, updateAddressDto: UpdateAddressDto): Promise<Add> {
     const address = await this.addressRepository.findOne({
       where: { id },
@@ -101,24 +102,26 @@ export class AddressesService {
       throw new NotFoundException(`Address with ID ${id} not found`);
     }
 
+    // Update UserAdd (Address details) if provided
     const userAddress = address.address;
-    if (userAddress) {
+    if (userAddress && updateAddressDto.address) {
       Object.assign(userAddress, updateAddressDto.address);
       await this.userAddressRepository.save(userAddress);
     }
 
+    // Update Add (Address entity)
     Object.assign(address, updateAddressDto);
     await this.addressRepository.save(address);
 
-    // Invalidate cache after update
-    const cacheKey = `addresses:userId:${address.customer.id}`;
-    await this.cacheManager.del(cacheKey);
+    // Invalidate cache for user addresses and this specific address
+    await this.cacheManager.del(`addresses:userId:${address.customer.id}`);
     await this.cacheManager.del(`address:id:${id}`);
 
     return address;
   }
 
-  async remove(id: number) {
+  // Remove an address by ID
+  async remove(id: number): Promise<void> {
     const address = await this.addressRepository.findOne({
       where: { id },
       relations: ['address', 'customer'],
@@ -130,9 +133,8 @@ export class AddressesService {
 
     await this.addressRepository.remove(address);
 
-    // Invalidate cache after removal
-    const cacheKey = `addresses:userId:${address.customer.id}`;
-    await this.cacheManager.del(cacheKey);
+    // Invalidate cache for user addresses and this specific address
+    await this.cacheManager.del(`addresses:userId:${address.customer.id}`);
     await this.cacheManager.del(`address:id:${id}`);
   }
 }

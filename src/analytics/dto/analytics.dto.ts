@@ -16,3 +16,13 @@ export class AnalyticsResponseDTO {
     newCustomers: number;
     totalYearSaleByMonth: TotalYearSaleByMonthDTO[];
 }
+export class GetAnalyticsDto {
+    shop_id: number;
+    customerId: number;
+    state: string;
+}
+
+export class TopUsersQueryDto {
+    userId: number;
+}
+

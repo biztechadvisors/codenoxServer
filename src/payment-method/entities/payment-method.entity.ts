@@ -34,6 +34,7 @@ export class PaymentMethod extends CoreEntity {
   origin?: string
   @Column()
   verification_check?: string;
+
   @ManyToOne(() => PaymentGateWay)
   payment_gateways?: PaymentGateWay;
 }

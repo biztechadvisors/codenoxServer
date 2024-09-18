@@ -72,7 +72,7 @@ export class Order extends CoreEntity {
   @OneToMany(() => Order, (order) => order.parentOrder)
   children?: Order[];
 
-  @ManyToOne(() => OrderStatus, (orderStatus) => orderStatus.order, { nullable: true, cascade: ['insert', 'update'] })
+  @ManyToOne(() => OrderStatus, (orderStatus) => orderStatus.order, { eager: true, nullable: true, cascade: ['insert', 'update'] })
   @JoinColumn({ name: 'statusId' })
   status: OrderStatus;
 
@@ -104,6 +104,9 @@ export class Order extends CoreEntity {
   @JoinColumn({ name: 'coupon_id' })
   coupon?: Coupon;
 
+  @Column({ type: 'int' })
+  shop_id: number;
+
   @ManyToMany(() => Shop, (shop) => shop.orders, { cascade: ['insert', 'update'] })
   @JoinTable({ name: 'shop_order' })
   shop: Shop[];
@@ -125,7 +128,7 @@ export class Order extends CoreEntity {
   })
   products: Product[];
 
-  @OneToMany(() => OrderProductPivot, (pivot) => pivot.order, { cascade: ['insert', 'update'] })
+  @OneToMany(() => OrderProductPivot, (pivot) => pivot.order, { eager: true, cascade: ['insert', 'update'] })
   orderProductPivots: OrderProductPivot[];
 
   @ManyToOne(() => UserAdd, { nullable: false, cascade: true })
@@ -140,7 +143,6 @@ export class Order extends CoreEntity {
   language: string;
   @Column({ type: 'json', nullable: true })
   translated_languages: any[] | null;
-
 
   @OneToOne(() => PaymentIntent, { nullable: true, cascade: true })
   @JoinColumn({ name: 'paymentIntentId' })

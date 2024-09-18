@@ -21,7 +21,7 @@ export class Stocks {
     @Column()
     receivedQuantity: number;
 
-    @ManyToOne(() => Product, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+    @ManyToOne(() => Product, { onDelete: 'SET NULL', onUpdate: "CASCADE" })
     @JoinColumn() // Specify the join column
     product: Product;
 
@@ -53,15 +53,15 @@ export class InventoryStocks {
     @Column()
     inStock: boolean;
 
-    @ManyToMany(() => Variation, { onDelete: "CASCADE", onUpdate: "CASCADE" })
-    @JoinTable({ name: "inventoryStocks_variation_options" })
+    @ManyToMany(() => Variation, { onUpdate: "CASCADE" })
+    @JoinTable({ name: "inventory_stocks_variation_options" })
     variation_options: Variation[];
 
-    @ManyToOne(() => Product, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+    @ManyToOne(() => Product, { onDelete: 'SET NULL', onUpdate: "CASCADE" })
     @JoinColumn() // Specify the join column
     product: Product;
 
-    @ManyToOne(() => User, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+    @ManyToOne(() => User, { onDelete: 'SET NULL', onUpdate: "CASCADE" })
     @JoinColumn() // Specify the join column
     user: User;
 }

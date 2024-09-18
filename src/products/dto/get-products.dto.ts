@@ -31,7 +31,7 @@ export class GetProductsDto extends PaginationArgs {
   dealerId?: number;
   shop_id?: number;
   shopName?: string;
-  regionNames?: string; // To handle an array of region names
+  regionNames?: any; // To handle an array of region names
 }
 
 

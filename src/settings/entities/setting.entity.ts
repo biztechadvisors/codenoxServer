@@ -36,7 +36,7 @@ export class SeoSettings {
   @Column({ nullable: true })
   ogDescription?: string;
 
-  @OneToOne(() => Attachment, { cascade: true, eager: true, nullable: true, onDelete: 'SET NULL' })
+  @OneToOne(() => Attachment, { cascade: true, eager: true, onDelete: 'CASCADE' })
   @JoinColumn()
   ogImage?: Attachment;
 
@@ -295,7 +295,7 @@ export class ContactDetails {
   id: number;
 
   @ManyToMany(() => ShopSocials, { cascade: true })
-  @JoinTable({ name: "contaCtdetails_shopSocils" })
+  @JoinTable({ name: "ContactDetails_shopSocils" })
   socials: ShopSocials[];
 
   @Column()
@@ -319,7 +319,7 @@ export class SettingsOptions extends CoreEntity {
   @Column()
   currency: string;
 
-  @ManyToOne(() => CurrencyOptions)
+  @ManyToOne(() => CurrencyOptions, { cascade: true })
   currencyOptions: CurrencyOptions;
 
   @Column({ nullable: true })
@@ -422,7 +422,7 @@ export class Setting extends CoreEntity {
   @JoinColumn()
   shop: Shop | null;
 
-  @ManyToOne(() => SettingsOptions)
+  @ManyToOne(() => SettingsOptions, { cascade: true, nullable: true })
   options: SettingsOptions;
 
   @Column()

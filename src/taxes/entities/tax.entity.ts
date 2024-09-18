@@ -26,10 +26,10 @@ export class Tax extends CoreEntity {
   @Column()
   gst_Name: string; //goods - service
 
-  @ManyToOne(() => Shop, { cascade: true })
+  @ManyToOne(() => Shop)
   @JoinColumn()
   shop: Shop
 
-  @OneToMany(() => Product, (products) => products.taxes)
+  @OneToMany(() => Product, (products) => products.taxes, { onDelete: "SET NULL" })
   products: Product[];
 }

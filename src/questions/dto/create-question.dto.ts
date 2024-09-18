@@ -12,8 +12,6 @@ export class CreateQuestionDto extends PickType(Question, [
   'shop_id',
   'positive_feedbacks_count',
   'negative_feedbacks_count',
-  'user_id',
-  'product_id',
   'created_at',
   'updated_at',
 ]) {

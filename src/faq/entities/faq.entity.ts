@@ -15,7 +15,7 @@ export class FAQ {
     @Column()
     description: string;
 
-    @ManyToMany(() => Attachment, { cascade: true, eager: true })
+    @ManyToMany(() => Attachment, { eager: true })
     @JoinTable({
         name: 'faq_images',
         joinColumn: { name: 'faqId', referencedColumnName: 'id' },
@@ -26,6 +26,6 @@ export class FAQ {
     @ManyToOne(() => Shop)
     shop: Shop;
 
-    @OneToMany(() => QnA, qna => qna.faq)
+    @OneToMany(() => QnA, qna => qna.faq, { onDelete: "CASCADE" })
     qnas: QnA[];
 }

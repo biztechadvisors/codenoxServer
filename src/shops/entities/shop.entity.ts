@@ -96,7 +96,7 @@ export class Shop extends CoreEntity {
   @OneToMany(() => SubCategory, (subCategory) => subCategory.shop, { onDelete: "CASCADE" })
   subCategories: SubCategory[];
 
-  @ManyToMany(() => Order, (order) => order.shop, { nullable: true })
+  @ManyToMany(() => Order, (order) => order.shop, { nullable: true, onDelete: "CASCADE" })
   orders: Order[];
 
   @ManyToOne(() => Permission, (permission) => permission.shop, { onDelete: "CASCADE", eager: true })
@@ -104,7 +104,7 @@ export class Shop extends CoreEntity {
   permission?: Permission;
 
   @ManyToMany(() => Permission, (permission) => permission.shops, { onDelete: "CASCADE", eager: true })
-  @JoinTable({ name: 'shop_additionalPermission' })
+  @JoinTable({ name: 'shop_additional_permission' })
   additionalPermissions: Permission[];
 
   @Column({ type: 'int', default: 0 })

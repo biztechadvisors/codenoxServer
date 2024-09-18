@@ -20,10 +20,10 @@ export class Balance {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   admin_commission_rate: number;
 
-  @OneToOne(() => Shop, (shop) => shop.balance, { onDelete: "CASCADE" })
+  @OneToOne(() => Shop, (shop) => shop.balance)
   shop: Shop;
 
-  @ManyToOne(() => Dealer, (dealer) => dealer.balance, { nullable: true })
+  @ManyToOne(() => Dealer, (dealer) => dealer.balance, { onDelete: "SET NULL", nullable: true })
   dealer: Dealer;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })

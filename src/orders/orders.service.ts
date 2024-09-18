@@ -45,11 +45,13 @@ import { NotificationService } from 'src/notifications/services/notifications.se
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { UserAdd } from '../address/entities/address.entity';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private readonly authService: AuthService,
+    private readonly analyticsService: AnalyticsService,
     private readonly stripeService: StripePaymentService,
     private readonly paypalService: PaypalPaymentService,
     private readonly razorpayService: RazorpayService,
@@ -302,6 +304,9 @@ export class OrdersService {
           `New order with ID ${savedOrder.id} has been successfully created.`,
         );
       }
+
+      // Update analytics after order creation
+      // await this.analyticsService.updateAnalytics(savedOrder);
 
       return savedOrder;
     } catch (error) {
@@ -1123,7 +1128,7 @@ export class OrdersService {
       // Handle payment intent based on the payment gateway
       switch (order.payment_gateway) {
         case PaymentGatewayType.STRIPE:
-          const stripeParams = await this.stripeService.makePaymentIntentParam(order, authUser);
+          const stripeParams = await this.stripeService.createPaymentIntentParams(order, authUser);
           return this.stripeService.createPaymentIntent(stripeParams);
 
         case PaymentGatewayType.PAYPAL:

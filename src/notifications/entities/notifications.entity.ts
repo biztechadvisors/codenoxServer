@@ -13,7 +13,7 @@ export class Notification {
     title: string;
 
     @Column({ default: false })
-    seen: boolean; // Track if the notification has been seen
+    seen: boolean;
 
     @ManyToOne(() => User, user => user.notifications, {
         onDelete: "SET NULL",

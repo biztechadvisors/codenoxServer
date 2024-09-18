@@ -20,13 +20,18 @@ import { Attachment } from 'src/common/entities/attachment.entity'
 import { AddressesService } from 'src/address/addresses.service'
 import { Permission } from 'src/permission/entities/permission.entity'
 import { CacheModule } from '@nestjs/cache-manager'
+import { AnalyticsService } from '../analytics/analytics.service'
+import { Order } from '../orders/entities/order.entity'
+import { Analytics, TotalYearSaleByMonth } from '../analytics/entities/analytics.entity'
+import { StocksSellOrd } from '../stocks/entities/stocksOrd.entity'
+import { Refund } from '../refunds/entities/refund.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Add, Location, ShopSocials, User, ShopSettings, Attachment, UserAdd, Permission]),
+    TypeOrmModule.forFeature([Shop, Balance, PaymentInfo, Add, Location, ShopSocials, User, ShopSettings, Attachment, UserAdd, Permission, Order, Analytics, Permission, StocksSellOrd, TotalYearSaleByMonth, Refund]),
     CacheModule.register(),
   ],
   controllers: [ShopsController, StaffsController, DisapproveShopController, ApproveShopController],
-  providers: [ShopsService, AddressesService],
+  providers: [ShopsService, AnalyticsService, AddressesService],
 })
 export class ShopsModule { }

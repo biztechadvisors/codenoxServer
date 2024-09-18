@@ -171,47 +171,53 @@ export class AuthService {
 
   async register(createUserInput: RegisterDto): Promise<{ message: string }> {
     try {
+      // Ensure either email or phone is provided
       if (!createUserInput.email && !createUserInput.contact) {
         throw new BadRequestException('Either email or phone number is required.');
       }
 
+      // Check if the user already exists based on email or contact
       const existingUser = await this.userRepository.findOne({
-        where: createUserInput.email ? { email: createUserInput.email } : createUserInput.contact ? { contact: createUserInput.contact } : undefined,
+        where: createUserInput.email
+          ? { email: createUserInput.email }
+          : createUserInput.contact
+            ? { contact: createUserInput.contact }
+            : undefined,
       });
 
       if (existingUser) {
         if (!existingUser.isVerified) {
+          // User exists but is not verified, resend OTP
           const otp = await this.generateOtp();
           existingUser.otp = parseInt(otp);
-          existingUser.created_at = new Date();
+          existingUser.created_at = new Date(); // Update created_at timestamp
           await this.userRepository.save(existingUser);
 
+          // Send OTP to unverified user (email or contact depending on their info)
           if (![UserType.Dealer, UserType.Company, UserType.Staff].includes(existingUser.permission?.type_name as UserType)) {
             await this.mailService.sendUserConfirmation(existingUser, otp.toString());
           }
 
-          return { message: 'OTP sent to your email.' };
+          return { message: 'OTP resent to your email.' };
         } else {
-          throw new ConflictException('User already registered and verified.');
+          // User is already verified
+          return { message: 'User already registered and verified.' };
         }
       }
 
+      // Handle new user registration
       let permission: Permission | null = null;
       if (createUserInput.permission) {
-        try {
-          permission = await this.permissionRepository.findOne({
-            where: { permission_name: ILike(createUserInput.permission) as unknown as FindOperator<string> },
-          });
+        permission = await this.permissionRepository.findOne({
+          where: { permission_name: ILike(createUserInput.permission) as unknown as FindOperator<string> },
+        });
 
-          if (!permission) {
-            throw new BadRequestException('Invalid permission type.');
-          }
-        } catch (error) {
-          this.logger.error('Error fetching permission:', error);
-          throw new InternalServerErrorException('Error retrieving permission.');
+        if (!permission) {
+          throw new BadRequestException('Invalid permission type.');
         }
       }
 
+      // Hash the password
       const hashPass = createUserInput.password ? await bcrypt.hash(createUserInput.password, 12) : null;
 
       const userData = new User();
@@ -223,6 +229,7 @@ export class AuthService {
       userData.createdBy = createUserInput.createdBy || null;
       userData.isVerified = !!createUserInput.createdBy;
 
+      // Set permission and handle dealer count logic (if applicable)
       if (createUserInput.createdBy) {
         const parentUsr = await this.userRepository.findOne({
           where: { id: createUserInput.createdBy.id },
@@ -248,27 +255,23 @@ export class AuthService {
 
       userData.permission = permission || null;
 
+      // Generate OTP and send it to the user
       const otpToken = await this.generateOtp();
-
-      if (createUserInput.email) {
+      if (createUserInput.email && !createUserInput.createdBy) {
         userData.otp = parseInt(otpToken);
         await this.mailService.sendUserConfirmation(userData, otpToken.toString());
-      } else if (createUserInput.contact) {
+      } else if (createUserInput.contact && !createUserInput.createdBy) {
         const otpDto: OtpDto = { phone_number: createUserInput.contact };
-        try {
-          const response = await this.sendOtpCode(otpDto);
-          if (!response.success) {
-            throw new InternalServerErrorException('Error sending OTP');
-          }
-        } catch (error) {
-          this.logger.error('Error sending OTP:', error.message);
+        const response = await this.sendOtpCode(otpDto);
+        if (!response.success) {
           throw new InternalServerErrorException('Error sending OTP');
         }
       }
 
+      // Save the new user data
       await this.userRepository.save(userData);
 
-      // Send notifications (if applicable)
+      // Send a notification after registration
       const notificationTitle = userData.permission?.type_name === UserType.Dealer
         ? 'Welcome Dealer!'
         : userData.permission?.type_name === UserType.Staff
@@ -487,7 +490,7 @@ export class AuthService {
       }
 
       const now = new Date();
-      const otpExpiryTime = 60 * 1000; // 1 minute
+      const otpExpiryTime = 5 * 60 * 1000; // 5 minute
       const hasOtpExpired = user.otp && user.created_at && now.getTime() - new Date(user.created_at).getTime() > otpExpiryTime;
 
       if (hasOtpExpired) {
