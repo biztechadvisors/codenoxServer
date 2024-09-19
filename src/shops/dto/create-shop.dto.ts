@@ -14,7 +14,7 @@ export class CreateShopDto extends PickType(Shop, [
   'settings',
   'balance',
   'owner',
-  'dealerCount',
+  // 'dealerCount',
 ]) {
   categories: number[];
   permission: Permission;
