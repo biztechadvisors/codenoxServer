@@ -384,7 +384,7 @@ export class SettingsService {
       }
 
       // Store the merged data in the cache with a TTL of 5 minutes
-      await this.cacheManager.set(cacheKey, mergedData, 3600);
+      await this.cacheManager.set(cacheKey, mergedData, 60);
     }
 
     return mergedData;

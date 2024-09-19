@@ -96,7 +96,7 @@ export class TaxesService {
         }
 
         // Cache the result
-        await this.cacheManager.set(cacheKey, existingData, 3600); // Adjust TTL as needed
+        await this.cacheManager.set(cacheKey, existingData, 60); // Adjust TTL as needed
       }
 
       return existingData;
@@ -119,7 +119,7 @@ export class TaxesService {
         }
 
         // Cache the result
-        await this.cacheManager.set(cacheKey, existingTax, 3600); // Adjust TTL as needed
+        await this.cacheManager.set(cacheKey, existingTax, 60); // Adjust TTL as needed
       }
 
       return existingTax;

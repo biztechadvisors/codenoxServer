@@ -102,7 +102,7 @@ export class PermissionService {
         permissions = Object.values(groupedPermissions);
 
         // Cache the result
-        await this.cacheManager.set(cacheKey, permissions, 3600); // Cache for 1 hour
+        await this.cacheManager.set(cacheKey, permissions, 60); // Cache for 1 hour
       }
 
       return permissions;
@@ -148,7 +148,7 @@ export class PermissionService {
         }));
 
         // Cache the result
-        await this.cacheManager.set(cacheKey, formattedResult[0], 3600); // Cache for 1 hour
+        await this.cacheManager.set(cacheKey, formattedResult[0], 60); // Cache for 1 hour
       }
 
       return formattedResult;

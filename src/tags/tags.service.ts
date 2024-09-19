@@ -126,7 +126,6 @@ export class TagsService {
 
     // Find regions by names if provided
     if (regionNames.length > 0) {
-      console.log("first")
       const regions = await this.regionRepository.find({
         where: { name: In(regionNames) },
       });
@@ -180,7 +179,7 @@ export class TagsService {
     };
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, response, 3600); // Cache for 1 hour
+    await this.cacheManager.set(cacheKey, response, 60); // Cache for 1 hour
 
     return response;
   }
@@ -208,7 +207,7 @@ export class TagsService {
     }
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, tag, 3600); // Cache for 5 minutes
+    await this.cacheManager.set(cacheKey, tag, 60); // Cache for 5 minutes
 
     return tag;
   }

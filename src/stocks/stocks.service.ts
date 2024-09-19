@@ -389,7 +389,7 @@ export class StocksService {
             });
 
             // Cache the result for future requests
-            await this.cacheManager.set(cacheKey, stocks, 3600); // Cache for 5 minutes
+            await this.cacheManager.set(cacheKey, stocks, 60); // Cache for 5 minutes
 
             return stocks;
 
@@ -456,7 +456,7 @@ export class StocksService {
             }
 
             // Cache the result for future requests
-            await this.cacheManager.set(cacheKey, allStocks, 3600); // Cache for 5 minutes
+            await this.cacheManager.set(cacheKey, allStocks, 60); // Cache for 5 minutes
 
             return allStocks;
 
@@ -503,7 +503,7 @@ export class StocksService {
             }));
 
             // Cache the result for future requests
-            await this.cacheManager.set(cacheKey, result, 3600); // Cache for 5 minutes
+            await this.cacheManager.set(cacheKey, result, 60); // Cache for 5 minutes
 
             return result;
 
@@ -839,7 +839,7 @@ export class StocksService {
             };
 
             // Cache the result
-            await this.cacheManager.set(cacheKey, paginatedResult, 3600); // Cache for 5 minutes
+            await this.cacheManager.set(cacheKey, paginatedResult, 60); // Cache for 5 minutes
 
             return paginatedResult;
 
@@ -983,7 +983,7 @@ export class StocksService {
             };
 
             // Cache the result
-            await this.cacheManager.set(cacheKey, transformedOrder, 3600); // Cache for 5 minutes
+            await this.cacheManager.set(cacheKey, transformedOrder, 60); // Cache for 5 minutes
 
             return transformedOrder;
         } catch (error) {

@@ -63,7 +63,7 @@ export class AddressesService {
       });
 
       if (addresses.length) {
-        await this.cacheManager.set(cacheKey, addresses, 120);
+        await this.cacheManager.set(cacheKey, addresses, 60);
       }
     }
 
@@ -85,7 +85,7 @@ export class AddressesService {
         throw new NotFoundException(`Address with ID ${id} not found`);
       }
 
-      await this.cacheManager.set(cacheKey, address, 120);
+      await this.cacheManager.set(cacheKey, address, 60);
     }
 
     return address;

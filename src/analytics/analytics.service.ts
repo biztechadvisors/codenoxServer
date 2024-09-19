@@ -102,7 +102,7 @@ export class AnalyticsService {
       }));
 
       // Cache the result for future requests
-      await this.cacheManager.set(cacheKey, analyticsResponse, 120); // Cache for 30 minutes
+      await this.cacheManager.set(cacheKey, analyticsResponse, 60); // Cache for 30 minutes
       this.logger.log(`Data cached with key: ${cacheKey}`);
 
       return analyticsResponse;
@@ -398,7 +398,7 @@ export class AnalyticsService {
           }));
 
           // Cache the result for future requests
-          await this.cacheManager.set(cacheKey, formattedResult, 1800); // Cache for 30 minutes
+          await this.cacheManager.set(cacheKey, formattedResult, 60); // Cache for 30 minutes
           this.logger.log(`Data cached with key: ${cacheKey}`);
 
           return formattedResult;
@@ -466,7 +466,7 @@ export class AnalyticsService {
       }));
 
       // Cache the result for future requests
-      await this.cacheManager.set(cacheKey, formattedResult, 1800); // Cache for 30 minutes
+      await this.cacheManager.set(cacheKey, formattedResult, 60); // Cache for 30 minutes
       this.logger.log(`Data cached with key: ${cacheKey}`);
 
       return formattedResult;

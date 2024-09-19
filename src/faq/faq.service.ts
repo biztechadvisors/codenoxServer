@@ -48,7 +48,7 @@ export class FAQService {
                 throw new NotFoundException(`FAQ with ID ${id} not found`);
             }
 
-            await this.cacheManager.set(cacheKey, faq, 3600); // Cache for 1 hour
+            await this.cacheManager.set(cacheKey, faq, 60); // Cache for 1 hour
         }
 
         return faq;
@@ -81,7 +81,7 @@ export class FAQService {
 
         const result = { data, total, page, limit };
 
-        await this.cacheManager.set(cacheKey, result, 3600); // Cache for 1 hour
+        await this.cacheManager.set(cacheKey, result, 60); // Cache for 1 hour
 
         return result;
     }
@@ -150,7 +150,7 @@ export class FAQService {
             const faq = await this.getFAQById(faqId);
             qnas = await this.qnaRepository.find({ where: { faq: { id: faq.id } } });
 
-            await this.cacheManager.set(cacheKey, qnas, 3600); // Cache for 1 hour
+            await this.cacheManager.set(cacheKey, qnas, 60); // Cache for 1 hour
         }
 
         return qnas;
@@ -182,7 +182,7 @@ export class FAQService {
 
         const result = { data, total, page, limit };
 
-        await this.cacheManager.set(cacheKey, result, 3600); // Cache for 1 hour
+        await this.cacheManager.set(cacheKey, result, 60); // Cache for 1 hour
 
         return result;
     }

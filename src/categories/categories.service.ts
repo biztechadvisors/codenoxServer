@@ -184,7 +184,7 @@ export class CategoriesService {
         ...paginate(total, numericPage, numericLimit, data.length, url),
       };
 
-      await this.cacheManager.set(cacheKey, categories, 3600); // Cache for 1 hour
+      await this.cacheManager.set(cacheKey, categories, 60); // Cache for 1 hour
     }
 
     return categories;
@@ -220,7 +220,7 @@ export class CategoriesService {
       }
 
       // Cache the result
-      await this.cacheManager.set(cacheKey, category, 3600); // Cache for 1 hour
+      await this.cacheManager.set(cacheKey, category, 60); // Cache for 1 hour
     }
 
     return category;
@@ -492,7 +492,7 @@ export class CategoriesService {
         ...paginate(total, numericPage, numericLimit, data.length, url),
       };
 
-      await this.cacheManager.set(cacheKey, subCategories, 3600); // Cache for 1 hour
+      await this.cacheManager.set(cacheKey, subCategories, 60); // Cache for 1 hour
     }
 
     return subCategories;

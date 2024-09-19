@@ -629,7 +629,7 @@ export class OrdersService {
           ...paginate(totalCount, page, limit, results.length, url),
         };
 
-        await this.cacheManager.set(cacheKey, ordersCache, 3600); // Cache for 1 hour
+        await this.cacheManager.set(cacheKey, ordersCache, 60); // Cache for 1 hour
       }
 
       return ordersCache;
@@ -702,7 +702,7 @@ export class OrdersService {
         }
 
         order = this.transformOrder(fetchedOrder);
-        await this.cacheManager.set(cacheKey, order, 3600);
+        await this.cacheManager.set(cacheKey, order, 60);
       }
 
       return order;
@@ -801,7 +801,7 @@ export class OrdersService {
         .take(limit)
         .getManyAndCount();
 
-      await this.cacheManager.set(cacheKey, data, 3600);
+      await this.cacheManager.set(cacheKey, data, 60);
     }
     const totalCount = await this.orderStatusRepository.count();
     const url = `/order-status?search=${search || ''}&limit=${limit}&orderBy=${orderBy || ''}`;
@@ -827,7 +827,7 @@ export class OrdersService {
         throw new NotFoundException('Order status not found');
       }
 
-      await this.cacheManager.set(cacheKey, orderStatus, 3600);
+      await this.cacheManager.set(cacheKey, orderStatus, 60);
     }
 
     return orderStatus;

@@ -75,7 +75,7 @@ export class BlogService {
                 throw new NotFoundException(`Blog with ID ${id} not found`);
             }
 
-            await this.cacheManager.set(cacheKey, blog, 3600); // Cache for 1 hour
+            await this.cacheManager.set(cacheKey, blog, 60); // Cache for 1 hour
         }
 
         return blog;
@@ -151,7 +151,7 @@ export class BlogService {
 
         // Cache the result for 1 hour (3600 seconds)
         cachedData = { data, count };
-        await this.cacheManager.set(cacheKey, cachedData, 3600);
+        await this.cacheManager.set(cacheKey, cachedData, 60);
 
         return cachedData;
     }

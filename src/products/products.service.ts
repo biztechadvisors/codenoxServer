@@ -559,7 +559,7 @@ export class ProductsService {
       };
 
       // Cache the result
-      await this.cacheManager.set(cacheKey, result, 120); // Cache for 30 minutes
+      await this.cacheManager.set(cacheKey, result, 60); // Cache for 30 minutes
       this.logger.log(`Data cached with key: ${cacheKey}`);
 
       return result;
@@ -658,7 +658,7 @@ export class ProductsService {
         product.related_products = [];
       }
 
-      await this.cacheManager.set(cacheKey, product, 1800);
+      await this.cacheManager.set(cacheKey, product, 60);
       this.logger.log(`Data cached with key: ${cacheKey}`);
       // Return the product with updated margins and related products
       return product;
@@ -718,7 +718,7 @@ export class ProductsService {
     const products = await productsQueryBuilder.limit(limit).getMany();
 
     // Cache the result for 30 minutes (1800 seconds)
-    await this.cacheManager.set(cacheKey, products, 1800);
+    await this.cacheManager.set(cacheKey, products, 60);
     this.logger.log(`Data cached with key: ${cacheKey}`);
 
     return products;

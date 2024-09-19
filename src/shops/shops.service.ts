@@ -275,7 +275,7 @@ export class ShopsService {
       }
 
       // Cache the results
-      await this.cacheManager.set(cacheKey, data, 3600); // Cache for 1 hour
+      await this.cacheManager.set(cacheKey, data, 60); // Cache for 1 hour
     }
 
     const results = search ? data.slice(startIndex, endIndex) : data;
@@ -436,14 +436,13 @@ export class ShopsService {
     };
 
     // Cache the result for future requests
-    await this.cacheManager.set(cacheKey, result, 3600); // Cache for 5 minutes
+    await this.cacheManager.set(cacheKey, result, 60); // Cache for 5 minutes
 
     return result;
   }
 
   async getShop(slug: string): Promise<Shop | null> {
     try {
-      console.log('first', slug)
       // Construct a unique cache key based on the shop slug
       const cacheKey = `shop_${slug}`;
 
@@ -480,7 +479,7 @@ export class ShopsService {
         }
 
         // Cache the fetched shop data for 1 hour (3600 seconds)
-        await this.cacheManager.set(cacheKey, existShop, 3600);
+        await this.cacheManager.set(cacheKey, existShop, 60);
       }
 
       // Map the retrieved shop data to the desired structure

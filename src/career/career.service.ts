@@ -98,7 +98,7 @@ export class CareerService {
 
             // Cache the result
             cachedData = { data, count };
-            await this.cacheManager.set(cacheKey, cachedData, 3600); // Cache for 1 hour
+            await this.cacheManager.set(cacheKey, cachedData, 60); // Cache for 1 hour
         }
 
         return cachedData;

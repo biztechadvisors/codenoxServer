@@ -59,7 +59,7 @@ export class WishlistsService {
     };
 
     // Cache the data
-    await this.cacheManager.set(cacheKey, paginatedData, 3600); // Cache for 1 hour
+    await this.cacheManager.set(cacheKey, paginatedData, 60); // Cache for 1 hour
 
     return paginatedData;
   }
@@ -84,7 +84,7 @@ export class WishlistsService {
     }
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, wishlist, 3600); // Cache for 1 hour
+    await this.cacheManager.set(cacheKey, wishlist, 60); // Cache for 1 hour
 
     return wishlist;
   }

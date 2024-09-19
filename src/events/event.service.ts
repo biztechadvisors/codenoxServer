@@ -74,7 +74,7 @@ export class EventService {
                 throw new NotFoundException(`Event with ID ${id} not found`);
             }
 
-            await this.cacheManager.set(cacheKey, event, 3600); // Cache for 1 hour
+            await this.cacheManager.set(cacheKey, event, 60); // Cache for 1 hour
         }
 
         return event;
@@ -168,7 +168,7 @@ export class EventService {
         const result = { data, total, page, limit };
 
         // Cache the result for 1 hour (3600 seconds)
-        await this.cacheManager.set(cacheKey, result, 3600);
+        await this.cacheManager.set(cacheKey, result, 60);
 
         return result;
     }

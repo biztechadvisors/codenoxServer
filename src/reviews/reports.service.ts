@@ -41,7 +41,7 @@ export class AbusiveReportService {
 
       reports = await query.getMany();
 
-      await this.cacheManager.set(cacheKey, reports, 300); // Cache for 5 minutes
+      await this.cacheManager.set(cacheKey, reports, 60); // Cache for 5 minutes
     }
 
     const totalReports = await this.reportRepository.count();

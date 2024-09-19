@@ -173,7 +173,7 @@ export class ReviewService {
         reviews = reviews.filter((review) => review.user.id === userId);
       }
 
-      await this.cacheManager.set(cacheKey, reviews, 300); // Cache for 5 minutes
+      await this.cacheManager.set(cacheKey, reviews, 60); // Cache for 5 minutes
     }
 
     const startIndex = (page - 1) * limit;

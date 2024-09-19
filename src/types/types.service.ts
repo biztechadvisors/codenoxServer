@@ -89,7 +89,7 @@ export class TypesService {
     }
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, data, 3600); // Cache for 1 hour
+    await this.cacheManager.set(cacheKey, data, 60); // Cache for 1 hour
 
     return data;
   }
@@ -115,7 +115,7 @@ export class TypesService {
     }
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, type, 3600); // Cache for 5 minutes
+    await this.cacheManager.set(cacheKey, type, 60); // Cache for 5 minutes
 
     return type;
   }

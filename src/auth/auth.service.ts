@@ -763,7 +763,7 @@ export class AuthService {
     }
 
     // Cache the user data
-    await this.cacheManager.set(cacheKey, user, 1800); // Cache for 30 minutes
+    await this.cacheManager.set(cacheKey, user, 60); // Cache for 30 minutes
     this.logger.log(`Data cached with key: ${cacheKey}`);
 
     return user;

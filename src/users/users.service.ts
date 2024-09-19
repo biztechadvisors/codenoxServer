@@ -128,6 +128,24 @@ export class UsersService {
     type,
   }: GetUsersDto): Promise<UserPaginator> {
 
+    if (!usrById && !type) {
+      const emptyUserPaginator: UserPaginator = {
+        data: [],
+        count: 0,
+        current_page: 1,
+        firstItem: null,
+        lastItem: null,
+        last_page: 1,
+        per_page: 10, // Adjust this based on your default pagination setup
+        total: 0,
+        first_page_url: null,
+        last_page_url: null,
+        next_page_url: null,
+        prev_page_url: null,
+      };
+      return emptyUserPaginator;
+    }
+
     const limitNum = limit;
     const pageNum = page;
     const startIndex = (pageNum - 1) * limitNum;
@@ -204,9 +222,14 @@ export class UsersService {
       queryBuilder.andWhere('user.createdById = :usrById', { usrById });
 
       if (type) {
+
         const permissions = await this.permissionRepository.find({
-          where: { type_name: type, user: Number(usrById) },
+          where: {
+            type_name: type,
+            user: Number(usrById),
+          },
         });
+
         if (permissions.length === 0) {
           throw new NotFoundException(`Permission for type "${type}" not found.`);
         }
@@ -260,7 +283,7 @@ export class UsersService {
     };
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, result, 3600); // Cache for 1 hour
+    await this.cacheManager.set(cacheKey, result, 60); // Cache for 1 hour
 
     return result;
   }
@@ -286,7 +309,7 @@ export class UsersService {
     }
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, user, 3600); // Cache for 1 hour
+    await this.cacheManager.set(cacheKey, user, 60); // Cache for 1 hour
 
     return user;
   }
@@ -539,7 +562,7 @@ export class UsersService {
       dealers = await this.dealerRepository.find(findOptions);
 
       // Cache the results
-      await this.cacheManager.set(cacheKey, dealers, 3600);
+      await this.cacheManager.set(cacheKey, dealers, 60);
     }
 
     return dealers;
@@ -566,7 +589,7 @@ export class UsersService {
       }
 
       // Cache the result
-      await this.cacheManager.set(cacheKey, dealer, 3600);
+      await this.cacheManager.set(cacheKey, dealer, 60);
     }
 
     return dealer;

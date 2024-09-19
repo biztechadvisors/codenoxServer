@@ -148,7 +148,7 @@ export class AttributesService {
     });
 
     // Cache the result for future requests
-    await this.cacheManager.set(cacheKey, formattedAttributes, 1800); // Cache for 30 minutes
+    await this.cacheManager.set(cacheKey, formattedAttributes, 60); // Cache for 30 minutes
     this.logger.log(`Data cached with key: ${cacheKey}`);
 
     return formattedAttributes;
@@ -176,13 +176,13 @@ export class AttributesService {
 
     if (result) {
       // Cache the found attribute
-      await this.cacheManager.set(cacheKey, result, 1800); // Cache for 30 minutes
+      await this.cacheManager.set(cacheKey, result, 60); // Cache for 30 minutes
       this.logger.log(`Data cached with key: ${cacheKey}`);
       return result;
     } else {
       const notFoundMessage = { message: "Attribute Not Found" };
       // Cache the not found message to avoid repeated DB hits for the same query
-      await this.cacheManager.set(cacheKey, notFoundMessage, 1800);
+      await this.cacheManager.set(cacheKey, notFoundMessage, 60);
       this.logger.log(`Data cached with key: ${cacheKey}`);
       return notFoundMessage;
     }

@@ -94,7 +94,7 @@ export class GetInspiredService {
         const result = { data, total, page, limit };
 
         // Cache the result for 1 hour
-        await this.cacheManager.set(cacheKey, result, 3600);
+        await this.cacheManager.set(cacheKey, result, 60);
 
         return result;
     }
@@ -113,7 +113,7 @@ export class GetInspiredService {
                 throw new NotFoundException(`GetInspired with ID ${id} not found`);
             }
 
-            await this.cacheManager.set(cacheKey, getInspired, 3600); // Cache for 1 hour
+            await this.cacheManager.set(cacheKey, getInspired, 60); // Cache for 1 hour
         }
 
         return getInspired;

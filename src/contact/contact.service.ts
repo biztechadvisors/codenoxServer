@@ -67,7 +67,7 @@ export class ContactService {
         const result = { data, total, page, limit };
 
         // Cache the result for future requests
-        await this.cacheManager.set(cacheKey, result, 300); // Cache for 5 minutes (300 seconds)
+        await this.cacheManager.set(cacheKey, result, 60); // Cache for 5 minutes (300 seconds)
 
         return result;
     }
