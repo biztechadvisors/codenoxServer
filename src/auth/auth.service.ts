@@ -208,8 +208,9 @@ export class AuthService {
       // Handle new user registration
       let permission: Permission | null = null;
       if (createUserInput.permission) {
+        // Fix the usage of ILike for proper query formatting
         permission = await this.permissionRepository.findOne({
-          where: { permission_name: ILike(createUserInput.permission) as unknown as FindOperator<string> },
+          where: { permission_name: ILike(`%${createUserInput.permission.permission_name}%`) },
         });
 
         if (!permission) {
@@ -233,24 +234,24 @@ export class AuthService {
       if (createUserInput.createdBy) {
         const parentUsr = await this.userRepository.findOne({
           where: { id: createUserInput.createdBy.id },
-          relations: ['permission'],
+          relations: ['permission', 'managed_shop'],
         });
 
         if (!parentUsr) {
           throw new BadRequestException('Invalid creator user.');
         }
 
-        // if (parentUsr.permission.type_name === UserType.Company && permission?.type_name === UserType.Dealer) {
-        //   const existingDealerCount = await this.userRepository.createQueryBuilder('user')
-        //     .innerJoin('user.permission', 'permission')
-        //     .where('user.createdBy = :createdBy', { createdBy: parentUsr.id })
-        //     .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
-        //     .getCount();
+        if (parentUsr.permission.type_name === UserType.Company && permission?.type_name === UserType.Dealer) {
+          const existingDealerCount = await this.userRepository.createQueryBuilder('user')
+            .innerJoin('user.permission', 'permission')
+            .where('user.createdBy = :createdBy', { createdBy: parentUsr.id })
+            .andWhere('permission.type_name = :type_name', { type_name: UserType.Dealer })
+            .getCount();
 
-        //   if (existingDealerCount >= parentUsr.managed_shop.dealerCount) {
-        //     throw new BadRequestException('Dealer count limit reached.');
-        //   }
-        // }
+          if (existingDealerCount >= parentUsr.managed_shop.dealerCount) {
+            throw new BadRequestException('Dealer count limit reached.');
+          }
+        }
       }
 
       userData.permission = permission || null;
@@ -299,7 +300,6 @@ export class AuthService {
       throw new HttpException('Registration failed. Please try again.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
-
 
   async verifyOtp(verifyOtpInput: VerifyOtpDto): Promise<{ access_token: string; success: boolean; message: string }> {
     const { phone_number, email, code } = verifyOtpInput;
