@@ -339,6 +339,24 @@ export class ProductsService {
 
     const startIndex = (page - 1) * limit;
 
+    if (!shop_id || (!shopName && !dealerId)) {
+      const products: ProductPaginator = {
+        data: [],
+        count: 0,
+        current_page: 1,
+        firstItem: null,
+        lastItem: null,
+        last_page: 1,
+        per_page: 10, // or any default value
+        total: 0,
+        first_page_url: '',
+        last_page_url: '',
+        next_page_url: '',
+        prev_page_url: ''
+      };
+      return products;
+    }
+
     const regionsArray: string[] =
       Array.isArray(regionNames)
         ? regionNames

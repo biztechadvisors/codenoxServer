@@ -49,10 +49,10 @@ export class Type extends CoreEntity {
   @Column()
   icon: string;
 
-  @OneToMany(() => Banner, (banner) => banner.type, { cascade: true })
+  @OneToMany(() => Banner, (banner) => banner.type, { onDelete: "CASCADE" })
   banners?: Banner[];
 
-  @ManyToMany(() => Attachment, { cascade: true })
+  @ManyToMany(() => Attachment, { onDelete: "CASCADE" })
   @JoinTable({
     name: 'type_promotional_sliders',
     joinColumn: { name: 'typeId', referencedColumnName: 'id' },

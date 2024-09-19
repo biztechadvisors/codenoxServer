@@ -512,6 +512,24 @@ export class OrdersService {
         endDate,
       } = getOrdersDto;
 
+      if (!shop_id && (!shopSlug && !customer_id && !tracking_number && !soldByUserAddress)) {
+        const order: OrderPaginator = {
+          data: [],
+          count: 0,
+          current_page: 1,
+          firstItem: null,
+          lastItem: null,
+          last_page: 1,
+          per_page: 10, // or any default value
+          total: 0,
+          first_page_url: null, // No URL since it's empty
+          last_page_url: null,
+          next_page_url: null,
+          prev_page_url: null,
+        };
+        return order;
+      }
+
       const startIndex = (page - 1) * limit;
       const cacheKey = `orders-${page}-${limit}-${customer_id}-${tracking_number}-${search}-${shop_id}-${shopSlug}-${soldByUserAddress}-${type}-${startDate}-${endDate}`;
       let ordersCache = await this.cacheManager.get<OrderPaginator>(cacheKey);

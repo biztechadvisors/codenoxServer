@@ -18,8 +18,9 @@ export class GetTagsDto extends PaginationArgs {
   hasType?: string;
   language?: string;
   search?: string;
-  region_name?: string;  // Add this to filter by region name
+  region_name?: string;  // Filtering by region name
 }
+
 
 export enum QueryTagsOrderByColumn {
   CREATED_AT = 'CREATED_AT',

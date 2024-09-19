@@ -365,7 +365,4 @@ export class TypesService {
     // Remove Type
     await this.typeRepository.remove(type);
   }
-
-
-
 }

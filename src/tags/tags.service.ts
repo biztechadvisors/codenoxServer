@@ -53,11 +53,14 @@ export class TagsService {
       }
     }
 
-    const regions = await this.regionRepository.find({
-      where: {
-        name: In(createTagDto.region_name),
-      },
-    });
+    let regions;
+    if (createTagDto.region_name) {
+      regions = await this.regionRepository.find({
+        where: {
+          name: In(createTagDto.region_name),
+        },
+      });
+    }
 
     // Check if all requested regions were found
     if (regions.length !== createTagDto.region_name.length) {
@@ -97,8 +100,8 @@ export class TagsService {
 
     const skip = (numericPage - 1) * numericLimit;
 
-    // Convert region_name to an array if it's a string
-    const regionNames = typeof region_name === 'string' ? [region_name] : region_name || [];
+    // Convert region_name to an array if it's a string with length greater than 1, or leave it as an empty array if undefined
+    const regionNames = typeof region_name === 'string' && region_name.trim().length > 1 ? [region_name] : Array.isArray(region_name) ? region_name : [];
 
     // Generate a unique cache key based on the query parameters
     const cacheKey = `tags_${numericPage}_${numericLimit}_${search || 'none'}_${shopSlug || 'none'}_${regionNames.join(',')}`;
@@ -123,6 +126,7 @@ export class TagsService {
 
     // Find regions by names if provided
     if (regionNames.length > 0) {
+      console.log("first")
       const regions = await this.regionRepository.find({
         where: { name: In(regionNames) },
       });
