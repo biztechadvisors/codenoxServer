@@ -339,7 +339,7 @@ export class ProductsService {
 
     const startIndex = (page - 1) * limit;
 
-    if (!shop_id || (!shopName && !dealerId)) {
+    if (!shop_id && (!shopName && !dealerId)) {
       const products: ProductPaginator = {
         data: [],
         count: 0,
