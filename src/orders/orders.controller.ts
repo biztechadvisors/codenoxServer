@@ -14,7 +14,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { CreateOrderStatusDto } from './dto/create-order-status.dto';
+import { CreateOrderStatusDto, UpdateOrderStatusDto } from './dto/create-order-status.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { GetOrderFilesDto, OrderFilesPaginator } from './dto/get-downloads.dto';
 import { GetOrderStatusesDto } from './dto/get-order-statuses.dto';
@@ -58,15 +58,6 @@ export class OrdersController {
   @Get(':id')
   async getOrderById(@Param('id', ParseIntPipe) id: number) {
     const order = await this.ordersService.getOrderByIdOrTrackingNumber(id);
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-    return order;
-  }
-
-  @Get('tracking-number/:tracking_id')
-  async getOrderByTrackingNumber(@Param('tracking_id', ParseIntPipe) tracking_id: number) {
-    const order = await this.ordersService.getOrderByIdOrTrackingNumber(tracking_id);
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -124,29 +115,34 @@ export class OrderStatusController {
 
   constructor(private readonly ordersService: OrdersService) { }
 
+  // Create Order Status
   @Post()
   @UsePipes(new ValidationPipe())
   async create(@Body() createOrderStatusDto: CreateOrderStatusDto) {
     return this.ordersService.createOrderStatus(createOrderStatusDto);
   }
 
+  // Get all order statuses (with pagination)
   @Get()
   @UsePipes(new ValidationPipe())
   async findAll(@Query() query: GetOrderStatusesDto) {
     return this.ordersService.getOrderStatuses(query);
   }
 
+  // Get a single order status by ID or name
   @Get(':param')
   async findOne(@Param('param') param: string, @Query('language') language: string) {
     return this.ordersService.getOrderStatus(param, language);
   }
 
+  // Update order status
   @Put(':id')
   @UsePipes(new ValidationPipe())
-  async update(@Param('id', ParseIntPipe) id: number, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.ordersService.update(id, updateOrderDto);
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateOrderStatusDto: UpdateOrderStatusDto) {
+    return this.ordersService.updateOrderStatus(id, updateOrderStatusDto);
   }
 
+  // Remove order status
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.remove(id);

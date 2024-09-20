@@ -46,6 +46,8 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { UserAdd } from '../address/entities/address.entity';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { SortOrder } from '../common/dto/generic-conditions.dto';
+import { convertToSlug } from '../helpers';
 
 @Injectable()
 export class OrdersService {
@@ -417,7 +419,6 @@ export class OrdersService {
     order.status = status;
   }
 
-
   private async applyCoupon(couponId: number, order: Order): Promise<void> {
     const coupon = await this.couponRepository.findOne({ where: { id: couponId } });
 
@@ -641,7 +642,8 @@ export class OrdersService {
 
   async updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
     try {
-      const updateOrder = await this.orderRepository.findOne({
+      // Fetch the order to be updated
+      const existingOrder = await this.orderRepository.findOne({
         where: { id: id },
         relations: [
           'status',
@@ -657,12 +659,28 @@ export class OrdersService {
         ],
       });
 
-      if (!updateOrder) {
+      if (!existingOrder) {
         throw new NotFoundException('Order not found');
       }
 
-      Object.assign(updateOrder, updateOrderDto);
-      return await this.orderRepository.save(updateOrder);
+      // Handle status update: Fetch the status entity by the provided status string
+      if (updateOrderDto.status) {
+        const orderStatus = await this.orderStatusRepository.findOne({
+          where: { name: updateOrderDto.status }, // Replace 'name' with the actual field name in your OrderStatus entity
+        });
+
+        if (!orderStatus) {
+          throw new BadRequestException('Invalid order status');
+        }
+
+        existingOrder.status = orderStatus; // Set the status entity
+      }
+
+      // Merge the rest of the updateOrderDto fields
+      Object.assign(existingOrder, updateOrderDto);
+
+      // Save the updated order
+      return await this.orderRepository.save(existingOrder);
     } catch (error) {
       console.error('Error updating order:', error);
       throw new InternalServerErrorException('Failed to update order');
@@ -771,66 +789,76 @@ export class OrdersService {
     };
   }
 
-  async getOrderStatuses({
-    limit = 30,
-    page = 1,
-    search,
-    orderBy,
-  }: GetOrderStatusesDto): Promise<OrderStatusPaginator> {
-    const startIndex = (page - 1) * limit;
-    const cacheKey = `order-statuses-${page}-${limit}-${search || ''}-${orderBy || ''}`;
-    let data = await this.cacheManager.get<OrderStatus[]>(cacheKey);
-    if (!data) {
-      let query = this.orderStatusRepository.createQueryBuilder('orderStatus');
+  // Pagination support for fetching order statuses
+  async getOrderStatuses(query: GetOrderStatusesDto): Promise<OrderStatusPaginator> {
+    const { orderBy, sortedBy, search, language, limit, page } = query;
 
-      if (search) {
-        const parseSearchParams = search.split(';');
-        for (const searchParam of parseSearchParams) {
-          const [key, value] = searchParam.split(':');
-          query = query.andWhere(`orderStatus.${key} LIKE :value`, { value: `%${value}%` });
-        }
-      }
+    const queryBuilder = this.orderStatusRepository.createQueryBuilder('orderStatus');
 
-      if (orderBy) {
-        const [key, order] = orderBy.split(':');
-        query = query.orderBy(`orderStatus.${key}`, order.toUpperCase() as ("ASC" | "DESC"));
-      }
-
-      [data] = await query
-        .skip(startIndex)
-        .take(limit)
-        .getManyAndCount();
-
-      await this.cacheManager.set(cacheKey, data, 60);
+    // Add search condition
+    if (search) {
+      queryBuilder.where('orderStatus.name LIKE :search', { search: `%${search}%` });
     }
-    const totalCount = await this.orderStatusRepository.count();
-    const url = `/order-status?search=${search || ''}&limit=${limit}&orderBy=${orderBy || ''}`;
+
+    // Add language filter
+    if (language) {
+      queryBuilder.andWhere('orderStatus.language = :language', { language });
+    }
+
+    // Handle orderBy and sortedBy
+    if (orderBy && sortedBy) {
+      const mappedSortOrder = sortedBy === SortOrder.ASC ? 'ASC' : 'DESC'; // Map SortOrder to TypeORM's 'ASC' | 'DESC'
+      queryBuilder.orderBy(`orderStatus.${orderBy}`, mappedSortOrder);
+    }
+
+    // Pagination logic
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    // Calculate pagination metadata
+    const current_page = page;
+    const per_page = limit;
+    const last_page = Math.ceil(total / limit);
+    const count = data.length;
+    const firstItem = (page - 1) * limit + 1;
+    const lastItem = firstItem + data.length - 1;
+
+    // Generate URLs for pagination
+    const baseUrl = ``;
+    const first_page_url = `${baseUrl}?page=1&limit=${limit}`;
+    const last_page_url = `${baseUrl}?page=${last_page}&limit=${limit}`;
+    const next_page_url = current_page < last_page ? `${baseUrl}?page=${current_page + 1}&limit=${limit}` : null;
+    const prev_page_url = current_page > 1 ? `${baseUrl}?page=${current_page - 1}&limit=${limit}` : null;
+
+    // Return the paginated result using correct pagination property names
     return {
       data,
-      ...paginate(totalCount, page, limit, data.length, url),
+      total,
+      current_page,
+      per_page,
+      last_page,
+      count,
+      firstItem,
+      lastItem,
+      first_page_url,
+      last_page_url,
+      next_page_url,
+      prev_page_url,
     };
   }
 
-  async getOrderStatus(param: string, language: string): Promise<OrderStatus> {
-    const cacheKey = `order-status-${param}-${language}`;
-    let orderStatus = await this.cacheManager.get<OrderStatus>(cacheKey);
+  // Fetch a single order status
+  async getOrderStatus(param: string, language: string): Promise<OrderStatus | undefined> {
+    const queryBuilder = this.orderStatusRepository.createQueryBuilder('orderStatus')
+      .where('orderStatus.name = :param OR orderStatus.id = :param', { param });
 
-    if (!orderStatus) {
-      orderStatus = await this.orderStatusRepository.findOne({
-        where: {
-          slug: param,
-          language: language
-        }
-      });
-
-      if (!orderStatus) {
-        throw new NotFoundException('Order status not found');
-      }
-
-      await this.cacheManager.set(cacheKey, orderStatus, 60);
+    if (language) {
+      queryBuilder.andWhere('orderStatus.language = :language', { language });
     }
 
-    return orderStatus;
+    return await queryBuilder.getOne();
   }
 
   async update(id: number, updateOrderInput: UpdateOrderDto): Promise<Order> {
@@ -888,8 +916,12 @@ export class OrdersService {
     }
   }
 
+  // Find Order Status by ID
   private async findOrderStatusInDatabase(id: number): Promise<OrderStatus | undefined> {
-    return this.orderStatusRepository.findOne({ where: { id: id } });
+    const order_Status = await this.orderRepository.findOne({ where: { id: id }, relations: ['status'] })
+    if (order_Status) {
+      return this.orderStatusRepository.findOne({ where: { id: order_Status.status.id } });
+    }
   }
 
   async verifyCheckout(input: CheckoutVerificationDto): Promise<VerifiedCheckoutData> {
@@ -921,31 +953,31 @@ export class OrdersService {
     };
   }
 
+  // Update Order Status in Database
   private async updateOrderStatusInDatabase(id: number, updateOrderStatusInput: UpdateOrderStatusDto): Promise<OrderStatus> {
     const orderStatus = await this.findOrderStatusInDatabase(id);
     if (!orderStatus) {
       throw new NotFoundException('Order status not found');
     }
-    Object.assign(orderStatus, updateOrderStatusInput);
-    return await this.orderStatusRepository.save(orderStatus);
+    orderStatus.slug = convertToSlug(updateOrderStatusInput.name)
+    Object.assign(orderStatus, updateOrderStatusInput); // Merge the update fields
+    return await this.orderStatusRepository.save(orderStatus); // Save changes
   }
 
+  // Create new Order Status
   async createOrderStatus(createOrderStatusInput: CreateOrderStatusDto): Promise<OrderStatus> {
     const orderStatus = this.orderStatusRepository.create(createOrderStatusInput);
-    return await this.orderStatusRepository.save(orderStatus);
+    return await this.orderStatusRepository.save(orderStatus); // Save new status
   }
 
+  // Update an existing Order Status
   async updateOrderStatus(id: number, updateOrderStatusInput: UpdateOrderStatusDto): Promise<OrderStatus> {
     try {
       const updatedOrderStatus = await this.updateOrderStatusInDatabase(id, updateOrderStatusInput);
-
-      if (!updatedOrderStatus) {
-        throw new NotFoundException('Order status not found or not updated');
-      }
       return updatedOrderStatus;
     } catch (error) {
       console.error('Error updating order status:', error);
-      throw error;
+      throw new InternalServerErrorException('Failed to update order status');
     }
   }
 
@@ -1164,7 +1196,6 @@ export class OrdersService {
     }
   }
 
-
   async stripePay(order: Order): Promise<void> {
     try {
       order.order_status = OrderStatusType.PROCESSING;
@@ -1240,11 +1271,11 @@ export class OrdersService {
     }
   }
 
-
+  // Change Order Payment Status
   async changeOrderPaymentStatus(order: Order, paymentStatus: PaymentStatusType): Promise<void> {
     try {
       order.payment_status = paymentStatus;
-      await this.orderRepository.save(order);
+      await this.orderRepository.save(order); // Save payment status update
     } catch (error) {
       console.error('Failed to change order payment status:', error.message || error);
       throw new InternalServerErrorException('Failed to change order payment status');
