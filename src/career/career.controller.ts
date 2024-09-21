@@ -18,11 +18,14 @@ export class CareerController {
     findAllByShop(
         @Param('shopSlug') shopSlug: string,
         @Query('location') location?: string,
+        @Query('vacancyTitle') vacancyTitle?: string, // New optional query parameter
+        @Query('position') position?: string,         // New optional query parameter
         @Query('page') page: number = 1,
         @Query('limit') limit: number = 10
     ): Promise<{ data: Career[], count: number }> {
-        return this.careerService.findAllByShop(shopSlug, location, page, limit);
+        return this.careerService.findAllByShop(shopSlug, location, vacancyTitle, position, page, limit);
     }
+
 
     @Get(':id')
     findOne(@Param('id') id: number): Promise<Career> {

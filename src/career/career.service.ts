@@ -77,6 +77,8 @@ export class CareerService {
     async findAllByShop(
         shopSlug: string,
         location?: string,
+        vacancyTitle?: string,
+        position?: string,
         page: number = 1,
         limit: number = 10
     ): Promise<{ data: Career[], count: number }> {
@@ -90,11 +92,20 @@ export class CareerService {
 
         // Build query to find careers linked to the shop
         const queryBuilder = this.careerRepository.createQueryBuilder('career')
+            .leftJoinAndSelect('career.vacancy', 'vacancy') // Join with the Vacancy entity
             .where('career.shopId = :shopId', { shopId: shop.id });
 
-        // Apply location filter if provided
+        // Apply filters if provided
         if (location) {
             queryBuilder.andWhere('career.location = :location', { location });
+        }
+
+        if (vacancyTitle) {
+            queryBuilder.andWhere('vacancy.title ILIKE :vacancyTitle', { vacancyTitle: `%${vacancyTitle}%` }); // Case-insensitive
+        }
+
+        if (position) {
+            queryBuilder.andWhere('career.position ILIKE :position', { position: `%${position}%` }); // Case-insensitive
         }
 
         // Get the total count before applying pagination
@@ -108,6 +119,7 @@ export class CareerService {
 
         return { data, count };
     }
+
 
     async deleteCareer(id: number): Promise<void> {
         const career = await this.getCareerById(id);
