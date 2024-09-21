@@ -953,15 +953,30 @@ export class OrdersService {
     };
   }
 
-  // Update Order Status in Database
   private async updateOrderStatusInDatabase(id: number, updateOrderStatusInput: UpdateOrderStatusDto): Promise<OrderStatus> {
+    // Find the order status in the database
     const orderStatus = await this.findOrderStatusInDatabase(id);
     if (!orderStatus) {
       throw new NotFoundException('Order status not found');
     }
-    orderStatus.slug = convertToSlug(updateOrderStatusInput.name)
-    Object.assign(orderStatus, updateOrderStatusInput); // Merge the update fields
-    return await this.orderStatusRepository.save(orderStatus); // Save changes
+
+    // Update the slug field in OrderStatus table
+    orderStatus.slug = convertToSlug(updateOrderStatusInput.name);
+
+    // Find the related order by status
+    const order = await this.orderRepository.findOne({ where: { id: id } });
+    if (!order) {
+      throw new NotFoundException('Order associated with this status not found');
+    }
+
+    // Update the order status field in the Order table
+    order.order_status = convertToSlug(updateOrderStatusInput.name) as OrderStatusType;
+
+    // Save the updated Order and OrderStatus entities
+    await this.orderRepository.save(order); // Save the updated order
+    await this.orderStatusRepository.save(orderStatus); // Save the updated status
+
+    return orderStatus; // Return the updated order status
   }
 
   // Create new Order Status
