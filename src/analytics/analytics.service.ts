@@ -116,10 +116,7 @@ export class AnalyticsService {
   private async calculateTotalRevenue(userId: number, permissionName: string, state: string): Promise<number> {
     try {
       // Find users created by the given user
-      const createdByUsers = await this.userRepository.find({
-        where: { createdBy: { id: userId } },
-      });
-
+      const createdByUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
       const userIds = [userId, ...createdByUsers.map(u => u.id)];
 
       let totalRevenue = 0;
@@ -139,8 +136,6 @@ export class AnalyticsService {
         }
 
         const stockOrders: StocksSellOrd[] = await queryBuilder.getMany();
-
-        // Safely calculate total revenue for StocksSellOrd
         totalRevenue = stockOrders.reduce((sum, order) => sum + (order.total ?? 0), 0);
       } else {
         // Handle other permissions with Order repository
@@ -157,18 +152,15 @@ export class AnalyticsService {
         }
 
         const orders: Order[] = await queryBuilder.getMany();
-
-        // Safely calculate total revenue for Orders
         totalRevenue = orders.reduce((sum, order) => sum + (order.total ?? 0), 0);
       }
 
       return totalRevenue;
     } catch (error) {
-      this.logger.error('Error calculating total revenue:', error.message);
+      this.logger.error('Error calculating total revenue:', { message: error.message, stack: error.stack });
       return 0;
     }
   }
-
 
   private async calculateTotalRefunds(permissionName: string, state: string): Promise<number> {
     try {
@@ -218,47 +210,45 @@ export class AnalyticsService {
 
       let queryBuilder = this.orderRepository.createQueryBuilder('order')
         .innerJoin('order.shipping_address', 'shipping_address')
-        .where('created_at BETWEEN :todayStart AND :todayEnd', { todayStart, todayEnd });
+        .where('order.created_at BETWEEN :todayStart AND :todayEnd', { todayStart, todayEnd }); // Explicitly use order.created_at
 
       if (state?.trim()) {
         if (['Company', 'Staff'].includes(permissionName)) {
           queryBuilder.andWhere('shipping_address.state = :state', { state });
         } else {
-          queryBuilder.andWhere('shipping_address.state = :state AND order.customer_id IN (:userIds)', { state, userIds });
+          queryBuilder.andWhere('shipping_address.state = :state AND order.customer_id IN (:...userIds)', { state, userIds });
         }
       } else if (!['super_admin', 'Admin'].includes(permissionName)) {
-        queryBuilder.andWhere('order.customer_id IN (:userIds)', { userIds });
+        queryBuilder.andWhere('order.customer_id IN (:...userIds)', { userIds });
       }
 
       const todayOrders = await queryBuilder.getMany();
-      return todayOrders.reduce((total, order) => total + order.total, 0);
-
+      return todayOrders.reduce((total, order) => total + (order.total ?? 0), 0);
     } catch (error) {
-      this.logger.error("Error calculating today's revenue:", error.message);
+      this.logger.error("Error calculating today's revenue:", { message: error.message, stack: error.stack });
       return 0;
     }
   }
 
   private async calculateTotalOrders(userId: number, permissionName: string, state: string): Promise<number> {
     try {
-      const createdByUsers = await this.userRepository.find({
-        where: { createdBy: { id: userId } }
-      });
-
+      const createdByUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
       const userIds = [userId, ...createdByUsers.map(u => u.id)];
 
       let queryBuilder = this.orderRepository.createQueryBuilder('order')
         .innerJoin('order.shipping_address', 'shipping_address');
 
       if (state?.trim()) {
-        queryBuilder.andWhere('shipping_address.state = :state', { state }).andWhere('order.customer_id IN (:...userIds)', { userIds });
+        queryBuilder
+          .andWhere('shipping_address.state = :state', { state })
+          .andWhere('order.customer_id IN (:...userIds)', { userIds });
       } else {
         queryBuilder.andWhere('order.customer_id IN (:...userIds)', { userIds });
       }
 
       return await queryBuilder.getCount();
     } catch (error) {
-      this.logger.error('Error calculating total orders:', error.message);
+      this.logger.error('Error calculating total orders:', { message: error.message, stack: error.stack });
       return 0;
     }
   }

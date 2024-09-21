@@ -962,6 +962,9 @@ export class OrdersService {
 
     // Update the slug field in OrderStatus table
     orderStatus.slug = convertToSlug(updateOrderStatusInput.name);
+    orderStatus.color = updateOrderStatusInput.color;
+    orderStatus.serial = updateOrderStatusInput.serial;
+    orderStatus.language = updateOrderStatusInput.language;
 
     // Find the related order by status
     const order = await this.orderRepository.findOne({ where: { id: id } });
