@@ -1,8 +1,10 @@
 import { Shop } from '@db/src/shops/entities/shop.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import { Vacancy } from './vacancies.entity';
+import { CoreEntity } from '@db/src/common/entities/core.entity';
 
 @Entity()
-export class Career {
+export class Career extends CoreEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -27,4 +29,7 @@ export class Career {
     @ManyToOne(() => Shop, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinColumn({ name: 'shop_id' })
     shop: Shop;
+
+    @ManyToOne(() => Vacancy, vacancy => vacancy.career, { onUpdate: 'CASCADE' })
+    vacancy: Vacancy;
 }

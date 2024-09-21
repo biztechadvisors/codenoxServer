@@ -25,8 +25,17 @@ export class CreateCareerDto {
     @IsString()
     cv_resume?: string;
 
-    @IsOptional()
-    shopSlug?: string;
+    @IsNotEmpty()
+    @IsString()
+    shopSlug: string;
+
+    @IsNotEmpty()
+    @IsNumber()
+    locationId: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    vacancyId: number;
 }
 
 export class UpdateCareerDto {
@@ -55,5 +64,6 @@ export class UpdateCareerDto {
     cv_resume?: string;
 
     @IsOptional()
+    @IsString()
     shopSlug?: string;
 }
