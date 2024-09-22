@@ -39,12 +39,10 @@ const uuid_1 = require("uuid");
 let PaypalPaymentService = class PaypalPaymentService {
     constructor() {
         this.paypal = Paypal;
-        this.clientId = process.env.NODE_ENV === 'production'
-            ? process.env.PAYPAL_CLIENT_ID
-            : process.env.PAYPAL_SANDBOX_CLIENT_ID;
-        this.clientSecret = process.env.NODE_ENV === 'production'
-            ? process.env.PAYPAL_CLIENT_SECRET
-            : process.env.PAYPAL_SANDBOX_CLIENT_SECRET;
+        this.clientId =
+            process.env.PAYPAL_SANDBOX_CLIENT_ID;
+        this.clientSecret =
+            process.env.PAYPAL_SANDBOX_CLIENT_SECRET;
         if (!this.clientId || !this.clientSecret) {
             throw new Error('PayPal client ID and secret must be provided.');
         }
