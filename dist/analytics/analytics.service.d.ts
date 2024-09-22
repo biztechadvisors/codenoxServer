@@ -8,6 +8,7 @@ import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity';
 import { Cache } from 'cache-manager';
 import { Analytics, TotalYearSaleByMonth } from './entities/analytics.entity';
 import { Refund } from '../refunds/entities/refund.entity';
+import { CreateTotalYearSaleByMonthDto } from './dto/create-analytics.dto';
 export declare class AnalyticsService {
     private readonly orderRepository;
     private readonly shopRepository;
@@ -30,7 +31,9 @@ export declare class AnalyticsService {
     private calculateTotalOrders;
     private calculateNewCustomers;
     private calculateTotalYearSaleByMonth;
-    private calculateTotalSalesForMonth;
     getTopUsersWithMaxOrders(userId: number): Promise<any[]>;
     getTopDealer(userId?: number): Promise<any[]>;
+    createAnalyticsWithTotalYearSale(analyticsData: Partial<Analytics>, saleData: CreateTotalYearSaleByMonthDto[]): Promise<Analytics>;
+    getAnalyticsById(analyticsId: number): Promise<Analytics>;
+    updateAnalytics(order?: Order, refund?: Refund, shop?: Shop): Promise<void>;
 }

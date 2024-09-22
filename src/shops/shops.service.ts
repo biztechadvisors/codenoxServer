@@ -220,7 +220,7 @@ export class ShopsService {
       });
 
       // Update analytics with the new shop
-      // await this.analyticsService.updateAnalytics(undefined, undefined, createdShop);
+      await this.analyticsService.updateAnalytics(undefined, undefined, createdShop);
 
       return createdShop;
     } catch (error) {

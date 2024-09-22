@@ -25,6 +25,7 @@ const stocksOrd_entity_1 = require("../stocks/entities/stocksOrd.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const analytics_entity_1 = require("./entities/analytics.entity");
 const refund_entity_1 = require("../refunds/entities/refund.entity");
+const date_fns_1 = require("date-fns");
 let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
     constructor(orderRepository, shopRepository, userRepository, analyticsRepository, refundRepository, permissionRepository, stocksSellOrdRepository, totalYearSaleByMonthRepository, cacheManager) {
         this.orderRepository = orderRepository;
@@ -242,52 +243,16 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
         }
     }
     async calculateTotalYearSaleByMonth(userId, permissionName, state) {
-        const months = [
-            'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December',
-        ];
-        return await Promise.all(months.map(async (month, index) => {
-            const total = await this.calculateTotalSalesForMonth(index + 1, userId, permissionName, state);
-            return { total, month };
-        }));
-    }
-    async calculateTotalSalesForMonth(month, userId, permissionName, state) {
         try {
-            const firstDayOfMonth = new Date(new Date().getFullYear(), month - 1, 1);
-            const lastDayOfMonth = new Date(new Date().getFullYear(), month, 0, 23, 59, 59, 999);
-            let query = permissionName === user_entity_1.UserType.Dealer
-                ? this.stocksSellOrdRepository.createQueryBuilder('order').innerJoin('order.shipping_address', 'shipping_address')
-                : this.orderRepository.createQueryBuilder('order').innerJoin('order.shipping_address', 'shipping_address');
-            query = query.where('order.created_at BETWEEN :firstDay AND :lastDay', {
-                firstDay: firstDayOfMonth,
-                lastDay: lastDayOfMonth,
-            });
-            const createdByUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
-            const userIds = [userId, ...createdByUsers.map(user => user.id)];
-            if (state === null || state === void 0 ? void 0 : state.trim()) {
-                if (!['Company', 'Staff'].includes(permissionName)) {
-                    query = query.andWhere('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
-                }
-                else {
-                    query = query.andWhere('shipping_address.state = :state', { state });
-                }
+            if (permissionName === 'Dealer') {
+                const totalYearSaleByMonth = await this.totalYearSaleByMonthRepository.find();
+                return totalYearSaleByMonth;
             }
-            else if (!['Company', 'Staff'].includes(permissionName)) {
-                if (permissionName.includes(user_entity_1.UserType.Dealer)) {
-                    query = query.andWhere('order.soldBy IN (:...userIds)', { userIds });
-                }
-                else {
-                    query = query.andWhere('order.customer_id IN (:...userIds)', { userIds });
-                }
-            }
-            const result = await query
-                .select('SUM(order.total)', 'total')
-                .getRawOne();
-            return parseInt(result.total, 10) || 0;
+            return [];
         }
         catch (error) {
-            console.error(`Error calculating total sales for month ${month}: ${error.message}`);
-            return 0;
+            this.logger.error('Error calculating total year sale by month:', error.message);
+            return [];
         }
     }
     async getTopUsersWithMaxOrders(userId) {
@@ -380,6 +345,94 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
         catch (error) {
             console.error('Error getting top dealers with max orders:', error.message);
             return [];
+        }
+    }
+    async createAnalyticsWithTotalYearSale(analyticsData, saleData) {
+        try {
+            const saleEntities = saleData.map(dto => {
+                const sale = new analytics_entity_1.TotalYearSaleByMonth();
+                sale.total = dto.total;
+                sale.month = dto.month;
+                return sale;
+            });
+            const totalYearSaleByMonthRecords = await Promise.all(saleEntities.map(sale => this.totalYearSaleByMonthRepository.save(sale)));
+            const newAnalytics = this.analyticsRepository.create(Object.assign(Object.assign({}, analyticsData), { totalYearSaleByMonth: totalYearSaleByMonthRecords }));
+            return await this.analyticsRepository.save(newAnalytics);
+        }
+        catch (error) {
+            this.logger.error('Error creating analytics with total year sale by month:', error.message);
+            throw new common_1.InternalServerErrorException('Failed to create analytics with total year sale by month');
+        }
+    }
+    async getAnalyticsById(analyticsId) {
+        const analytics = await this.analyticsRepository.findOne({
+            where: { id: analyticsId },
+            relations: ['totalYearSaleByMonth'],
+        });
+        if (!analytics) {
+            throw new common_1.NotFoundException(`Analytics with ID ${analyticsId} not found`);
+        }
+        return analytics;
+    }
+    async updateAnalytics(order, refund, shop) {
+        try {
+            if (!order && !refund && !shop) {
+                throw new common_1.BadRequestException('Order, Refund, or Shop must be provided');
+            }
+            const shopId = shop ? shop.id : (order ? order.shop_id : null);
+            const userId = shop ? shop.owner_id : (order ? order.customer_id : null);
+            if (!shopId && !userId && !refund) {
+                throw new common_1.BadRequestException('Shop ID and User ID must be provided');
+            }
+            let analytics = await this.analyticsRepository.findOne({ where: { shop_id: shopId } });
+            if (!analytics) {
+                analytics = this.analyticsRepository.create({
+                    totalRevenue: 0,
+                    totalOrders: 0,
+                    totalRefunds: 0,
+                    totalShops: shop ? 1 : 0,
+                    todaysRevenue: 0,
+                    newCustomers: 0,
+                    shop_id: shopId,
+                    user_id: userId,
+                });
+            }
+            if (order) {
+                analytics.totalOrders = (analytics.totalOrders || 0) + 1;
+                analytics.totalRevenue = (analytics.totalRevenue || 0) + order.total;
+                const today = (0, date_fns_1.format)(new Date(), 'yyyy-MM-dd');
+                const orderDate = (0, date_fns_1.format)(order.created_at, 'yyyy-MM-dd');
+                if (today === orderDate) {
+                    analytics.todaysRevenue = (analytics.todaysRevenue || 0) + order.total;
+                }
+            }
+            if (refund) {
+                analytics.totalRefunds = (analytics.totalRefunds || 0) + refund.amount;
+                analytics.totalRevenue = (analytics.totalRevenue || 0) - refund.amount;
+                const today = (0, date_fns_1.format)(new Date(), 'yyyy-MM-dd');
+                const refundDate = (0, date_fns_1.format)(refund.created_at, 'yyyy-MM-dd');
+                if (today === refundDate) {
+                    analytics.todaysRevenue = (analytics.todaysRevenue || 0) - refund.amount;
+                }
+            }
+            const currentMonth = (0, date_fns_1.format)(new Date(), 'MMMM');
+            let monthlySale = await this.totalYearSaleByMonthRepository.findOne({ where: { month: currentMonth } });
+            if (!monthlySale) {
+                monthlySale = this.totalYearSaleByMonthRepository.create({
+                    month: currentMonth,
+                    total: (order ? order.total : 0) - (refund ? refund.amount : 0),
+                });
+            }
+            else {
+                monthlySale.total += (order ? order.total : 0) - (refund ? refund.amount : 0);
+            }
+            await this.totalYearSaleByMonthRepository.save(monthlySale);
+            analytics.totalYearSaleByMonth = [monthlySale];
+            await this.analyticsRepository.save(analytics);
+        }
+        catch (error) {
+            this.logger.error('Error updating analytics:', error.message);
+            throw new common_1.InternalServerErrorException('Failed to update analytics');
         }
     }
 };

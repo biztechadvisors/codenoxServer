@@ -82,6 +82,8 @@ export declare class File extends CoreEntity {
 export declare class Variation {
     id: number;
     title: string;
+    name: string;
+    slug: string;
     price: number;
     sku: string;
     is_disable: boolean;

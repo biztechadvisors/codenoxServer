@@ -32,11 +32,11 @@ export class Refund extends CoreEntity {
   @JoinColumn({ name: 'shop_id' })
   shop: Shop;
 
-  @OneToOne(() => Order, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Order, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  @OneToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: User;
 }

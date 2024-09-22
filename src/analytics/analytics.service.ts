@@ -276,77 +276,77 @@ export class AnalyticsService {
     }
   }
 
-  // private async calculateTotalYearSaleByMonth(userId: number, permissionName: string, state: string): Promise<any[]> {
-  //   try {
-  //     if (permissionName === 'Dealer') {
-  //       const totalYearSaleByMonth = await this.totalYearSaleByMonthRepository.find();
-  //       return totalYearSaleByMonth;
-  //     }
-  //     return [];
-  //   } catch (error) {
-  //     this.logger.error('Error calculating total year sale by month:', error.message);
-  //     return [];
-  //   }
-  // }
+  private async calculateTotalYearSaleByMonth(userId: number, permissionName: string, state: string): Promise<any[]> {
+    try {
+      if (permissionName === 'Dealer') {
+        const totalYearSaleByMonth = await this.totalYearSaleByMonthRepository.find();
+        return totalYearSaleByMonth;
+      }
+      return [];
+    } catch (error) {
+      this.logger.error('Error calculating total year sale by month:', error.message);
+      return [];
+    }
+  }
 
   // ***********************************************************
 
-  private async calculateTotalYearSaleByMonth(userId: number, permissionName: string, state: string): Promise<TotalYearSaleByMonthDTO[]> {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ];
+  // private async calculateTotalYearSaleByMonth(userId: number, permissionName: string, state: string): Promise<TotalYearSaleByMonthDTO[]> {
+  //   const months = [
+  //     'January', 'February', 'March', 'April', 'May', 'June',
+  //     'July', 'August', 'September', 'October', 'November', 'December',
+  //   ];
 
-    return await Promise.all(
-      months.map(async (month, index) => {
-        const total = await this.calculateTotalSalesForMonth(index + 1, userId, permissionName, state);
-        return { total, month };
-      }),
-    );
-  }
+  //   return await Promise.all(
+  //     months.map(async (month, index) => {
+  //       const total = await this.calculateTotalSalesForMonth(index + 1, userId, permissionName, state);
+  //       return { total, month };
+  //     }),
+  //   );
+  // }
 
-  private async calculateTotalSalesForMonth(month: number, userId: number, permissionName: string, state: string): Promise<number> {
-    try {
-      const firstDayOfMonth = new Date(new Date().getFullYear(), month - 1, 1);
-      const lastDayOfMonth = new Date(new Date().getFullYear(), month, 0, 23, 59, 59, 999);
+  // private async calculateTotalSalesForMonth(month: number, userId: number, permissionName: string, state: string): Promise<number> {
+  //   try {
+  //     const firstDayOfMonth = new Date(new Date().getFullYear(), month - 1, 1);
+  //     const lastDayOfMonth = new Date(new Date().getFullYear(), month, 0, 23, 59, 59, 999);
 
-      let query = permissionName === UserType.Dealer
-        ? this.stocksSellOrdRepository.createQueryBuilder('order').innerJoin('order.shipping_address', 'shipping_address')
-        : this.orderRepository.createQueryBuilder('order').innerJoin('order.shipping_address', 'shipping_address');
+  //     let query = permissionName === UserType.Dealer
+  //       ? this.stocksSellOrdRepository.createQueryBuilder('order').innerJoin('order.shipping_address', 'shipping_address')
+  //       : this.orderRepository.createQueryBuilder('order').innerJoin('order.shipping_address', 'shipping_address');
 
-      query = query.where('order.created_at BETWEEN :firstDay AND :lastDay', {
-        firstDay: firstDayOfMonth,
-        lastDay: lastDayOfMonth,
-      });
+  //     query = query.where('order.created_at BETWEEN :firstDay AND :lastDay', {
+  //       firstDay: firstDayOfMonth,
+  //       lastDay: lastDayOfMonth,
+  //     });
 
-      const createdByUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
-      const userIds = [userId, ...createdByUsers.map(user => user.id)];
+  //     const createdByUsers = await this.userRepository.find({ where: { createdBy: { id: userId } } });
+  //     const userIds = [userId, ...createdByUsers.map(user => user.id)];
 
-      if (state?.trim()) {
-        if (!['Company', 'Staff'].includes(permissionName)) {
-          query = query.andWhere('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
-        } else {
-          query = query.andWhere('shipping_address.state = :state', { state });
-        }
-      } else if (!['Company', 'Staff'].includes(permissionName)) {
-        if (permissionName.includes(UserType.Dealer)) {
-          query = query.andWhere('order.soldBy IN (:...userIds)', { userIds });
-        } else {
-          query = query.andWhere('order.customer_id IN (:...userIds)', { userIds });
-        }
-      }
+  //     if (state?.trim()) {
+  //       if (!['Company', 'Staff'].includes(permissionName)) {
+  //         query = query.andWhere('order.customer_id IN (:...userIds) AND shipping_address.state = :state', { userIds, state });
+  //       } else {
+  //         query = query.andWhere('shipping_address.state = :state', { state });
+  //       }
+  //     } else if (!['Company', 'Staff'].includes(permissionName)) {
+  //       if (permissionName.includes(UserType.Dealer)) {
+  //         query = query.andWhere('order.soldBy IN (:...userIds)', { userIds });
+  //       } else {
+  //         query = query.andWhere('order.customer_id IN (:...userIds)', { userIds });
+  //       }
+  //     }
 
-      const result = await query
-        .select('SUM(order.total)', 'total')
-        .getRawOne();
+  //     const result = await query
+  //       .select('SUM(order.total)', 'total')
+  //       .getRawOne();
 
-      return parseInt(result.total, 10) || 0;
+  //     return parseInt(result.total, 10) || 0;
 
-    } catch (error) {
-      console.error(`Error calculating total sales for month ${month}: ${error.message}`);
-      return 0;
-    }
-  }
+  //   } catch (error) {
+  //     console.error(`Error calculating total sales for month ${month}: ${error.message}`);
+  //     return 0;
+  //   }
+  // }
 
   async getTopUsersWithMaxOrders(userId: number): Promise<any[]> {
     try {
@@ -468,128 +468,129 @@ export class AnalyticsService {
 
   // **************** Create And Get Analytics *********************
 
-  // async createAnalyticsWithTotalYearSale(
-  //   analyticsData: Partial<Analytics>,
-  //   saleData: CreateTotalYearSaleByMonthDto[],
-  // ): Promise<Analytics> {
-  //   try {
-  //     const saleEntities = saleData.map(dto => {
-  //       const sale = new TotalYearSaleByMonth();
-  //       sale.total = dto.total;
-  //       sale.month = dto.month;
-  //       return sale;
-  //     });
+  async createAnalyticsWithTotalYearSale(
+    analyticsData: Partial<Analytics>,
+    saleData: CreateTotalYearSaleByMonthDto[],
+  ): Promise<Analytics> {
+    try {
+      const saleEntities = saleData.map(dto => {
+        const sale = new TotalYearSaleByMonth();
+        sale.total = dto.total;
+        sale.month = dto.month;
+        return sale;
+      });
 
-  //     const totalYearSaleByMonthRecords = await Promise.all(
-  //       saleEntities.map(sale => this.totalYearSaleByMonthRepository.save(sale))
-  //     );
+      const totalYearSaleByMonthRecords = await Promise.all(
+        saleEntities.map(sale => this.totalYearSaleByMonthRepository.save(sale))
+      );
 
-  //     const newAnalytics = this.analyticsRepository.create({
-  //       ...analyticsData,
-  //       totalYearSaleByMonth: totalYearSaleByMonthRecords,
-  //     });
+      const newAnalytics = this.analyticsRepository.create({
+        ...analyticsData,
+        totalYearSaleByMonth: totalYearSaleByMonthRecords,
+      });
 
-  //     return await this.analyticsRepository.save(newAnalytics);
-  //   } catch (error) {
-  //     this.logger.error('Error creating analytics with total year sale by month:', error.message);
-  //     throw new InternalServerErrorException('Failed to create analytics with total year sale by month');
-  //   }
-  // }
+      return await this.analyticsRepository.save(newAnalytics);
+    } catch (error) {
+      this.logger.error('Error creating analytics with total year sale by month:', error.message);
+      throw new InternalServerErrorException('Failed to create analytics with total year sale by month');
+    }
+  }
 
-  // async getAnalyticsById(analyticsId: number): Promise<Analytics> {
-  //   const analytics = await this.analyticsRepository.findOne({
-  //     where: { id: analyticsId },
-  //     relations: ['totalYearSaleByMonth'],
-  //   });
+  async getAnalyticsById(analyticsId: number): Promise<Analytics> {
+    const analytics = await this.analyticsRepository.findOne({
+      where: { id: analyticsId },
+      relations: ['totalYearSaleByMonth'],
+    });
 
-  //   if (!analytics) {
-  //     throw new NotFoundException(`Analytics with ID ${analyticsId} not found`);
-  //   }
+    if (!analytics) {
+      throw new NotFoundException(`Analytics with ID ${analyticsId} not found`);
+    }
 
-  //   return analytics;
-  // }
+    return analytics;
+  }
 
-  // async updateAnalytics(
-  //   order?: Order,
-  //   refund?: Refund,
-  //   shop?: Shop
-  // ): Promise<void> {
-  //   try {
-  //     if (!order && !refund && !shop) {
-  //       throw new BadRequestException('Order, Refund, or Shop must be provided');
-  //     }
+  async updateAnalytics(
+    order?: Order,
+    refund?: Refund,
+    shop?: Shop
+  ): Promise<void> {
+    try {
 
-  //     const shopId = shop ? shop.id : (order ? order.shop_id : null);
-  //     const userId = shop ? shop.owner_id : (order ? order.customer_id : null);
+      if (!order && !refund && !shop) {
+        throw new BadRequestException('Order, Refund, or Shop must be provided');
+      }
 
-  //     if (!shopId || !userId) {
-  //       throw new BadRequestException('Shop ID and User ID must be provided');
-  //     }
+      const shopId = shop ? shop.id : (order ? order.shop_id : null);
+      const userId = shop ? shop.owner_id : (order ? order.customer_id : null);
 
-  //     // Fetch or create analytics record for the shop
-  //     let analytics = await this.analyticsRepository.findOne({ where: { shop_id: shopId } });
+      if (!shopId && !userId && !refund) {
+        throw new BadRequestException('Shop ID and User ID must be provided');
+      }
 
-  //     if (!analytics) {
-  //       analytics = this.analyticsRepository.create({
-  //         totalRevenue: 0,
-  //         totalOrders: 0,
-  //         totalRefunds: 0,
-  //         totalShops: shop ? 1 : 0,
-  //         todaysRevenue: 0,
-  //         newCustomers: 0,
-  //         shop_id: shopId,
-  //         user_id: userId,
-  //       });
-  //     }
+      // Fetch or create analytics record for the shop
+      let analytics = await this.analyticsRepository.findOne({ where: { shop_id: shopId } });
 
-  //     // Update analytics based on order
-  //     if (order) {
-  //       analytics.totalOrders = (analytics.totalOrders || 0) + 1;
-  //       analytics.totalRevenue = (analytics.totalRevenue || 0) + order.total;
+      if (!analytics) {
+        analytics = this.analyticsRepository.create({
+          totalRevenue: 0,
+          totalOrders: 0,
+          totalRefunds: 0,
+          totalShops: shop ? 1 : 0,
+          todaysRevenue: 0,
+          newCustomers: 0,
+          shop_id: shopId,
+          user_id: userId,
+        });
+      }
 
-  //       const today = format(new Date(), 'yyyy-MM-dd');
-  //       const orderDate = format(order.created_at, 'yyyy-MM-dd');
-  //       if (today === orderDate) {
-  //         analytics.todaysRevenue = (analytics.todaysRevenue || 0) + order.total;
-  //       }
-  //     }
+      // Update analytics based on order
+      if (order) {
+        analytics.totalOrders = (analytics.totalOrders || 0) + 1;
+        analytics.totalRevenue = (analytics.totalRevenue || 0) + order.total;
 
-  //     // Update analytics based on refund
-  //     if (refund) {
-  //       analytics.totalRefunds = (analytics.totalRefunds || 0) + refund.amount;
-  //       analytics.totalRevenue = (analytics.totalRevenue || 0) - refund.amount;
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const orderDate = format(order.created_at, 'yyyy-MM-dd');
+        if (today === orderDate) {
+          analytics.todaysRevenue = (analytics.todaysRevenue || 0) + order.total;
+        }
+      }
 
-  //       const today = format(new Date(), 'yyyy-MM-dd');
-  //       const refundDate = format(refund.created_at, 'yyyy-MM-dd');
-  //       if (today === refundDate) {
-  //         analytics.todaysRevenue = (analytics.todaysRevenue || 0) - refund.amount;
-  //       }
-  //     }
+      // Update analytics based on refund
+      if (refund) {
+        analytics.totalRefunds = (analytics.totalRefunds || 0) + refund.amount;
+        analytics.totalRevenue = (analytics.totalRevenue || 0) - refund.amount;
 
-  //     // Update or create monthly sales record
-  //     const currentMonth = format(new Date(), 'MMMM');
-  //     let monthlySale = await this.totalYearSaleByMonthRepository.findOne({ where: { month: currentMonth } });
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const refundDate = format(refund.created_at, 'yyyy-MM-dd');
+        if (today === refundDate) {
+          analytics.todaysRevenue = (analytics.todaysRevenue || 0) - refund.amount;
+        }
+      }
 
-  //     if (!monthlySale) {
-  //       monthlySale = this.totalYearSaleByMonthRepository.create({
-  //         month: currentMonth,
-  //         total: (order ? order.total : 0) - (refund ? refund.amount : 0),
-  //       });
-  //     } else {
-  //       monthlySale.total += (order ? order.total : 0) - (refund ? refund.amount : 0);
-  //     }
+      // Update or create monthly sales record
+      const currentMonth = format(new Date(), 'MMMM');
+      let monthlySale = await this.totalYearSaleByMonthRepository.findOne({ where: { month: currentMonth } });
 
-  //     await this.totalYearSaleByMonthRepository.save(monthlySale);
+      if (!monthlySale) {
+        monthlySale = this.totalYearSaleByMonthRepository.create({
+          month: currentMonth,
+          total: (order ? order.total : 0) - (refund ? refund.amount : 0),
+        });
+      } else {
+        monthlySale.total += (order ? order.total : 0) - (refund ? refund.amount : 0);
+      }
 
-  //     analytics.totalYearSaleByMonth = [monthlySale];
+      await this.totalYearSaleByMonthRepository.save(monthlySale);
 
-  //     await this.analyticsRepository.save(analytics);
+      analytics.totalYearSaleByMonth = [monthlySale];
 
-  //   } catch (error) {
-  //     this.logger.error('Error updating analytics:', error.message);
-  //     throw new InternalServerErrorException('Failed to update analytics');
-  //   }
-  // }
+      await this.analyticsRepository.save(analytics);
+
+    } catch (error) {
+      this.logger.error('Error updating analytics:', error.message);
+      throw new InternalServerErrorException('Failed to update analytics');
+    }
+  }
 
 
 }

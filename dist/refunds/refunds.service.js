@@ -18,15 +18,46 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const refund_entity_1 = require("./entities/refund.entity");
 const analytics_service_1 = require("../analytics/analytics.service");
+const shop_entity_1 = require("../shops/entities/shop.entity");
+const order_entity_1 = require("../orders/entities/order.entity");
+const user_entity_1 = require("../users/entities/user.entity");
 let RefundsService = class RefundsService {
-    constructor(analyticsService, refundRepository) {
+    constructor(analyticsService, refundRepository, shopRepository, orderRepository, userRepository) {
         this.analyticsService = analyticsService;
         this.refundRepository = refundRepository;
+        this.shopRepository = shopRepository;
+        this.orderRepository = orderRepository;
+        this.userRepository = userRepository;
     }
     async create(createRefundDto) {
+        const { shopId, orderId, customerId } = createRefundDto;
         try {
-            const refund = this.refundRepository.create(createRefundDto);
+            let shop = null;
+            if (shopId) {
+                shop = await this.shopRepository.findOne({ where: { id: shopId } });
+                if (!shop) {
+                    throw new common_1.NotFoundException(`Shop with ID ${shopId} not found.`);
+                }
+            }
+            let order = null;
+            if (orderId) {
+                order = await this.orderRepository.findOne({ where: { id: orderId } });
+                if (!order) {
+                    throw new common_1.NotFoundException(`Order with ID ${orderId} not found.`);
+                }
+            }
+            let customer = null;
+            if (customerId) {
+                customer = await this.userRepository.findOne({ where: { id: customerId } });
+                if (!customer) {
+                    throw new common_1.NotFoundException(`Customer with ID ${customerId} not found.`);
+                }
+            }
+            const refund = this.refundRepository.create(Object.assign(Object.assign({}, createRefundDto), { shop,
+                order,
+                customer }));
             await this.refundRepository.save(refund);
+            await this.analyticsService.updateAnalytics(undefined, refund);
             return refund;
         }
         catch (error) {
@@ -35,33 +66,42 @@ let RefundsService = class RefundsService {
         }
     }
     async findAll() {
-        return this.refundRepository.find();
+        return this.refundRepository.find({ relations: ['shop', 'order', 'customer'] });
     }
     async findOne(id) {
-        const refund = await this.refundRepository.findOne({ where: { id } });
+        const refund = await this.refundRepository.findOne({
+            where: { id },
+            relations: ['shop', 'order', 'customer'],
+        });
         if (!refund) {
-            throw new common_1.NotFoundException(`Refund with ID ${id} not found`);
+            throw new common_1.NotFoundException(`Refund with ID ${id} not found.`);
         }
         return refund;
     }
     async update(id, updateRefundDto) {
         const refund = await this.refundRepository.preload(Object.assign({ id }, updateRefundDto));
         if (!refund) {
-            throw new common_1.NotFoundException(`Refund with ID ${id} not found`);
+            throw new common_1.NotFoundException(`Refund with ID ${id} not found.`);
         }
         return this.refundRepository.save(refund);
     }
     async remove(id) {
         const result = await this.refundRepository.delete(id);
         if (result.affected === 0) {
-            throw new common_1.NotFoundException(`Refund with ID ${id} not found`);
+            throw new common_1.NotFoundException(`Refund with ID ${id} not found.`);
         }
     }
 };
 RefundsService = __decorate([
     (0, common_1.Injectable)(),
     __param(1, (0, typeorm_1.InjectRepository)(refund_entity_1.Refund)),
+    __param(2, (0, typeorm_1.InjectRepository)(shop_entity_1.Shop)),
+    __param(3, (0, typeorm_1.InjectRepository)(order_entity_1.Order)),
+    __param(4, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __metadata("design:paramtypes", [analytics_service_1.AnalyticsService,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository])
 ], RefundsService);
 exports.RefundsService = RefundsService;

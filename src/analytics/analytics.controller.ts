@@ -73,18 +73,17 @@ export class AnalyticsController {
 
   // ************* Create Analytics ********************
 
-  // @Post()
-  // async createAnalytics(
-  //   @Body() createAnalyticsDto: CreateAnalyticsDto
-  // ): Promise<Analytics> {
-  //   const { analyticsData, saleData } = createAnalyticsDto;
-  //   return await this.analyticsService.createAnalyticsWithTotalYearSale(analyticsData, saleData);
-  // }
+  @Post()
+  async createAnalytics(
+    @Body() createAnalyticsDto: CreateAnalyticsDto
+  ): Promise<Analytics> {
+    const { analyticsData, saleData } = createAnalyticsDto;
+    return await this.analyticsService.createAnalyticsWithTotalYearSale(analyticsData, saleData);
+  }
 
-  // @Get(':id')
-  // async getAnalyticsById(@Param('id') id: number): Promise<Analytics> {
-  //   return await this.analyticsService.getAnalyticsById(id);
-  // }
-
+  @Get(':id')
+  async getAnalyticsById(@Param('id') id: number): Promise<Analytics> {
+    return await this.analyticsService.getAnalyticsById(id);
+  }
 
 }

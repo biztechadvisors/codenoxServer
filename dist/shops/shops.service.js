@@ -181,6 +181,7 @@ let ShopsService = class ShopsService {
                 where: { id: shop.id },
                 relations: ['balance'],
             });
+            await this.analyticsService.updateAnalytics(undefined, undefined, createdShop);
             return createdShop;
         }
         catch (error) {

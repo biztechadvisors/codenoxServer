@@ -50,12 +50,12 @@ __decorate([
     __metadata("design:type", shop_entity_1.Shop)
 ], Refund.prototype, "shop", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => order_entity_1.Order, { nullable: true, onDelete: 'CASCADE' }),
+    (0, typeorm_1.ManyToOne)(() => order_entity_1.Order, { nullable: true, onDelete: 'CASCADE' }),
     (0, typeorm_1.JoinColumn)({ name: 'order_id' }),
     __metadata("design:type", order_entity_1.Order)
 ], Refund.prototype, "order", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => user_entity_1.User, { nullable: true, onDelete: 'SET NULL' }),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { nullable: true, onDelete: 'SET NULL' }),
     (0, typeorm_1.JoinColumn)({ name: 'customer_id' }),
     __metadata("design:type", user_entity_1.User)
 ], Refund.prototype, "customer", void 0);

@@ -197,6 +197,10 @@ export class Variation {
   @Column()
   title: string;
   @Column()
+  name: string;
+  @Column()
+  slug: string;
+  @Column()
   price: number;
   @Column()
   sku: string;

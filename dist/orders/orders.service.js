@@ -142,6 +142,7 @@ let OrdersService = class OrdersService {
             order.delivery_time = createOrderInput.delivery_time;
             order.language = createOrderInput.language || "en";
             order.translated_languages = createOrderInput.translated_languages || ["en"];
+            order.shop_id = createOrderInput.shop_id;
             if (createOrderInput.dealerId) {
                 const dealer = await this.userRepository.findOne({ where: { id: createOrderInput.dealerId } });
                 if (!dealer)
@@ -232,6 +233,7 @@ let OrdersService = class OrdersService {
             if (savedOrder.customer) {
                 await this.notificationService.createNotification(Number(savedOrder.customer.id), 'Order Created', `New order with ID ${savedOrder.id} has been successfully created.`);
             }
+            await this.analyticsService.updateAnalytics(savedOrder);
             return savedOrder;
         }
         catch (error) {

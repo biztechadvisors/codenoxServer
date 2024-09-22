@@ -19,6 +19,7 @@ const common_1 = require("@nestjs/common");
 const analytics_service_1 = require("./analytics.service");
 const analytics_dto_1 = require("./dto/analytics.dto");
 const swagger_1 = require("@nestjs/swagger");
+const create_analytics_dto_1 = require("./dto/create-analytics.dto");
 let AnalyticsController = AnalyticsController_1 = class AnalyticsController {
     constructor(analyticsService) {
         this.analyticsService = analyticsService;
@@ -69,6 +70,13 @@ let AnalyticsController = AnalyticsController_1 = class AnalyticsController {
             throw new common_1.BadRequestException('Error fetching top dealers');
         }
     }
+    async createAnalytics(createAnalyticsDto) {
+        const { analyticsData, saleData } = createAnalyticsDto;
+        return await this.analyticsService.createAnalyticsWithTotalYearSale(analyticsData, saleData);
+    }
+    async getAnalyticsById(id) {
+        return await this.analyticsService.getAnalyticsById(id);
+    }
 };
 __decorate([
     (0, common_1.Post)(),
@@ -97,6 +105,22 @@ __decorate([
     __metadata("design:paramtypes", [analytics_dto_1.TopUsersQueryDto]),
     __metadata("design:returntype", Promise)
 ], AnalyticsController.prototype, "getTopDealer", null);
+__decorate([
+    (0, common_1.Post)(),
+    openapi.ApiResponse({ status: 201, type: require("./entities/analytics.entity").Analytics }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_analytics_dto_1.CreateAnalyticsDto]),
+    __metadata("design:returntype", Promise)
+], AnalyticsController.prototype, "createAnalytics", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    openapi.ApiResponse({ status: 200, type: require("./entities/analytics.entity").Analytics }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], AnalyticsController.prototype, "getAnalyticsById", null);
 AnalyticsController = AnalyticsController_1 = __decorate([
     (0, common_1.Controller)('analytics'),
     __metadata("design:paramtypes", [analytics_service_1.AnalyticsService])

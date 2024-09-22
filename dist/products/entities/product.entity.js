@@ -297,7 +297,7 @@ File = __decorate([
 exports.File = File;
 let Variation = class Variation {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, title: { required: true, type: () => String }, price: { required: true, type: () => Number }, sku: { required: true, type: () => String }, is_disable: { required: true, type: () => Boolean }, sale_price: { required: false, type: () => Number }, quantity: { required: true, type: () => Number }, options: { required: true, type: () => [require("./product.entity").VariationOption] }, image: { required: true, type: () => require("./product.entity").File }, value: { required: true, type: () => String }, meta: { required: true, type: () => String }, created_at: { required: true, type: () => Date }, updated_at: { required: true, type: () => Date } };
+        return { id: { required: true, type: () => Number }, title: { required: true, type: () => String }, name: { required: true, type: () => String }, slug: { required: true, type: () => String }, price: { required: true, type: () => Number }, sku: { required: true, type: () => String }, is_disable: { required: true, type: () => Boolean }, sale_price: { required: false, type: () => Number }, quantity: { required: true, type: () => Number }, options: { required: true, type: () => [require("./product.entity").VariationOption] }, image: { required: true, type: () => require("./product.entity").File }, value: { required: true, type: () => String }, meta: { required: true, type: () => String }, created_at: { required: true, type: () => Date }, updated_at: { required: true, type: () => Date } };
     }
 };
 __decorate([
@@ -308,6 +308,14 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Variation.prototype, "title", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], Variation.prototype, "name", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], Variation.prototype, "slug", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)

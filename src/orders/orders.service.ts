@@ -179,6 +179,7 @@ export class OrdersService {
       order.delivery_time = createOrderInput.delivery_time;
       order.language = createOrderInput.language || "en";
       order.translated_languages = createOrderInput.translated_languages || ["en"]
+      order.shop_id = createOrderInput.shop_id;
 
       // Handle dealer, shop, and soldByUserAddress
       if (createOrderInput.dealerId) {
@@ -308,7 +309,7 @@ export class OrdersService {
       }
 
       // Update analytics after order creation
-      // await this.analyticsService.updateAnalytics(savedOrder);
+      await this.analyticsService.updateAnalytics(savedOrder);
 
       return savedOrder;
     } catch (error) {
