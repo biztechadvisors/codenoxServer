@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>OTP Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    p {
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .otp {
+      font-size: 24px;
+      text-align: center;
+      margin: 20px 0;
+      background-color: #e0e0e0;
+      padding: 10px;
+      border-radius: 5px;
+      letter-spacing: 2px;
+    }
+
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>OTP Verification</h2>
+    <p>Hi {{name}},</p>
+    <p>Please use the following OTP to verify your email address:</p>
+    <div class="otp">{{otp}}</div>
+    <p>If you didn't request this verification, you can safely ignore this email.</p>
+    <p>Thank you,</p>
+    <p>Sincerely,</p>
+    <p style="font-weight: bold;">Team Codenox</p>
+    <div class="footer">
+      <p>&copy; 2024 Codenox. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+
+</html>

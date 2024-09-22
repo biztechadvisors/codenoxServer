@@ -1,0 +1,40 @@
+import { CreateSettingDto } from './dto/create-setting.dto';
+import { UpdateSettingDto } from './dto/update-setting.dto';
+import { ContactDetails, CurrencyOptions, DeliveryTime, EmailAdmin, EmailCustomer, EmailEvent, EmailVendor, Location, LogoSettings, PaymentGateway, SeoSettings, ServerInfo, Setting, SettingsOptions, ShopSocials, SmsAdmin, SmsCustomer, SmsEvent, SmsVendor } from './entities/setting.entity';
+import { Shop } from 'src/shops/entities/shop.entity';
+import { Repository } from 'typeorm';
+import { Attachment } from 'src/common/entities/attachment.entity';
+import { Cache } from 'cache-manager';
+export declare class SettingsService {
+    private settingRepository;
+    private settingsOptionsRepository;
+    private contactDetailRepository;
+    private locationRepository;
+    private shopSocialRepository;
+    private currencyOptionRepository;
+    private emailEventRepository;
+    private emailAdminRepository;
+    private emailVendorRepository;
+    private emailCustomerRepository;
+    private smsEventRepository;
+    private smsAdminRepository;
+    private smsVendorRepository;
+    private smsCustomerRepository;
+    private seoSettingsRepository;
+    private serverInfoRepository;
+    private deliveryTimeRepository;
+    private logoSettingsRepository;
+    private paymentGatewayRepository;
+    private attachmentRepository;
+    private shopRepository;
+    private ServerInfoRepository;
+    private readonly cacheManager;
+    constructor(settingRepository: Repository<Setting>, settingsOptionsRepository: Repository<SettingsOptions>, contactDetailRepository: Repository<ContactDetails>, locationRepository: Repository<Location>, shopSocialRepository: Repository<ShopSocials>, currencyOptionRepository: Repository<CurrencyOptions>, emailEventRepository: Repository<EmailEvent>, emailAdminRepository: Repository<EmailAdmin>, emailVendorRepository: Repository<EmailVendor>, emailCustomerRepository: Repository<EmailCustomer>, smsEventRepository: Repository<SmsEvent>, smsAdminRepository: Repository<SmsAdmin>, smsVendorRepository: Repository<SmsVendor>, smsCustomerRepository: Repository<SmsCustomer>, seoSettingsRepository: Repository<SeoSettings>, serverInfoRepository: Repository<ServerInfo>, deliveryTimeRepository: Repository<DeliveryTime>, logoSettingsRepository: Repository<LogoSettings>, paymentGatewayRepository: Repository<PaymentGateway>, attachmentRepository: Repository<Attachment>, shopRepository: Repository<Shop>, ServerInfoRepository: Repository<ServerInfo>, cacheManager: Cache);
+    create(shopId: number, createSettingDto: CreateSettingDto): Promise<Setting | {
+        message: string;
+    }>;
+    createSettingsOptions(optionsData: Partial<SettingsOptions>): Promise<SettingsOptions>;
+    findOne(shop_slug: string): Promise<any>;
+    update(id: number, updateSettingDto: UpdateSettingDto): Promise<Setting>;
+    remove(id: number): Promise<string>;
+}

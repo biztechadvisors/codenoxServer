@@ -1,0 +1,38 @@
+import { UserAdd } from 'src/address/entities/address.entity';
+import { CoreEntity } from 'src/common/entities/core.entity';
+import { Coupon } from 'src/coupons/entities/coupon.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { User } from 'src/users/entities/user.entity';
+import { OrderStatusType, PaymentStatusType } from 'src/orders/entities/order.entity';
+import { OrderStatus } from 'src/orders/entities/order-status.entity';
+export declare class StocksSellOrd extends CoreEntity {
+    id: number;
+    tracking_number: string;
+    customer_id: number;
+    customer_contact: string;
+    status: OrderStatus;
+    coupon?: Coupon;
+    order_status: OrderStatusType;
+    payment_status: PaymentStatusType;
+    amount: number;
+    sales_tax: number;
+    total: number;
+    paid_total: number;
+    payment_id?: string;
+    payment_gateway: string;
+    discount?: number;
+    delivery_fee: number;
+    delivery_time: string;
+    products: Product[];
+    soldBy: User;
+    billing_address: UserAdd;
+    shipping_address: UserAdd;
+    language: string;
+    translated_languages: string[];
+    customerId: number;
+    logistics_provider: object;
+    soldByUserAddress: UserAdd;
+    cancelled_amount: number;
+    wallet_point: number;
+    customer: User;
+}

@@ -1,0 +1,31 @@
+import { CreateCategoryDto, CreateSubCategoryDto } from './dto/create-category.dto';
+import { CategoryPaginator, GetCategoriesDto, GetSubCategoriesDto, SubCategoryPaginator } from './dto/get-categories.dto';
+import { UpdateCategoryDto, UpdateSubCategoryDto } from './dto/update-category.dto';
+import { Category, SubCategory } from './entities/category.entity';
+import { Attachment } from 'src/common/entities/attachment.entity';
+import { Repository } from 'typeorm';
+import { Shop } from 'src/shops/entities/shop.entity';
+import { Cache } from 'cache-manager';
+import { Region } from '../region/entities/region.entity';
+import { Type } from '../types/entities/type.entity';
+export declare class CategoriesService {
+    private readonly categoryRepository;
+    private readonly attachmentRepository;
+    private readonly typeRepository;
+    private readonly shopRepository;
+    private readonly subCategoryRepository;
+    private readonly regionRepository;
+    private readonly cacheManager;
+    constructor(categoryRepository: Repository<Category>, attachmentRepository: Repository<Attachment>, typeRepository: Repository<Type>, shopRepository: Repository<Shop>, subCategoryRepository: Repository<SubCategory>, regionRepository: Repository<Region>, cacheManager: Cache);
+    convertToSlug(text: any): Promise<any>;
+    create(createCategoryDto: CreateCategoryDto): Promise<Category>;
+    getCategories(query: GetCategoriesDto): Promise<CategoryPaginator>;
+    getCategory(param: string, language: string, shopId: number): Promise<Category>;
+    update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category>;
+    remove(id: number): Promise<void>;
+    createSubCategory(createSubCategoryDto: CreateSubCategoryDto): Promise<SubCategory>;
+    getSubCategory(param: string, language: string, shopSlug: string): Promise<SubCategory>;
+    getSubCategories(query: GetSubCategoriesDto): Promise<SubCategoryPaginator>;
+    updateSubCategory(id: number, updateSubCategoryDto: UpdateSubCategoryDto): Promise<SubCategory>;
+    removeSubCategory(id: number): Promise<void>;
+}

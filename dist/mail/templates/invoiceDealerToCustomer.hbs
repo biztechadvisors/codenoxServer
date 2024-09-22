@@ -1,0 +1,143 @@
+<html lang="en">
+
+<head>
+    <title>Invoice</title>
+</head>
+
+<body style="background:rgb(254, 252, 252);">
+    <div class="invoice"
+        style=" font-family: Arial, sans-serif; max-width: full ;margin: 20px auto;padding: 20px;border: 1px solid #ddd;box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);display: flex;flex-direction: column;align-items: center;  ">
+        <div class="invoice-header"
+            style="  display:flex; justify-content: space-between;align-items: center;width: 100%;;">
+            <img src='https://th.bing.com/th?id=OIP.ta3k2VChGjj3vVIMNYeV0wHaEK&w=333&h=187&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2'
+                alt='Amazon Logo' style="height: 90px; width: 100px;text-aling:left;">
+            <h3 style="margin-top:20px;color:rgb(0, 0, 0);display:block;text-aling:right;">Tax Invoice/Bill of
+                Supply/Cash Memo
+            </h3>
+        </div>
+        <div class="invoice-body" style="display:flex;justify-content:space-between;width:100%;">
+            <div style="flex: 0 0 47%;text-align:left;">
+                <h4 style="text-align:left;">Sold By:</h4>
+                <p style="text-align: left;">{{dealer.name}}</p>
+                <p style="text-align:left;">{{soldByUserAddress.street_address}}</p>
+                <p style="text-align:left;">
+                    {{soldByUserAddress.city}} {{soldByUserAddress.state}} {{soldByUserAddress.country}}
+                </p>
+                <br>
+                <p style="text-align:left;"><b>PAN No:</b>{{dealer.dealer.pan}}</p>
+                <p style="text-align:left;"><b>GST Registration No:</b>{{dealer.dealer.gst}}</p>
+                <div class="order-details" style="margin-top: 20px;text-align:left;">
+                    <p style="text-align:left;margin-top:20px"><b>Order Number:</b> {{order_no}}</p>
+                    <p style="text-align:left;"><b>Order Date:</b>{{created_at}}</p>
+
+                </div>
+            </div>
+            <div style="flex: 0 0 50%;text-align:right;text-align:right;">
+                <div class="buyer" style="margin-top: 20px;text-align:right;">
+                    <h4 style="margin-top: 20px;text-align:right;">Billing Address:</h4>
+                    <p style="margin-top: 20px;text-align:right;">{{billing_address.id}}</p>
+                    <p style="margin-top: 20px;text-align:right;">
+                        {{billing_address.street_address}} {{billing_address.city}}</p>
+                    <p style="margin-top: 20px;text-align:right;">
+                        {{billing_address.state}} {{billing_address.country}}
+                        {{billing_address.zip}}
+                    </p>
+
+                </div>
+                <div class="buyer" style="margin-top: 20px;text-align:right;">
+                    <h4 style="margin-top: 20px;text-align:right;">Shipping Address:</h4>
+                    <p style="margin-top: 20px;text-align:right;">{{shipping_address.id}}</p>
+                    <p style="margin-top: 20px;text-align:right;">{{shipping_address.street_address}}
+                        {{shipping_address.city}}</p>
+                    <p style="margin-top: 20px;text-align:right;">{{shipping_address.state}}
+                        {{shipping_address.country}} {{shipping_address.zip}}</p>
+
+                </div>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Number:</b>not</p>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Details:</b> MP-FIDA-1034-2324</p>
+                <p style="margin-top: 20px;text-align:right;"><b>Invoice Date:</b>{{invoice_date}}</p>
+            </div>
+        </div>
+        <table
+            style="width: 100%; border-collapse: collapse;margin-bottom: 20px; margin-top: 20px; border: 2px solid black;">
+            <thead style="border:2px solid black">
+                <tr style="border:2px solid black">
+                    <th style="border: 2px solid black;">SL No.</th>
+                    <th style="border: 2px solid black;">Description</th>
+                    <th style="border: 2px solid black;">Unit Price</th>
+                    <th style="border: 2px solid black;">Quantity</th>
+                    <th style="border: 2px solid black;">Net Amount</th>
+                    <th style="border: 2px solid black;">Tax Rate</th>
+                    <th style="border: 2px solid black;">Tax Type</th>
+                    <th style="border: 2px solid black;">Tax Amount</th>
+                    <th style="border: 2px solid black;">Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each products}}
+                <!-- Insert dynamic item rows here -->
+                <tr style="border: 2px solid black">
+                    <td style="border: 2px solid black;">{{this.id}}</td>
+                    <td style="border: 2px solid black;">{{this.name}} </td>
+                    <td style="border: 2px solid black;">{{this.pivot.unit_price}}</td>
+                    <td style="border: 2px solid black;">{{this.pivot.order_quantity}}</td>
+                    <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
+                    <td style="border: 2px solid black;">{{this.taxes.rate}}%</td>
+                    <td style="border: 2px solid black;">CGST {{this.taxes.cgst}}%<br /> SGST {{this.taxes.sgst}} %</td>
+                    <td style="border: 2px solid black;">{{this.taxAmount}}</td>
+                    <td style="border: 2px solid black;">{{this.pivot.subtotal}}</td>
+                </tr>
+                {{/each}}
+                <tr style="border:2px solid black">
+                    <td colspan="7" style="border: 2px solid black; text-align: left;"><b>TOTAL:</b></td>
+                    <td style="border: 2px solid black;">{{sales_tax}}</td>
+                    <td style="border: 2px solid black;">{{finalTotal}}</td>
+                </tr>
+                <tr>
+                    <td colspan="9" style="border: 2px solid black; text-align: left;"><b>Amount in Words:</b>
+                        <span>{{amountinWord}}</span>
+                    </td>
+                </tr>
+                <tr>
+                    {{!-- <td colspan="9" style="text-align: right;"><b>{{invoice.dealer.name}}</b><br></td> --}}
+                </tr>
+                <tr>
+                    <td colspan="9" style="text-align: right;"><b>Authorized Signatory</b></td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- Payment Details Table -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; border: 2px solid black;">
+            <tbody>
+                <tr style="border:2px solid black">
+                    <td style="border:2px solid black">Payment Transaction ID: <br>
+                        <p style="font-size: 12px;">invoice.paymentInfo.payment_id</p>
+                    </td>
+                    <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">{{invoice_date}}
+                        </p>
+                    </td>
+                    <td rowSpan="2" style="border:2px solid black">Invoice Value:<p style="font-size: 12px;">
+                            {{finalTotal}}</p>
+                    </td>
+                    <td style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">Gift
+                            {{payment_Mode}}</p>
+                    </td>
+                </tr>
+                <tr style="border:2px solid black">
+                    <td style="border:2px solid black">Payment Transaction ID: <br>
+                        <p style="font-size: 12px;">paymentInfo.payment_id</p>
+                    </td>
+                    <td style="border:2px solid black">Date & Time: <p style="font-size: 12px;">{{invoice_date}}
+                        </p>
+                    </td>
+                    <td colspan="2" style="border:2px solid black">Mode of Payment:<p style="font-size: 12px;">Credit
+                            {{payment_Mode}}</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</body>
+
+</html>
