@@ -21,19 +21,14 @@ export declare class AnalyticsService {
     private readonly cacheManager;
     private readonly logger;
     constructor(orderRepository: Repository<Order>, shopRepository: Repository<Shop>, userRepository: Repository<User>, analyticsRepository: Repository<Analytics>, refundRepository: Repository<Refund>, permissionRepository: Repository<Permission>, stocksSellOrdRepository: Repository<StocksSellOrd>, totalYearSaleByMonthRepository: Repository<TotalYearSaleByMonth>, cacheManager: Cache);
-    findAll(shop_id: number | null, customerId: number, state: string): Promise<AnalyticsResponseDTO | {
-        message: string;
-    }>;
-    private calculateTotalRevenue;
-    private calculateTotalRefunds;
-    private calculateTotalShops;
-    private calculateTodaysRevenue;
-    private calculateTotalOrders;
-    private calculateNewCustomers;
-    private calculateTotalYearSaleByMonth;
     getTopUsersWithMaxOrders(userId: number): Promise<any[]>;
     getTopDealer(userId?: number): Promise<any[]>;
-    createAnalyticsWithTotalYearSale(analyticsData: Partial<Analytics>, saleData: CreateTotalYearSaleByMonthDto[]): Promise<Analytics>;
     getAnalyticsById(analyticsId: number): Promise<Analytics>;
     updateAnalytics(order?: Order, refund?: Refund, shop?: Shop): Promise<void>;
+    createAnalyticsWithTotalYearSale(analyticsData: Partial<Analytics>, saleData: CreateTotalYearSaleByMonthDto[]): Promise<Analytics>;
+    findAll(shop_id: number | null, customerId: number | null, state: string, startDate?: string, endDate?: string): Promise<AnalyticsResponseDTO | {
+        message: string;
+    }>;
+    private initializeMonthlySales;
+    private getMonthIndex;
 }

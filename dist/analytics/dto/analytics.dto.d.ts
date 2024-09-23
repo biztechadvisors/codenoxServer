@@ -11,11 +11,13 @@ export declare class AnalyticsResponseDTO {
     newCustomers: number;
     totalYearSaleByMonth: TotalYearSaleByMonthDTO[];
 }
-export declare class GetAnalyticsDto {
-    shop_id: number;
-    customerId: number;
-    state: string;
-}
 export declare class TopUsersQueryDto {
     userId: number;
+}
+export declare class GetAnalyticsDto {
+    shop_id?: number;
+    customerId?: number;
+    state: string;
+    startDate?: string;
+    endDate?: string;
 }

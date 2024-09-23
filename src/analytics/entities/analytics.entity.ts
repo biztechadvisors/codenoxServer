@@ -47,6 +47,9 @@ export class Analytics extends CoreEntity {
   @Column({ type: 'int', default: 0 })
   totalShops: number;
 
+  // @Column({ type: 'int', default: 0 })
+  // totalDealers: number;
+
   @Column({ type: 'int', default: 0 })
   newCustomers: number;
 

@@ -29,6 +29,9 @@ let AnalyticsController = AnalyticsController_1 = class AnalyticsController {
         try {
             this.logger.log(`Fetching analytics for shop_id: ${query.shop_id}, customerId: ${query.customerId}, state: ${query.state}`);
             const result = await this.analyticsService.findAll(query.shop_id, query.customerId, query.state);
+            if ('message' in result) {
+                throw new common_1.BadRequestException(result.message);
+            }
             if (!result) {
                 throw new common_1.NotFoundException('No analytics data found');
             }
@@ -72,16 +75,30 @@ let AnalyticsController = AnalyticsController_1 = class AnalyticsController {
     }
     async createAnalytics(createAnalyticsDto) {
         const { analyticsData, saleData } = createAnalyticsDto;
-        return await this.analyticsService.createAnalyticsWithTotalYearSale(analyticsData, saleData);
+        const analytics = await this.analyticsService.createAnalyticsWithTotalYearSale(analyticsData, saleData);
+        return this.mapToResponseDTO(analytics);
     }
     async getAnalyticsById(id) {
-        return await this.analyticsService.getAnalyticsById(id);
+        const analytics = await this.analyticsService.getAnalyticsById(id);
+        return this.mapToResponseDTO(analytics);
+    }
+    mapToResponseDTO(analytics) {
+        var _a, _b, _c, _d, _e, _f, _g;
+        return {
+            totalRevenue: (_a = analytics.totalRevenue) !== null && _a !== void 0 ? _a : 0,
+            totalOrders: (_b = analytics.totalOrders) !== null && _b !== void 0 ? _b : 0,
+            totalRefunds: (_c = analytics.totalRefunds) !== null && _c !== void 0 ? _c : 0,
+            totalShops: (_d = analytics.totalShops) !== null && _d !== void 0 ? _d : 0,
+            todaysRevenue: (_e = analytics.todaysRevenue) !== null && _e !== void 0 ? _e : 0,
+            newCustomers: (_f = analytics.newCustomers) !== null && _f !== void 0 ? _f : 0,
+            totalYearSaleByMonth: (_g = analytics.totalYearSaleByMonth) !== null && _g !== void 0 ? _g : [],
+        };
     }
 };
 __decorate([
     (0, common_1.Post)(),
     (0, swagger_1.ApiOperation)({ summary: 'Fetch analytics for a specific shop, customer, and state' }),
-    openapi.ApiResponse({ status: 201, type: Object }),
+    openapi.ApiResponse({ status: 201, type: require("./dto/analytics.dto").AnalyticsResponseDTO }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [analytics_dto_1.GetAnalyticsDto]),
@@ -106,8 +123,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AnalyticsController.prototype, "getTopDealer", null);
 __decorate([
-    (0, common_1.Post)(),
-    openapi.ApiResponse({ status: 201, type: require("./entities/analytics.entity").Analytics }),
+    (0, common_1.Post)('create'),
+    openapi.ApiResponse({ status: 201, type: require("./dto/analytics.dto").AnalyticsResponseDTO }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_analytics_dto_1.CreateAnalyticsDto]),
@@ -115,7 +132,7 @@ __decorate([
 ], AnalyticsController.prototype, "createAnalytics", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    openapi.ApiResponse({ status: 200, type: require("./entities/analytics.entity").Analytics }),
+    openapi.ApiResponse({ status: 200, type: require("./dto/analytics.dto").AnalyticsResponseDTO }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
