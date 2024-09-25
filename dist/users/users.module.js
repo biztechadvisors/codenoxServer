@@ -28,6 +28,11 @@ const cache_manager_1 = require("@nestjs/cache-manager");
 const session_service_1 = require("../auth/auth-helper/session.service");
 const address_entity_1 = require("../address/entities/address.entity");
 const addresses_service_1 = require("../address/addresses.service");
+const analytics_service_1 = require("../analytics/analytics.service");
+const order_entity_1 = require("../orders/entities/order.entity");
+const analytics_entity_1 = require("../analytics/entities/analytics.entity");
+const refund_entity_1 = require("../refunds/entities/refund.entity");
+const stocksOrd_entity_1 = require("../stocks/entities/stocksOrd.entity");
 let UsersModule = class UsersModule {
 };
 UsersModule = __decorate([
@@ -35,14 +40,15 @@ UsersModule = __decorate([
         imports: [
             typeorm_1.TypeOrmModule.forFeature([
                 user_entity_1.User, address_entity_1.Add, address_entity_1.UserAdd, profile_entity_1.Profile, dealer_entity_1.Dealer, profile_entity_1.Social, product_entity_1.Product, category_entity_1.Category,
-                attachment_entity_1.Attachment, dealer_entity_1.DealerCategoryMargin, dealer_entity_1.DealerProductMargin, shop_entity_1.Shop, permission_entity_1.Permission
+                attachment_entity_1.Attachment, dealer_entity_1.DealerCategoryMargin, dealer_entity_1.DealerProductMargin, shop_entity_1.Shop, permission_entity_1.Permission, order_entity_1.Order, analytics_entity_1.Analytics, refund_entity_1.Refund, stocksOrd_entity_1.StocksSellOrd,
+                analytics_entity_1.TotalYearSaleByMonth
             ]),
             jwt_1.JwtModule.register({}),
             cache_manager_1.CacheModule.register(),
             notifications_module_1.NotificationModule,
         ],
         controllers: [users_controller_1.UsersController, users_controller_1.ProfilesController, users_controller_1.DealerController],
-        providers: [users_service_1.UsersService, auth_service_1.AuthService, mail_service_1.MailService, addresses_service_1.AddressesService, jwt_strategy_1.JwtStrategy, session_service_1.SessionService],
+        providers: [users_service_1.UsersService, auth_service_1.AuthService, mail_service_1.MailService, addresses_service_1.AddressesService, jwt_strategy_1.JwtStrategy, session_service_1.SessionService, analytics_service_1.AnalyticsService],
         exports: [users_service_1.UsersService],
     })
 ], UsersModule);

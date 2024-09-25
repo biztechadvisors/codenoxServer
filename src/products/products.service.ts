@@ -179,12 +179,14 @@ export class ProductsService {
     }
 
     // Handle type
-    const type = await this.typeRepository.findOne({ where: { id: type_id } });
-    if (!type) {
-      throw new NotFoundException(`Type with ID ${type_id} not found`);
+    if (type_id) {
+      const type = await this.typeRepository.findOne({ where: { id: type_id } });
+      if (!type) {
+        throw new NotFoundException(`Type with ID ${type_id} not found`);
+      }
+      product.type = type;
+      product.type_id = type.id;
     }
-    product.type = type;
-    product.type_id = type.id;
 
     // Handle shop
     const shop = await this.shopRepository.findOne({ where: { id: shop_id } });

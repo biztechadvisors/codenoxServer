@@ -20,12 +20,19 @@ const permission_entity_1 = require("../permission/entities/permission.entity");
 const jwt_strategy_1 = require("./auth-helper/jwt.strategy");
 const session_service_1 = require("./auth-helper/session.service");
 const users_module_1 = require("../users/users.module");
+const analytics_service_1 = require("../analytics/analytics.service");
+const analytics_entity_1 = require("../analytics/entities/analytics.entity");
+const order_entity_1 = require("../orders/entities/order.entity");
+const refund_entity_1 = require("../refunds/entities/refund.entity");
+const stocksOrd_entity_1 = require("../stocks/entities/stocksOrd.entity");
+const shop_entity_1 = require("../shops/entities/shop.entity");
 let AuthModule = class AuthModule {
 };
 AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, permission_entity_1.Permission]),
+            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, permission_entity_1.Permission, order_entity_1.Order, analytics_entity_1.Analytics, refund_entity_1.Refund, stocksOrd_entity_1.StocksSellOrd,
+                analytics_entity_1.TotalYearSaleByMonth, shop_entity_1.Shop]),
             users_module_1.UsersModule,
             mail_module_1.MailModule,
             notifications_module_1.NotificationModule,
@@ -37,7 +44,7 @@ AuthModule = __decorate([
             cache_manager_1.CacheModule.register(),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, session_service_1.SessionService],
+        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, session_service_1.SessionService, analytics_service_1.AnalyticsService],
         exports: [auth_service_1.AuthService],
     })
 ], AuthModule);

@@ -134,6 +134,27 @@ export class OrdersService {
     }
   }
 
+  // async updateShopOrdersProductsCount(orders: Order) {
+  //   try {
+  //     const shop = await this.shopRepository.findOne({ where: { id: orders.shop_id } });
+  //     if (!shop) {
+  //       throw new NotFoundException(`Shop with ID ${orders.shop_id} not found`);
+  //     }
+  //     if (orders.orderProductPivots[0].product) {
+  //       // Product found, increase the products_count for the shop
+  //       shop.products_count += 1;
+  //     } else if (shop.products_count > 0) {
+  //       // Product not found, decrease the products_count (if it's greater than 0)
+  //       shop.products_count -= 1;
+  //     }
+  //     // Save the updated shop
+  //     await this.shopRepository.save(shop);
+  //   } catch (err) {
+  //     // Handle errors appropriately
+  //     throw err;
+  //   }
+  // }
+
   async create(createOrderInput: CreateOrderDto): Promise<Order> {
     const order = new Order();
     const paymentGatewayType = createOrderInput.payment_gateway || PaymentGatewayType.CASH_ON_DELIVERY;

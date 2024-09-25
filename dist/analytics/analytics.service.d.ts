@@ -24,7 +24,7 @@ export declare class AnalyticsService {
     getTopUsersWithMaxOrders(userId: number): Promise<any[]>;
     getTopDealer(userId?: number): Promise<any[]>;
     getAnalyticsById(analyticsId: number): Promise<Analytics>;
-    updateAnalytics(order?: Order, refund?: Refund, shop?: Shop): Promise<void>;
+    updateAnalytics(order?: Order, refund?: Refund, shop?: Shop, user?: User): Promise<void>;
     createAnalyticsWithTotalYearSale(analyticsData: Partial<Analytics>, saleData: CreateTotalYearSaleByMonthDto[]): Promise<Analytics>;
     findAll(shop_id: number | null, customerId: number | null, state: string, startDate?: string, endDate?: string): Promise<AnalyticsResponseDTO | {
         message: string;

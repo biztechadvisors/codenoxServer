@@ -14,6 +14,7 @@ export declare class Analytics extends CoreEntity {
     todaysRevenue?: number;
     totalRefunds?: number;
     totalShops: number;
+    totalDealers: number;
     newCustomers: number;
     totalYearSaleByMonth?: TotalYearSaleByMonth[];
 }

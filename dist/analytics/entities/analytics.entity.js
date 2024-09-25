@@ -44,7 +44,7 @@ TotalYearSaleByMonth = __decorate([
 exports.TotalYearSaleByMonth = TotalYearSaleByMonth;
 let Analytics = class Analytics extends core_entity_1.CoreEntity {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, totalRevenue: { required: false, type: () => Number }, totalOrders: { required: true, type: () => Number }, user_id: { required: true, type: () => Number }, shop_id: { required: true, type: () => Number }, todaysRevenue: { required: false, type: () => Number }, totalRefunds: { required: false, type: () => Number }, totalShops: { required: true, type: () => Number }, newCustomers: { required: true, type: () => Number }, totalYearSaleByMonth: { required: false, type: () => [require("./analytics.entity").TotalYearSaleByMonth] } };
+        return { id: { required: true, type: () => Number }, totalRevenue: { required: false, type: () => Number }, totalOrders: { required: true, type: () => Number }, user_id: { required: true, type: () => Number }, shop_id: { required: true, type: () => Number }, todaysRevenue: { required: false, type: () => Number }, totalRefunds: { required: false, type: () => Number }, totalShops: { required: true, type: () => Number }, totalDealers: { required: true, type: () => Number }, newCustomers: { required: true, type: () => Number }, totalYearSaleByMonth: { required: false, type: () => [require("./analytics.entity").TotalYearSaleByMonth] } };
     }
 };
 __decorate([
@@ -79,6 +79,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'int', default: 0 }),
     __metadata("design:type", Number)
 ], Analytics.prototype, "totalShops", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], Analytics.prototype, "totalDealers", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'int', default: 0 }),
     __metadata("design:type", Number)

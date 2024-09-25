@@ -132,12 +132,14 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 product.taxes = tax;
             }
         }
-        const type = await this.typeRepository.findOne({ where: { id: type_id } });
-        if (!type) {
-            throw new common_1.NotFoundException(`Type with ID ${type_id} not found`);
+        if (type_id) {
+            const type = await this.typeRepository.findOne({ where: { id: type_id } });
+            if (!type) {
+                throw new common_1.NotFoundException(`Type with ID ${type_id} not found`);
+            }
+            product.type = type;
+            product.type_id = type.id;
         }
-        product.type = type;
-        product.type_id = type.id;
         const shop = await this.shopRepository.findOne({ where: { id: shop_id } });
         if (!shop) {
             throw new common_1.NotFoundException(`Shop with ID ${shop_id} not found`);

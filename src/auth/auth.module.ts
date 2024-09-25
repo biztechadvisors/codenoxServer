@@ -12,10 +12,17 @@ import { Permission } from 'src/permission/entities/permission.entity';
 import { JwtStrategy } from './auth-helper/jwt.strategy';
 import { SessionService } from './auth-helper/session.service';
 import { UsersModule } from '../users/users.module';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { Analytics, TotalYearSaleByMonth } from '../analytics/entities/analytics.entity';
+import { Order } from '../orders/entities/order.entity';
+import { Refund } from '../refunds/entities/refund.entity';
+import { StocksSellOrd } from '../stocks/entities/stocksOrd.entity';
+import { Shop } from '../shops/entities/shop.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Permission]),
+    TypeOrmModule.forFeature([User, Permission, Order, Analytics, Refund, StocksSellOrd,
+      TotalYearSaleByMonth, Shop]),
     UsersModule,
     MailModule,
     NotificationModule,
@@ -27,7 +34,7 @@ import { UsersModule } from '../users/users.module';
     CacheModule.register(),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, SessionService],
+  providers: [AuthService, JwtStrategy, SessionService, AnalyticsService],
   exports: [AuthService],
 })
 export class AuthModule { }

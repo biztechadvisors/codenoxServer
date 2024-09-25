@@ -32,12 +32,13 @@ const address_entity_1 = require("../address/entities/address.entity");
 const addresses_service_1 = require("../address/addresses.service");
 const create_address_dto_1 = require("../address/dto/create-address.dto");
 const update_address_dto_1 = require("../address/dto/update-address.dto");
+const analytics_service_1 = require("../analytics/analytics.service");
 const options = {
     keys: ['name', 'type.slug', 'categories.slug', 'status'],
     threshold: 0.3,
 };
 let UsersService = class UsersService {
-    constructor(userRepository, addressRepository, profileRepository, attachmentRepository, dealerRepository, productRepository, categoryRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, shopRepository, socialRepository, permissionRepository, cacheManager, authService, addressesService) {
+    constructor(userRepository, addressRepository, profileRepository, attachmentRepository, dealerRepository, productRepository, categoryRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, shopRepository, socialRepository, permissionRepository, cacheManager, analyticsService, authService, addressesService) {
         this.userRepository = userRepository;
         this.addressRepository = addressRepository;
         this.profileRepository = profileRepository;
@@ -51,6 +52,7 @@ let UsersService = class UsersService {
         this.socialRepository = socialRepository;
         this.permissionRepository = permissionRepository;
         this.cacheManager = cacheManager;
+        this.analyticsService = analyticsService;
         this.authService = authService;
         this.addressesService = addressesService;
     }
@@ -229,7 +231,7 @@ let UsersService = class UsersService {
             return cachedUser;
         }
         const user = await this.userRepository.findOne({
-            where: { id: id },
+            where: { id },
             relations: ['profile', 'address', 'owned_shops', 'orders', 'address.address', 'permission'],
         });
         if (!user) {
@@ -239,37 +241,39 @@ let UsersService = class UsersService {
         return user;
     }
     async update(id, updateUserDto) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
         const user = await this.userRepository.findOne({
-            where: { id: id }, relations: ["profile", "address", "address.address", "owned_shops", "orders", "profile.socials", "permission"]
+            where: { id },
+            relations: ["profile", "address", "owned_shops", "orders", "profile.socials", "permission"]
         });
         if (!user) {
             throw new common_1.NotFoundException(`User with id ${id} not found`);
         }
-        user.name = updateUserDto.name || user.name;
-        user.email = updateUserDto.email || user.email;
-        user.password = updateUserDto.password || user.password;
+        user.name = (_a = updateUserDto.name) !== null && _a !== void 0 ? _a : user.name;
+        user.email = (_b = updateUserDto.email) !== null && _b !== void 0 ? _b : user.email;
+        user.password = (_c = updateUserDto.password) !== null && _c !== void 0 ? _c : user.password;
         user.isVerified = updateUserDto.isVerified !== undefined ? updateUserDto.isVerified : user.isVerified;
         user.is_active = updateUserDto.is_active !== undefined ? updateUserDto.is_active : user.is_active;
         user.permission = updateUserDto.permission || user.permission;
-        const shop = await this.shopRepository.findOne({ where: { id: (_a = updateUserDto.managed_shop) === null || _a === void 0 ? void 0 : _a.id } });
-        if (shop) {
-            user.shop_id = (_b = updateUserDto.managed_shop) === null || _b === void 0 ? void 0 : _b.id;
+        if ((_d = updateUserDto.managed_shop) === null || _d === void 0 ? void 0 : _d.id) {
+            const shop = await this.shopRepository.findOne({ where: { id: updateUserDto.managed_shop.id } });
+            if (shop) {
+                user.managed_shop = shop;
+            }
         }
-        await this.userRepository.save(user);
         if (Array.isArray(updateUserDto.address)) {
             for (const addressData of updateUserDto.address) {
-                let address;
-                if (addressData.address.id) {
-                    address = await this.addressRepository.findOne({ where: { id: addressData.address.id } });
-                }
-                if (address) {
-                    const updateAddressDto = new update_address_dto_1.UpdateAddressDto();
-                    updateAddressDto.title = addressData.title;
-                    updateAddressDto.type = addressData.type;
-                    updateAddressDto.default = addressData.default;
-                    updateAddressDto.address = addressData.address;
-                    await this.addressesService.update(addressData.address.id, updateAddressDto);
+                if (addressData.address && addressData.address.id) {
+                    let address = await this.addressRepository.findOne({ where: { id: addressData.address.id } });
+                    if (address) {
+                        const updateAddressDto = new update_address_dto_1.UpdateAddressDto();
+                        updateAddressDto.title = addressData.title;
+                        updateAddressDto.type = addressData.type;
+                        updateAddressDto.default = addressData.default;
+                        updateAddressDto.address = addressData.address;
+                        updateAddressDto.customer_id = user.id;
+                        await this.addressesService.update(address.id, updateAddressDto);
+                    }
                 }
                 else {
                     const createAddressDto = new create_address_dto_1.CreateAddressDto();
@@ -277,32 +281,39 @@ let UsersService = class UsersService {
                     createAddressDto.type = addressData.type;
                     createAddressDto.default = addressData.default;
                     createAddressDto.address = addressData.address;
-                    createAddressDto.customer_id = id;
+                    createAddressDto.customer_id = user.id;
                     await this.addressesService.create(createAddressDto);
                 }
             }
         }
         let profile = await this.profileRepository.findOne({ where: { customer: { id } } });
         if (!profile) {
-            profile = new profile_entity_1.Profile();
-            profile.customer = user;
-            profile.bio = updateUserDto.profile.bio;
-            profile.contact = updateUserDto.profile.contact;
+            profile = this.profileRepository.create({
+                customer: user,
+                bio: (_e = updateUserDto.profile) === null || _e === void 0 ? void 0 : _e.bio,
+                contact: (_f = updateUserDto.profile) === null || _f === void 0 ? void 0 : _f.contact
+            });
         }
-        if (updateUserDto.profile && updateUserDto.profile.socials) {
-            let social = await this.socialRepository.findOne({ where: { id: (_c = profile.socials) === null || _c === void 0 ? void 0 : _c.id } });
+        else {
+            profile.bio = (_h = (_g = updateUserDto.profile) === null || _g === void 0 ? void 0 : _g.bio) !== null && _h !== void 0 ? _h : profile.bio;
+            profile.contact = (_k = (_j = updateUserDto.profile) === null || _j === void 0 ? void 0 : _j.contact) !== null && _k !== void 0 ? _k : profile.contact;
+        }
+        if ((_l = updateUserDto.profile) === null || _l === void 0 ? void 0 : _l.socials) {
+            let social = await this.socialRepository.findOne({ where: { id: (_m = profile.socials) === null || _m === void 0 ? void 0 : _m.id } });
             if (social) {
-                social.type = updateUserDto.profile.socials.type || social.type;
-                social.link = updateUserDto.profile.socials.link || social.link;
+                social.type = (_o = updateUserDto.profile.socials.type) !== null && _o !== void 0 ? _o : social.type;
+                social.link = (_p = updateUserDto.profile.socials.link) !== null && _p !== void 0 ? _p : social.link;
             }
             else {
-                social = new profile_entity_1.Social();
-                social.type = updateUserDto.profile.socials.type;
-                social.link = updateUserDto.profile.socials.link;
+                social = this.socialRepository.create({
+                    type: updateUserDto.profile.socials.type,
+                    link: updateUserDto.profile.socials.link,
+                });
             }
             await this.socialRepository.save(social);
             profile.socials = social;
         }
+        await this.userRepository.save(user);
         await this.profileRepository.save(profile);
         return user;
     }
@@ -392,6 +403,7 @@ let UsersService = class UsersService {
             await this.dealerCategoryMarginRepository.save(margin);
         }
         delete savedDealer.user.dealer;
+        await this.analyticsService.updateAnalytics(undefined, undefined, undefined, user);
         return savedDealer;
     }
     async getAllDealers(createdBy) {
@@ -557,7 +569,8 @@ UsersService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository, Object, auth_service_1.AuthService,
+        typeorm_2.Repository, Object, analytics_service_1.AnalyticsService,
+        auth_service_1.AuthService,
         addresses_service_1.AddressesService])
 ], UsersService);
 exports.UsersService = UsersService;

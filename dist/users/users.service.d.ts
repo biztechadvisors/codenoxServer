@@ -17,6 +17,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Cache } from 'cache-manager';
 import { Add } from '../address/entities/address.entity';
 import { AddressesService } from '../address/addresses.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 export declare class UsersService {
     private readonly userRepository;
     private readonly addressRepository;
@@ -31,9 +32,10 @@ export declare class UsersService {
     private readonly socialRepository;
     private readonly permissionRepository;
     private readonly cacheManager;
+    private readonly analyticsService;
     private readonly authService;
     private readonly addressesService;
-    constructor(userRepository: Repository<User>, addressRepository: Repository<Add>, profileRepository: Repository<Profile>, attachmentRepository: Repository<Attachment>, dealerRepository: Repository<Dealer>, productRepository: Repository<Product>, categoryRepository: Repository<Category>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, shopRepository: Repository<Shop>, socialRepository: Repository<Social>, permissionRepository: Repository<Permission>, cacheManager: Cache, authService: AuthService, addressesService: AddressesService);
+    constructor(userRepository: Repository<User>, addressRepository: Repository<Add>, profileRepository: Repository<Profile>, attachmentRepository: Repository<Attachment>, dealerRepository: Repository<Dealer>, productRepository: Repository<Product>, categoryRepository: Repository<Category>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, shopRepository: Repository<Shop>, socialRepository: Repository<Social>, permissionRepository: Repository<Permission>, cacheManager: Cache, analyticsService: AnalyticsService, authService: AuthService, addressesService: AddressesService);
     create(createUserDto: CreateUserDto): Promise<User>;
     getUsers({ searchJoin, with: include, limit, page, name, orderBy, sortedBy, usrById, search, type, }: GetUsersDto): Promise<UserPaginator>;
     findOne(id: number): Promise<User>;

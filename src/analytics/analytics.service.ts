@@ -174,10 +174,12 @@ export class AnalyticsService {
   async updateAnalytics(
     order?: Order,
     refund?: Refund,
-    shop?: Shop
+    shop?: Shop,
+    user?: User
   ): Promise<void> {
     try {
-      if (!order && !refund && !shop) {
+
+      if (!order && !refund && !shop && !user) {
         throw new BadRequestException('At least one of Order, Refund, or Shop must be provided');
       }
 
@@ -189,9 +191,16 @@ export class AnalyticsService {
         userId = refund.customer.createdBy ? refund.customer.createdBy.id : refund.shop.owner_id;
       } else if (shop) {
         userId = shop.owner_id ? shop.owner_id : shop.owner.id;
+      } else if (user) {
+        userId = user?.createdBy?.id;
       }
 
-      const shopId = shop?.id || order?.shop_id || refund?.shop.id;
+      let usrCrtBy;
+      if (user.createdBy) {
+        usrCrtBy = await this.userRepository.findOne({ where: { id: user.createdBy.id } })
+      }
+
+      const shopId = shop?.id || order?.shop_id || refund?.shop.id || usrCrtBy.shop_id;
 
       if (!shopId || !userId) {
         throw new BadRequestException('Shop ID and User ID must be available');
@@ -239,6 +248,25 @@ export class AnalyticsService {
 
         if (today === format(order.created_at, 'yyyy-MM-dd')) {
           analytics.todaysRevenue = updateValue(analytics.todaysRevenue, order.total);
+        }
+      }
+
+      // Update analytics based on the user
+      if (user) {
+        user = await this.userRepository.findOne({
+          where: { id: user.id },
+          relations: ['permission']
+        });
+
+        // Step 3: Get the permission of the user or shop owner
+        const permissionName = user?.permission?.type_name
+
+        if (permissionName === UserType.Dealer) {
+          analytics.totalDealers += 1;
+        } else if (permissionName === UserType.Company) {
+          analytics.totalShops += 1;
+        } else {
+          analytics.newCustomers += 1;
         }
       }
 

@@ -8,6 +8,7 @@ import { NotificationService } from 'src/notifications/services/notifications.se
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { SessionService } from './auth-helper/session.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 export declare class AuthService {
     private readonly userRepository;
     private readonly permissionRepository;
@@ -15,6 +16,7 @@ export declare class AuthService {
     private readonly jwtService;
     private readonly mailService;
     private readonly sessionService;
+    private readonly analyticsService;
     private readonly notificationService;
     private readonly configService;
     private readonly logger;
@@ -22,7 +24,7 @@ export declare class AuthService {
     private readonly twilioVerifyServiceSid;
     private readonly otpExpiryTime;
     private emailVerificationCodes;
-    constructor(userRepository: Repository<User>, permissionRepository: Repository<Permission>, cacheManager: Cache, jwtService: JwtService, mailService: MailService, sessionService: SessionService, notificationService: NotificationService, configService: ConfigService);
+    constructor(userRepository: Repository<User>, permissionRepository: Repository<Permission>, cacheManager: Cache, jwtService: JwtService, mailService: MailService, sessionService: SessionService, analyticsService: AnalyticsService, notificationService: NotificationService, configService: ConfigService);
     private sendSms;
     generateOtp(length?: number): Promise<string>;
     destroyOtp(user: User): Promise<void>;
@@ -37,6 +39,17 @@ export declare class AuthService {
     register(createUserInput: RegisterDto): Promise<{
         message: string;
     }>;
+    private validateInput;
+    private findExistingUser;
+    private handleExistingUser;
+    private getPermission;
+    private buildUser;
+    private handleCreatedByLogic;
+    private handleNewUserRegistration;
+    private sendRegistrationNotification;
+    private getNotificationTitle;
+    private getNotificationMessage;
+    private handleRegistrationError;
     verifyOtp(verifyOtpInput: VerifyOtpDto): Promise<{
         access_token: string;
         success: boolean;

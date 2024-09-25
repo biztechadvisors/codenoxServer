@@ -141,9 +141,10 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
         }
         return analytics;
     }
-    async updateAnalytics(order, refund, shop) {
+    async updateAnalytics(order, refund, shop, user) {
+        var _a, _b;
         try {
-            if (!order && !refund && !shop) {
+            if (!order && !refund && !shop && !user) {
                 throw new common_1.BadRequestException('At least one of Order, Refund, or Shop must be provided');
             }
             let userId;
@@ -156,7 +157,14 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
             else if (shop) {
                 userId = shop.owner_id ? shop.owner_id : shop.owner.id;
             }
-            const shopId = (shop === null || shop === void 0 ? void 0 : shop.id) || (order === null || order === void 0 ? void 0 : order.shop_id) || (refund === null || refund === void 0 ? void 0 : refund.shop.id);
+            else if (user) {
+                userId = (_a = user === null || user === void 0 ? void 0 : user.createdBy) === null || _a === void 0 ? void 0 : _a.id;
+            }
+            let usrCrtBy;
+            if (user.createdBy) {
+                usrCrtBy = await this.userRepository.findOne({ where: { id: user.createdBy.id } });
+            }
+            const shopId = (shop === null || shop === void 0 ? void 0 : shop.id) || (order === null || order === void 0 ? void 0 : order.shop_id) || (refund === null || refund === void 0 ? void 0 : refund.shop.id) || usrCrtBy.shop_id;
             if (!shopId || !userId) {
                 throw new common_1.BadRequestException('Shop ID and User ID must be available');
             }
@@ -192,6 +200,22 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 analytics.totalRevenue = updateValue(analytics.totalRevenue, order.total);
                 if (today === (0, date_fns_1.format)(order.created_at, 'yyyy-MM-dd')) {
                     analytics.todaysRevenue = updateValue(analytics.todaysRevenue, order.total);
+                }
+            }
+            if (user) {
+                user = await this.userRepository.findOne({
+                    where: { id: user.id },
+                    relations: ['permission']
+                });
+                const permissionName = (_b = user === null || user === void 0 ? void 0 : user.permission) === null || _b === void 0 ? void 0 : _b.type_name;
+                if (permissionName === user_entity_1.UserType.Dealer) {
+                    analytics.totalDealers += 1;
+                }
+                else if (permissionName === user_entity_1.UserType.Company) {
+                    analytics.totalShops += 1;
+                }
+                else {
+                    analytics.newCustomers += 1;
                 }
             }
             if (refund) {

@@ -19,19 +19,25 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { SessionService } from '../auth/auth-helper/session.service';
 import { Add, UserAdd } from '../address/entities/address.entity';
 import { AddressesService } from '../address/addresses.service';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { Order } from '../orders/entities/order.entity';
+import { Analytics, TotalYearSaleByMonth } from '../analytics/entities/analytics.entity';
+import { Refund } from '../refunds/entities/refund.entity';
+import { StocksSellOrd } from '../stocks/entities/stocksOrd.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       User, Add, UserAdd, Profile, Dealer, Social, Product, Category,
-      Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission
+      Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission, Order, Analytics, Refund, StocksSellOrd,
+      TotalYearSaleByMonth
     ]),
     JwtModule.register({}),
     CacheModule.register(),
     NotificationModule,
   ],
   controllers: [UsersController, ProfilesController, DealerController],
-  providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy, SessionService],
+  providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy, SessionService, AnalyticsService],
   exports: [UsersService],
 })
 export class UsersModule { }

@@ -28,6 +28,7 @@ import { Add } from '../address/entities/address.entity';
 import { AddressesService } from '../address/addresses.service';
 import { CreateAddressDto } from '../address/dto/create-address.dto';
 import { UpdateAddressDto } from '../address/dto/update-address.dto';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 const options = {
   keys: ['name', 'type.slug', 'categories.slug', 'status'],
@@ -51,6 +52,7 @@ export class UsersService {
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
 
+    private readonly analyticsService: AnalyticsService,
     private readonly authService: AuthService,
     private readonly addressesService: AddressesService,
 
@@ -300,7 +302,7 @@ export class UsersService {
 
     // Fetch user from the database if not cached
     const user = await this.userRepository.findOne({
-      where: { id: id },
+      where: { id },
       relations: ['profile', 'address', 'owned_shops', 'orders', 'address.address', 'permission'],
     });
 
@@ -308,15 +310,17 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    // Cache the result
-    await this.cacheManager.set(cacheKey, user, 60); // Cache for 1 hour
+    // Cache the result for 60 seconds (adjust as needed)
+    await this.cacheManager.set(cacheKey, user, 60);
 
     return user;
   }
 
+
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.userRepository.findOne({
-      where: { id: id }, relations: ["profile", "address", "address.address", "owned_shops", "orders", "profile.socials", "permission"]
+      where: { id },
+      relations: ["profile", "address", "owned_shops", "orders", "profile.socials", "permission"]
     });
 
     if (!user) {
@@ -324,79 +328,85 @@ export class UsersService {
     }
 
     // Update the user properties
-    user.name = updateUserDto.name || user.name;
-    user.email = updateUserDto.email || user.email;
-    user.password = updateUserDto.password || user.password;
+    user.name = updateUserDto.name ?? user.name;
+    user.email = updateUserDto.email ?? user.email;
+    user.password = updateUserDto.password ?? user.password;
     user.isVerified = updateUserDto.isVerified !== undefined ? updateUserDto.isVerified : user.isVerified;
     user.is_active = updateUserDto.is_active !== undefined ? updateUserDto.is_active : user.is_active;
     user.permission = updateUserDto.permission || user.permission;
 
-    // Check if the shop exists in the ShopRepository
-    const shop = await this.shopRepository.findOne({ where: { id: updateUserDto.managed_shop?.id } });
-    if (shop) {
-      user.shop_id = updateUserDto.managed_shop?.id;
+    // Update shop if provided
+    if (updateUserDto.managed_shop?.id) {
+      const shop = await this.shopRepository.findOne({ where: { id: updateUserDto.managed_shop.id } });
+      if (shop) {
+        user.managed_shop = shop;
+      }
     }
-
-    // Save the updated user
-    await this.userRepository.save(user);
 
     if (Array.isArray(updateUserDto.address)) {
       for (const addressData of updateUserDto.address) {
-        let address;
-        if (addressData.address.id) {
-          address = await this.addressRepository.findOne({ where: { id: addressData.address.id } });
-        }
-        if (address) {
-          const updateAddressDto = new UpdateAddressDto();
-          updateAddressDto.title = addressData.title;
-          updateAddressDto.type = addressData.type;
-          updateAddressDto.default = addressData.default;
-          updateAddressDto.address = addressData.address;
-          await this.addressesService.update(addressData.address.id, updateAddressDto);
+        // Check if addressData.address exists and if it has an id
+        if (addressData.address && addressData.address.id) {
+          let address = await this.addressRepository.findOne({ where: { id: addressData.address.id } });
+
+          if (address) {
+            const updateAddressDto = new UpdateAddressDto();
+            updateAddressDto.title = addressData.title;
+            updateAddressDto.type = addressData.type;
+            updateAddressDto.default = addressData.default;
+            updateAddressDto.address = addressData.address;
+            updateAddressDto.customer_id = user.id;
+            await this.addressesService.update(address.id, updateAddressDto);
+          }
         } else {
           const createAddressDto = new CreateAddressDto();
           createAddressDto.title = addressData.title;
           createAddressDto.type = addressData.type;
           createAddressDto.default = addressData.default;
           createAddressDto.address = addressData.address;
-          createAddressDto.customer_id = id;
+          createAddressDto.customer_id = user.id;
           await this.addressesService.create(createAddressDto);
         }
       }
     }
 
-    // Find the profile by customer id
+    // Update or create profile
     let profile = await this.profileRepository.findOne({ where: { customer: { id } } });
 
-    // If the profile does not exist, create a new one
     if (!profile) {
-      profile = new Profile();
-      profile.customer = user;
-      profile.bio = updateUserDto.profile.bio;
-      profile.contact = updateUserDto.profile.contact;
+      profile = this.profileRepository.create({
+        customer: user,
+        bio: updateUserDto.profile?.bio,
+        contact: updateUserDto.profile?.contact
+      });
+    } else {
+      profile.bio = updateUserDto.profile?.bio ?? profile.bio;
+      profile.contact = updateUserDto.profile?.contact ?? profile.contact;
     }
 
-    // Update and save the socials
-    if (updateUserDto.profile && updateUserDto.profile.socials) {
+    // Update socials if provided
+    if (updateUserDto.profile?.socials) {
       let social = await this.socialRepository.findOne({ where: { id: profile.socials?.id } });
       if (social) {
-        social.type = updateUserDto.profile.socials.type || social.type;
-        social.link = updateUserDto.profile.socials.link || social.link;
+        social.type = updateUserDto.profile.socials.type ?? social.type;
+        social.link = updateUserDto.profile.socials.link ?? social.link;
       } else {
-        social = new Social();
-        social.type = updateUserDto.profile.socials.type;
-        social.link = updateUserDto.profile.socials.link;
+        social = this.socialRepository.create({
+          type: updateUserDto.profile.socials.type,
+          link: updateUserDto.profile.socials.link,
+        });
       }
       await this.socialRepository.save(social);
       profile.socials = social;
     }
 
-    // Save the profile
+    // Save the updated user and profile
+    await this.userRepository.save(user);
     await this.profileRepository.save(profile);
-
 
     return user;
   }
+
 
   async removeUser(id: number) {
     const user = await this.userRepository.findOne({
@@ -450,8 +460,6 @@ export class UsersService {
 
     return user;
   }
-
-
 
   async activeUser(id: number) {
     const user = await this.userRepository.findOne({ where: { id: id } });
@@ -531,6 +539,7 @@ export class UsersService {
 
     // Remove circular references
     delete savedDealer.user.dealer;
+    await this.analyticsService.updateAnalytics(undefined, undefined, undefined, user);
 
     return savedDealer;
   }
