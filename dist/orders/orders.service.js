@@ -101,6 +101,25 @@ let OrdersService = class OrdersService {
             throw new common_1.InternalServerErrorException('Failed to update product quantities');
         }
     }
+    async updateShopOrdersProductsCount(orders) {
+        try {
+            console.log("first", orders);
+            const shop = await this.shopRepository.findOne({ where: { id: orders.shop_id } });
+            if (!shop) {
+                throw new common_1.NotFoundException(`Shop with ID ${orders.shop_id} not found`);
+            }
+            if (orders.orderProductPivots[0].product) {
+                shop.products_count += 1;
+            }
+            else if (shop.products_count > 0) {
+                shop.products_count -= 1;
+            }
+            await this.shopRepository.save(shop);
+        }
+        catch (err) {
+            throw err;
+        }
+    }
     async create(createOrderInput) {
         var _a;
         const order = new order_entity_1.Order();

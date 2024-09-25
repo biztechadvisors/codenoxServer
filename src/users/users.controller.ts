@@ -28,8 +28,9 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @Get()
+  @Get('all')
   getAllUsers(@Query() query: GetUsersDto) {
+    console.log("first")
     return this.usersService.getUsers(query);
   }
 

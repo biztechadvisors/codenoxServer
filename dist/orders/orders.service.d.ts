@@ -49,6 +49,7 @@ export declare class OrdersService {
     private readonly cacheManager;
     constructor(authService: AuthService, analyticsService: AnalyticsService, stripeService: StripePaymentService, paypalService: PaypalPaymentService, razorpayService: RazorpayService, shiprocketService: ShiprocketService, mailService: MailService, stocksService: StocksService, notificationService: NotificationService, orderRepository: Repository<Order>, orderStatusRepository: Repository<OrderStatus>, userRepository: Repository<User>, userAddressRepository: Repository<UserAdd>, productRepository: Repository<Product>, orderFilesRepository: Repository<OrderFiles>, fileRepository: Repository<File>, paymentIntentInfoRepository: Repository<PaymentIntentInfo>, paymentIntentRepository: Repository<PaymentIntent>, orderProductPivotRepository: Repository<OrderProductPivot>, shopRepository: Repository<Shop>, couponRepository: Repository<Coupon>, cacheManager: Cache);
     updateOrderQuantityProducts(ordProducts: any[]): Promise<void>;
+    updateShopOrdersProductsCount(orders: Order): Promise<void>;
     create(createOrderInput: CreateOrderDto): Promise<Order>;
     private createOrderFiles;
     private setOrderStatus;

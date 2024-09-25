@@ -30,6 +30,7 @@ let UsersController = class UsersController {
         return this.usersService.create(createUserDto);
     }
     getAllUsers(query) {
+        console.log("first");
         return this.usersService.getUsers(query);
     }
     getUser(id) {
@@ -60,7 +61,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "createUser", null);
 __decorate([
-    (0, common_1.Get)(),
+    (0, common_1.Get)('all'),
     openapi.ApiResponse({ status: 200, type: require("./dto/get-users.dto").UserPaginator }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
