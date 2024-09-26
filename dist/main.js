@@ -10,7 +10,6 @@ const app_module_1 = require("./app.module");
 const path_1 = require("path");
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const express_session_1 = __importDefault(require("express-session"));
-const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const compression_1 = __importDefault(require("compression"));
 const common_2 = require("@nestjs/common");
@@ -31,19 +30,10 @@ async function bootstrap() {
             maxAge: 24 * 60 * 60 * 1000,
         },
     }));
-    const corsOptions = {
-        origin: (origin, callback) => {
-            const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : [];
-            if (!origin || allowedOrigins.includes(origin)) {
-                callback(null, true);
-            }
-            else {
-                callback(new Error('Not allowed by CORS'));
-            }
-        },
+    app.enableCors({
+        origin: '*',
         credentials: true,
-    };
-    app.use((0, cors_1.default)(corsOptions));
+    });
     app.setGlobalPrefix('api');
     app.useGlobalPipes(new common_1.ValidationPipe());
     if (process.env.NODE_ENV !== 'production') {

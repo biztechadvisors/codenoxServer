@@ -6,7 +6,6 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
-import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import { Logger } from '@nestjs/common';
@@ -17,9 +16,11 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.use(cookieParser());
 
+  // Security and performance optimizations
   app.use(helmet());
   app.use(compression());
 
+  // Session handling
   app.use(
     session({
       name: process.env.SESSION_NAME || 'sessionName',
@@ -29,28 +30,22 @@ async function bootstrap() {
       cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
       },
     }),
   );
 
-  const corsOptions = {
-    origin: (origin, callback) => {
-      const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : [];
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+  // CORS setup - Allowing all origins for API access
+  app.enableCors({
+    origin: '*',
     credentials: true,
-  };
+  });
 
-  app.use(cors(corsOptions));
-
+  // Setting global prefix and validation pipes
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe());
 
+  // Swagger setup for development environment
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Marvel')
@@ -62,6 +57,7 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, document);
   }
 
+  // Starting the application
   const PORT = process.env.PORT || 5000;
   await app.listen(PORT);
   Logger.log(`Application is running on: ${await app.getUrl()}/api`);

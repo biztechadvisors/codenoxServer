@@ -81,7 +81,7 @@ import { AddModule } from './address/addresses.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: ['error'],
         extra: {
-          
+
           connectionLimit: 50,
           waitForConnections: true,
           queueLimit: 0,
@@ -99,18 +99,18 @@ import { AddModule } from './address/addresses.module';
       apiVersion: '2022-11-15',
     }),
     MulterModule.register({ dest: './uploads' }),
-    CacheModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        max: 100,
-        isGlobal: true,
-        ttl: configService.get<number>('CACHE_TTL'),
-        store: redistStore,
-        host: configService.get<string>('REDIS_HOST'),
-        port: configService.get<number>('REDIS_PORT'),
-      }),
-      inject: [ConfigService],
-    }),
+    // CacheModule.registerAsync({
+    //   imports: [ConfigModule],
+    //   useFactory: async (configService: ConfigService) => ({
+    //     max: 100,
+    //     isGlobal: true,
+    //     ttl: configService.get<number>('CACHE_TTL'),
+    //     store: redistStore,
+    //     host: configService.get<string>('REDIS_HOST'),
+    //     port: configService.get<number>('REDIS_PORT'),
+    //   }),
+    //   inject: [ConfigService],
+    // }),
     // Import all feature modules
     UsersModule,
     MailModule,
@@ -163,10 +163,10 @@ import { AddModule } from './address/addresses.module';
   ],
   controllers: [],
   providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: CacheInterceptor,
-    },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: CacheInterceptor,
+    // },
   ],
 })
 export class AppModule implements NestModule {
