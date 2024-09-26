@@ -14,7 +14,7 @@ export class GetInspiredController {
         return this.getInspiredService.createGetInspired(createGetInspiredDto);
     }
 
-    @Get('shop/:shopSlug')
+    @Get('shop')
     async getAllGetInspired(
         @Query('shopSlug') shopSlug: string,
         @Query('type') type?: string, // Optional query parameter for type

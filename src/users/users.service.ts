@@ -29,6 +29,8 @@ import { AddressesService } from '../address/addresses.service';
 import { CreateAddressDto } from '../address/dto/create-address.dto';
 import { UpdateAddressDto } from '../address/dto/update-address.dto';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
+import { CreateDealerEnquiryDto, UpdateDealerEnquiryDto } from './dto/createDealerEnquiryDto.dto';
 
 const options = {
   keys: ['name', 'type.slug', 'categories.slug', 'status'],
@@ -50,6 +52,8 @@ export class UsersService {
     @InjectRepository(Shop) private readonly shopRepository: Repository<Shop>,
     @InjectRepository(Social) private readonly socialRepository: Repository<Social>,
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
+    @InjectRepository(DealerEnquiry)
+    private readonly dealerEnquiryRepository: Repository<DealerEnquiry>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
 
     private readonly analyticsService: AnalyticsService,
@@ -726,4 +730,49 @@ export class UsersService {
 
     return
   }
+
+  // ------------------------- Profile Service ----------------------------------------
+
+  async CreateDealerEnquiry(createDealerEnquiryDto: CreateDealerEnquiryDto): Promise<DealerEnquiry> {
+    const shop = await this.shopRepository.findOne({ where: { slug: createDealerEnquiryDto.shopSlug } });
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    const dealerEnquiry = this.dealerEnquiryRepository.create({
+      ...createDealerEnquiryDto,
+      shop
+    });
+
+    return await this.dealerEnquiryRepository.save(dealerEnquiry);
+  }
+
+  async findAllDealerEnquiry(shopSlug: string): Promise<DealerEnquiry[]> {
+    const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    return await this.dealerEnquiryRepository.find({ where: { shop: { id: shop.id } } });
+  }
+
+  async findOneDealerEnquiry(id: number): Promise<DealerEnquiry> {
+    const enquiry = await this.dealerEnquiryRepository.findOne({ where: { id } });
+    if (!enquiry) {
+      throw new NotFoundException('Dealer enquiry not found');
+    }
+    return enquiry;
+  }
+
+  async updateDealerEnquiry(id: number, updateDealerEnquiryDto: UpdateDealerEnquiryDto): Promise<DealerEnquiry> {
+    const enquiry = await this.findOneDealerEnquiry(id);
+    Object.assign(enquiry, updateDealerEnquiryDto);
+    return await this.dealerEnquiryRepository.save(enquiry);
+  }
+
+  async removeDealerEnquiry(id: number): Promise<void> {
+    const enquiry = await this.findOneDealerEnquiry(id);
+    await this.dealerEnquiryRepository.remove(enquiry);
+  }
+
 }

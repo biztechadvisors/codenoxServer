@@ -6,6 +6,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
 import { DealerDto } from './dto/add-dealer.dto';
 import { Dealer } from './entities/dealer.entity';
+import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
+import { CreateDealerEnquiryDto, UpdateDealerEnquiryDto } from './dto/createDealerEnquiryDto.dto';
 export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
@@ -33,4 +35,13 @@ export declare class DealerController {
     getDealerById(id: number): Promise<Dealer>;
     updateDealer(id: number, dealerData: DealerDto): Promise<Dealer>;
     deleteDealer(id: number): Promise<void>;
+}
+export declare class DealerEnquiryController {
+    private readonly usersService;
+    constructor(usersService: UsersService);
+    create(createDealerEnquiryDto: CreateDealerEnquiryDto): Promise<DealerEnquiry>;
+    findAll(shopSlug: string): Promise<DealerEnquiry[]>;
+    findOne(id: number): Promise<DealerEnquiry>;
+    update(id: number, updateDealerEnquiryDto: UpdateDealerEnquiryDto): Promise<DealerEnquiry>;
+    remove(id: number): Promise<void>;
 }

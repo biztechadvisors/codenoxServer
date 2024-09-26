@@ -33,12 +33,13 @@ const addresses_service_1 = require("../address/addresses.service");
 const create_address_dto_1 = require("../address/dto/create-address.dto");
 const update_address_dto_1 = require("../address/dto/update-address.dto");
 const analytics_service_1 = require("../analytics/analytics.service");
+const delaerForEnquiry_entity_1 = require("./entities/delaerForEnquiry.entity");
 const options = {
     keys: ['name', 'type.slug', 'categories.slug', 'status'],
     threshold: 0.3,
 };
 let UsersService = class UsersService {
-    constructor(userRepository, addressRepository, profileRepository, attachmentRepository, dealerRepository, productRepository, categoryRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, shopRepository, socialRepository, permissionRepository, cacheManager, analyticsService, authService, addressesService) {
+    constructor(userRepository, addressRepository, profileRepository, attachmentRepository, dealerRepository, productRepository, categoryRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, shopRepository, socialRepository, permissionRepository, dealerEnquiryRepository, cacheManager, analyticsService, authService, addressesService) {
         this.userRepository = userRepository;
         this.addressRepository = addressRepository;
         this.profileRepository = profileRepository;
@@ -51,6 +52,7 @@ let UsersService = class UsersService {
         this.shopRepository = shopRepository;
         this.socialRepository = socialRepository;
         this.permissionRepository = permissionRepository;
+        this.dealerEnquiryRepository = dealerEnquiryRepository;
         this.cacheManager = cacheManager;
         this.analyticsService = analyticsService;
         this.authService = authService;
@@ -517,6 +519,37 @@ let UsersService = class UsersService {
     async updateProfile(updateProfileDto) {
         return;
     }
+    async CreateDealerEnquiry(createDealerEnquiryDto) {
+        const shop = await this.shopRepository.findOne({ where: { slug: createDealerEnquiryDto.shopSlug } });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        const dealerEnquiry = this.dealerEnquiryRepository.create(Object.assign(Object.assign({}, createDealerEnquiryDto), { shop }));
+        return await this.dealerEnquiryRepository.save(dealerEnquiry);
+    }
+    async findAllDealerEnquiry(shopSlug) {
+        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        return await this.dealerEnquiryRepository.find({ where: { shop: { id: shop.id } } });
+    }
+    async findOneDealerEnquiry(id) {
+        const enquiry = await this.dealerEnquiryRepository.findOne({ where: { id } });
+        if (!enquiry) {
+            throw new common_1.NotFoundException('Dealer enquiry not found');
+        }
+        return enquiry;
+    }
+    async updateDealerEnquiry(id, updateDealerEnquiryDto) {
+        const enquiry = await this.findOneDealerEnquiry(id);
+        Object.assign(enquiry, updateDealerEnquiryDto);
+        return await this.dealerEnquiryRepository.save(enquiry);
+    }
+    async removeDealerEnquiry(id) {
+        const enquiry = await this.findOneDealerEnquiry(id);
+        await this.dealerEnquiryRepository.remove(enquiry);
+    }
 };
 UsersService = __decorate([
     (0, common_1.Injectable)(),
@@ -532,8 +565,10 @@ UsersService = __decorate([
     __param(9, (0, typeorm_1.InjectRepository)(shop_entity_1.Shop)),
     __param(10, (0, typeorm_1.InjectRepository)(profile_entity_1.Social)),
     __param(11, (0, typeorm_1.InjectRepository)(permission_entity_1.Permission)),
-    __param(12, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
+    __param(12, (0, typeorm_1.InjectRepository)(delaerForEnquiry_entity_1.DealerEnquiry)),
+    __param(13, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

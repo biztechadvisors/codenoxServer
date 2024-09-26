@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DealerController = exports.ProfilesController = exports.UsersController = void 0;
+exports.DealerEnquiryController = exports.DealerController = exports.ProfilesController = exports.UsersController = void 0;
 const openapi = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const users_service_1 = require("./users.service");
@@ -22,6 +22,7 @@ const create_profile_dto_1 = require("./dto/create-profile.dto");
 const update_profile_dto_1 = require("./dto/update-profile.dto");
 const get_users_dto_1 = require("./dto/get-users.dto");
 const add_dealer_dto_1 = require("./dto/add-dealer.dto");
+const createDealerEnquiryDto_dto_1 = require("./dto/createDealerEnquiryDto.dto");
 let UsersController = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
@@ -230,4 +231,70 @@ DealerController = __decorate([
     __metadata("design:paramtypes", [users_service_1.UsersService])
 ], DealerController);
 exports.DealerController = DealerController;
+let DealerEnquiryController = class DealerEnquiryController {
+    constructor(usersService) {
+        this.usersService = usersService;
+    }
+    async create(createDealerEnquiryDto) {
+        return this.usersService.CreateDealerEnquiry(createDealerEnquiryDto);
+    }
+    async findAll(shopSlug) {
+        return this.usersService.findAllDealerEnquiry(shopSlug);
+    }
+    async findOne(id) {
+        return this.usersService.findOneDealerEnquiry(id);
+    }
+    async update(id, updateDealerEnquiryDto) {
+        return this.usersService.updateDealerEnquiry(id, updateDealerEnquiryDto);
+    }
+    async remove(id) {
+        return this.usersService.removeDealerEnquiry(id);
+    }
+};
+__decorate([
+    (0, common_1.Post)(),
+    openapi.ApiResponse({ status: 201, type: require("./entities/delaerForEnquiry.entity").DealerEnquiry }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [createDealerEnquiryDto_dto_1.CreateDealerEnquiryDto]),
+    __metadata("design:returntype", Promise)
+], DealerEnquiryController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(':shopSlug'),
+    openapi.ApiResponse({ status: 200, type: [require("./entities/delaerForEnquiry.entity").DealerEnquiry] }),
+    __param(0, (0, common_1.Param)('shopSlug')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], DealerEnquiryController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    openapi.ApiResponse({ status: 200, type: require("./entities/delaerForEnquiry.entity").DealerEnquiry }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], DealerEnquiryController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    openapi.ApiResponse({ status: 200, type: require("./entities/delaerForEnquiry.entity").DealerEnquiry }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, createDealerEnquiryDto_dto_1.UpdateDealerEnquiryDto]),
+    __metadata("design:returntype", Promise)
+], DealerEnquiryController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    openapi.ApiResponse({ status: 200 }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], DealerEnquiryController.prototype, "remove", null);
+DealerEnquiryController = __decorate([
+    (0, common_1.Controller)('dealer-enquiries'),
+    __metadata("design:paramtypes", [users_service_1.UsersService])
+], DealerEnquiryController);
+exports.DealerEnquiryController = DealerEnquiryController;
 //# sourceMappingURL=users.controller.js.map

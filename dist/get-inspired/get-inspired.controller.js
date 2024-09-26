@@ -47,7 +47,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GetInspiredController.prototype, "createGetInspired", null);
 __decorate([
-    (0, common_1.Get)('shop/:shopSlug'),
+    (0, common_1.Get)('shop'),
     openapi.ApiResponse({ status: 200 }),
     __param(0, (0, common_1.Query)('shopSlug')),
     __param(1, (0, common_1.Query)('type')),

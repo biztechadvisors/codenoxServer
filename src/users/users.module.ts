@@ -24,13 +24,14 @@ import { Order } from '../orders/entities/order.entity';
 import { Analytics, TotalYearSaleByMonth } from '../analytics/entities/analytics.entity';
 import { Refund } from '../refunds/entities/refund.entity';
 import { StocksSellOrd } from '../stocks/entities/stocksOrd.entity';
+import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       User, Add, UserAdd, Profile, Dealer, Social, Product, Category,
       Attachment, DealerCategoryMargin, DealerProductMargin, Shop, Permission, Order, Analytics, Refund, StocksSellOrd,
-      TotalYearSaleByMonth
+      TotalYearSaleByMonth, DealerEnquiry
     ]),
     JwtModule.register({}),
     CacheModule.register(),

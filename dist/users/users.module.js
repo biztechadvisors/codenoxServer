@@ -33,6 +33,7 @@ const order_entity_1 = require("../orders/entities/order.entity");
 const analytics_entity_1 = require("../analytics/entities/analytics.entity");
 const refund_entity_1 = require("../refunds/entities/refund.entity");
 const stocksOrd_entity_1 = require("../stocks/entities/stocksOrd.entity");
+const delaerForEnquiry_entity_1 = require("./entities/delaerForEnquiry.entity");
 let UsersModule = class UsersModule {
 };
 UsersModule = __decorate([
@@ -41,7 +42,7 @@ UsersModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([
                 user_entity_1.User, address_entity_1.Add, address_entity_1.UserAdd, profile_entity_1.Profile, dealer_entity_1.Dealer, profile_entity_1.Social, product_entity_1.Product, category_entity_1.Category,
                 attachment_entity_1.Attachment, dealer_entity_1.DealerCategoryMargin, dealer_entity_1.DealerProductMargin, shop_entity_1.Shop, permission_entity_1.Permission, order_entity_1.Order, analytics_entity_1.Analytics, refund_entity_1.Refund, stocksOrd_entity_1.StocksSellOrd,
-                analytics_entity_1.TotalYearSaleByMonth
+                analytics_entity_1.TotalYearSaleByMonth, delaerForEnquiry_entity_1.DealerEnquiry
             ]),
             jwt_1.JwtModule.register({}),
             cache_manager_1.CacheModule.register(),

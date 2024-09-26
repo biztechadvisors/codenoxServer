@@ -18,6 +18,8 @@ import { Cache } from 'cache-manager';
 import { Add } from '../address/entities/address.entity';
 import { AddressesService } from '../address/addresses.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
+import { CreateDealerEnquiryDto, UpdateDealerEnquiryDto } from './dto/createDealerEnquiryDto.dto';
 export declare class UsersService {
     private readonly userRepository;
     private readonly addressRepository;
@@ -31,11 +33,12 @@ export declare class UsersService {
     private readonly shopRepository;
     private readonly socialRepository;
     private readonly permissionRepository;
+    private readonly dealerEnquiryRepository;
     private readonly cacheManager;
     private readonly analyticsService;
     private readonly authService;
     private readonly addressesService;
-    constructor(userRepository: Repository<User>, addressRepository: Repository<Add>, profileRepository: Repository<Profile>, attachmentRepository: Repository<Attachment>, dealerRepository: Repository<Dealer>, productRepository: Repository<Product>, categoryRepository: Repository<Category>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, shopRepository: Repository<Shop>, socialRepository: Repository<Social>, permissionRepository: Repository<Permission>, cacheManager: Cache, analyticsService: AnalyticsService, authService: AuthService, addressesService: AddressesService);
+    constructor(userRepository: Repository<User>, addressRepository: Repository<Add>, profileRepository: Repository<Profile>, attachmentRepository: Repository<Attachment>, dealerRepository: Repository<Dealer>, productRepository: Repository<Product>, categoryRepository: Repository<Category>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, shopRepository: Repository<Shop>, socialRepository: Repository<Social>, permissionRepository: Repository<Permission>, dealerEnquiryRepository: Repository<DealerEnquiry>, cacheManager: Cache, analyticsService: AnalyticsService, authService: AuthService, addressesService: AddressesService);
     create(createUserDto: CreateUserDto): Promise<User>;
     getUsers({ searchJoin, limit, page, name, orderBy, sortedBy, usrById, search, type, }: GetUsersDto): Promise<UserPaginator>;
     findOne(id: number): Promise<User>;
@@ -51,4 +54,9 @@ export declare class UsersService {
     deleteDealer(id: number): Promise<void>;
     createProfile(createProfileDto: CreateProfileDto): Promise<Profile>;
     updateProfile(updateProfileDto: UpdateProfileDto): Promise<Profile>;
+    CreateDealerEnquiry(createDealerEnquiryDto: CreateDealerEnquiryDto): Promise<DealerEnquiry>;
+    findAllDealerEnquiry(shopSlug: string): Promise<DealerEnquiry[]>;
+    findOneDealerEnquiry(id: number): Promise<DealerEnquiry>;
+    updateDealerEnquiry(id: number, updateDealerEnquiryDto: UpdateDealerEnquiryDto): Promise<DealerEnquiry>;
+    removeDealerEnquiry(id: number): Promise<void>;
 }

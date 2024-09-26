@@ -8,7 +8,8 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards
+  UseGuards,
+  Patch
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,6 +19,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersDto } from './dto/get-users.dto';
 import { DealerDto } from './dto/add-dealer.dto';
 import { Dealer } from './entities/dealer.entity';
+import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
+import { CreateDealerEnquiryDto, UpdateDealerEnquiryDto } from './dto/createDealerEnquiryDto.dto';
 
 @Controller('users')
 export class UsersController {
@@ -113,4 +116,34 @@ export class DealerController {
     return this.usersService.deleteDealer(id);
   }
 
+}
+
+@Controller('dealer-enquiries')
+export class DealerEnquiryController {
+  constructor(private readonly usersService: UsersService) { }
+
+  @Post()
+  async create(@Body() createDealerEnquiryDto: CreateDealerEnquiryDto): Promise<DealerEnquiry> {
+    return this.usersService.CreateDealerEnquiry(createDealerEnquiryDto);
+  }
+
+  @Get(':shopSlug')
+  async findAll(@Param('shopSlug') shopSlug: string): Promise<DealerEnquiry[]> {
+    return this.usersService.findAllDealerEnquiry(shopSlug);
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: number): Promise<DealerEnquiry> {
+    return this.usersService.findOneDealerEnquiry(id);
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: number, @Body() updateDealerEnquiryDto: UpdateDealerEnquiryDto): Promise<DealerEnquiry> {
+    return this.usersService.updateDealerEnquiry(id, updateDealerEnquiryDto);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: number): Promise<void> {
+    return this.usersService.removeDealerEnquiry(id);
+  }
 }
