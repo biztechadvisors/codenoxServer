@@ -35,9 +35,9 @@ let OrdersController = OrdersController_1 = class OrdersController {
     }
     async create(createOrderDto) {
         try {
-            const OrdSuccess = await this.ordersService.create(createOrderDto);
-            await this.ordersService.updateOrderQuantityProducts(createOrderDto.products);
-            return OrdSuccess;
+            const order = await this.ordersService.create(createOrderDto);
+            await this.ordersService.updateShopAndProducts(createOrderDto);
+            return order;
         }
         catch (error) {
             this.logger.error('Error creating order:', error.message || error);

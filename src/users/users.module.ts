@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { DealerController, ProfilesController, UsersController } from './users.controller';
+import { DealerController, DealerEnquiryController, ProfilesController, UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Profile, Social } from './entities/profile.entity';
@@ -37,7 +37,7 @@ import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
     CacheModule.register(),
     NotificationModule,
   ],
-  controllers: [UsersController, ProfilesController, DealerController],
+  controllers: [UsersController, ProfilesController, DealerController, DealerEnquiryController],
   providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy, SessionService, AnalyticsService],
   exports: [UsersService],
 })

@@ -40,9 +40,13 @@ export class OrdersController {
   @UsePipes(new ValidationPipe())
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order | { statusCode: number; message: string }> {
     try {
-      const OrdSuccess = await this.ordersService.create(createOrderDto);
-      await this.ordersService.updateOrderQuantityProducts(createOrderDto.products);
-      return OrdSuccess;
+
+      const order = await this.ordersService.create(createOrderDto);
+
+      // Update shop order count and product quantities in a single method
+      await this.ordersService.updateShopAndProducts(createOrderDto);
+
+      return order;
     } catch (error) {
       this.logger.error('Error creating order:', error.message || error);
       throw new BadRequestException('Failed to create order');

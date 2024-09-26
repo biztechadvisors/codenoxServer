@@ -161,7 +161,7 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 userId = (_a = user === null || user === void 0 ? void 0 : user.createdBy) === null || _a === void 0 ? void 0 : _a.id;
             }
             let usrCrtBy;
-            if (user.createdBy) {
+            if (user === null || user === void 0 ? void 0 : user.createdBy) {
                 usrCrtBy = await this.userRepository.findOne({ where: { id: user.createdBy.id } });
             }
             const shopId = (shop === null || shop === void 0 ? void 0 : shop.id) || (order === null || order === void 0 ? void 0 : order.shop_id) || (refund === null || refund === void 0 ? void 0 : refund.shop.id) || usrCrtBy.shop_id;

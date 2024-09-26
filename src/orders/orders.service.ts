@@ -31,7 +31,7 @@ import {
   PaymentStatusType,
 } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { File, OrderProductPivot, Product } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
@@ -87,72 +87,79 @@ export class OrdersService {
     private readonly couponRepository: Repository<Coupon>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
+
+    private readonly dataSource: DataSource,
   ) { }
 
-  async updateOrderQuantityProducts(ordProducts: any[]): Promise<void> {
-    if (!ordProducts || ordProducts.length === 0) {
-      throw new BadRequestException('No products provided.');
-    }
-
-    const productIds = ordProducts.map(product => product.product_id);
-    const products = await this.productRepository.find({
-      where: { id: In(productIds) },
-      relations: ['variation_options'],
-    });
-
-    if (products.length === 0) {
-      throw new NotFoundException('Products not found');
-    }
+  async updateShopAndProducts(orderDto: CreateOrderDto): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner(); // Use dataSource here
+    await queryRunner.startTransaction();
 
     try {
-      const entityManager = this.productRepository.manager;
-      for (const ordProduct of ordProducts) {
-        const product = products.find(p => p.id === ordProduct.product_id);
+      // Find the shop and update its order count
+      const shop = await this.shopRepository.findOne({ where: { id: orderDto.shop_id } });
+      if (!shop) {
+        throw new NotFoundException(`Shop with ID ${orderDto.shop_id} not found`);
+      }
+
+      // Increment the shop's order count
+      shop.orders_count += 1;
+
+      // Collect product IDs to fetch in bulk
+      const productIds = orderDto.products.map(p => p.product_id);
+      const products = await this.productRepository.find({
+        where: { id: In(productIds) },
+        relations: ['variation_options'],
+      });
+
+      if (products.length === 0) {
+        throw new NotFoundException('Products not found');
+      }
+
+      // Update product quantities and shop product count
+      for (const orderedProduct of orderDto.products) {
+        const product = products.find(p => p.id === orderedProduct.product_id);
         if (!product) {
-          throw new NotFoundException(`Product with ID ${ordProduct.product_id} not found`);
+          throw new NotFoundException(`Product with ID ${orderedProduct.product_id} not found`);
         }
 
-        const variation = ordProduct.variation_option_id
-          ? product.variation_options.find(v => v.id === ordProduct.variation_option_id)
+        const variation = orderedProduct.variation_option_id
+          ? product.variation_options.find(v => v.id === orderedProduct.variation_option_id)
           : null;
 
-        if (ordProduct.order_quantity > (variation ? variation.quantity : product.quantity)) {
-          throw new BadRequestException(`Order quantity exceeds available quantity for product ID ${product.id}${variation ? ' and variation ID ' + variation.id : ''}`);
+        // Check if order quantity exceeds available quantity
+        const availableQuantity = variation ? variation.quantity : product.quantity;
+        if (orderedProduct.order_quantity > availableQuantity) {
+          throw new BadRequestException(`Order quantity exceeds available stock for product ID ${product.id}`);
         }
 
-        product.quantity -= ordProduct.order_quantity;
-        await entityManager.save(product);
-
+        // Reduce the product and variation quantities
         if (variation) {
-          variation.quantity -= ordProduct.order_quantity;
-          await entityManager.save(variation);
+          variation.quantity -= orderedProduct.order_quantity;
+          await queryRunner.manager.save(variation);
+        } else {
+          product.quantity -= orderedProduct.order_quantity;
         }
-      }
-    } catch (error) {
-      console.error('Error updating product quantities:', error.message || error);
-      throw new InternalServerErrorException('Failed to update product quantities');
-    }
-  }
 
-  async updateShopOrdersProductsCount(orders: Order) {
-    try {
-      console.log("first", orders)
-      const shop = await this.shopRepository.findOne({ where: { id: orders.shop_id } });
-      if (!shop) {
-        throw new NotFoundException(`Shop with ID ${orders.shop_id} not found`);
+        await queryRunner.manager.save(product);
+
+        // Update shop product count
+        shop.products_count -= orderedProduct.order_quantity;
       }
-      if (orders.orderProductPivots[0].product) {
-        // Product found, increase the products_count for the shop
-        shop.products_count += 1;
-      } else if (shop.products_count > 0) {
-        // Product not found, decrease the products_count (if it's greater than 0)
-        shop.products_count -= 1;
-      }
-      // Save the updated shop
-      await this.shopRepository.save(shop);
-    } catch (err) {
-      // Handle errors appropriately
-      throw err;
+
+      // Save updated shop information
+      await queryRunner.manager.save(shop);
+
+      // Commit the transaction
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      // Rollback the transaction on error
+      await queryRunner.rollbackTransaction();
+      console.error('Error updating shop and products:', error.message || error);
+      throw new InternalServerErrorException('Failed to update shop and products');
+    } finally {
+      // Release the query runner
+      await queryRunner.release();
     }
   }
 

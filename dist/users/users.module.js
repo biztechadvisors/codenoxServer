@@ -48,7 +48,7 @@ UsersModule = __decorate([
             cache_manager_1.CacheModule.register(),
             notifications_module_1.NotificationModule,
         ],
-        controllers: [users_controller_1.UsersController, users_controller_1.ProfilesController, users_controller_1.DealerController],
+        controllers: [users_controller_1.UsersController, users_controller_1.ProfilesController, users_controller_1.DealerController, users_controller_1.DealerEnquiryController],
         providers: [users_service_1.UsersService, auth_service_1.AuthService, mail_service_1.MailService, addresses_service_1.AddressesService, jwt_strategy_1.JwtStrategy, session_service_1.SessionService, analytics_service_1.AnalyticsService],
         exports: [users_service_1.UsersService],
     })

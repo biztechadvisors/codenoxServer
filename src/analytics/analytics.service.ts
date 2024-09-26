@@ -196,7 +196,7 @@ export class AnalyticsService {
       }
 
       let usrCrtBy;
-      if (user.createdBy) {
+      if (user?.createdBy) {
         usrCrtBy = await this.userRepository.findOne({ where: { id: user.createdBy.id } })
       }
 

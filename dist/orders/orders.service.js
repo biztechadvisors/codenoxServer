@@ -39,7 +39,7 @@ const analytics_service_1 = require("../analytics/analytics.service");
 const generic_conditions_dto_1 = require("../common/dto/generic-conditions.dto");
 const helpers_1 = require("../helpers");
 let OrdersService = class OrdersService {
-    constructor(authService, analyticsService, stripeService, paypalService, razorpayService, shiprocketService, mailService, stocksService, notificationService, orderRepository, orderStatusRepository, userRepository, userAddressRepository, productRepository, orderFilesRepository, fileRepository, paymentIntentInfoRepository, paymentIntentRepository, orderProductPivotRepository, shopRepository, couponRepository, cacheManager) {
+    constructor(authService, analyticsService, stripeService, paypalService, razorpayService, shiprocketService, mailService, stocksService, notificationService, orderRepository, orderStatusRepository, userRepository, userAddressRepository, productRepository, orderFilesRepository, fileRepository, paymentIntentInfoRepository, paymentIntentRepository, orderProductPivotRepository, shopRepository, couponRepository, cacheManager, dataSource) {
         this.authService = authService;
         this.analyticsService = analyticsService;
         this.stripeService = stripeService;
@@ -62,62 +62,57 @@ let OrdersService = class OrdersService {
         this.shopRepository = shopRepository;
         this.couponRepository = couponRepository;
         this.cacheManager = cacheManager;
+        this.dataSource = dataSource;
     }
-    async updateOrderQuantityProducts(ordProducts) {
-        if (!ordProducts || ordProducts.length === 0) {
-            throw new common_1.BadRequestException('No products provided.');
-        }
-        const productIds = ordProducts.map(product => product.product_id);
-        const products = await this.productRepository.find({
-            where: { id: (0, typeorm_2.In)(productIds) },
-            relations: ['variation_options'],
-        });
-        if (products.length === 0) {
-            throw new common_1.NotFoundException('Products not found');
-        }
+    async updateShopAndProducts(orderDto) {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.startTransaction();
         try {
-            const entityManager = this.productRepository.manager;
-            for (const ordProduct of ordProducts) {
-                const product = products.find(p => p.id === ordProduct.product_id);
-                if (!product) {
-                    throw new common_1.NotFoundException(`Product with ID ${ordProduct.product_id} not found`);
-                }
-                const variation = ordProduct.variation_option_id
-                    ? product.variation_options.find(v => v.id === ordProduct.variation_option_id)
-                    : null;
-                if (ordProduct.order_quantity > (variation ? variation.quantity : product.quantity)) {
-                    throw new common_1.BadRequestException(`Order quantity exceeds available quantity for product ID ${product.id}${variation ? ' and variation ID ' + variation.id : ''}`);
-                }
-                product.quantity -= ordProduct.order_quantity;
-                await entityManager.save(product);
-                if (variation) {
-                    variation.quantity -= ordProduct.order_quantity;
-                    await entityManager.save(variation);
-                }
+            const shop = await this.shopRepository.findOne({ where: { id: orderDto.shop_id } });
+            if (!shop) {
+                throw new common_1.NotFoundException(`Shop with ID ${orderDto.shop_id} not found`);
             }
+            shop.orders_count += 1;
+            const productIds = orderDto.products.map(p => p.product_id);
+            const products = await this.productRepository.find({
+                where: { id: (0, typeorm_2.In)(productIds) },
+                relations: ['variation_options'],
+            });
+            if (products.length === 0) {
+                throw new common_1.NotFoundException('Products not found');
+            }
+            for (const orderedProduct of orderDto.products) {
+                const product = products.find(p => p.id === orderedProduct.product_id);
+                if (!product) {
+                    throw new common_1.NotFoundException(`Product with ID ${orderedProduct.product_id} not found`);
+                }
+                const variation = orderedProduct.variation_option_id
+                    ? product.variation_options.find(v => v.id === orderedProduct.variation_option_id)
+                    : null;
+                const availableQuantity = variation ? variation.quantity : product.quantity;
+                if (orderedProduct.order_quantity > availableQuantity) {
+                    throw new common_1.BadRequestException(`Order quantity exceeds available stock for product ID ${product.id}`);
+                }
+                if (variation) {
+                    variation.quantity -= orderedProduct.order_quantity;
+                    await queryRunner.manager.save(variation);
+                }
+                else {
+                    product.quantity -= orderedProduct.order_quantity;
+                }
+                await queryRunner.manager.save(product);
+                shop.products_count -= orderedProduct.order_quantity;
+            }
+            await queryRunner.manager.save(shop);
+            await queryRunner.commitTransaction();
         }
         catch (error) {
-            console.error('Error updating product quantities:', error.message || error);
-            throw new common_1.InternalServerErrorException('Failed to update product quantities');
+            await queryRunner.rollbackTransaction();
+            console.error('Error updating shop and products:', error.message || error);
+            throw new common_1.InternalServerErrorException('Failed to update shop and products');
         }
-    }
-    async updateShopOrdersProductsCount(orders) {
-        try {
-            console.log("first", orders);
-            const shop = await this.shopRepository.findOne({ where: { id: orders.shop_id } });
-            if (!shop) {
-                throw new common_1.NotFoundException(`Shop with ID ${orders.shop_id} not found`);
-            }
-            if (orders.orderProductPivots[0].product) {
-                shop.products_count += 1;
-            }
-            else if (shop.products_count > 0) {
-                shop.products_count -= 1;
-            }
-            await this.shopRepository.save(shop);
-        }
-        catch (err) {
-            throw err;
+        finally {
+            await queryRunner.release();
         }
     }
     async create(createOrderInput) {
@@ -1111,7 +1106,7 @@ OrdersService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository, Object])
+        typeorm_2.Repository, Object, typeorm_2.DataSource])
 ], OrdersService);
 exports.OrdersService = OrdersService;
 //# sourceMappingURL=orders.service.js.map
