@@ -30,7 +30,6 @@ export class UsersController {
 
   @Get('all')
   getAllUsers(@Query() query: GetUsersDto) {
-    console.log("first")
     return this.usersService.getUsers(query);
   }
 

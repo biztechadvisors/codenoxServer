@@ -119,7 +119,6 @@ export class UsersService {
 
   async getUsers({
     searchJoin = 'and',
-    with: include,
     limit = 30,
     page = 1,
     name,
@@ -129,68 +128,106 @@ export class UsersService {
     search,
     type,
   }: GetUsersDto): Promise<UserPaginator> {
+
     if (!usrById && !type) {
-      return {
+      const emptyUserPaginator: UserPaginator = {
         data: [],
         count: 0,
         current_page: 1,
         firstItem: null,
         lastItem: null,
         last_page: 1,
-        per_page: limit,
+        per_page: 10, // Adjust this based on your default pagination setup
         total: 0,
         first_page_url: null,
         last_page_url: null,
         next_page_url: null,
         prev_page_url: null,
       };
+      return emptyUserPaginator;
     }
 
     const limitNum = limit;
     const pageNum = page;
     const startIndex = (pageNum - 1) * limitNum;
 
-    // Cache key construction
-    const cacheKey = `users_${JSON.stringify({
-      searchJoin,
-      include,
-      limit,
-      page,
-      name,
-      orderBy,
-      sortedBy,
-      usrById,
-      search,
-      type,
-    })}`;
+    // // Construct a cache key based on query parameters
+    // const cacheKey = `users_${JSON.stringify({
+    //   searchJoin,
+    //   include,
+    //   limit,
+    //   page,
+    //   name,
+    //   orderBy,
+    //   sortedBy,
+    //   usrById,
+    //   search,
+    //   type,
+    // })}`;
 
-    // Check cache
-    const cachedData = await this.cacheManager.get<UserPaginator>(cacheKey);
-    if (cachedData) {
-      return cachedData;
+    // // Try to get cached data
+    // const cachedData = await this.cacheManager.get<UserPaginator>(cacheKey);
+    // if (cachedData) {
+    //   return cachedData;
+    // }
+
+    let user: User;
+
+    if (usrById) {
+      // Fetch user by ID and apply type-based filtering if provided
+      user = await this.userRepository.findOne({
+        where: { id: Number(usrById) },
+        relations: [
+          'profile',
+          'dealer',
+          'owned_shops',
+          // 'inventoryStocks',
+          // 'stocks',
+          'managed_shop',
+          'address',
+          // 'orders',
+          // 'stockOrd',
+          // 'stocksSellOrd',
+          'permission',
+        ],
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${usrById} not found`);
+      }
     }
 
     const queryBuilder: SelectQueryBuilder<User> = this.userRepository.createQueryBuilder('user');
 
-    // Conditionally load relations
-    if (include.includes('profile')) queryBuilder.leftJoinAndSelect('user.profile', 'profile');
-    if (include.includes('dealer')) queryBuilder.leftJoinAndSelect('user.dealer', 'dealer');
-    if (include.includes('shops')) queryBuilder.leftJoinAndSelect('user.owned_shops', 'owned_shops');
-    // Add more joins based on the `with` parameter
+    // Adding relations using left join to bring associated data
+    queryBuilder
+      .leftJoinAndSelect('user.profile', 'profile')
+      .leftJoinAndSelect('user.dealer', 'dealer')
+      .leftJoinAndSelect('user.owned_shops', 'owned_shops')
+      // .leftJoinAndSelect('user.inventoryStocks', 'inventoryStocks')
+      // .leftJoinAndSelect('user.stocks', 'stocks')
+      .leftJoinAndSelect('user.managed_shop', 'managed_shop')
+      .leftJoinAndSelect('user.address', 'address')
+      // .leftJoinAndSelect('user.orders', 'orders')
+      // .leftJoinAndSelect('user.stockOrd', 'stockOrd')
+      // .leftJoinAndSelect('user.stocksSellOrd', 'stocksSellOrd')
+      .leftJoinAndSelect('user.permission', 'permission');
 
     // Pagination
     queryBuilder.skip(startIndex).take(limitNum);
 
-    // Sorting
+
+    // Ordering
     if (orderBy && sortedBy) {
       queryBuilder.addOrderBy(`user.${orderBy}`, sortedBy.toUpperCase() as 'ASC' | 'DESC');
     }
 
-    // Filter by `usrById` and `type`
+    // Filtering by usrById and type
     if (usrById) {
       queryBuilder.andWhere('user.createdById = :usrById', { usrById });
 
       if (type) {
+
         const permissions = await this.permissionRepository.find({
           where: {
             type_name: type,
@@ -207,54 +244,51 @@ export class UsersService {
       }
     }
 
-    // Filter by name
+    // Filtering by name
     if (name) {
       queryBuilder.andWhere('user.name LIKE :name', { name: `%${name}%` });
     }
 
-    // Search filter
+    // Search filter query
     if (search) {
       const searchConditions = [];
       const searchParams = {};
-      const filterTerms = search.split(' ');
 
+      const filterTerms = search.split(' ');
       filterTerms.forEach((term, index) => {
         const searchTermKey = `searchTerm${index}`;
+        const searchTermValue = `%${term}%`;
         searchConditions.push(
           `(user.name LIKE :${searchTermKey} OR user.email LIKE :${searchTermKey} OR user.contact LIKE :${searchTermKey})`
         );
-        searchParams[searchTermKey] = `%${term}%`;
+        searchParams[searchTermKey] = searchTermValue;
       });
 
       if (searchJoin.toLowerCase() === 'or') {
-        queryBuilder.andWhere(new Brackets(qb => qb.where(searchConditions.join(' OR '), searchParams)));
+        queryBuilder.andWhere(new Brackets(qb => {
+          qb.where(searchConditions.join(' OR '), searchParams);
+        }));
       } else {
-        searchConditions.forEach((condition, index) => queryBuilder.andWhere(condition, searchParams));
+        searchConditions.forEach((condition, index) => {
+          queryBuilder.andWhere(condition, searchParams);
+        });
       }
     }
 
-    // Execute the query
+    // Execute the query and get results
     const [users, total] = await queryBuilder.getManyAndCount();
 
-    // Determine first and last items
-    const firstItem = users.length > 0 ? users[0] : null;
-    const lastItem = users.length > 0 ? users[users.length - 1] : null;
+    // Prepare paginated response
+    const isCompanyOrStaff = user && (user.permission.type_name === UserType.Company || user.permission.type_name === UserType.Staff);
+    const url = `/users?type=${type || 'customer'}&limit=${limitNum}`;
 
-    // Prepare pagination URLs
-    const pagination = paginate(total, pageNum, limitNum, total, `/users?type=${type || 'customer'}`);
-
-    // Final response structure
-    const result: UserPaginator = {
-      data: users,
-      count: users.length,
-      current_page: pageNum,
-      firstItem: firstItem?.id || null,
-      lastItem: lastItem?.id || null,
-      ...pagination,
+    const result = {
+      data: isCompanyOrStaff ? [...users] : [user, ...users],
+      ...paginate(total, pageNum, limitNum, total, url),
     };
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, result, 60);
+    // await this.cacheManager.set(cacheKey, result, 60); // Cache for 1 hour
 
     return result;
   }

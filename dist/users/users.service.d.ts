@@ -37,7 +37,7 @@ export declare class UsersService {
     private readonly addressesService;
     constructor(userRepository: Repository<User>, addressRepository: Repository<Add>, profileRepository: Repository<Profile>, attachmentRepository: Repository<Attachment>, dealerRepository: Repository<Dealer>, productRepository: Repository<Product>, categoryRepository: Repository<Category>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, shopRepository: Repository<Shop>, socialRepository: Repository<Social>, permissionRepository: Repository<Permission>, cacheManager: Cache, analyticsService: AnalyticsService, authService: AuthService, addressesService: AddressesService);
     create(createUserDto: CreateUserDto): Promise<User>;
-    getUsers({ searchJoin, with: include, limit, page, name, orderBy, sortedBy, usrById, search, type, }: GetUsersDto): Promise<UserPaginator>;
+    getUsers({ searchJoin, limit, page, name, orderBy, sortedBy, usrById, search, type, }: GetUsersDto): Promise<UserPaginator>;
     findOne(id: number): Promise<User>;
     update(id: number, updateUserDto: UpdateUserDto): Promise<User>;
     removeUser(id: number): Promise<string>;

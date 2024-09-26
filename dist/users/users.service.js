@@ -103,49 +103,52 @@ let UsersService = class UsersService {
         await this.userRepository.save(usr);
         return usr;
     }
-    async getUsers({ searchJoin = 'and', with: include, limit = 30, page = 1, name, orderBy, sortedBy, usrById, search, type, }) {
+    async getUsers({ searchJoin = 'and', limit = 30, page = 1, name, orderBy, sortedBy, usrById, search, type, }) {
         if (!usrById && !type) {
-            return {
+            const emptyUserPaginator = {
                 data: [],
                 count: 0,
                 current_page: 1,
                 firstItem: null,
                 lastItem: null,
                 last_page: 1,
-                per_page: limit,
+                per_page: 10,
                 total: 0,
                 first_page_url: null,
                 last_page_url: null,
                 next_page_url: null,
                 prev_page_url: null,
             };
+            return emptyUserPaginator;
         }
         const limitNum = limit;
         const pageNum = page;
         const startIndex = (pageNum - 1) * limitNum;
-        const cacheKey = `users_${JSON.stringify({
-            searchJoin,
-            include,
-            limit,
-            page,
-            name,
-            orderBy,
-            sortedBy,
-            usrById,
-            search,
-            type,
-        })}`;
-        const cachedData = await this.cacheManager.get(cacheKey);
-        if (cachedData) {
-            return cachedData;
+        let user;
+        if (usrById) {
+            user = await this.userRepository.findOne({
+                where: { id: Number(usrById) },
+                relations: [
+                    'profile',
+                    'dealer',
+                    'owned_shops',
+                    'managed_shop',
+                    'address',
+                    'permission',
+                ],
+            });
+            if (!user) {
+                throw new common_1.NotFoundException(`User with ID ${usrById} not found`);
+            }
         }
         const queryBuilder = this.userRepository.createQueryBuilder('user');
-        if (include.includes('profile'))
-            queryBuilder.leftJoinAndSelect('user.profile', 'profile');
-        if (include.includes('dealer'))
-            queryBuilder.leftJoinAndSelect('user.dealer', 'dealer');
-        if (include.includes('shops'))
-            queryBuilder.leftJoinAndSelect('user.owned_shops', 'owned_shops');
+        queryBuilder
+            .leftJoinAndSelect('user.profile', 'profile')
+            .leftJoinAndSelect('user.dealer', 'dealer')
+            .leftJoinAndSelect('user.owned_shops', 'owned_shops')
+            .leftJoinAndSelect('user.managed_shop', 'managed_shop')
+            .leftJoinAndSelect('user.address', 'address')
+            .leftJoinAndSelect('user.permission', 'permission');
         queryBuilder.skip(startIndex).take(limitNum);
         if (orderBy && sortedBy) {
             queryBuilder.addOrderBy(`user.${orderBy}`, sortedBy.toUpperCase());
@@ -175,22 +178,25 @@ let UsersService = class UsersService {
             const filterTerms = search.split(' ');
             filterTerms.forEach((term, index) => {
                 const searchTermKey = `searchTerm${index}`;
+                const searchTermValue = `%${term}%`;
                 searchConditions.push(`(user.name LIKE :${searchTermKey} OR user.email LIKE :${searchTermKey} OR user.contact LIKE :${searchTermKey})`);
-                searchParams[searchTermKey] = `%${term}%`;
+                searchParams[searchTermKey] = searchTermValue;
             });
             if (searchJoin.toLowerCase() === 'or') {
-                queryBuilder.andWhere(new typeorm_2.Brackets(qb => qb.where(searchConditions.join(' OR '), searchParams)));
+                queryBuilder.andWhere(new typeorm_2.Brackets(qb => {
+                    qb.where(searchConditions.join(' OR '), searchParams);
+                }));
             }
             else {
-                searchConditions.forEach((condition, index) => queryBuilder.andWhere(condition, searchParams));
+                searchConditions.forEach((condition, index) => {
+                    queryBuilder.andWhere(condition, searchParams);
+                });
             }
         }
         const [users, total] = await queryBuilder.getManyAndCount();
-        const firstItem = users.length > 0 ? users[0] : null;
-        const lastItem = users.length > 0 ? users[users.length - 1] : null;
-        const pagination = (0, paginate_1.paginate)(total, pageNum, limitNum, total, `/users?type=${type || 'customer'}`);
-        const result = Object.assign({ data: users, count: users.length, current_page: pageNum, firstItem: (firstItem === null || firstItem === void 0 ? void 0 : firstItem.id) || null, lastItem: (lastItem === null || lastItem === void 0 ? void 0 : lastItem.id) || null }, pagination);
-        await this.cacheManager.set(cacheKey, result, 60);
+        const isCompanyOrStaff = user && (user.permission.type_name === user_entity_1.UserType.Company || user.permission.type_name === user_entity_1.UserType.Staff);
+        const url = `/users?type=${type || 'customer'}&limit=${limitNum}`;
+        const result = Object.assign({ data: isCompanyOrStaff ? [...users] : [user, ...users] }, (0, paginate_1.paginate)(total, pageNum, limitNum, total, url));
         return result;
     }
     async findOne(id) {

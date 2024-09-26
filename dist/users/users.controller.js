@@ -30,7 +30,6 @@ let UsersController = class UsersController {
         return this.usersService.create(createUserDto);
     }
     getAllUsers(query) {
-        console.log("first");
         return this.usersService.getUsers(query);
     }
     getUser(id) {
