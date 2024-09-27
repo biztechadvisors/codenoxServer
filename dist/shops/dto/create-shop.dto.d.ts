@@ -2,7 +2,7 @@ import { Shop } from '../entities/shop.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Permission } from '@db/src/permission/entities/permission.entity';
-declare const CreateShopDto_base: import("@nestjs/common").Type<Pick<Shop, "name" | "slug" | "description" | "address" | "owner" | "balance" | "logo" | "settings">>;
+declare const CreateShopDto_base: import("@nestjs/common").Type<Pick<Shop, "name" | "slug" | "settings" | "description" | "balance" | "logo" | "owner" | "address">>;
 export declare class CreateShopDto extends CreateShopDto_base {
     categories: number[];
     permission: Permission;

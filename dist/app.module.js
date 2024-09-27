@@ -1,9 +1,32 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
@@ -13,6 +36,8 @@ const config_1 = require("@nestjs/config");
 const typeorm_1 = require("@nestjs/typeorm");
 const schedule_1 = require("@nestjs/schedule");
 const platform_express_1 = require("@nestjs/platform-express");
+const cache_manager_1 = require("@nestjs/cache-manager");
+const redistStore = __importStar(require("cache-manager-redis-store"));
 const users_module_1 = require("./users/users.module");
 const mail_module_1 = require("./mail/mail.module");
 const common_module_1 = require("./common/common.module");
@@ -58,6 +83,7 @@ const blog_module_1 = require("./blog/blog.module");
 const event_module_1 = require("./events/event.module");
 const get_inspired_module_1 = require("./get-inspired/get-inspired.module");
 const notifications_middleware_1 = require("./common/middleware/notifications.middleware");
+const core_1 = require("@nestjs/core");
 const career_module_1 = require("./career/career.module");
 const contact_module_1 = require("./contact/contact.module");
 const region_module_1 = require("./region/region.module");
@@ -106,6 +132,18 @@ AppModule = __decorate([
                 apiVersion: '2022-11-15',
             }),
             platform_express_1.MulterModule.register({ dest: './uploads' }),
+            cache_manager_1.CacheModule.registerAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: async (configService) => ({
+                    store: redistStore,
+                    host: configService.get('REDIS_HOST'),
+                    port: configService.get('REDIS_PORT'),
+                    auth_pass: configService.get('REDIS_PASSWORD'),
+                    ttl: configService.get('CACHE_TTL') || 3000,
+                    isGlobal: configService.get('CACHE_IS_GLOBAL'),
+                }),
+                inject: [config_1.ConfigService],
+            }),
             users_module_1.UsersModule,
             mail_module_1.MailModule,
             common_module_1.CommonModule,
@@ -156,7 +194,12 @@ AppModule = __decorate([
             region_module_1.RegionModule,
         ],
         controllers: [],
-        providers: [],
+        providers: [
+            {
+                provide: core_1.APP_INTERCEPTOR,
+                useClass: cache_manager_1.CacheInterceptor,
+            },
+        ],
     })
 ], AppModule);
 exports.AppModule = AppModule;

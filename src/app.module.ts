@@ -81,7 +81,6 @@ import { AddModule } from './address/addresses.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: ['error'],
         extra: {
-
           connectionLimit: 50,
           waitForConnections: true,
           queueLimit: 0,
@@ -92,25 +91,26 @@ import { AddModule } from './address/addresses.module';
         autoLoadEntities: true,
       }),
       inject: [ConfigService],
-    })
-    ,
+    }),
     StripeModule.forRoot({
       apiKey: process.env.STRIPE_API_KEY,
       apiVersion: '2022-11-15',
     }),
     MulterModule.register({ dest: './uploads' }),
-    // CacheModule.registerAsync({
-    //   imports: [ConfigModule],
-    //   useFactory: async (configService: ConfigService) => ({
-    //     max: 100,
-    //     isGlobal: true,
-    //     ttl: configService.get<number>('CACHE_TTL'),
-    //     store: redistStore,
-    //     host: configService.get<string>('REDIS_HOST'),
-    //     port: configService.get<number>('REDIS_PORT'),
-    //   }),
-    //   inject: [ConfigService],
-    // }),
+    CacheModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        store: redistStore,
+        host: configService.get<string>('REDIS_HOST'), // your Redis host
+        port: configService.get<number>('REDIS_PORT'), // your Redis port
+        auth_pass: configService.get<string>('REDIS_PASSWORD'), // your Redis password
+        ttl: configService.get<number>('CACHE_TTL') || 3000, // cache TTL
+        isGlobal: configService.get<boolean>('CACHE_IS_GLOBAL'), // whether cache is global
+        // Secure TLS connection (enable only if required by Redis Cloud)
+        // tls: configService.get<boolean>('REDIS_TLS') ? {} : undefined,
+      }),
+      inject: [ConfigService],
+    }),
     // Import all feature modules
     UsersModule,
     MailModule,
@@ -163,10 +163,10 @@ import { AddModule } from './address/addresses.module';
   ],
   controllers: [],
   providers: [
-    // {
-    //   provide: APP_INTERCEPTOR,
-    //   useClass: CacheInterceptor,
-    // },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
+    },
   ],
 })
 export class AppModule implements NestModule {

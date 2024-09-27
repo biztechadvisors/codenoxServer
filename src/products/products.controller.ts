@@ -22,7 +22,6 @@ import { Product } from './entities/product.entity';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadXlService } from './uploadProductsXl';
-import { CacheInterceptor } from '@nestjs/cache-manager';
 
 @Controller('products')
 export class ProductsController {
@@ -30,6 +29,7 @@ export class ProductsController {
 
   @Post()
   createProduct(@Body() createProductDto: CreateProductDto) {
+    console.log("First")
     return this.productsService.create(createProductDto);
   }
 

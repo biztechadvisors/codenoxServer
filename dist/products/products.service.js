@@ -98,38 +98,37 @@ let ProductsService = ProductsService_1 = class ProductsService {
         }
     }
     async create(createProductDto) {
-        const { name, slug, description, product_type, status, quantity, max_price, min_price, price, sale_price, unit, height, length, width, sku, language, translated_languages, taxes, type_id, shop_id, categories, subCategories, tags, image, gallery, variations, variation_options, regionName } = createProductDto;
-        const existedProduct = await this.productRepository.findOne({
-            where: {
-                name,
-                slug
-            }
-        });
+        const { name, slug, description, product_type, status, quantity, max_price, min_price, price, sale_price, unit, height, length, width, sku, language = 'en', translated_languages = ['en'], taxes, type_id, shop_id, categories, subCategories, tags, image, gallery, variations, variation_options, regionName } = createProductDto;
+        const existedProduct = await this.productRepository.findOne({ where: { name, slug } });
         if (existedProduct) {
             return { message: "Product already exists." };
         }
-        const product = new product_entity_1.Product();
-        product.name = name;
-        product.slug = (0, helpers_1.convertToSlug)(name);
-        product.description = description;
-        product.product_type = product_type;
-        product.status = status;
-        product.quantity = quantity;
-        product.max_price = max_price || price;
-        product.min_price = min_price || sale_price;
-        product.price = max_price || price;
-        product.sale_price = min_price || sale_price;
-        product.unit = unit;
-        product.height = height;
-        product.length = length;
-        product.width = width;
-        product.sku = sku;
-        product.language = language || 'en';
-        product.translated_languages = translated_languages || ['en'];
+        const product = this.productRepository.create({
+            name,
+            slug: (0, helpers_1.convertToSlug)(name),
+            description,
+            product_type,
+            status,
+            quantity,
+            max_price: max_price || price,
+            min_price: min_price || sale_price,
+            price: max_price || price,
+            sale_price: min_price || sale_price,
+            unit,
+            height,
+            length,
+            width,
+            sku,
+            language,
+            translated_languages
+        });
         if (taxes) {
             const tax = await this.taxRepository.findOne({ where: { id: taxes.id } });
             if (tax) {
                 product.taxes = tax;
+            }
+            else {
+                throw new common_1.NotFoundException(`Tax with ID ${taxes.id} not found`);
             }
         }
         if (type_id) {
@@ -146,16 +145,11 @@ let ProductsService = ProductsService_1 = class ProductsService {
         }
         product.shop = shop;
         product.shop_id = shop.id;
-        if (categories) {
-            const categoryEntities = await this.categoryRepository.findByIds(categories);
-            product.categories = categoryEntities;
-        }
-        if (subCategories) {
-            const subCategoryEntities = await this.subCategoryRepository.findByIds(subCategories);
-            product.subCategories = subCategoryEntities;
-        }
-        const tagEntities = await this.tagRepository.findByIds(tags);
-        product.tags = tagEntities;
+        const categoryEntities = categories ? await this.categoryRepository.findByIds(categories) : [];
+        const subCategoryEntities = subCategories ? await this.subCategoryRepository.findByIds(subCategories) : [];
+        product.categories = categoryEntities;
+        product.subCategories = subCategoryEntities;
+        product.tags = await this.tagRepository.findByIds(tags || []);
         if (image) {
             const imageEntity = await this.attachmentRepository.findOne({ where: { id: image.id } });
             if (!imageEntity) {
@@ -164,85 +158,66 @@ let ProductsService = ProductsService_1 = class ProductsService {
             product.image = imageEntity;
         }
         if (gallery) {
-            const galleryEntities = [];
-            for (const galleryImage of gallery) {
+            const galleryEntities = await Promise.all(gallery.map(async (galleryImage) => {
                 const imageEntity = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
                 if (!imageEntity) {
                     throw new common_1.NotFoundException(`Gallery image with ID ${galleryImage.id} not found`);
                 }
-                galleryEntities.push(imageEntity);
-            }
+                return imageEntity;
+            }));
             product.gallery = galleryEntities;
         }
         if (variations) {
-            const attributeValues = [];
-            for (const variation of variations) {
+            product.variations = await Promise.all(variations.map(async (variation) => {
                 const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
                 if (!attributeValue) {
                     throw new common_1.NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
                 }
-                attributeValues.push(attributeValue);
-            }
-            product.variations = attributeValues;
+                return attributeValue;
+            }));
         }
         if (product.product_type === product_entity_1.ProductType.VARIABLE && (variation_options === null || variation_options === void 0 ? void 0 : variation_options.upsert)) {
-            const variationOptions = [];
-            for (const variationDto of variation_options.upsert) {
-                const newVariation = new product_entity_1.Variation();
-                newVariation.title = variationDto === null || variationDto === void 0 ? void 0 : variationDto.title;
-                newVariation.price = variationDto === null || variationDto === void 0 ? void 0 : variationDto.price;
-                newVariation.sku = variationDto === null || variationDto === void 0 ? void 0 : variationDto.sku;
-                newVariation.is_disable = variationDto === null || variationDto === void 0 ? void 0 : variationDto.is_disable;
-                newVariation.sale_price = variationDto === null || variationDto === void 0 ? void 0 : variationDto.sale_price;
-                newVariation.quantity = variationDto === null || variationDto === void 0 ? void 0 : variationDto.quantity;
+            const variationOptions = await Promise.all(variation_options.upsert.map(async (variationDto) => {
+                const newVariation = this.variationRepository.create(variationDto);
+                const savedVariation = await this.variationRepository.save(newVariation);
                 if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) {
                     let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
                     if (!image) {
-                        image = new product_entity_1.File();
-                        image.attachment_id = variationDto.image.id;
-                        image.url = variationDto.image.original;
-                        image.fileable_id = newVariation.id;
+                        image = this.fileRepository.create({
+                            attachment_id: variationDto.image.id,
+                            url: variationDto.image.original,
+                            fileable_id: savedVariation.id
+                        });
                         await this.fileRepository.save(image);
                     }
-                    newVariation.image = image;
+                    savedVariation.image = image;
                 }
-                const savedVariation = await this.variationRepository.save(newVariation);
-                const variationOptionEntities = [];
-                if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.options) {
-                    for (const option of variationDto.options) {
-                        const newVariationOption = new product_entity_1.VariationOption();
-                        newVariationOption.name = option.name;
-                        newVariationOption.value = option.value;
-                        const savedVariationOption = await this.variationOptionRepository.save(newVariationOption);
-                        variationOptionEntities.push(savedVariationOption);
-                    }
-                }
-                else {
-                    console.log("variationDto or its options are null or undefined");
-                }
-                savedVariation.options = variationOptionEntities;
+                const variationOptionEntities = await Promise.all((variationDto.options || []).map(async (option) => {
+                    const values = option.value.split(',');
+                    return Promise.all(values.map(async (value) => {
+                        const newVariationOption = this.variationOptionRepository.create({
+                            name: option.name,
+                            value: value.trim()
+                        });
+                        return this.variationOptionRepository.save(newVariationOption);
+                    }));
+                }));
+                savedVariation.options = [].concat(...variationOptionEntities);
                 await this.variationRepository.save(savedVariation);
-                variationOptions.push(savedVariation);
-            }
+                return savedVariation;
+            }));
             product.variation_options = variationOptions;
-            await this.productRepository.save(product);
         }
         if (regionName) {
-            const regions = await this.regionRepository.find({
-                where: {
-                    name: (0, typeorm_2.In)(regionName),
-                },
-            });
+            const regions = await this.regionRepository.find({ where: { name: (0, typeorm_2.In)(regionName) } });
             if (regions.length !== regionName.length) {
-                const missingRegionNames = regionName.filter((name) => !regions.some((region) => region.name === name));
+                const missingRegionNames = regionName.filter(name => !regions.some(region => region.name === name));
                 throw new common_1.NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
             }
             product.regions = regions;
         }
         await this.productRepository.save(product);
-        if (product) {
-            await this.updateShopProductsCount(shop.id, product.id);
-        }
+        await this.updateShopProductsCount(shop.id, product.id);
         return product;
     }
     async getProducts(query) {
@@ -605,7 +580,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
         if (updateProductDto.type_id) {
             const type = await this.typeRepository.findOne({ where: { id: updateProductDto.type_id } });
             product.type = type;
-            product.type_id = type.id;
+            product.type_id = type === null || type === void 0 ? void 0 : type.id;
         }
         if (updateProductDto.shop_id) {
             const shop = await this.shopRepository.findOne({ where: { id: updateProductDto.shop_id } });
