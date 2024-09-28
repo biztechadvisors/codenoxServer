@@ -24,7 +24,7 @@ export declare class TypesService {
     private readonly regionRepository;
     private readonly cacheManager;
     constructor(uploadsService: UploadsService, typeRepository: Repository<Type>, typeSettingsRepository: Repository<TypeSettings>, bannerRepository: Repository<Banner>, attachmentRepository: Repository<Attachment>, shopRepository: Repository<Shop>, tagRepository: Repository<Tag>, categoryRepository: Repository<Category>, productRepository: Repository<Product>, regionRepository: Repository<Region>, cacheManager: Cache);
-    convertToSlug(text: any): Promise<any>;
+    convertToSlug(text: any): Promise<string>;
     findAll(query: GetTypesDto): Promise<Type[]>;
     getTypeBySlug(slug: string): Promise<Type>;
     create(data: CreateTypeDto): Promise<Type>;

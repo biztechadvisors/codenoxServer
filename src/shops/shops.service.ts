@@ -198,12 +198,12 @@ export class ShopsService {
 
           // Set dealerCount only if the user is of type Company
           if (permission.type_name === UserType.Company) {
-            // createShopDto.dealerCount = createShopDto?.dealerCount || 0;
+            createShopDto.dealerCount = createShopDto.dealerCount || 0;
           }
         }
       }
 
-      if (createShopDto.additionalPermissions) {
+      if (createShopDto.additionalPermissions.length > 0) {
         const additionalPermissions = await this.permissionRepository.find({
           where: { permission_name: ILike(createShopDto.additionalPermissions) as unknown as FindOperator<string> },
         });

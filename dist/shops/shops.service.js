@@ -165,10 +165,11 @@ let ShopsService = class ShopsService {
                 if (permission) {
                     newShop.permission = permission;
                     if (permission.type_name === user_entity_1.UserType.Company) {
+                        createShopDto.dealerCount = createShopDto.dealerCount || 0;
                     }
                 }
             }
-            if (createShopDto.additionalPermissions) {
+            if (createShopDto.additionalPermissions.length > 0) {
                 const additionalPermissions = await this.permissionRepository.find({
                     where: { permission_name: (0, typeorm_2.ILike)(createShopDto.additionalPermissions) },
                 });

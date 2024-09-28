@@ -142,7 +142,7 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
         return analytics;
     }
     async updateAnalytics(order, refund, shop, user) {
-        var _a, _b;
+        var _a;
         try {
             if (!order && !refund && !shop && !user) {
                 throw new common_1.BadRequestException('At least one of Order, Refund, or Shop must be provided');
@@ -158,14 +158,14 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 userId = shop.owner_id ? shop.owner_id : shop.owner.id;
             }
             else if (user) {
-                userId = (_a = user === null || user === void 0 ? void 0 : user.createdBy) === null || _a === void 0 ? void 0 : _a.id;
+                userId = typeof user.createdBy === 'number' ? user.createdBy : user.createdBy.id;
             }
             let usrCrtBy;
-            if (user === null || user === void 0 ? void 0 : user.createdBy) {
-                usrCrtBy = await this.userRepository.findOne({ where: { id: user.createdBy.id } });
+            if (userId) {
+                usrCrtBy = await this.userRepository.findOne({ where: { id: userId } });
             }
             const shopId = (shop === null || shop === void 0 ? void 0 : shop.id) || (order === null || order === void 0 ? void 0 : order.shop_id) || (refund === null || refund === void 0 ? void 0 : refund.shop.id) || usrCrtBy.shop_id;
-            if (!shopId || !userId) {
+            if (!shopId && !userId) {
                 throw new common_1.BadRequestException('Shop ID and User ID must be available');
             }
             let analytics = await this.analyticsRepository.findOne({
@@ -207,7 +207,7 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                     where: { id: user.id },
                     relations: ['permission']
                 });
-                const permissionName = (_b = user === null || user === void 0 ? void 0 : user.permission) === null || _b === void 0 ? void 0 : _b.type_name;
+                const permissionName = (_a = user === null || user === void 0 ? void 0 : user.permission) === null || _a === void 0 ? void 0 : _a.type_name;
                 if (permissionName === user_entity_1.UserType.Dealer) {
                     analytics.totalDealers += 1;
                 }

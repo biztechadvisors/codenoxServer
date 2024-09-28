@@ -17,7 +17,7 @@ export declare class CategoriesService {
     private readonly regionRepository;
     private readonly cacheManager;
     constructor(categoryRepository: Repository<Category>, attachmentRepository: Repository<Attachment>, typeRepository: Repository<Type>, shopRepository: Repository<Shop>, subCategoryRepository: Repository<SubCategory>, regionRepository: Repository<Region>, cacheManager: Cache);
-    convertToSlug(text: any): Promise<any>;
+    convertToSlug(text: any): Promise<string>;
     create(createCategoryDto: CreateCategoryDto): Promise<Category>;
     getCategories(query: GetCategoriesDto): Promise<CategoryPaginator>;
     getCategory(param: string, language: string, shopId: number): Promise<Category>;

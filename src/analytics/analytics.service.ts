@@ -13,6 +13,7 @@ import { Analytics, TotalYearSaleByMonth } from './entities/analytics.entity';
 import { Refund } from '../refunds/entities/refund.entity';
 import { format } from 'date-fns';
 import { CreateTotalYearSaleByMonthDto } from './dto/create-analytics.dto';
+import { isNumber } from 'class-validator';
 
 @Injectable()
 export class AnalyticsService {
@@ -192,17 +193,17 @@ export class AnalyticsService {
       } else if (shop) {
         userId = shop.owner_id ? shop.owner_id : shop.owner.id;
       } else if (user) {
-        userId = user?.createdBy?.id;
+        userId = typeof user.createdBy === 'number' ? user.createdBy : user.createdBy.id;
       }
 
       let usrCrtBy;
-      if (user?.createdBy) {
-        usrCrtBy = await this.userRepository.findOne({ where: { id: user.createdBy.id } })
+      if (userId) {
+        usrCrtBy = await this.userRepository.findOne({ where: { id: userId } })
       }
 
       const shopId = shop?.id || order?.shop_id || refund?.shop.id || usrCrtBy.shop_id;
 
-      if (!shopId || !userId) {
+      if (!shopId && !userId) {
         throw new BadRequestException('Shop ID and User ID must be available');
       }
 

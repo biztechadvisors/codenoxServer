@@ -21,8 +21,7 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Region } from '../region/entities/region.entity';
-import { convertToSlug } from '../helpers';
-
+import { convertToSlug, invalidateCacheBySubstring } from '../helpers';
 
 @Injectable()
 export class ProductsService {
@@ -290,6 +289,10 @@ export class ProductsService {
 
     // Update shop products count if necessary
     await this.updateShopProductsCount(shop.id, product.id);
+
+    // Invalidate cache for related shop
+    const cacheKeyPrefix = `/api/products?shop_id=${shop.id}:*`;
+    await invalidateCacheBySubstring(cacheKeyPrefix, this.cacheManager, this.logger);
 
     return product;
   }

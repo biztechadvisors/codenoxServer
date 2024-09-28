@@ -11,7 +11,7 @@ export declare class AuthorsService {
     private shopSocialsRepository;
     private attachmentRepository;
     constructor(authorRepository: Repository<Author>, shopSocialsRepository: Repository<ShopSocials>, attachmentRepository: Repository<Attachment>);
-    convertToSlug(text: any): Promise<any>;
+    convertToSlug(text: any): Promise<string>;
     create(createAuthorDto: CreateAuthorDto): Promise<Author>;
     getAuthors({ page, limit, search, is_approved }: GetAuthorDto): Promise<{
         count: number;
@@ -30,5 +30,5 @@ export declare class AuthorsService {
     getAuthorBySlug(slug: string): Promise<Author>;
     getTopAuthors({ limit }: GetTopAuthorsDto): Promise<Author[]>;
     update(id: number, updateAuthorDto: UpdateAuthorDto): Promise<Author>;
-    remove(id: number): Promise<ShopSocials[] | Author>;
+    remove(id: number): Promise<Author | ShopSocials[]>;
 }

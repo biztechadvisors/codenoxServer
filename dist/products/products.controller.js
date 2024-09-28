@@ -27,7 +27,6 @@ let ProductsController = class ProductsController {
         this.productsService = productsService;
     }
     createProduct(createProductDto) {
-        console.log("First");
         return this.productsService.create(createProductDto);
     }
     async getProducts(query) {

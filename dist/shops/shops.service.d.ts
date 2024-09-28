@@ -31,7 +31,7 @@ export declare class ShopsService {
     private readonly cacheManager;
     constructor(analyticsService: AnalyticsService, shopRepository: Repository<Shop>, balanceRepository: Repository<Balance>, shopSettingsRepository: Repository<ShopSettings>, paymentInfoRepository: Repository<PaymentInfo>, addressRepository: Repository<Add>, userAddressRepository: Repository<UserAdd>, shopSocialsRepository: Repository<ShopSocials>, locationRepository: Repository<Location>, userRepository: Repository<User>, attachmentRepository: Repository<Attachment>, permissionRepository: Repository<Permission>, addressesService: AddressesService, cacheManager: Cache);
     private shops;
-    convertToSlug(text: any): Promise<any>;
+    convertToSlug(text: any): Promise<string>;
     create(createShopDto: CreateShopDto): Promise<Shop>;
     getShops({ search, limit, page }: GetShopsDto): Promise<ShopPaginator>;
     getStaffs({ shop_id, limit, page, orderBy, sortedBy, createdBy }: GetStaffsDto): Promise<any>;
