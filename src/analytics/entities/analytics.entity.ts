@@ -35,7 +35,7 @@ export class Analytics extends CoreEntity {
   @Column({ type: 'int' })
   user_id: number;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   shop_id: number;  // Ensure this is a number
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })

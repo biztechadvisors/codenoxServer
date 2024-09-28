@@ -218,7 +218,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
         }
         await this.productRepository.save(product);
         await this.updateShopProductsCount(shop.id, product.id);
-        const cacheKeyPrefix = `/api/products?shop_id=${shop.id}:*`;
+        const cacheKeyPrefix = `/api/products?shop_id=${shop.id}`;
         await (0, helpers_1.invalidateCacheBySubstring)(cacheKeyPrefix, this.cacheManager, this.logger);
         return product;
     }

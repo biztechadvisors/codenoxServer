@@ -17,7 +17,7 @@ function convertToSlug(text) {
 exports.convertToSlug = convertToSlug;
 async function invalidateCacheBySubstring(substring, cacheManager, logger) {
     try {
-        const pattern = `*${substring}*`;
+        const pattern = `${substring}*`;
         const keys = await getMatchingKeys(cacheManager, pattern);
         if (keys.length > 0) {
             await cacheManager.del(keys);

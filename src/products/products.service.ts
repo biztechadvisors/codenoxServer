@@ -291,8 +291,8 @@ export class ProductsService {
     await this.updateShopProductsCount(shop.id, product.id);
 
     // Invalidate cache for related shop
-    const cacheKeyPrefix = `/api/products?shop_id=${shop.id}:*`;
-    await invalidateCacheBySubstring(cacheKeyPrefix, this.cacheManager, this.logger);
+    const cacheKeyPrefix = `/api/products?shop_id=${shop.id}`; // Create the cache key prefix
+    await invalidateCacheBySubstring(cacheKeyPrefix, this.cacheManager, this.logger); // Call cache invalidation function
 
     return product;
   }

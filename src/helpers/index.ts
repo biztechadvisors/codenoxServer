@@ -19,7 +19,7 @@ export function convertToSlug(text: string): string {
 export async function invalidateCacheBySubstring(substring: string, cacheManager: any, logger: any): Promise<void> {
   try {
     // Refine the pattern for matching the exact substring
-    const pattern = `*${substring}*`;
+    const pattern = `${substring}*`; // Ensure to use an asterisk for wildcard matching
     const keys = await getMatchingKeys(cacheManager, pattern);
 
     if (keys.length > 0) {
