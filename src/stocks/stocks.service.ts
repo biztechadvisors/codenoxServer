@@ -1,13 +1,10 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { DeepPartial, In, Repository } from 'typeorm';
 import { InventoryStocks, Stocks } from './entities/stocks.entity';
-import { CreatestockOrderDto, CreateStocksDto, GetStocksDto, UpdateStkQuantityDto } from './dto/create-stock.dto';
+import { CreatestockOrderDto } from './dto/create-stock.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User, UserType } from 'src/users/entities/user.entity';
 import { Dealer } from 'src/users/entities/dealer.entity';
-import { error } from 'console';
-import { throwError } from 'rxjs';
-import { CreateOrderDto } from 'src/orders/dto/create-order.dto';
 import { Order, OrderStatusType, PaymentGatewayType, PaymentStatusType } from 'src/orders/entities/order.entity';
 import { StocksSellOrd } from './entities/stocksOrd.entity';
 import { plainToClass } from 'class-transformer';
@@ -21,10 +18,10 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { paginate } from 'src/common/pagination/paginate';
-import { UpdateOrderStatusDto } from 'src/orders/dto/create-order-status.dto';
 import { NotificationService } from 'src/notifications/services/notifications.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from '@nestjs/cache-manager';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class StocksService {
@@ -63,6 +60,9 @@ export class StocksService {
         private readonly orderRepository: Repository<Order>,
         @Inject(CACHE_MANAGER)
         private readonly cacheManager: Cache,
+
+        private readonly cacheService: CacheService
+
     ) { }
 
     async create(createStocksDto: any): Promise<Stocks[]> {

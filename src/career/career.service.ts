@@ -9,6 +9,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Vacancy } from './entities/vacancies.entity';
 import { CreateVacancyDto, UpdateVacancyDto } from './dto/createvacancy.dto';
 import { Add } from '../address/entities/address.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class CareerService {
@@ -22,6 +23,7 @@ export class CareerService {
         @InjectRepository(Add)
         private readonly addressRepository: Repository<Add>,
         @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+
     ) { }
 
     async createCareer(createCareerDto: CreateCareerDto): Promise<Career> {

@@ -15,6 +15,7 @@ export class ContactService {
         @InjectRepository(Shop)
         private readonly shopRepository: Repository<Shop>,
         @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+
     ) { }
 
     async create(createContactDto: CreateContactDto): Promise<Contact> {

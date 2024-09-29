@@ -25,7 +25,6 @@ let RegionController = class RegionController {
         return this.regionService.createRegion(createRegionDto);
     }
     async findAllRegionByShop(shopSlug) {
-        console.log("shop", shopSlug);
         return this.regionService.findAllRegionByShop(shopSlug);
     }
     async findOne(id) {

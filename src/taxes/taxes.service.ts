@@ -11,6 +11,7 @@ import { Category } from 'src/categories/entities/category.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { CacheService } from '../helpers/cacheService';
 
 export enum GST_NAME {
   GOODS = 'goods',
@@ -29,7 +30,10 @@ export class TaxesService {
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
     @Inject(CACHE_MANAGER)
-    private readonly cacheManager: Cache
+    private readonly cacheManager: Cache,
+
+    private readonly cacheService: CacheService
+
   ) { }
 
   async create(createTaxDto: CreateTaxDto) {

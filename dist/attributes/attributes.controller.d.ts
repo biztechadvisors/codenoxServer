@@ -4,13 +4,15 @@ import { UpdateAttributeDto } from './dto/update-attribute.dto';
 import { GetAttributeArgs } from './dto/get-attribute.dto';
 import { Attribute } from './entities/attribute.entity';
 import { GetAttributesArgs } from './dto/get-attributes.dto';
+import { CacheService } from '../helpers/cacheService';
 export declare class AttributesController {
     private readonly attributesService;
-    constructor(attributesService: AttributesService);
-    create(createAttributeDto: CreateAttributeDto): Promise<Attribute | {
+    private readonly cacheService;
+    constructor(attributesService: AttributesService, cacheService: CacheService);
+    create(createAttributeDto: CreateAttributeDto): Promise<{
         message: string;
         status: boolean;
-    }>;
+    } | Attribute>;
     findAll(query: GetAttributesArgs): Promise<{
         id: number;
         name: string;

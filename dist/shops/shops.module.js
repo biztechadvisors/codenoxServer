@@ -26,6 +26,7 @@ const order_entity_1 = require("../orders/entities/order.entity");
 const analytics_entity_1 = require("../analytics/entities/analytics.entity");
 const stocksOrd_entity_1 = require("../stocks/entities/stocksOrd.entity");
 const refund_entity_1 = require("../refunds/entities/refund.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let ShopsModule = class ShopsModule {
 };
 ShopsModule = __decorate([
@@ -35,7 +36,7 @@ ShopsModule = __decorate([
             cache_manager_1.CacheModule.register(),
         ],
         controllers: [shops_controller_1.ShopsController, shops_controller_1.StaffsController, shops_controller_1.DisapproveShopController, shops_controller_1.ApproveShopController],
-        providers: [shops_service_1.ShopsService, analytics_service_1.AnalyticsService, addresses_service_1.AddressesService],
+        providers: [shops_service_1.ShopsService, analytics_service_1.AnalyticsService, addresses_service_1.AddressesService, cacheService_1.CacheService],
     })
 ], ShopsModule);
 exports.ShopsModule = ShopsModule;

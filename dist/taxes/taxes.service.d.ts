@@ -6,6 +6,7 @@ import { Product } from 'src/products/entities/product.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
+import { CacheService } from '../helpers/cacheService';
 export declare enum GST_NAME {
     GOODS = "goods",
     SERVICES = "service"
@@ -16,7 +17,8 @@ export declare class TaxesService {
     private readonly categoryRepository;
     private readonly shopRepository;
     private readonly cacheManager;
-    constructor(taxRepository: Repository<Tax>, productRepository: Repository<Product>, categoryRepository: Repository<Category>, shopRepository: Repository<Shop>, cacheManager: Cache);
+    private readonly cacheService;
+    constructor(taxRepository: Repository<Tax>, productRepository: Repository<Product>, categoryRepository: Repository<Category>, shopRepository: Repository<Shop>, cacheManager: Cache, cacheService: CacheService);
     create(createTaxDto: CreateTaxDto): Promise<Tax | "Cannot Find Data Here">;
     findAllByShopIdentifier(shopId: number, shopSlug: string): Promise<Tax[]>;
     findOne(id: number): Promise<Tax>;

@@ -8,6 +8,7 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { Region } from '../region/entities/region.entity';
+import { CacheService } from '../helpers/cacheService';
 export declare class TagsService {
     private tagRepository;
     private readonly attachmentRepository;
@@ -15,7 +16,8 @@ export declare class TagsService {
     private shopRepository;
     private regionRepository;
     private readonly cacheManager;
-    constructor(tagRepository: Repository<Tag>, attachmentRepository: Repository<Attachment>, typeRepository: Repository<Type>, shopRepository: Repository<Shop>, regionRepository: Repository<Region>, cacheManager: Cache);
+    private readonly cacheService;
+    constructor(tagRepository: Repository<Tag>, attachmentRepository: Repository<Attachment>, typeRepository: Repository<Type>, shopRepository: Repository<Shop>, regionRepository: Repository<Region>, cacheManager: Cache, cacheService: CacheService);
     create(createTagDto: CreateTagDto): Promise<Tag>;
     findAll(query: GetTagsDto): Promise<any>;
     findOne(param: string, language: string): Promise<Tag>;

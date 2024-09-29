@@ -34,6 +34,7 @@ const analytics_entity_1 = require("../analytics/entities/analytics.entity");
 const refund_entity_1 = require("../refunds/entities/refund.entity");
 const stocksOrd_entity_1 = require("../stocks/entities/stocksOrd.entity");
 const delaerForEnquiry_entity_1 = require("./entities/delaerForEnquiry.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let UsersModule = class UsersModule {
 };
 UsersModule = __decorate([
@@ -49,7 +50,7 @@ UsersModule = __decorate([
             notifications_module_1.NotificationModule,
         ],
         controllers: [users_controller_1.UsersController, users_controller_1.ProfilesController, users_controller_1.DealerController, users_controller_1.DealerEnquiryController],
-        providers: [users_service_1.UsersService, auth_service_1.AuthService, mail_service_1.MailService, addresses_service_1.AddressesService, jwt_strategy_1.JwtStrategy, session_service_1.SessionService, analytics_service_1.AnalyticsService],
+        providers: [users_service_1.UsersService, auth_service_1.AuthService, mail_service_1.MailService, addresses_service_1.AddressesService, jwt_strategy_1.JwtStrategy, session_service_1.SessionService, analytics_service_1.AnalyticsService, cacheService_1.CacheService],
         exports: [users_service_1.UsersService],
     })
 ], UsersModule);

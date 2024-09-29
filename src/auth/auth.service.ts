@@ -31,6 +31,7 @@ import { ConfigService } from '@nestjs/config';
 import { SessionService } from './auth-helper/session.service';
 import { UsersService } from '../users/users.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class AuthService {
@@ -50,6 +51,7 @@ export class AuthService {
     private readonly analyticsService: AnalyticsService,
     private readonly notificationService: NotificationService,
     private readonly configService: ConfigService,
+    private readonly cacheService: CacheService
   ) {
     this.twilioVerifyServiceSid = this.configService.get<string>('TWILIO_VERIFY_SERVICE_SID');
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');

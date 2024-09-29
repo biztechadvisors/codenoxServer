@@ -15,6 +15,7 @@ const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const addresses_controller_1 = require("./addresses.controller");
 const addresses_service_1 = require("./addresses.service");
+const cacheService_1 = require("../helpers/cacheService");
 let AddModule = class AddModule {
 };
 AddModule = __decorate([
@@ -24,7 +25,7 @@ AddModule = __decorate([
             cache_manager_1.CacheModule.register(),
         ],
         controllers: [addresses_controller_1.AddressesController],
-        providers: [addresses_service_1.AddressesService],
+        providers: [addresses_service_1.AddressesService, cacheService_1.CacheService],
         exports: [addresses_service_1.AddressesService],
     })
 ], AddModule);

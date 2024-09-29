@@ -21,7 +21,8 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Region } from '../region/entities/region.entity';
-import { convertToSlug, invalidateCacheBySubstring } from '../helpers';
+import { CacheService } from '../helpers/cacheService';
+import { convertToSlug } from '../helpers';
 
 @Injectable()
 export class ProductsService {
@@ -46,7 +47,6 @@ export class ProductsService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Tax) private readonly taxRepository: Repository<Tax>,
     @InjectRepository(Region) private readonly regionRepository: Repository<Region>,
-
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 
@@ -289,10 +289,6 @@ export class ProductsService {
 
     // Update shop products count if necessary
     await this.updateShopProductsCount(shop.id, product.id);
-
-    // Invalidate cache for related shop
-    const cacheKeyPrefix = `/api/products?shop_id=${shop.id}`; // Create the cache key prefix
-    await invalidateCacheBySubstring(cacheKeyPrefix, this.cacheManager, this.logger); // Call cache invalidation function
 
     return product;
   }
@@ -1082,6 +1078,7 @@ export class ProductsService {
       this.variationRepository.remove(variations),
       this.productRepository.remove(product),
     ]);
+
   }
 
 

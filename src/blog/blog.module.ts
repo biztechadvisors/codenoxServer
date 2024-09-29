@@ -8,12 +8,13 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Region } from '../region/entities/region.entity';
 import { Tag } from '../tags/entities/tag.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Blog, Attachment, Shop, Region, Tag]),
     CacheModule.register()
     ],
-    providers: [BlogService],
+    providers: [BlogService, CacheService],
     controllers: [BlogController],
 })
 export class BlogModule { }

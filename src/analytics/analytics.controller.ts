@@ -4,12 +4,15 @@ import { AnalyticsResponseDTO, GetAnalyticsDto, TopUsersQueryDto } from './dto/a
 import { ApiOperation } from '@nestjs/swagger';
 import { CreateAnalyticsDto } from './dto/create-analytics.dto';
 import { Analytics } from './entities/analytics.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('analytics')
 export class AnalyticsController {
   private readonly logger = new Logger(AnalyticsController.name);
 
-  constructor(private readonly analyticsService: AnalyticsService) { }
+  constructor(private readonly analyticsService: AnalyticsService,
+    private readonly cacheService: CacheService
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Fetch analytics for a specific shop, customer, and state' })
@@ -28,7 +31,7 @@ export class AnalyticsController {
         throw new NotFoundException('No analytics data found');
       }
 
-      return result; // Now we can safely return as AnalyticsResponseDTO
+      return result;
     } catch (error) {
       this.logger.error('Error fetching analytics:', error.message);
       if (error instanceof NotFoundException || error instanceof ForbiddenException) {
@@ -82,6 +85,7 @@ export class AnalyticsController {
   ): Promise<AnalyticsResponseDTO> {
     const { analyticsData, saleData } = createAnalyticsDto;
     const analytics: Analytics = await this.analyticsService.createAnalyticsWithTotalYearSale(analyticsData, saleData);
+    this.cacheService.invalidateCacheBySubstring('analytics')
     return this.mapToResponseDTO(analytics);
   }
 

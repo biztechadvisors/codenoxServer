@@ -18,11 +18,14 @@ const common_1 = require("@nestjs/common");
 const career_service_1 = require("./career.service");
 const createcareer_dto_1 = require("./dto/createcareer.dto");
 const createvacancy_dto_1 = require("./dto/createvacancy.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let CareerController = class CareerController {
-    constructor(careerService) {
+    constructor(careerService, cacheService) {
         this.careerService = careerService;
+        this.cacheService = cacheService;
     }
-    create(createCareerDto) {
+    async create(createCareerDto) {
+        await this.cacheService.invalidateCacheBySubstring("careers");
         return this.careerService.createCareer(createCareerDto);
     }
     findAllByShop(shopSlug, location, vacancyTitle, position, page = 1, limit = 10) {
@@ -31,10 +34,12 @@ let CareerController = class CareerController {
     findOne(id) {
         return this.careerService.getCareerById(id);
     }
-    update(id, updateCareerDto) {
+    async update(id, updateCareerDto) {
+        await this.cacheService.invalidateCacheBySubstring("careers");
         return this.careerService.updateCareer(id, updateCareerDto);
     }
-    remove(id) {
+    async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring("careers");
         return this.careerService.deleteCareer(id);
     }
 };
@@ -86,23 +91,27 @@ __decorate([
 ], CareerController.prototype, "remove", null);
 CareerController = __decorate([
     (0, common_1.Controller)('careers'),
-    __metadata("design:paramtypes", [career_service_1.CareerService])
+    __metadata("design:paramtypes", [career_service_1.CareerService, cacheService_1.CacheService])
 ], CareerController);
 exports.CareerController = CareerController;
 let VacancyController = class VacancyController {
-    constructor(careerService) {
+    constructor(careerService, cacheService) {
         this.careerService = careerService;
+        this.cacheService = cacheService;
     }
-    create(createVacancyDto) {
+    async create(createVacancyDto) {
+        await this.cacheService.invalidateCacheBySubstring("vacancies");
         return this.careerService.createVacancy(createVacancyDto);
     }
     findOne(id) {
         return this.careerService.findVacancyById(id);
     }
-    update(id, updateVacancyDto) {
+    async update(id, updateVacancyDto) {
+        await this.cacheService.invalidateCacheBySubstring("vacancies");
         return this.careerService.updateVacancy(id, updateVacancyDto);
     }
-    remove(id) {
+    async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring("vacancies");
         return this.careerService.deleteVacancy(id);
     }
     findAll(findVacanciesDto) {
@@ -153,7 +162,7 @@ __decorate([
 ], VacancyController.prototype, "findAll", null);
 VacancyController = __decorate([
     (0, common_1.Controller)('vacancies'),
-    __metadata("design:paramtypes", [career_service_1.CareerService])
+    __metadata("design:paramtypes", [career_service_1.CareerService, cacheService_1.CacheService])
 ], VacancyController);
 exports.VacancyController = VacancyController;
 //# sourceMappingURL=career.controller.js.map

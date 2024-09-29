@@ -13,13 +13,15 @@ import { CategoriesService } from './categories.service'
 import { CreateCategoryDto, CreateSubCategoryDto } from './dto/create-category.dto'
 import { GetCategoriesDto, GetSubCategoriesDto } from './dto/get-categories.dto'
 import { UpdateCategoryDto, UpdateSubCategoryDto } from './dto/update-category.dto'
+import { CacheService } from '../helpers/cacheService'
 
 @Controller('categories')
 export class CategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) { }
+  constructor(private readonly categoriesService: CategoriesService, private readonly cacheService: CacheService) { }
 
   @Post()
-  create(@Body() createCategoryDto: CreateCategoryDto) {
+  async create(@Body() createCategoryDto: CreateCategoryDto) {
+    await this.cacheService.invalidateCacheBySubstring("categories")
     return this.categoriesService.create(createCategoryDto);
   }
 
@@ -34,15 +36,17 @@ export class CategoriesController {
   }
 
   @Put(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
+    await this.cacheService.invalidateCacheBySubstring("categories")
     return this.categoriesService.update(+id, updateCategoryDto)
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring("categories")
     return this.categoriesService.remove(+id)
   }
 }
@@ -50,10 +54,11 @@ export class CategoriesController {
 
 @Controller('subCategories')
 export class SubCategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) { }
+  constructor(private readonly categoriesService: CategoriesService, private readonly cacheService: CacheService) { }
 
   @Post()
-  create(@Body() createSubCategoryDto: CreateSubCategoryDto) {
+  async create(@Body() createSubCategoryDto: CreateSubCategoryDto) {
+    await this.cacheService.invalidateCacheBySubstring("subCategories")
     return this.categoriesService.createSubCategory(createSubCategoryDto);
   }
 
@@ -68,15 +73,17 @@ export class SubCategoriesController {
   }
 
   @Put(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateSubCategoryDto: UpdateSubCategoryDto,
   ) {
+    await this.cacheService.invalidateCacheBySubstring("subCategories")
     return this.categoriesService.updateSubCategory(+id, updateSubCategoryDto)
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring("subCategories")
     return this.categoriesService.removeSubCategory(+id)
   }
 }

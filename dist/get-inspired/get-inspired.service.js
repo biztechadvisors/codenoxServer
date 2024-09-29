@@ -21,13 +21,15 @@ const attachment_entity_1 = require("../common/entities/attachment.entity");
 const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const tag_entity_1 = require("../tags/entities/tag.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let GetInspiredService = class GetInspiredService {
-    constructor(getInspiredRepository, attachmentRepository, shopRepository, tagRepository, cacheManager) {
+    constructor(getInspiredRepository, attachmentRepository, shopRepository, tagRepository, cacheManager, cacheService) {
         this.getInspiredRepository = getInspiredRepository;
         this.attachmentRepository = attachmentRepository;
         this.shopRepository = shopRepository;
         this.tagRepository = tagRepository;
         this.cacheManager = cacheManager;
+        this.cacheService = cacheService;
     }
     async createGetInspired(createGetInspiredDto) {
         const { title, type, shopId, imageIds = [], tagIds = [] } = createGetInspiredDto;
@@ -122,7 +124,7 @@ GetInspiredService = __decorate([
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository, Object])
+        typeorm_2.Repository, Object, cacheService_1.CacheService])
 ], GetInspiredService);
 exports.GetInspiredService = GetInspiredService;
 //# sourceMappingURL=get-inspired.service.js.map

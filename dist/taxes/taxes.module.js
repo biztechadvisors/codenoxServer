@@ -16,6 +16,7 @@ const product_entity_1 = require("../products/entities/product.entity");
 const category_entity_1 = require("../categories/entities/category.entity");
 const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let TaxesModule = class TaxesModule {
 };
 TaxesModule = __decorate([
@@ -24,7 +25,7 @@ TaxesModule = __decorate([
             cache_manager_1.CacheModule.register()
         ],
         controllers: [taxes_controller_1.TaxesController],
-        providers: [taxes_service_1.TaxesService],
+        providers: [taxes_service_1.TaxesService, cacheService_1.CacheService],
     })
 ], TaxesModule);
 exports.TaxesModule = TaxesModule;

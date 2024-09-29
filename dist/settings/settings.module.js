@@ -15,6 +15,7 @@ const setting_entity_1 = require("./entities/setting.entity");
 const attachment_entity_1 = require("../common/entities/attachment.entity");
 const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let SettingsModule = class SettingsModule {
 };
 SettingsModule = __decorate([
@@ -23,7 +24,7 @@ SettingsModule = __decorate([
             cache_manager_1.CacheModule.register()
         ],
         controllers: [settings_controller_1.SettingsController],
-        providers: [settings_service_1.SettingsService],
+        providers: [settings_service_1.SettingsService, cacheService_1.CacheService],
         exports: [settings_service_1.SettingsService],
     })
 ], SettingsModule);

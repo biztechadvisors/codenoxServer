@@ -24,10 +24,6 @@ const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const region_entity_1 = require("../region/entities/region.entity");
 const type_entity_1 = require("../types/entities/type.entity");
-const options = {
-    keys: ['name', 'type.slug'],
-    threshold: 0.3,
-};
 let CategoriesService = class CategoriesService {
     constructor(categoryRepository, attachmentRepository, typeRepository, shopRepository, subCategoryRepository, regionRepository, cacheManager) {
         this.categoryRepository = categoryRepository;

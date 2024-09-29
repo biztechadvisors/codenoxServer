@@ -20,11 +20,13 @@ const product_entity_1 = require("../products/entities/product.entity");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let WishlistsService = class WishlistsService {
-    constructor(wishlistRepository, productRepository, cacheManager) {
+    constructor(wishlistRepository, productRepository, cacheManager, cacheService) {
         this.wishlistRepository = wishlistRepository;
         this.productRepository = productRepository;
         this.cacheManager = cacheManager;
+        this.cacheService = cacheService;
     }
     async findAllWishlists({ limit = 30, page = 1, search }, userId) {
         const cacheKey = `wishlists_${userId || 'all'}_${page}_${limit}_${search || 'all'}`;
@@ -120,7 +122,7 @@ WishlistsService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
     __param(2, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository, Object])
+        typeorm_2.Repository, Object, cacheService_1.CacheService])
 ], WishlistsService);
 exports.WishlistsService = WishlistsService;
 //# sourceMappingURL=wishlists.service.js.map

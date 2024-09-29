@@ -10,6 +10,7 @@ import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Report } from './entities/reports.entity';
 import { Cache } from 'cache-manager';
+import { CacheService } from '../helpers/cacheService';
 export declare class ReviewService {
     private readonly reviewRepository;
     private readonly productRepository;
@@ -19,7 +20,8 @@ export declare class ReviewService {
     private readonly orderkRepository;
     private readonly reportRepository;
     private readonly cacheManager;
-    constructor(reviewRepository: Repository<Review>, productRepository: Repository<Product>, userRepository: Repository<User>, shopRepository: Repository<Shop>, feedbackRepository: Repository<Feedback>, orderkRepository: Repository<Order>, reportRepository: Repository<Report>, cacheManager: Cache);
+    private readonly cacheService;
+    constructor(reviewRepository: Repository<Review>, productRepository: Repository<Product>, userRepository: Repository<User>, shopRepository: Repository<Shop>, feedbackRepository: Repository<Feedback>, orderkRepository: Repository<Order>, reportRepository: Repository<Report>, cacheManager: Cache, cacheService: CacheService);
     private getReviewsFromDatabase;
     private findReviewInDatabase;
     private createReviewInDatabase;

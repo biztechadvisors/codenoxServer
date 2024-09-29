@@ -28,6 +28,7 @@ const order_entity_1 = require("../orders/entities/order.entity");
 const notifications_service_1 = require("../notifications/services/notifications.service");
 const notifications_entity_1 = require("../notifications/entities/notifications.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let StocksModule = class StocksModule {
 };
 StocksModule = __decorate([
@@ -38,7 +39,7 @@ StocksModule = __decorate([
         controllers: [
             stocks_controller_1.StocksController,
         ],
-        providers: [stocks_service_1.StocksService, shiprocket_service_1.ShiprocketService, mail_service_1.MailService, notifications_service_1.NotificationService],
+        providers: [stocks_service_1.StocksService, shiprocket_service_1.ShiprocketService, mail_service_1.MailService, notifications_service_1.NotificationService, cacheService_1.CacheService],
     })
 ], StocksModule);
 exports.StocksModule = StocksModule;

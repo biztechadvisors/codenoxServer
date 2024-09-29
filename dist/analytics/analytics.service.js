@@ -26,8 +26,9 @@ const cache_manager_1 = require("@nestjs/cache-manager");
 const analytics_entity_1 = require("./entities/analytics.entity");
 const refund_entity_1 = require("../refunds/entities/refund.entity");
 const date_fns_1 = require("date-fns");
+const cacheService_1 = require("../helpers/cacheService");
 let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
-    constructor(orderRepository, shopRepository, userRepository, analyticsRepository, refundRepository, permissionRepository, stocksSellOrdRepository, totalYearSaleByMonthRepository, cacheManager) {
+    constructor(orderRepository, shopRepository, userRepository, analyticsRepository, refundRepository, permissionRepository, stocksSellOrdRepository, totalYearSaleByMonthRepository, cacheManager, cacheService) {
         this.orderRepository = orderRepository;
         this.shopRepository = shopRepository;
         this.userRepository = userRepository;
@@ -37,6 +38,7 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
         this.stocksSellOrdRepository = stocksSellOrdRepository;
         this.totalYearSaleByMonthRepository = totalYearSaleByMonthRepository;
         this.cacheManager = cacheManager;
+        this.cacheService = cacheService;
         this.logger = new common_1.Logger(AnalyticsService_1.name);
     }
     async getTopUsersWithMaxOrders(userId) {
@@ -241,6 +243,8 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
             }
             await this.totalYearSaleByMonthRepository.save(monthlySale);
             await this.analyticsRepository.save(analytics);
+            const cacheKeyPrefix = `analytics`;
+            await this.cacheService.invalidateCacheBySubstring(cacheKeyPrefix);
         }
         catch (error) {
             this.logger.error('Error updating analytics:', error.stack || error);
@@ -410,7 +414,7 @@ AnalyticsService = AnalyticsService_1 = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository, Object])
+        typeorm_2.Repository, Object, cacheService_1.CacheService])
 ], AnalyticsService);
 exports.AnalyticsService = AnalyticsService;
 //# sourceMappingURL=analytics.service.js.map

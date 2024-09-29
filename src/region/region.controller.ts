@@ -14,7 +14,6 @@ export class RegionController {
 
     @Get('shop/:shopSlug')
     async findAllRegionByShop(@Param('shopSlug') shopSlug: string): Promise<Region[]> {
-        console.log("shop", shopSlug)
         return this.regionService.findAllRegionByShop(shopSlug);
     }
 

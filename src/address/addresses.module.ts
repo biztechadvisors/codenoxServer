@@ -6,6 +6,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { AddressesController } from './addresses.controller';
 import { AddressesService } from './addresses.service';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { AddressesService } from './addresses.service';
     CacheModule.register(),
   ],
   controllers: [AddressesController],
-  providers: [AddressesService],
+  providers: [AddressesService, CacheService],
   exports: [AddressesService],
 })
 export class AddModule { }

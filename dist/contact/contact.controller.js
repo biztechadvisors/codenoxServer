@@ -17,11 +17,14 @@ const openapi = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const contact_service_1 = require("./contact.service");
 const createcontact_dto_1 = require("./dto/createcontact.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let ContactController = class ContactController {
-    constructor(contactService) {
+    constructor(contactService, cacheService) {
         this.contactService = contactService;
+        this.cacheService = cacheService;
     }
-    create(createContactDto) {
+    async create(createContactDto) {
+        await this.cacheService.invalidateCacheBySubstring("contacts");
         return this.contactService.create(createContactDto);
     }
     async findAllByShop(shopSlug, page = 1, limit = 10) {
@@ -30,10 +33,12 @@ let ContactController = class ContactController {
     findOne(id) {
         return this.contactService.findOne(id);
     }
-    update(id, updateContactDto) {
+    async update(id, updateContactDto) {
+        await this.cacheService.invalidateCacheBySubstring("contacts");
         return this.contactService.update(id, updateContactDto);
     }
-    remove(id) {
+    async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring("contacts");
         return this.contactService.remove(id);
     }
 };
@@ -82,7 +87,7 @@ __decorate([
 ], ContactController.prototype, "remove", null);
 ContactController = __decorate([
     (0, common_1.Controller)('contacts'),
-    __metadata("design:paramtypes", [contact_service_1.ContactService])
+    __metadata("design:paramtypes", [contact_service_1.ContactService, cacheService_1.CacheService])
 ], ContactController);
 exports.ContactController = ContactController;
 //# sourceMappingURL=contact.controller.js.map

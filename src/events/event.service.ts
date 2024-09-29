@@ -21,7 +21,8 @@ export class EventService {
         private readonly regionRepository: Repository<Region>,
         @InjectRepository(Attachment)
         private readonly attachmentRepository: Repository<Attachment>,
-        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+
     ) { }
 
     async createEvent(createEventDto: CreateEventDto): Promise<Event> {

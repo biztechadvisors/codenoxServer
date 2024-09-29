@@ -25,6 +25,7 @@ import { Order } from '../orders/entities/order.entity'
 import { Analytics, TotalYearSaleByMonth } from '../analytics/entities/analytics.entity'
 import { StocksSellOrd } from '../stocks/entities/stocksOrd.entity'
 import { Refund } from '../refunds/entities/refund.entity'
+import { CacheService } from '../helpers/cacheService'
 
 @Module({
   imports: [
@@ -32,6 +33,6 @@ import { Refund } from '../refunds/entities/refund.entity'
     CacheModule.register(),
   ],
   controllers: [ShopsController, StaffsController, DisapproveShopController, ApproveShopController],
-  providers: [ShopsService, AnalyticsService, AddressesService],
+  providers: [ShopsService, AnalyticsService, AddressesService, CacheService],
 })
 export class ShopsModule { }

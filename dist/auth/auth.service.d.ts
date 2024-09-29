@@ -9,6 +9,7 @@ import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { SessionService } from './auth-helper/session.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { CacheService } from '../helpers/cacheService';
 export declare class AuthService {
     private readonly userRepository;
     private readonly permissionRepository;
@@ -19,12 +20,13 @@ export declare class AuthService {
     private readonly analyticsService;
     private readonly notificationService;
     private readonly configService;
+    private readonly cacheService;
     private readonly logger;
     private readonly twilioClient;
     private readonly twilioVerifyServiceSid;
     private readonly otpExpiryTime;
     private emailVerificationCodes;
-    constructor(userRepository: Repository<User>, permissionRepository: Repository<Permission>, cacheManager: Cache, jwtService: JwtService, mailService: MailService, sessionService: SessionService, analyticsService: AnalyticsService, notificationService: NotificationService, configService: ConfigService);
+    constructor(userRepository: Repository<User>, permissionRepository: Repository<Permission>, cacheManager: Cache, jwtService: JwtService, mailService: MailService, sessionService: SessionService, analyticsService: AnalyticsService, notificationService: NotificationService, configService: ConfigService, cacheService: CacheService);
     private sendSms;
     generateOtp(length?: number): Promise<string>;
     destroyOtp(user: User): Promise<void>;

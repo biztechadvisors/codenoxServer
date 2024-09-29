@@ -21,18 +21,20 @@ const product_entity_1 = require("../products/entities/product.entity");
 const category_entity_1 = require("../categories/entities/category.entity");
 const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 var GST_NAME;
 (function (GST_NAME) {
     GST_NAME["GOODS"] = "goods";
     GST_NAME["SERVICES"] = "service";
 })(GST_NAME = exports.GST_NAME || (exports.GST_NAME = {}));
 let TaxesService = class TaxesService {
-    constructor(taxRepository, productRepository, categoryRepository, shopRepository, cacheManager) {
+    constructor(taxRepository, productRepository, categoryRepository, shopRepository, cacheManager, cacheService) {
         this.taxRepository = taxRepository;
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.shopRepository = shopRepository;
         this.cacheManager = cacheManager;
+        this.cacheService = cacheService;
     }
     async create(createTaxDto) {
         try {
@@ -177,7 +179,7 @@ TaxesService = __decorate([
     __metadata("design:paramtypes", [typeorm_1.Repository,
         typeorm_1.Repository,
         typeorm_1.Repository,
-        typeorm_1.Repository, Object])
+        typeorm_1.Repository, Object, cacheService_1.CacheService])
 ], TaxesService);
 exports.TaxesService = TaxesService;
 //# sourceMappingURL=taxes.service.js.map

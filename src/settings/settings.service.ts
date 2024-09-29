@@ -29,6 +29,7 @@ import { EntityNotFoundError, Repository, UpdateValuesMissingError } from 'typeo
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
+import { CacheService } from '../helpers/cacheService'
 
 @Injectable()
 export class SettingsService {
@@ -79,6 +80,9 @@ export class SettingsService {
     private ServerInfoRepository: Repository<ServerInfo>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
+
+    private readonly cacheService: CacheService
+
   ) { }
 
   async create(shopId: number, createSettingDto: CreateSettingDto): Promise<Setting | { message: string }> {

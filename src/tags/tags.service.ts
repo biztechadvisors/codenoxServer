@@ -15,6 +15,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Region } from '../region/entities/region.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class TagsService {
@@ -25,7 +26,8 @@ export class TagsService {
     @InjectRepository(Shop) private shopRepository: Repository<Shop>,
     @InjectRepository(Region) private regionRepository: Repository<Region>,
 
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly cacheService: CacheService,
 
   ) { }
 

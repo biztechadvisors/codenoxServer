@@ -18,10 +18,12 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const region_entity_1 = require("./entities/region.entity");
 const shop_entity_1 = require("../shops/entities/shop.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let RegionService = class RegionService {
-    constructor(regionRepository, shopRepository) {
+    constructor(regionRepository, shopRepository, cacheService) {
         this.regionRepository = regionRepository;
         this.shopRepository = shopRepository;
+        this.cacheService = cacheService;
     }
     async createRegion(createRegionDto) {
         const { name, shop_id } = createRegionDto;
@@ -77,7 +79,8 @@ RegionService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(region_entity_1.Region)),
     __param(1, (0, typeorm_1.InjectRepository)(shop_entity_1.Shop)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        cacheService_1.CacheService])
 ], RegionService);
 exports.RegionService = RegionService;
 //# sourceMappingURL=region.service.js.map

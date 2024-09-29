@@ -18,11 +18,14 @@ const common_1 = require("@nestjs/common");
 const faq_service_1 = require("./faq.service");
 const createfaqdto_dto_1 = require("./dto/createfaqdto.dto");
 const createqnadto_dto_1 = require("./dto/createqnadto.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let FAQController = class FAQController {
-    constructor(faqService) {
+    constructor(faqService, cacheService) {
         this.faqService = faqService;
+        this.cacheService = cacheService;
     }
-    createFAQ(createFAQDto) {
+    async createFAQ(createFAQDto) {
+        await this.cacheService.invalidateCacheBySubstring("faqs");
         return this.faqService.createFAQ(createFAQDto);
     }
     getFAQById(id) {
@@ -31,19 +34,24 @@ let FAQController = class FAQController {
     async getFAQsByShopSlug(shopSlug, page = 1, limit = 10) {
         return this.faqService.getFAQsByShopSlug(shopSlug, page, limit);
     }
-    updateFAQ(id, updateFAQDto) {
+    async updateFAQ(id, updateFAQDto) {
+        await this.cacheService.invalidateCacheBySubstring("faqs");
         return this.faqService.updateFAQ(id, updateFAQDto);
     }
-    deleteFAQ(id) {
+    async deleteFAQ(id) {
+        await this.cacheService.invalidateCacheBySubstring("faqs");
         return this.faqService.deleteFAQ(id);
     }
-    addQnA(faqId, createQnADto) {
+    async addQnA(faqId, createQnADto) {
+        await this.cacheService.invalidateCacheBySubstring("faqs");
         return this.faqService.addQnAToFAQ(faqId, createQnADto);
     }
-    updateQnA(id, updateQnADto) {
+    async updateQnA(id, updateQnADto) {
+        await this.cacheService.invalidateCacheBySubstring("faqs");
         return this.faqService.updateQnA(id, updateQnADto);
     }
-    deleteQnA(id) {
+    async deleteQnA(id) {
+        await this.cacheService.invalidateCacheBySubstring("faqs");
         return this.faqService.deleteQnA(id);
     }
     getQnAsByFAQId(faqId) {
@@ -142,7 +150,7 @@ __decorate([
 ], FAQController.prototype, "getQnAsByShopId", null);
 FAQController = __decorate([
     (0, common_1.Controller)('faqs'),
-    __metadata("design:paramtypes", [faq_service_1.FAQService])
+    __metadata("design:paramtypes", [faq_service_1.FAQService, cacheService_1.CacheService])
 ], FAQController);
 exports.FAQController = FAQController;
 //# sourceMappingURL=faq.controller.js.map

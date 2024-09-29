@@ -18,11 +18,14 @@ const common_1 = require("@nestjs/common");
 const addresses_service_1 = require("./addresses.service");
 const create_address_dto_1 = require("./dto/create-address.dto");
 const update_address_dto_1 = require("./dto/update-address.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let AddressesController = class AddressesController {
-    constructor(addressesService) {
+    constructor(addressesService, cacheService) {
         this.addressesService = addressesService;
+        this.cacheService = cacheService;
     }
-    createAddress(createAddressDto) {
+    async createAddress(createAddressDto) {
+        await this.cacheService.invalidateCacheBySubstring("address");
         return this.addressesService.create(createAddressDto);
     }
     addresses(userId) {
@@ -31,10 +34,12 @@ let AddressesController = class AddressesController {
     async address(id) {
         return this.addressesService.findOne(+id);
     }
-    updateAddress(id, updateAddressDto) {
+    async updateAddress(id, updateAddressDto) {
+        await this.cacheService.invalidateCacheBySubstring("address");
         return this.addressesService.update(+id, updateAddressDto);
     }
-    deleteAddress(id) {
+    async deleteAddress(id) {
+        await this.cacheService.invalidateCacheBySubstring("address");
         return this.addressesService.remove(+id);
     }
 };
@@ -44,7 +49,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_address_dto_1.CreateAddressDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], AddressesController.prototype, "createAddress", null);
 __decorate([
     (0, common_1.Get)(),
@@ -69,7 +74,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_address_dto_1.UpdateAddressDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], AddressesController.prototype, "updateAddress", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -77,11 +82,12 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], AddressesController.prototype, "deleteAddress", null);
 AddressesController = __decorate([
     (0, common_1.Controller)('address'),
-    __metadata("design:paramtypes", [addresses_service_1.AddressesService])
+    __metadata("design:paramtypes", [addresses_service_1.AddressesService,
+        cacheService_1.CacheService])
 ], AddressesController);
 exports.AddressesController = AddressesController;
 //# sourceMappingURL=addresses.controller.js.map

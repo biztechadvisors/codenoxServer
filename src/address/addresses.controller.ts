@@ -11,13 +11,18 @@ import {
 import { AddressesService } from './addresses.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('address')
 export class AddressesController {
-  constructor(private readonly addressesService: AddressesService) { }
+  constructor(
+    private readonly addressesService: AddressesService,
+    private readonly cacheService: CacheService
+  ) { }
 
   @Post()
-  createAddress(@Body() createAddressDto: CreateAddressDto) {
+  async createAddress(@Body() createAddressDto: CreateAddressDto) {
+    await this.cacheService.invalidateCacheBySubstring("address")
     return this.addressesService.create(createAddressDto);
   }
 
@@ -32,15 +37,17 @@ export class AddressesController {
   }
 
   @Put(':id')
-  updateAddress(
+  async updateAddress(
     @Param('id') id: string,
     @Body() updateAddressDto: UpdateAddressDto,
   ) {
+    await this.cacheService.invalidateCacheBySubstring("address")
     return this.addressesService.update(+id, updateAddressDto);
   }
 
   @Delete(':id')
-  deleteAddress(@Param('id') id: string) {
+  async deleteAddress(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring("address")
     return this.addressesService.remove(+id);
   }
 }

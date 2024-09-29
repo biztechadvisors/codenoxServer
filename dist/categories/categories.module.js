@@ -17,6 +17,7 @@ const cache_manager_1 = require("@nestjs/cache-manager");
 const region_entity_1 = require("../region/entities/region.entity");
 const attachment_entity_1 = require("../common/entities/attachment.entity");
 const type_entity_1 = require("../types/entities/type.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let CategoriesModule = class CategoriesModule {
 };
 CategoriesModule = __decorate([
@@ -26,7 +27,7 @@ CategoriesModule = __decorate([
             cache_manager_1.CacheModule.register()
         ],
         controllers: [categories_controller_1.CategoriesController, categories_controller_1.SubCategoriesController],
-        providers: [categories_service_1.CategoriesService],
+        providers: [categories_service_1.CategoriesService, cacheService_1.CacheService],
     })
 ], CategoriesModule);
 exports.CategoriesModule = CategoriesModule;

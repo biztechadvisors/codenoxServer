@@ -4,13 +4,15 @@ import { CreateCareerDto, UpdateCareerDto } from './dto/createcareer.dto';
 import { Career } from './entities/career.entity';
 import { Vacancy } from './entities/vacancies.entity';
 import { CreateVacancyDto, FindVacanciesDto, UpdateVacancyDto } from './dto/createvacancy.dto';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('careers')
 export class CareerController {
-    constructor(private readonly careerService: CareerService) { }
+    constructor(private readonly careerService: CareerService, private readonly cacheService: CacheService) { }
 
     @Post()
-    create(@Body() createCareerDto: CreateCareerDto): Promise<Career> {
+    async create(@Body() createCareerDto: CreateCareerDto): Promise<Career> {
+        await this.cacheService.invalidateCacheBySubstring("careers")
         return this.careerService.createCareer(createCareerDto);
     }
 
@@ -33,21 +35,24 @@ export class CareerController {
     }
 
     @Put(':id')
-    update(@Param('id') id: number, @Body() updateCareerDto: UpdateCareerDto): Promise<Career> {
+    async update(@Param('id') id: number, @Body() updateCareerDto: UpdateCareerDto): Promise<Career> {
+        await this.cacheService.invalidateCacheBySubstring("careers")
         return this.careerService.updateCareer(id, updateCareerDto);
     }
 
     @Delete(':id')
-    remove(@Param('id') id: number): Promise<void> {
+    async remove(@Param('id') id: number): Promise<void> {
+        await this.cacheService.invalidateCacheBySubstring("careers")
         return this.careerService.deleteCareer(id);
     }
 }
 @Controller('vacancies')
 export class VacancyController {
-    constructor(private readonly careerService: CareerService) { }
+    constructor(private readonly careerService: CareerService, private readonly cacheService: CacheService) { }
 
     @Post()
-    create(@Body() createVacancyDto: CreateVacancyDto): Promise<Vacancy> {
+    async create(@Body() createVacancyDto: CreateVacancyDto): Promise<Vacancy> {
+        await this.cacheService.invalidateCacheBySubstring("vacancies")
         return this.careerService.createVacancy(createVacancyDto);
     }
 
@@ -57,12 +62,14 @@ export class VacancyController {
     }
 
     @Put(':id')
-    update(@Param('id') id: number, @Body() updateVacancyDto: UpdateVacancyDto): Promise<Vacancy> {
+    async update(@Param('id') id: number, @Body() updateVacancyDto: UpdateVacancyDto): Promise<Vacancy> {
+        await this.cacheService.invalidateCacheBySubstring("vacancies")
         return this.careerService.updateVacancy(id, updateVacancyDto);
     }
 
     @Delete(':id')
-    remove(@Param('id') id: number): Promise<void> {
+    async remove(@Param('id') id: number): Promise<void> {
+        await this.cacheService.invalidateCacheBySubstring("vacancies")
         return this.careerService.deleteVacancy(id);
     }
 

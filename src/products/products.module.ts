@@ -20,6 +20,7 @@ import { Tax } from 'src/taxes/entities/tax.entity';
 import { UploadXlService } from './uploadProductsXl';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Region } from '../region/entities/region.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { Region } from '../region/entities/region.entity';
   providers: [
     ProductsService,
     UploadXlService,
+    CacheService,
   ],
 })
 export class ProductsModule { }

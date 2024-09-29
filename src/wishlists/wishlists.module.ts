@@ -9,11 +9,13 @@ import { Wishlist } from './entities/wishlist.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { User } from 'src/users/entities/user.entity';
 import { CacheModule } from '@nestjs/cache-manager';
+import { CacheService } from '../helpers/cacheService';
+import { ShiprocketService } from '../orders/shiprocket.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Wishlist, Product, User]),
   CacheModule.register()],
   controllers: [WishlistsController, MyWishlistsController],
-  providers: [WishlistsService, MyWishlistService],
+  providers: [WishlistsService, MyWishlistService, CacheService],
 })
 export class WishlistsModule { }

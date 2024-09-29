@@ -20,9 +20,11 @@ const analytics_service_1 = require("./analytics.service");
 const analytics_dto_1 = require("./dto/analytics.dto");
 const swagger_1 = require("@nestjs/swagger");
 const create_analytics_dto_1 = require("./dto/create-analytics.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let AnalyticsController = AnalyticsController_1 = class AnalyticsController {
-    constructor(analyticsService) {
+    constructor(analyticsService, cacheService) {
         this.analyticsService = analyticsService;
+        this.cacheService = cacheService;
         this.logger = new common_1.Logger(AnalyticsController_1.name);
     }
     async getAnalytics(query) {
@@ -76,6 +78,7 @@ let AnalyticsController = AnalyticsController_1 = class AnalyticsController {
     async createAnalytics(createAnalyticsDto) {
         const { analyticsData, saleData } = createAnalyticsDto;
         const analytics = await this.analyticsService.createAnalyticsWithTotalYearSale(analyticsData, saleData);
+        this.cacheService.invalidateCacheBySubstring('analytics');
         return this.mapToResponseDTO(analytics);
     }
     async getAnalyticsById(id) {
@@ -140,7 +143,8 @@ __decorate([
 ], AnalyticsController.prototype, "getAnalyticsById", null);
 AnalyticsController = AnalyticsController_1 = __decorate([
     (0, common_1.Controller)('analytics'),
-    __metadata("design:paramtypes", [analytics_service_1.AnalyticsService])
+    __metadata("design:paramtypes", [analytics_service_1.AnalyticsService,
+        cacheService_1.CacheService])
 ], AnalyticsController);
 exports.AnalyticsController = AnalyticsController;
 //# sourceMappingURL=analytics.controller.js.map

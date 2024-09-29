@@ -20,8 +20,9 @@ const shop_entity_1 = require("../shops/entities/shop.entity");
 const typeorm_2 = require("typeorm");
 const attachment_entity_1 = require("../common/entities/attachment.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let SettingsService = class SettingsService {
-    constructor(settingRepository, settingsOptionsRepository, contactDetailRepository, locationRepository, shopSocialRepository, currencyOptionRepository, emailEventRepository, emailAdminRepository, emailVendorRepository, emailCustomerRepository, smsEventRepository, smsAdminRepository, smsVendorRepository, smsCustomerRepository, seoSettingsRepository, serverInfoRepository, deliveryTimeRepository, logoSettingsRepository, paymentGatewayRepository, attachmentRepository, shopRepository, ServerInfoRepository, cacheManager) {
+    constructor(settingRepository, settingsOptionsRepository, contactDetailRepository, locationRepository, shopSocialRepository, currencyOptionRepository, emailEventRepository, emailAdminRepository, emailVendorRepository, emailCustomerRepository, smsEventRepository, smsAdminRepository, smsVendorRepository, smsCustomerRepository, seoSettingsRepository, serverInfoRepository, deliveryTimeRepository, logoSettingsRepository, paymentGatewayRepository, attachmentRepository, shopRepository, ServerInfoRepository, cacheManager, cacheService) {
         this.settingRepository = settingRepository;
         this.settingsOptionsRepository = settingsOptionsRepository;
         this.contactDetailRepository = contactDetailRepository;
@@ -45,6 +46,7 @@ let SettingsService = class SettingsService {
         this.shopRepository = shopRepository;
         this.ServerInfoRepository = ServerInfoRepository;
         this.cacheManager = cacheManager;
+        this.cacheService = cacheService;
     }
     async create(shopId, createSettingDto) {
         try {
@@ -735,7 +737,7 @@ SettingsService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository, Object])
+        typeorm_2.Repository, Object, cacheService_1.CacheService])
 ], SettingsService);
 exports.SettingsService = SettingsService;
 //# sourceMappingURL=settings.service.js.map

@@ -18,11 +18,14 @@ const common_1 = require("@nestjs/common");
 const event_service_1 = require("./event.service");
 const create_event_dto_1 = require("./dto/create-event.dto");
 const update_event_dto_1 = require("./dto/update-event.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let EventController = class EventController {
-    constructor(eventService) {
+    constructor(eventService, cacheService) {
         this.eventService = eventService;
+        this.cacheService = cacheService;
     }
-    createEvent(createEventDto) {
+    async createEvent(createEventDto) {
+        await this.cacheService.invalidateCacheBySubstring("events");
         return this.eventService.createEvent(createEventDto);
     }
     async getAllEvents(shopSlug, regionName, page = 1, limit = 10, filter, startDate, endDate, location) {
@@ -31,10 +34,12 @@ let EventController = class EventController {
     getEventById(id) {
         return this.eventService.getEventById(id);
     }
-    updateEvent(id, updateEventDto) {
+    async updateEvent(id, updateEventDto) {
+        await this.cacheService.invalidateCacheBySubstring("events");
         return this.eventService.updateEvent(id, updateEventDto);
     }
-    deleteEvent(id) {
+    async deleteEvent(id) {
+        await this.cacheService.invalidateCacheBySubstring("events");
         return this.eventService.deleteEvent(id);
     }
 };
@@ -88,7 +93,7 @@ __decorate([
 ], EventController.prototype, "deleteEvent", null);
 EventController = __decorate([
     (0, common_1.Controller)('events'),
-    __metadata("design:paramtypes", [event_service_1.EventService])
+    __metadata("design:paramtypes", [event_service_1.EventService, cacheService_1.CacheService])
 ], EventController);
 exports.EventController = EventController;
 //# sourceMappingURL=event.controller.js.map

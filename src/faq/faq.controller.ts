@@ -4,13 +4,15 @@ import { FAQ } from './entities/faq.entity';
 import { QnA, QnAType } from './entities/qna.entity';
 import { CreateFAQDto, UpdateFAQDto } from './dto/createfaqdto.dto';
 import { CreateQnADto, UpdateQnADto } from './dto/createqnadto.dto';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('faqs')
 export class FAQController {
-    constructor(private readonly faqService: FAQService) { }
+    constructor(private readonly faqService: FAQService, private readonly cacheService: CacheService) { }
 
     @Post()
-    createFAQ(@Body() createFAQDto: CreateFAQDto): Promise<FAQ> {
+    async createFAQ(@Body() createFAQDto: CreateFAQDto): Promise<FAQ> {
+        await this.cacheService.invalidateCacheBySubstring("faqs")
         return this.faqService.createFAQ(createFAQDto);
     }
 
@@ -29,27 +31,32 @@ export class FAQController {
     }
 
     @Put(':id')
-    updateFAQ(@Param('id') id: number, @Body() updateFAQDto: UpdateFAQDto): Promise<FAQ> {
+    async updateFAQ(@Param('id') id: number, @Body() updateFAQDto: UpdateFAQDto): Promise<FAQ> {
+        await this.cacheService.invalidateCacheBySubstring("faqs")
         return this.faqService.updateFAQ(id, updateFAQDto);
     }
 
     @Delete(':id')
-    deleteFAQ(@Param('id') id: number): Promise<void> {
+    async deleteFAQ(@Param('id') id: number): Promise<void> {
+        await this.cacheService.invalidateCacheBySubstring("faqs")
         return this.faqService.deleteFAQ(id);
     }
 
     @Post(':faqId/qna')
-    addQnA(@Param('faqId') faqId: number, @Body() createQnADto: CreateQnADto): Promise<QnA> {
+    async addQnA(@Param('faqId') faqId: number, @Body() createQnADto: CreateQnADto): Promise<QnA> {
+        await this.cacheService.invalidateCacheBySubstring("faqs")
         return this.faqService.addQnAToFAQ(faqId, createQnADto);
     }
 
     @Put('qna/:id')
-    updateQnA(@Param('id') id: number, @Body() updateQnADto: UpdateQnADto): Promise<QnA> {
+    async updateQnA(@Param('id') id: number, @Body() updateQnADto: UpdateQnADto): Promise<QnA> {
+        await this.cacheService.invalidateCacheBySubstring("faqs")
         return this.faqService.updateQnA(id, updateQnADto);
     }
 
     @Delete('qna/:id')
-    deleteQnA(@Param('id') id: number): Promise<void> {
+    async deleteQnA(@Param('id') id: number): Promise<void> {
+        await this.cacheService.invalidateCacheBySubstring("faqs")
         return this.faqService.deleteQnA(id);
     }
 

@@ -20,6 +20,7 @@ const category_entity_1 = require("../categories/entities/category.entity");
 const product_entity_1 = require("../products/entities/product.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const region_entity_1 = require("../region/entities/region.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let TypesModule = class TypesModule {
 };
 TypesModule = __decorate([
@@ -29,7 +30,7 @@ TypesModule = __decorate([
             cache_manager_1.CacheModule.register()
         ],
         controllers: [types_controller_1.TypesController],
-        providers: [types_service_1.TypesService, uploads_service_1.UploadsService],
+        providers: [types_service_1.TypesService, uploads_service_1.UploadsService, cacheService_1.CacheService],
     })
 ], TypesModule);
 exports.TypesModule = TypesModule;

@@ -14,6 +14,7 @@ const contact_service_1 = require("./contact.service");
 const contact_controller_1 = require("./contact.controller");
 const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let ContactModule = class ContactModule {
 };
 ContactModule = __decorate([
@@ -21,7 +22,7 @@ ContactModule = __decorate([
         imports: [typeorm_1.TypeOrmModule.forFeature([createcontact_entitiy_1.Contact, shop_entity_1.Shop]),
             cache_manager_1.CacheModule.register()
         ],
-        providers: [contact_service_1.ContactService],
+        providers: [contact_service_1.ContactService, cacheService_1.CacheService],
         controllers: [contact_controller_1.ContactController],
         exports: [contact_service_1.ContactService],
     })

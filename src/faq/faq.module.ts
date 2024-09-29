@@ -6,11 +6,12 @@ import { FAQ } from './entities/faq.entity';
 import { FAQService } from './faq.service';
 import { FAQController } from './faq.controller';
 import { CacheModule } from '@nestjs/cache-manager';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
     imports: [TypeOrmModule.forFeature([FAQ, QnA, Attachment]),
     CacheModule.register()],
-    providers: [FAQService],
+    providers: [FAQService, CacheService],
     controllers: [FAQController],
 })
 export class FAQModule { }

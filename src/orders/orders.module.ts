@@ -35,6 +35,7 @@ import { UserAdd } from '../address/entities/address.entity';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { Analytics, TotalYearSaleByMonth } from '../analytics/entities/analytics.entity';
 import { Refund } from '../refunds/entities/refund.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
   imports: [
@@ -53,7 +54,7 @@ import { Refund } from '../refunds/entities/refund.entity';
     DownloadInvoiceController,
     ShiprocketController,
   ],
-  providers: [OrdersService, AnalyticsService, ShiprocketService, MailService, StocksService, NotificationService],  // Ensure NotificationService is listed as a provider
+  providers: [OrdersService, AnalyticsService, ShiprocketService, MailService, StocksService, NotificationService, CacheService],
   exports: [OrdersService],
 })
 export class OrdersModule { }

@@ -8,13 +8,14 @@ import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { Shop } from 'src/shops/entities/shop.entity'
 import { CacheModule } from '@nestjs/cache-manager'
+import { CacheService } from '../helpers/cacheService'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Setting, Attachment, PaymentGateway, LogoSettings, DeliveryTime, ServerInfo, SeoSettings, SmsEvent, SmsAdmin, SmsVendor, SmsCustomer, EmailAdmin, EmailVendor, EmailCustomer, EmailEvent, CurrencyOptions, ShopSocials, SettingsOptions, ContactDetails, Location, Shop]),
   CacheModule.register()
   ],
   controllers: [SettingsController],
-  providers: [SettingsService],
+  providers: [SettingsService, CacheService],
   exports: [SettingsService],
 })
 export class SettingsModule { }

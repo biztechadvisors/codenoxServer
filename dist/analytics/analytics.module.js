@@ -21,6 +21,7 @@ const jwt_1 = require("@nestjs/jwt");
 const stocksOrd_entity_1 = require("../stocks/entities/stocksOrd.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const refund_entity_1 = require("../refunds/entities/refund.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let AnalyticsModule = class AnalyticsModule {
 };
 AnalyticsModule = __decorate([
@@ -31,7 +32,7 @@ AnalyticsModule = __decorate([
             cache_manager_1.CacheModule.register()
         ],
         controllers: [analytics_controller_1.AnalyticsController],
-        providers: [analytics_service_1.AnalyticsService],
+        providers: [analytics_service_1.AnalyticsService, cacheService_1.CacheService],
     })
 ], AnalyticsModule);
 exports.AnalyticsModule = AnalyticsModule;

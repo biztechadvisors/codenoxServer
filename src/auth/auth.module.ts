@@ -18,6 +18,7 @@ import { Order } from '../orders/entities/order.entity';
 import { Refund } from '../refunds/entities/refund.entity';
 import { StocksSellOrd } from '../stocks/entities/stocksOrd.entity';
 import { Shop } from '../shops/entities/shop.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
   imports: [
@@ -34,7 +35,7 @@ import { Shop } from '../shops/entities/shop.entity';
     CacheModule.register(),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, SessionService, AnalyticsService],
+  providers: [AuthService, JwtStrategy, SessionService, AnalyticsService, CacheService],
   exports: [AuthService],
 })
 export class AuthModule { }

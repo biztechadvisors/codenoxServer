@@ -14,6 +14,7 @@ const permission_controller_1 = require("./permission.controller");
 const permission_service_1 = require("./permission.service");
 const user_entity_1 = require("../users/entities/user.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let PermissionModule = class PermissionModule {
 };
 PermissionModule = __decorate([
@@ -22,7 +23,7 @@ PermissionModule = __decorate([
             cache_manager_1.CacheModule.register(),
         ],
         controllers: [permission_controller_1.PermissionController],
-        providers: [permission_service_1.PermissionService],
+        providers: [permission_service_1.PermissionService, cacheService_1.CacheService],
     })
 ], PermissionModule);
 exports.PermissionModule = PermissionModule;

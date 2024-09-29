@@ -13,13 +13,14 @@ const region_entity_1 = require("./entities/region.entity");
 const region_controller_1 = require("./region.controller");
 const region_service_1 = require("./region.service");
 const shop_entity_1 = require("../shops/entities/shop.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let RegionModule = class RegionModule {
 };
 RegionModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([region_entity_1.Region, shop_entity_1.Shop])],
         controllers: [region_controller_1.RegionController],
-        providers: [region_service_1.RegionService],
+        providers: [region_service_1.RegionService, cacheService_1.CacheService],
     })
 ], RegionModule);
 exports.RegionModule = RegionModule;

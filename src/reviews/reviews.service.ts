@@ -17,6 +17,7 @@ import { Order } from 'src/orders/entities/order.entity';
 import { Report } from './entities/reports.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class ReviewService {
@@ -37,6 +38,8 @@ export class ReviewService {
     private readonly reportRepository: Repository<Report>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
+    private readonly cacheService: CacheService
+
   ) { }
 
   private async getReviewsFromDatabase(): Promise<Review[]> {

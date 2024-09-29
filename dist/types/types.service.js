@@ -30,8 +30,9 @@ const category_entity_1 = require("../categories/entities/category.entity");
 const product_entity_1 = require("../products/entities/product.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const region_entity_1 = require("../region/entities/region.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let TypesService = class TypesService {
-    constructor(uploadsService, typeRepository, typeSettingsRepository, bannerRepository, attachmentRepository, shopRepository, tagRepository, categoryRepository, productRepository, regionRepository, cacheManager) {
+    constructor(uploadsService, typeRepository, typeSettingsRepository, bannerRepository, attachmentRepository, shopRepository, tagRepository, categoryRepository, productRepository, regionRepository, cacheManager, cacheService) {
         this.uploadsService = uploadsService;
         this.typeRepository = typeRepository;
         this.typeSettingsRepository = typeSettingsRepository;
@@ -43,6 +44,7 @@ let TypesService = class TypesService {
         this.productRepository = productRepository;
         this.regionRepository = regionRepository;
         this.cacheManager = cacheManager;
+        this.cacheService = cacheService;
     }
     async convertToSlug(text) {
         return await (0, helpers_1.convertToSlug)(text);
@@ -288,7 +290,7 @@ TypesService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository, Object])
+        typeorm_2.Repository, Object, cacheService_1.CacheService])
 ], TypesService);
 exports.TypesService = TypesService;
 //# sourceMappingURL=types.service.js.map

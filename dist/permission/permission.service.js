@@ -19,12 +19,14 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("../users/entities/user.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let PermissionService = class PermissionService {
-    constructor(permissionRepository, permissionTypeRepository, userRepository, cacheManager) {
+    constructor(permissionRepository, permissionTypeRepository, userRepository, cacheManager, cacheService) {
         this.permissionRepository = permissionRepository;
         this.permissionTypeRepository = permissionTypeRepository;
         this.userRepository = userRepository;
         this.cacheManager = cacheManager;
+        this.cacheService = cacheService;
     }
     async create(createPermission) {
         const existingPermission = await this.permissionRepository.findOne({ where: { permission_name: createPermission.permission_name } });
@@ -208,7 +210,7 @@ PermissionService = __decorate([
     __param(3, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository, Object])
+        typeorm_2.Repository, Object, cacheService_1.CacheService])
 ], PermissionService);
 exports.PermissionService = PermissionService;
 //# sourceMappingURL=permission.service.js.map

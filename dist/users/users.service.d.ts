@@ -20,6 +20,7 @@ import { AddressesService } from '../address/addresses.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
 import { CreateDealerEnquiryDto, UpdateDealerEnquiryDto } from './dto/createDealerEnquiryDto.dto';
+import { CacheService } from '../helpers/cacheService';
 export declare class UsersService {
     private readonly userRepository;
     private readonly addressRepository;
@@ -38,7 +39,8 @@ export declare class UsersService {
     private readonly analyticsService;
     private readonly authService;
     private readonly addressesService;
-    constructor(userRepository: Repository<User>, addressRepository: Repository<Add>, profileRepository: Repository<Profile>, attachmentRepository: Repository<Attachment>, dealerRepository: Repository<Dealer>, productRepository: Repository<Product>, categoryRepository: Repository<Category>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, shopRepository: Repository<Shop>, socialRepository: Repository<Social>, permissionRepository: Repository<Permission>, dealerEnquiryRepository: Repository<DealerEnquiry>, cacheManager: Cache, analyticsService: AnalyticsService, authService: AuthService, addressesService: AddressesService);
+    private readonly cacheService;
+    constructor(userRepository: Repository<User>, addressRepository: Repository<Add>, profileRepository: Repository<Profile>, attachmentRepository: Repository<Attachment>, dealerRepository: Repository<Dealer>, productRepository: Repository<Product>, categoryRepository: Repository<Category>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, shopRepository: Repository<Shop>, socialRepository: Repository<Social>, permissionRepository: Repository<Permission>, dealerEnquiryRepository: Repository<DealerEnquiry>, cacheManager: Cache, analyticsService: AnalyticsService, authService: AuthService, addressesService: AddressesService, cacheService: CacheService);
     create(createUserDto: CreateUserDto): Promise<User>;
     getUsers({ searchJoin, limit, page, name, orderBy, sortedBy, usrById, search, type, }: GetUsersDto): Promise<UserPaginator>;
     findOne(id: number): Promise<User>;

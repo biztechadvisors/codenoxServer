@@ -3,13 +3,17 @@ import { BlogService } from './blog.service';
 import { Blog } from './entities/blog.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('blogs')
 export class BlogController {
-    constructor(private readonly blogService: BlogService) { }
+    constructor(private readonly blogService: BlogService,
+        private readonly cacheService: CacheService
+    ) { }
 
     @Post()
-    createBlog(@Body() createBlogDto: CreateBlogDto): Promise<Blog> {
+    async createBlog(@Body() createBlogDto: CreateBlogDto): Promise<Blog> {
+        await this.cacheService.invalidateCacheBySubstring("blogs");
         return this.blogService.createBlog(createBlogDto);
     }
 
@@ -32,12 +36,14 @@ export class BlogController {
     }
 
     @Put(':id')
-    updateBlog(@Param('id') id: number, @Body() updateBlogDto: UpdateBlogDto): Promise<Blog> {
+    async updateBlog(@Param('id') id: number, @Body() updateBlogDto: UpdateBlogDto): Promise<Blog> {
+        await this.cacheService.invalidateCacheBySubstring("blogs");
         return this.blogService.updateBlog(id, updateBlogDto);
     }
 
     @Delete(':id')
-    deleteBlog(@Param('id') id: number): Promise<void> {
+    async deleteBlog(@Param('id') id: number): Promise<void> {
+        await this.cacheService.invalidateCacheBySubstring("blogs")
         return this.blogService.deleteBlog(id);
     }
 }

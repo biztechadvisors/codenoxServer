@@ -9,6 +9,7 @@ import { Cache } from 'cache-manager';
 import { Analytics, TotalYearSaleByMonth } from './entities/analytics.entity';
 import { Refund } from '../refunds/entities/refund.entity';
 import { CreateTotalYearSaleByMonthDto } from './dto/create-analytics.dto';
+import { CacheService } from '../helpers/cacheService';
 export declare class AnalyticsService {
     private readonly orderRepository;
     private readonly shopRepository;
@@ -19,8 +20,9 @@ export declare class AnalyticsService {
     private readonly stocksSellOrdRepository;
     private readonly totalYearSaleByMonthRepository;
     private readonly cacheManager;
+    private readonly cacheService;
     private readonly logger;
-    constructor(orderRepository: Repository<Order>, shopRepository: Repository<Shop>, userRepository: Repository<User>, analyticsRepository: Repository<Analytics>, refundRepository: Repository<Refund>, permissionRepository: Repository<Permission>, stocksSellOrdRepository: Repository<StocksSellOrd>, totalYearSaleByMonthRepository: Repository<TotalYearSaleByMonth>, cacheManager: Cache);
+    constructor(orderRepository: Repository<Order>, shopRepository: Repository<Shop>, userRepository: Repository<User>, analyticsRepository: Repository<Analytics>, refundRepository: Repository<Refund>, permissionRepository: Repository<Permission>, stocksSellOrdRepository: Repository<StocksSellOrd>, totalYearSaleByMonthRepository: Repository<TotalYearSaleByMonth>, cacheManager: Cache, cacheService: CacheService);
     getTopUsersWithMaxOrders(userId: number): Promise<any[]>;
     getTopDealer(userId?: number): Promise<any[]>;
     getAnalyticsById(analyticsId: number): Promise<Analytics>;

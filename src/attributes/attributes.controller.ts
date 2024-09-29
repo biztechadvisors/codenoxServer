@@ -14,13 +14,17 @@ import { UpdateAttributeDto } from './dto/update-attribute.dto';
 import { GetAttributeArgs } from './dto/get-attribute.dto';
 import { Attribute } from './entities/attribute.entity';
 import { GetAttributesArgs } from './dto/get-attributes.dto';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('attributes')
 export class AttributesController {
-  constructor(private readonly attributesService: AttributesService) { }
+  constructor(private readonly attributesService: AttributesService,
+    private readonly cacheService: CacheService
+  ) { }
 
   @Post()
-  create(@Body() createAttributeDto: CreateAttributeDto) {
+  async create(@Body() createAttributeDto: CreateAttributeDto) {
+    await this.cacheService.invalidateCacheBySubstring("attributes")
     return this.attributesService.create(createAttributeDto);
   }
 
@@ -36,16 +40,18 @@ export class AttributesController {
   }
 
   @Put(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateAttributeDto: UpdateAttributeDto,
   ) {
+    await this.cacheService.invalidateCacheBySubstring("attributes")
     return this.attributesService.update(+id, updateAttributeDto);
   }
 
   @Delete(':id')
   async delete(@Param('id') id: number): Promise<{ message: string; status: boolean }> {
     await this.attributesService.delete(id);
+    await this.cacheService.invalidateCacheBySubstring("attributes")
     return { message: 'Attribute deleted successfully', status: true };
   }
 

@@ -31,6 +31,7 @@ import { UpdateAddressDto } from '../address/dto/update-address.dto';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
 import { CreateDealerEnquiryDto, UpdateDealerEnquiryDto } from './dto/createDealerEnquiryDto.dto';
+import { CacheService } from '../helpers/cacheService';
 
 const options = {
   keys: ['name', 'type.slug', 'categories.slug', 'status'],
@@ -59,6 +60,8 @@ export class UsersService {
     private readonly analyticsService: AnalyticsService,
     private readonly authService: AuthService,
     private readonly addressesService: AddressesService,
+
+    private readonly cacheService: CacheService
 
   ) { }
 
@@ -155,25 +158,24 @@ export class UsersService {
     const pageNum = page;
     const startIndex = (pageNum - 1) * limitNum;
 
-    // // Construct a cache key based on query parameters
-    // const cacheKey = `users_${JSON.stringify({
-    //   searchJoin,
-    //   include,
-    //   limit,
-    //   page,
-    //   name,
-    //   orderBy,
-    //   sortedBy,
-    //   usrById,
-    //   search,
-    //   type,
-    // })}`;
+    // Construct a cache key based on query parameters
+    const cacheKey = `users_${JSON.stringify({
+      searchJoin,
+      limit,
+      page,
+      name,
+      orderBy,
+      sortedBy,
+      usrById,
+      search,
+      type,
+    })}`;
 
-    // // Try to get cached data
-    // const cachedData = await this.cacheManager.get<UserPaginator>(cacheKey);
-    // if (cachedData) {
-    //   return cachedData;
-    // }
+    // Try to get cached data
+    const cachedData = await this.cacheManager.get<UserPaginator>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
 
     let user: User;
 
@@ -292,7 +294,7 @@ export class UsersService {
     };
 
     // Cache the result
-    // await this.cacheManager.set(cacheKey, result, 60); // Cache for 1 hour
+    await this.cacheManager.set(cacheKey, result, 60); // Cache for 1 hour
 
     return result;
   }

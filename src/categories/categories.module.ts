@@ -9,6 +9,7 @@ import { CacheModule } from '@nestjs/cache-manager'
 import { Region } from '../region/entities/region.entity'
 import { Attachment } from '../common/entities/attachment.entity'
 import { Type } from '../types/entities/type.entity'
+import { CacheService } from '../helpers/cacheService'
 
 @Module({
   imports: [
@@ -16,6 +17,6 @@ import { Type } from '../types/entities/type.entity'
     CacheModule.register()
   ],
   controllers: [CategoriesController, SubCategoriesController],
-  providers: [CategoriesService],
+  providers: [CategoriesService, CacheService],
 })
 export class CategoriesModule { }

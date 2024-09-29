@@ -5,6 +5,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Repository } from 'typeorm';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Cache } from 'cache-manager';
+import { CacheService } from '../helpers/cacheService';
 export declare class SettingsService {
     private settingRepository;
     private settingsOptionsRepository;
@@ -29,7 +30,8 @@ export declare class SettingsService {
     private shopRepository;
     private ServerInfoRepository;
     private readonly cacheManager;
-    constructor(settingRepository: Repository<Setting>, settingsOptionsRepository: Repository<SettingsOptions>, contactDetailRepository: Repository<ContactDetails>, locationRepository: Repository<Location>, shopSocialRepository: Repository<ShopSocials>, currencyOptionRepository: Repository<CurrencyOptions>, emailEventRepository: Repository<EmailEvent>, emailAdminRepository: Repository<EmailAdmin>, emailVendorRepository: Repository<EmailVendor>, emailCustomerRepository: Repository<EmailCustomer>, smsEventRepository: Repository<SmsEvent>, smsAdminRepository: Repository<SmsAdmin>, smsVendorRepository: Repository<SmsVendor>, smsCustomerRepository: Repository<SmsCustomer>, seoSettingsRepository: Repository<SeoSettings>, serverInfoRepository: Repository<ServerInfo>, deliveryTimeRepository: Repository<DeliveryTime>, logoSettingsRepository: Repository<LogoSettings>, paymentGatewayRepository: Repository<PaymentGateway>, attachmentRepository: Repository<Attachment>, shopRepository: Repository<Shop>, ServerInfoRepository: Repository<ServerInfo>, cacheManager: Cache);
+    private readonly cacheService;
+    constructor(settingRepository: Repository<Setting>, settingsOptionsRepository: Repository<SettingsOptions>, contactDetailRepository: Repository<ContactDetails>, locationRepository: Repository<Location>, shopSocialRepository: Repository<ShopSocials>, currencyOptionRepository: Repository<CurrencyOptions>, emailEventRepository: Repository<EmailEvent>, emailAdminRepository: Repository<EmailAdmin>, emailVendorRepository: Repository<EmailVendor>, emailCustomerRepository: Repository<EmailCustomer>, smsEventRepository: Repository<SmsEvent>, smsAdminRepository: Repository<SmsAdmin>, smsVendorRepository: Repository<SmsVendor>, smsCustomerRepository: Repository<SmsCustomer>, seoSettingsRepository: Repository<SeoSettings>, serverInfoRepository: Repository<ServerInfo>, deliveryTimeRepository: Repository<DeliveryTime>, logoSettingsRepository: Repository<LogoSettings>, paymentGatewayRepository: Repository<PaymentGateway>, attachmentRepository: Repository<Attachment>, shopRepository: Repository<Shop>, ServerInfoRepository: Repository<ServerInfo>, cacheManager: Cache, cacheService: CacheService);
     create(shopId: number, createSettingDto: CreateSettingDto): Promise<Setting | {
         message: string;
     }>;

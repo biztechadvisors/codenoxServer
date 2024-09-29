@@ -22,11 +22,14 @@ const get_products_dto_1 = require("./dto/get-products.dto");
 const get_popular_products_dto_1 = require("./dto/get-popular-products.dto");
 const platform_express_1 = require("@nestjs/platform-express");
 const uploadProductsXl_1 = require("./uploadProductsXl");
+const cacheService_1 = require("../helpers/cacheService");
 let ProductsController = class ProductsController {
-    constructor(productsService) {
+    constructor(productsService, cacheService) {
         this.productsService = productsService;
+        this.cacheService = cacheService;
     }
-    createProduct(createProductDto) {
+    async createProduct(createProductDto) {
+        await this.cacheService.invalidateCacheBySubstring("products");
         return this.productsService.create(createProductDto);
     }
     async getProducts(query) {
@@ -43,7 +46,8 @@ let ProductsController = class ProductsController {
             throw new common_1.NotFoundException(`Error fetching product: ${error.message}`);
         }
     }
-    update(id, updateProductDto) {
+    async update(id, updateProductDto) {
+        await this.cacheService.invalidateCacheBySubstring("products");
         return this.productsService.update(+id, updateProductDto);
     }
     async updateQuantity(id, updateQuantityDto) {
@@ -55,7 +59,8 @@ let ProductsController = class ProductsController {
             return { error: err.message || 'Internal Server Error' };
         }
     }
-    remove(id) {
+    async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring("products");
         return this.productsService.remove(+id);
     }
 };
@@ -65,7 +70,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_product_dto_1.CreateProductDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "createProduct", null);
 __decorate([
     (0, common_1.Get)(),
@@ -92,7 +97,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_product_dto_1.UpdateProductDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "update", null);
 __decorate([
     (0, common_1.Post)(':id'),
@@ -109,11 +114,12 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "remove", null);
 ProductsController = __decorate([
     (0, common_1.Controller)('products'),
-    __metadata("design:paramtypes", [products_service_1.ProductsService])
+    __metadata("design:paramtypes", [products_service_1.ProductsService,
+        cacheService_1.CacheService])
 ], ProductsController);
 exports.ProductsController = ProductsController;
 let PopularProductsController = class PopularProductsController {
@@ -150,6 +156,7 @@ let UploadProductsXl = class UploadProductsXl {
         }
         const buffer = file.buffer;
         await this.uploadXlService.uploadProductsFromExcel(buffer, shopSlug);
+        await this.cacheService.invalidateCacheBySubstring("products");
         return { message: 'Products uploaded successfully' };
     }
 };

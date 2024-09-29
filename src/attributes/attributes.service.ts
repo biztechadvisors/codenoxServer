@@ -13,6 +13,7 @@ import { Repository } from 'typeorm';
 import { GetAttributesArgs } from './dto/get-attributes.dto';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class AttributesService {
@@ -22,6 +23,7 @@ export class AttributesService {
     @InjectRepository(AttributeValue) private attributeValueRepository: Repository<AttributeValue>,
     @InjectRepository(Shop) private shopRepository: Repository<Shop>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+
   ) { }
 
   async convertToSlug(text) {

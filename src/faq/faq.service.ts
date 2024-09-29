@@ -17,7 +17,7 @@ export class FAQService {
         private readonly qnaRepository: Repository<QnA>,
         @InjectRepository(Attachment)
         private readonly attachmentRepository: Repository<Attachment>,
-        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     ) { }
 
     async createFAQ(createFAQDto: any): Promise<FAQ> {

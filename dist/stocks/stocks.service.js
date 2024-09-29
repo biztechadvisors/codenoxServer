@@ -34,8 +34,9 @@ const paginate_1 = require("../common/pagination/paginate");
 const notifications_service_1 = require("../notifications/services/notifications.service");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const cache_manager_2 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let StocksService = class StocksService {
-    constructor(shiprocketService, MailService, notificationService, stocksRepository, inventoryStocksRepository, userRepository, dealerRepository, productRepository, StocksSellOrdRepository, orderProductPivotRepository, orderStatusRepository, couponRepository, userAddressRepository, shopRepository, permissionRepository, variationRepository, orderRepository, cacheManager) {
+    constructor(shiprocketService, MailService, notificationService, stocksRepository, inventoryStocksRepository, userRepository, dealerRepository, productRepository, StocksSellOrdRepository, orderProductPivotRepository, orderStatusRepository, couponRepository, userAddressRepository, shopRepository, permissionRepository, variationRepository, orderRepository, cacheManager, cacheService) {
         this.shiprocketService = shiprocketService;
         this.MailService = MailService;
         this.notificationService = notificationService;
@@ -54,6 +55,7 @@ let StocksService = class StocksService {
         this.variationRepository = variationRepository;
         this.orderRepository = orderRepository;
         this.cacheManager = cacheManager;
+        this.cacheService = cacheService;
     }
     async create(createStocksDto) {
         try {
@@ -830,7 +832,8 @@ StocksService = __decorate([
         typeorm_1.Repository,
         typeorm_1.Repository,
         typeorm_1.Repository,
-        cache_manager_2.Cache])
+        cache_manager_2.Cache,
+        cacheService_1.CacheService])
 ], StocksService);
 exports.StocksService = StocksService;
 //# sourceMappingURL=stocks.service.js.map

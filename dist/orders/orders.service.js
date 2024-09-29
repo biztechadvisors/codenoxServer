@@ -38,8 +38,9 @@ const address_entity_1 = require("../address/entities/address.entity");
 const analytics_service_1 = require("../analytics/analytics.service");
 const generic_conditions_dto_1 = require("../common/dto/generic-conditions.dto");
 const helpers_1 = require("../helpers");
+const cacheService_1 = require("../helpers/cacheService");
 let OrdersService = class OrdersService {
-    constructor(authService, analyticsService, stripeService, paypalService, razorpayService, shiprocketService, mailService, stocksService, notificationService, orderRepository, orderStatusRepository, userRepository, userAddressRepository, productRepository, orderFilesRepository, fileRepository, paymentIntentInfoRepository, paymentIntentRepository, orderProductPivotRepository, shopRepository, couponRepository, cacheManager, dataSource) {
+    constructor(authService, analyticsService, stripeService, paypalService, razorpayService, shiprocketService, mailService, stocksService, notificationService, orderRepository, orderStatusRepository, userRepository, userAddressRepository, productRepository, orderFilesRepository, fileRepository, paymentIntentInfoRepository, paymentIntentRepository, orderProductPivotRepository, shopRepository, couponRepository, cacheManager, cacheService, dataSource) {
         this.authService = authService;
         this.analyticsService = analyticsService;
         this.stripeService = stripeService;
@@ -62,6 +63,7 @@ let OrdersService = class OrdersService {
         this.shopRepository = shopRepository;
         this.couponRepository = couponRepository;
         this.cacheManager = cacheManager;
+        this.cacheService = cacheService;
         this.dataSource = dataSource;
     }
     async updateShopAndProducts(orderDto) {
@@ -1106,7 +1108,8 @@ OrdersService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository, Object, typeorm_2.DataSource])
+        typeorm_2.Repository, Object, cacheService_1.CacheService,
+        typeorm_2.DataSource])
 ], OrdersService);
 exports.OrdersService = OrdersService;
 //# sourceMappingURL=orders.service.js.map

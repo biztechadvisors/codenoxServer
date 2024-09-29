@@ -10,6 +10,7 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Region } from '../region/entities/region.entity';
 import { Tag } from '../tags/entities/tag.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class BlogService {
@@ -25,6 +26,7 @@ export class BlogService {
         @InjectRepository(Tag)
         private readonly tagRepository: Repository<Tag>, // Inject Tag repository
         @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+
     ) { }
 
     async createBlog(createBlogDto: CreateBlogDto): Promise<Blog> {

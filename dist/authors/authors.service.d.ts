@@ -11,7 +11,7 @@ export declare class AuthorsService {
     private shopSocialsRepository;
     private attachmentRepository;
     constructor(authorRepository: Repository<Author>, shopSocialsRepository: Repository<ShopSocials>, attachmentRepository: Repository<Attachment>);
-    convertToSlug(text: any): Promise<string>;
+    convertToSlug(text: any): Promise<any>;
     create(createAuthorDto: CreateAuthorDto): Promise<Author>;
     getAuthors({ page, limit, search, is_approved }: GetAuthorDto): Promise<{
         count: number;

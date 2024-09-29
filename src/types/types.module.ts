@@ -12,6 +12,7 @@ import { Category } from 'src/categories/entities/category.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Region } from '../region/entities/region.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
   imports: [
@@ -19,6 +20,6 @@ import { Region } from '../region/entities/region.entity';
     CacheModule.register()
   ],
   controllers: [TypesController],
-  providers: [TypesService, UploadsService],
+  providers: [TypesService, UploadsService, CacheService],
 })
 export class TypesModule { }

@@ -20,6 +20,7 @@ const analytics_entity_1 = require("../analytics/entities/analytics.entity");
 const permission_entity_1 = require("../permission/entities/permission.entity");
 const stocksOrd_entity_1 = require("../stocks/entities/stocksOrd.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let RefundsModule = class RefundsModule {
 };
 RefundsModule = __decorate([
@@ -28,7 +29,7 @@ RefundsModule = __decorate([
             cache_manager_1.CacheModule.register(),
         ],
         controllers: [refunds_controller_1.RefundsController],
-        providers: [refunds_service_1.RefundsService, analytics_service_1.AnalyticsService],
+        providers: [refunds_service_1.RefundsService, analytics_service_1.AnalyticsService, cacheService_1.CacheService],
     })
 ], RefundsModule);
 exports.RefundsModule = RefundsModule;

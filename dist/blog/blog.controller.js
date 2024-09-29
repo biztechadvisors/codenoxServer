@@ -18,11 +18,14 @@ const common_1 = require("@nestjs/common");
 const blog_service_1 = require("./blog.service");
 const create_blog_dto_1 = require("./dto/create-blog.dto");
 const update_blog_dto_1 = require("./dto/update-blog.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let BlogController = class BlogController {
-    constructor(blogService) {
+    constructor(blogService, cacheService) {
         this.blogService = blogService;
+        this.cacheService = cacheService;
     }
-    createBlog(createBlogDto) {
+    async createBlog(createBlogDto) {
+        await this.cacheService.invalidateCacheBySubstring("blogs");
         return this.blogService.createBlog(createBlogDto);
     }
     getAllBlogs(shopSlug, regionName, tagName, page = 1, limit = 10, startDate, endDate) {
@@ -31,10 +34,12 @@ let BlogController = class BlogController {
     getBlogById(id) {
         return this.blogService.getBlogById(id);
     }
-    updateBlog(id, updateBlogDto) {
+    async updateBlog(id, updateBlogDto) {
+        await this.cacheService.invalidateCacheBySubstring("blogs");
         return this.blogService.updateBlog(id, updateBlogDto);
     }
-    deleteBlog(id) {
+    async deleteBlog(id) {
+        await this.cacheService.invalidateCacheBySubstring("blogs");
         return this.blogService.deleteBlog(id);
     }
 };
@@ -87,7 +92,8 @@ __decorate([
 ], BlogController.prototype, "deleteBlog", null);
 BlogController = __decorate([
     (0, common_1.Controller)('blogs'),
-    __metadata("design:paramtypes", [blog_service_1.BlogService])
+    __metadata("design:paramtypes", [blog_service_1.BlogService,
+        cacheService_1.CacheService])
 ], BlogController);
 exports.BlogController = BlogController;
 //# sourceMappingURL=blog.controller.js.map

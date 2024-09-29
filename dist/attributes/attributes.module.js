@@ -15,6 +15,7 @@ const attribute_entity_1 = require("./entities/attribute.entity");
 const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const attribute_value_entity_1 = require("./entities/attribute-value.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let AttributesModule = class AttributesModule {
 };
 AttributesModule = __decorate([
@@ -24,7 +25,7 @@ AttributesModule = __decorate([
             cache_manager_1.CacheModule.register()
         ],
         controllers: [attributes_controller_1.AttributesController],
-        providers: [attributes_service_1.AttributesService],
+        providers: [attributes_service_1.AttributesService, cacheService_1.CacheService],
     })
 ], AttributesModule);
 exports.AttributesModule = AttributesModule;

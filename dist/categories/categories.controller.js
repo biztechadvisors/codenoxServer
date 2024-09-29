@@ -19,11 +19,14 @@ const categories_service_1 = require("./categories.service");
 const create_category_dto_1 = require("./dto/create-category.dto");
 const get_categories_dto_1 = require("./dto/get-categories.dto");
 const update_category_dto_1 = require("./dto/update-category.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let CategoriesController = class CategoriesController {
-    constructor(categoriesService) {
+    constructor(categoriesService, cacheService) {
         this.categoriesService = categoriesService;
+        this.cacheService = cacheService;
     }
-    create(createCategoryDto) {
+    async create(createCategoryDto) {
+        await this.cacheService.invalidateCacheBySubstring("categories");
         return this.categoriesService.create(createCategoryDto);
     }
     findAll(query) {
@@ -32,10 +35,12 @@ let CategoriesController = class CategoriesController {
     findOne(param, language, shopId) {
         return this.categoriesService.getCategory(param, language, shopId);
     }
-    update(id, updateCategoryDto) {
+    async update(id, updateCategoryDto) {
+        await this.cacheService.invalidateCacheBySubstring("categories");
         return this.categoriesService.update(+id, updateCategoryDto);
     }
-    remove(id) {
+    async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring("categories");
         return this.categoriesService.remove(+id);
     }
 };
@@ -45,7 +50,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_category_dto_1.CreateCategoryDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], CategoriesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
@@ -72,7 +77,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_category_dto_1.UpdateCategoryDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], CategoriesController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -80,18 +85,20 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], CategoriesController.prototype, "remove", null);
 CategoriesController = __decorate([
     (0, common_1.Controller)('categories'),
-    __metadata("design:paramtypes", [categories_service_1.CategoriesService])
+    __metadata("design:paramtypes", [categories_service_1.CategoriesService, cacheService_1.CacheService])
 ], CategoriesController);
 exports.CategoriesController = CategoriesController;
 let SubCategoriesController = class SubCategoriesController {
-    constructor(categoriesService) {
+    constructor(categoriesService, cacheService) {
         this.categoriesService = categoriesService;
+        this.cacheService = cacheService;
     }
-    create(createSubCategoryDto) {
+    async create(createSubCategoryDto) {
+        await this.cacheService.invalidateCacheBySubstring("subCategories");
         return this.categoriesService.createSubCategory(createSubCategoryDto);
     }
     findAll(query) {
@@ -100,10 +107,12 @@ let SubCategoriesController = class SubCategoriesController {
     findOne(param, language, shopSlug) {
         return this.categoriesService.getSubCategory(param, language, shopSlug);
     }
-    update(id, updateSubCategoryDto) {
+    async update(id, updateSubCategoryDto) {
+        await this.cacheService.invalidateCacheBySubstring("subCategories");
         return this.categoriesService.updateSubCategory(+id, updateSubCategoryDto);
     }
-    remove(id) {
+    async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring("subCategories");
         return this.categoriesService.removeSubCategory(+id);
     }
 };
@@ -113,7 +122,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_category_dto_1.CreateSubCategoryDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], SubCategoriesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
@@ -140,7 +149,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_category_dto_1.UpdateSubCategoryDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], SubCategoriesController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -148,11 +157,11 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], SubCategoriesController.prototype, "remove", null);
 SubCategoriesController = __decorate([
     (0, common_1.Controller)('subCategories'),
-    __metadata("design:paramtypes", [categories_service_1.CategoriesService])
+    __metadata("design:paramtypes", [categories_service_1.CategoriesService, cacheService_1.CacheService])
 ], SubCategoriesController);
 exports.SubCategoriesController = SubCategoriesController;
 //# sourceMappingURL=categories.controller.js.map

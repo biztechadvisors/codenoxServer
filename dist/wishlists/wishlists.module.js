@@ -17,6 +17,7 @@ const wishlist_entity_1 = require("./entities/wishlist.entity");
 const product_entity_1 = require("../products/entities/product.entity");
 const user_entity_1 = require("../users/entities/user.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let WishlistsModule = class WishlistsModule {
 };
 WishlistsModule = __decorate([
@@ -24,7 +25,7 @@ WishlistsModule = __decorate([
         imports: [typeorm_1.TypeOrmModule.forFeature([wishlist_entity_1.Wishlist, product_entity_1.Product, user_entity_1.User]),
             cache_manager_1.CacheModule.register()],
         controllers: [wishlists_controller_1.WishlistsController, my_wishlists_controller_1.MyWishlistsController],
-        providers: [wishlists_service_1.WishlistsService, my_wishlists_service_1.MyWishlistService],
+        providers: [wishlists_service_1.WishlistsService, my_wishlists_service_1.MyWishlistService, cacheService_1.CacheService],
     })
 ], WishlistsModule);
 exports.WishlistsModule = WishlistsModule;

@@ -1,9 +1,11 @@
 import { ContactService } from './contact.service';
 import { CreateContactDto, UpdateContactDto } from './dto/createcontact.dto';
 import { Contact } from './entity/createcontact.entitiy';
+import { CacheService } from '../helpers/cacheService';
 export declare class ContactController {
     private readonly contactService;
-    constructor(contactService: ContactService);
+    private readonly cacheService;
+    constructor(contactService: ContactService, cacheService: CacheService);
     create(createContactDto: CreateContactDto): Promise<Contact>;
     findAllByShop(shopSlug: string, page?: number, limit?: number): Promise<{
         data: Contact[];

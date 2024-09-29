@@ -16,6 +16,7 @@ const attachment_entity_1 = require("../common/entities/attachment.entity");
 const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const region_entity_1 = require("../region/entities/region.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let EventModule = class EventModule {
 };
 EventModule = __decorate([
@@ -23,7 +24,7 @@ EventModule = __decorate([
         imports: [typeorm_1.TypeOrmModule.forFeature([event_entity_1.Event, attachment_entity_1.Attachment, shop_entity_1.Shop, region_entity_1.Region]),
             cache_manager_1.CacheModule.register()
         ],
-        providers: [event_service_1.EventService],
+        providers: [event_service_1.EventService, cacheService_1.CacheService],
         controllers: [event_controller_1.EventController],
     })
 ], EventModule);

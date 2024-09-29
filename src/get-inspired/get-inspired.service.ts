@@ -10,6 +10,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Tag } from '../tags/entities/tag.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class GetInspiredService {
@@ -24,6 +25,7 @@ export class GetInspiredService {
         private readonly tagRepository: Repository<Tag>,
         @Inject(CACHE_MANAGER)
         private readonly cacheManager: Cache,
+        private readonly cacheService: CacheService
     ) { }
 
     async createGetInspired(createGetInspiredDto: CreateGetInspiredDto): Promise<GetInspired> {

@@ -16,6 +16,7 @@ const shop_entity_1 = require("../shops/entities/shop.entity");
 const get_inspired_controller_1 = require("./get-inspired.controller");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const tag_entity_1 = require("../tags/entities/tag.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let GetInspiredModule = class GetInspiredModule {
 };
 GetInspiredModule = __decorate([
@@ -23,7 +24,7 @@ GetInspiredModule = __decorate([
         imports: [typeorm_1.TypeOrmModule.forFeature([get_inspired_entity_1.GetInspired, attachment_entity_1.Attachment, shop_entity_1.Shop, tag_entity_1.Tag]),
             cache_manager_1.CacheModule.register()],
         controllers: [get_inspired_controller_1.GetInspiredController],
-        providers: [get_inspired_service_1.GetInspiredService],
+        providers: [get_inspired_service_1.GetInspiredService, cacheService_1.CacheService],
     })
 ], GetInspiredModule);
 exports.GetInspiredModule = GetInspiredModule;

@@ -12,6 +12,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindManyOptions } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { ShiprocketService } from '../orders/shiprocket.service';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class WishlistsService {
@@ -21,7 +23,10 @@ export class WishlistsService {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     @Inject(CACHE_MANAGER)
-    private readonly cacheManager: Cache
+    private readonly cacheManager: Cache,
+
+    private readonly cacheService: CacheService,
+
   ) { }
 
   async findAllWishlists({ limit = 30, page = 1, search }: GetWishlistDto, userId?: number) {

@@ -5,9 +5,11 @@ import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { Product } from './entities/product.entity';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 import { UploadXlService } from './uploadProductsXl';
+import { CacheService } from '../helpers/cacheService';
 export declare class ProductsController {
     private readonly productsService;
-    constructor(productsService: ProductsService);
+    private readonly cacheService;
+    constructor(productsService: ProductsService, cacheService: CacheService);
     createProduct(createProductDto: CreateProductDto): Promise<Product | {
         message: string;
     }>;
@@ -30,6 +32,7 @@ export declare class PopularProductsController {
 }
 export declare class UploadProductsXl {
     private readonly uploadXlService;
+    cacheService: any;
     constructor(uploadXlService: UploadXlService);
     uploadProducts(file: any, shopSlug: string): Promise<{
         message: string;

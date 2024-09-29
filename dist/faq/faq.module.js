@@ -15,13 +15,14 @@ const faq_entity_1 = require("./entities/faq.entity");
 const faq_service_1 = require("./faq.service");
 const faq_controller_1 = require("./faq.controller");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let FAQModule = class FAQModule {
 };
 FAQModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([faq_entity_1.FAQ, qna_entity_1.QnA, attachment_entity_1.Attachment]),
             cache_manager_1.CacheModule.register()],
-        providers: [faq_service_1.FAQService],
+        providers: [faq_service_1.FAQService, cacheService_1.CacheService],
         controllers: [faq_controller_1.FAQController],
     })
 ], FAQModule);

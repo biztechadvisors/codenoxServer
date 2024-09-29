@@ -24,6 +24,7 @@ const tax_entity_1 = require("../taxes/entities/tax.entity");
 const uploadProductsXl_1 = require("./uploadProductsXl");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const region_entity_1 = require("../region/entities/region.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let ProductsModule = class ProductsModule {
 };
 ProductsModule = __decorate([
@@ -38,6 +39,7 @@ ProductsModule = __decorate([
         providers: [
             products_service_1.ProductsService,
             uploadProductsXl_1.UploadXlService,
+            cacheService_1.CacheService,
         ],
     })
 ], ProductsModule);

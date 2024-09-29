@@ -3,9 +3,11 @@ import { CreateCareerDto, UpdateCareerDto } from './dto/createcareer.dto';
 import { Career } from './entities/career.entity';
 import { Vacancy } from './entities/vacancies.entity';
 import { CreateVacancyDto, FindVacanciesDto, UpdateVacancyDto } from './dto/createvacancy.dto';
+import { CacheService } from '../helpers/cacheService';
 export declare class CareerController {
     private readonly careerService;
-    constructor(careerService: CareerService);
+    private readonly cacheService;
+    constructor(careerService: CareerService, cacheService: CacheService);
     create(createCareerDto: CreateCareerDto): Promise<Career>;
     findAllByShop(shopSlug: string, location?: string, vacancyTitle?: string, position?: string, page?: number, limit?: number): Promise<{
         data: Career[];
@@ -17,7 +19,8 @@ export declare class CareerController {
 }
 export declare class VacancyController {
     private readonly careerService;
-    constructor(careerService: CareerService);
+    private readonly cacheService;
+    constructor(careerService: CareerService, cacheService: CacheService);
     create(createVacancyDto: CreateVacancyDto): Promise<Vacancy>;
     findOne(id: number): Promise<Vacancy>;
     update(id: number, updateVacancyDto: UpdateVacancyDto): Promise<Vacancy>;

@@ -5,11 +5,13 @@ import { UpdateWishlistDto } from './dto/update-wishlists.dto';
 import { Product } from '../products/entities/product.entity';
 import { Repository } from 'typeorm';
 import { Cache } from 'cache-manager';
+import { CacheService } from '../helpers/cacheService';
 export declare class WishlistsService {
     private readonly wishlistRepository;
     private readonly productRepository;
     private readonly cacheManager;
-    constructor(wishlistRepository: Repository<Wishlist>, productRepository: Repository<Product>, cacheManager: Cache);
+    private readonly cacheService;
+    constructor(wishlistRepository: Repository<Wishlist>, productRepository: Repository<Product>, cacheManager: Cache, cacheService: CacheService);
     findAllWishlists({ limit, page, search }: GetWishlistDto, userId?: number): Promise<unknown>;
     findWishlist(id: number): Promise<Wishlist>;
     create(createWishlistDto: CreateWishlistDto): Promise<void>;

@@ -1,8 +1,8 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Order } from 'src/orders/entities/order.entity';
-import { AnalyticsResponseDTO, TotalYearSaleByMonthDTO } from './dto/analytics.dto';
+import { AnalyticsResponseDTO } from './dto/analytics.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { User, UserType } from 'src/users/entities/user.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
@@ -13,7 +13,7 @@ import { Analytics, TotalYearSaleByMonth } from './entities/analytics.entity';
 import { Refund } from '../refunds/entities/refund.entity';
 import { format } from 'date-fns';
 import { CreateTotalYearSaleByMonthDto } from './dto/create-analytics.dto';
-import { isNumber } from 'class-validator';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class AnalyticsService {
@@ -37,6 +37,7 @@ export class AnalyticsService {
     @InjectRepository(TotalYearSaleByMonth)
     private readonly totalYearSaleByMonthRepository: Repository<TotalYearSaleByMonth>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly cacheService: CacheService,
   ) { }
 
   async getTopUsersWithMaxOrders(userId: number): Promise<any[]> {
@@ -300,6 +301,9 @@ export class AnalyticsService {
 
       await this.totalYearSaleByMonthRepository.save(monthlySale);
       await this.analyticsRepository.save(analytics);
+      // Invalidate cache for related shop
+      const cacheKeyPrefix = `analytics`;
+      await this.cacheService.invalidateCacheBySubstring(cacheKeyPrefix);
     } catch (error) {
       this.logger.error('Error updating analytics:', error.stack || error);
       throw new InternalServerErrorException('Failed to update analytics');

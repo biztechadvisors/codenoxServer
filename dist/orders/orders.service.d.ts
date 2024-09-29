@@ -24,6 +24,7 @@ import { NotificationService } from 'src/notifications/services/notifications.se
 import { Cache } from 'cache-manager';
 import { UserAdd } from '../address/entities/address.entity';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { CacheService } from '../helpers/cacheService';
 export declare class OrdersService {
     private readonly authService;
     private readonly analyticsService;
@@ -47,8 +48,9 @@ export declare class OrdersService {
     private readonly shopRepository;
     private readonly couponRepository;
     private readonly cacheManager;
+    private readonly cacheService;
     private readonly dataSource;
-    constructor(authService: AuthService, analyticsService: AnalyticsService, stripeService: StripePaymentService, paypalService: PaypalPaymentService, razorpayService: RazorpayService, shiprocketService: ShiprocketService, mailService: MailService, stocksService: StocksService, notificationService: NotificationService, orderRepository: Repository<Order>, orderStatusRepository: Repository<OrderStatus>, userRepository: Repository<User>, userAddressRepository: Repository<UserAdd>, productRepository: Repository<Product>, orderFilesRepository: Repository<OrderFiles>, fileRepository: Repository<File>, paymentIntentInfoRepository: Repository<PaymentIntentInfo>, paymentIntentRepository: Repository<PaymentIntent>, orderProductPivotRepository: Repository<OrderProductPivot>, shopRepository: Repository<Shop>, couponRepository: Repository<Coupon>, cacheManager: Cache, dataSource: DataSource);
+    constructor(authService: AuthService, analyticsService: AnalyticsService, stripeService: StripePaymentService, paypalService: PaypalPaymentService, razorpayService: RazorpayService, shiprocketService: ShiprocketService, mailService: MailService, stocksService: StocksService, notificationService: NotificationService, orderRepository: Repository<Order>, orderStatusRepository: Repository<OrderStatus>, userRepository: Repository<User>, userAddressRepository: Repository<UserAdd>, productRepository: Repository<Product>, orderFilesRepository: Repository<OrderFiles>, fileRepository: Repository<File>, paymentIntentInfoRepository: Repository<PaymentIntentInfo>, paymentIntentRepository: Repository<PaymentIntent>, orderProductPivotRepository: Repository<OrderProductPivot>, shopRepository: Repository<Shop>, couponRepository: Repository<Coupon>, cacheManager: Cache, cacheService: CacheService, dataSource: DataSource);
     updateShopAndProducts(orderDto: CreateOrderDto): Promise<void>;
     create(createOrderInput: CreateOrderDto): Promise<Order>;
     private createOrderFiles;

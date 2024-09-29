@@ -7,12 +7,13 @@ import { Shop } from '../shops/entities/shop.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Vacancy } from './entities/vacancies.entity';
 import { Add } from '../address/entities/address.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Career, Shop, Vacancy, Add]),
     CacheModule.register(),
     ],
-    providers: [CareerService],
+    providers: [CareerService, CacheService],
     controllers: [CareerController, VacancyController],
 })
 export class CareerModule { }

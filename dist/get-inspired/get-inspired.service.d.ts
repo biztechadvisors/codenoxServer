@@ -5,13 +5,15 @@ import { Attachment } from 'src/common/entities/attachment.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { Tag } from '../tags/entities/tag.entity';
+import { CacheService } from '../helpers/cacheService';
 export declare class GetInspiredService {
     private readonly getInspiredRepository;
     private readonly attachmentRepository;
     private readonly shopRepository;
     private readonly tagRepository;
     private readonly cacheManager;
-    constructor(getInspiredRepository: Repository<GetInspired>, attachmentRepository: Repository<Attachment>, shopRepository: Repository<Shop>, tagRepository: Repository<Tag>, cacheManager: Cache);
+    private readonly cacheService;
+    constructor(getInspiredRepository: Repository<GetInspired>, attachmentRepository: Repository<Attachment>, shopRepository: Repository<Shop>, tagRepository: Repository<Tag>, cacheManager: Cache, cacheService: CacheService);
     createGetInspired(createGetInspiredDto: CreateGetInspiredDto): Promise<GetInspired>;
     getAllGetInspired(shopSlug: string, type?: string, tagIds?: number[], page?: number, limit?: number): Promise<{
         data: GetInspired[];

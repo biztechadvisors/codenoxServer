@@ -7,7 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MulterModule } from '@nestjs/platform-express';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
-import * as redistStore from 'cache-manager-redis-store';
+import * as redisStore from 'cache-manager-redis-store';
 import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
 import { CommonModule } from './common/common.module';
@@ -100,13 +100,13 @@ import { AddModule } from './address/addresses.module';
     CacheModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        store: redistStore,
-        host: configService.get<string>('REDIS_HOST'), // your Redis host
-        port: configService.get<number>('REDIS_PORT'), // your Redis port
-        auth_pass: configService.get<string>('REDIS_PASSWORD'), // your Redis password
-        ttl: configService.get<number>('CACHE_TTL') || 3000, // cache TTL
-        isGlobal: configService.get<boolean>('CACHE_IS_GLOBAL'), // whether cache is global
-        // Secure TLS connection (enable only if required by Redis Cloud)
+        store: redisStore,
+        host: configService.get<string>('REDIS_HOST'),
+        port: configService.get<number>('REDIS_PORT'),
+        auth_pass: configService.get<string>('REDIS_PASSWORD'),
+        ttl: configService.get<number>('CACHE_TTL') || 3000, // Cache TTL in seconds
+        isGlobal: true, // Make the cache global across the application
+        // Uncomment if TLS is required
         // tls: configService.get<boolean>('REDIS_TLS') ? {} : undefined,
       }),
       inject: [ConfigService],

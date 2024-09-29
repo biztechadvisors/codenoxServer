@@ -25,6 +25,7 @@ import { Analytics, TotalYearSaleByMonth } from '../analytics/entities/analytics
 import { Refund } from '../refunds/entities/refund.entity';
 import { StocksSellOrd } from '../stocks/entities/stocksOrd.entity';
 import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
   imports: [
@@ -38,7 +39,7 @@ import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
     NotificationModule,
   ],
   controllers: [UsersController, ProfilesController, DealerController, DealerEnquiryController],
-  providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy, SessionService, AnalyticsService],
+  providers: [UsersService, AuthService, MailService, AddressesService, JwtStrategy, SessionService, AnalyticsService, CacheService],
   exports: [UsersService],
 })
 export class UsersModule { }

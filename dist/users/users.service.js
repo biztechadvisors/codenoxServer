@@ -34,12 +34,13 @@ const create_address_dto_1 = require("../address/dto/create-address.dto");
 const update_address_dto_1 = require("../address/dto/update-address.dto");
 const analytics_service_1 = require("../analytics/analytics.service");
 const delaerForEnquiry_entity_1 = require("./entities/delaerForEnquiry.entity");
+const cacheService_1 = require("../helpers/cacheService");
 const options = {
     keys: ['name', 'type.slug', 'categories.slug', 'status'],
     threshold: 0.3,
 };
 let UsersService = class UsersService {
-    constructor(userRepository, addressRepository, profileRepository, attachmentRepository, dealerRepository, productRepository, categoryRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, shopRepository, socialRepository, permissionRepository, dealerEnquiryRepository, cacheManager, analyticsService, authService, addressesService) {
+    constructor(userRepository, addressRepository, profileRepository, attachmentRepository, dealerRepository, productRepository, categoryRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, shopRepository, socialRepository, permissionRepository, dealerEnquiryRepository, cacheManager, analyticsService, authService, addressesService, cacheService) {
         this.userRepository = userRepository;
         this.addressRepository = addressRepository;
         this.profileRepository = profileRepository;
@@ -57,6 +58,7 @@ let UsersService = class UsersService {
         this.analyticsService = analyticsService;
         this.authService = authService;
         this.addressesService = addressesService;
+        this.cacheService = cacheService;
     }
     async create(createUserDto) {
         var _a, _b;
@@ -126,6 +128,21 @@ let UsersService = class UsersService {
         const limitNum = limit;
         const pageNum = page;
         const startIndex = (pageNum - 1) * limitNum;
+        const cacheKey = `users_${JSON.stringify({
+            searchJoin,
+            limit,
+            page,
+            name,
+            orderBy,
+            sortedBy,
+            usrById,
+            search,
+            type,
+        })}`;
+        const cachedData = await this.cacheManager.get(cacheKey);
+        if (cachedData) {
+            return cachedData;
+        }
         let user;
         if (usrById) {
             user = await this.userRepository.findOne({
@@ -199,6 +216,7 @@ let UsersService = class UsersService {
         const isCompanyOrStaff = user && (user.permission.type_name === user_entity_1.UserType.Company || user.permission.type_name === user_entity_1.UserType.Staff);
         const url = `/users?type=${type || 'customer'}&limit=${limitNum}`;
         const result = Object.assign({ data: isCompanyOrStaff ? [...users] : [user, ...users] }, (0, paginate_1.paginate)(total, pageNum, limitNum, total, url));
+        await this.cacheManager.set(cacheKey, result, 60);
         return result;
     }
     async findOne(id) {
@@ -581,7 +599,8 @@ UsersService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository, Object, analytics_service_1.AnalyticsService,
         auth_service_1.AuthService,
-        addresses_service_1.AddressesService])
+        addresses_service_1.AddressesService,
+        cacheService_1.CacheService])
 ], UsersService);
 exports.UsersService = UsersService;
 //# sourceMappingURL=users.service.js.map

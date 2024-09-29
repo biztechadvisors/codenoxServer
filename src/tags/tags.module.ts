@@ -9,11 +9,12 @@ import { Type } from 'src/types/entities/type.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Region } from '../region/entities/region.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Tag, Attachment, Type, Shop, Region]),
   CacheModule.register()],
   controllers: [TagsController],
-  providers: [TagsService],
+  providers: [TagsService, CacheService],
 })
 export class TagsModule { }

@@ -20,6 +20,7 @@ import { Order } from 'src/orders/entities/order.entity'
 import { NotificationService } from 'src/notifications/services/notifications.service'
 import { Notification } from 'src/notifications/entities/notifications.entity'
 import { CacheModule } from '@nestjs/cache-manager'
+import { CacheService } from '../helpers/cacheService'
 
 @Module({
     imports: [TypeOrmModule.forFeature([Attachment, Permission, StocksSellOrd, User, Product, OrderStatus, OrderProductPivot, Coupon, Stocks, Dealer, UserAdd, Shop, InventoryStocks, Variation, Order, Notification]),
@@ -28,6 +29,6 @@ import { CacheModule } from '@nestjs/cache-manager'
     controllers: [
         StocksController,
     ],
-    providers: [StocksService, ShiprocketService, MailService, NotificationService],
+    providers: [StocksService, ShiprocketService, MailService, NotificationService, CacheService],
 })
 export class StocksModule { }

@@ -8,6 +8,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Repository } from 'typeorm';
+import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class AddressesService {
@@ -20,6 +21,7 @@ export class AddressesService {
     private readonly userRepository: Repository<User>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
+
   ) { }
 
   // Create new address

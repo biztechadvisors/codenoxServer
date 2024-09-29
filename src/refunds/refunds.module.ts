@@ -12,12 +12,13 @@ import { Analytics, TotalYearSaleByMonth } from '../analytics/entities/analytics
 import { Permission } from '../permission/entities/permission.entity'
 import { StocksSellOrd } from '../stocks/entities/stocksOrd.entity'
 import { CacheModule } from '@nestjs/cache-manager'
+import { CacheService } from '../helpers/cacheService'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Refund, Order, Shop, User, Analytics, Permission, StocksSellOrd, TotalYearSaleByMonth]),
   CacheModule.register(),
   ],
   controllers: [RefundsController],
-  providers: [RefundsService, AnalyticsService],
+  providers: [RefundsService, AnalyticsService, CacheService],
 })
 export class RefundsModule { }

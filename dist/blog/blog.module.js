@@ -17,6 +17,7 @@ const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const region_entity_1 = require("../region/entities/region.entity");
 const tag_entity_1 = require("../tags/entities/tag.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let BlogModule = class BlogModule {
 };
 BlogModule = __decorate([
@@ -24,7 +25,7 @@ BlogModule = __decorate([
         imports: [typeorm_1.TypeOrmModule.forFeature([blog_entity_1.Blog, attachment_entity_1.Attachment, shop_entity_1.Shop, region_entity_1.Region, tag_entity_1.Tag]),
             cache_manager_1.CacheModule.register()
         ],
-        providers: [blog_service_1.BlogService],
+        providers: [blog_service_1.BlogService, cacheService_1.CacheService],
         controllers: [blog_controller_1.BlogController],
     })
 ], BlogModule);

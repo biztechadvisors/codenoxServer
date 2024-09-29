@@ -7,12 +7,13 @@ import { Attribute } from './entities/attribute.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { AttributeValue } from './entities/attribute-value.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Attribute, Shop, AttributeValue]),
     CacheModule.register()],
   controllers: [AttributesController],
-  providers: [AttributesService],
+  providers: [AttributesService, CacheService],
 })
 export class AttributesModule { }

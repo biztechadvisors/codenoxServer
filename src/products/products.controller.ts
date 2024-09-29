@@ -22,13 +22,19 @@ import { Product } from './entities/product.entity';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadXlService } from './uploadProductsXl';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) { }
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly cacheService: CacheService
+  ) { }
 
   @Post()
-  createProduct(@Body() createProductDto: CreateProductDto) {
+  async createProduct(@Body() createProductDto: CreateProductDto) {
+    // Invalidate cache for related shop
+    await this.cacheService.invalidateCacheBySubstring("products");
     return this.productsService.create(createProductDto);
   }
 
@@ -54,7 +60,8 @@ export class ProductsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+  async update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+    await this.cacheService.invalidateCacheBySubstring("products");
     return this.productsService.update(+id, updateProductDto);
   }
 
@@ -69,7 +76,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring("products");
     return this.productsService.remove(+id);
   }
 }
@@ -85,6 +93,7 @@ export class PopularProductsController {
 
 @Controller('uploadxl-products')
 export class UploadProductsXl {
+  cacheService: any;
   constructor(private readonly uploadXlService: UploadXlService) { }
 
   @Post('upload')
@@ -99,6 +108,7 @@ export class UploadProductsXl {
 
     const buffer = file.buffer;
     await this.uploadXlService.uploadProductsFromExcel(buffer, shopSlug);
+    await this.cacheService.invalidateCacheBySubstring("products");
     return { message: 'Products uploaded successfully' };
   }
 }

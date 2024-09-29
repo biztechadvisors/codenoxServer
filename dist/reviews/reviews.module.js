@@ -21,6 +21,7 @@ const shop_entity_1 = require("../shops/entities/shop.entity");
 const feedback_entity_1 = require("../feedbacks/entities/feedback.entity");
 const order_entity_1 = require("../orders/entities/order.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let ReviewModule = class ReviewModule {
 };
 ReviewModule = __decorate([
@@ -29,7 +30,7 @@ ReviewModule = __decorate([
             cache_manager_1.CacheModule.register()
         ],
         controllers: [reviews_controller_1.ReviewController, reports_controller_1.AbusiveReportsController],
-        providers: [reviews_service_1.ReviewService, reports_service_1.AbusiveReportService],
+        providers: [reviews_service_1.ReviewService, reports_service_1.AbusiveReportService, cacheService_1.CacheService],
     })
 ], ReviewModule);
 exports.ReviewModule = ReviewModule;

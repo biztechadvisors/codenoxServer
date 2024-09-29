@@ -55,8 +55,9 @@ const axios_1 = __importDefault(require("axios"));
 const config_1 = require("@nestjs/config");
 const session_service_1 = require("./auth-helper/session.service");
 const analytics_service_1 = require("../analytics/analytics.service");
+const cacheService_1 = require("../helpers/cacheService");
 let AuthService = AuthService_1 = class AuthService {
-    constructor(userRepository, permissionRepository, cacheManager, jwtService, mailService, sessionService, analyticsService, notificationService, configService) {
+    constructor(userRepository, permissionRepository, cacheManager, jwtService, mailService, sessionService, analyticsService, notificationService, configService, cacheService) {
         this.userRepository = userRepository;
         this.permissionRepository = permissionRepository;
         this.cacheManager = cacheManager;
@@ -66,6 +67,7 @@ let AuthService = AuthService_1 = class AuthService {
         this.analyticsService = analyticsService;
         this.notificationService = notificationService;
         this.configService = configService;
+        this.cacheService = cacheService;
         this.logger = new common_1.Logger(AuthService_1.name);
         this.otpExpiryTime = 60 * 1000;
         this.emailVerificationCodes = new Map();
@@ -843,7 +845,8 @@ AuthService = AuthService_1 = __decorate([
         session_service_1.SessionService,
         analytics_service_1.AnalyticsService,
         notifications_service_1.NotificationService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        cacheService_1.CacheService])
 ], AuthService);
 exports.AuthService = AuthService;
 //# sourceMappingURL=auth.service.js.map

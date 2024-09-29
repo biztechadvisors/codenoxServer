@@ -14,6 +14,7 @@ import { Permission } from 'src/permission/entities/permission.entity';
 import { Repository } from 'typeorm';
 import { Cache } from 'cache-manager';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { CacheService } from '../helpers/cacheService';
 export declare class ShopsService {
     private readonly analyticsService;
     private readonly shopRepository;
@@ -29,9 +30,10 @@ export declare class ShopsService {
     private readonly permissionRepository;
     private readonly addressesService;
     private readonly cacheManager;
-    constructor(analyticsService: AnalyticsService, shopRepository: Repository<Shop>, balanceRepository: Repository<Balance>, shopSettingsRepository: Repository<ShopSettings>, paymentInfoRepository: Repository<PaymentInfo>, addressRepository: Repository<Add>, userAddressRepository: Repository<UserAdd>, shopSocialsRepository: Repository<ShopSocials>, locationRepository: Repository<Location>, userRepository: Repository<User>, attachmentRepository: Repository<Attachment>, permissionRepository: Repository<Permission>, addressesService: AddressesService, cacheManager: Cache);
+    private readonly cacheService;
+    constructor(analyticsService: AnalyticsService, shopRepository: Repository<Shop>, balanceRepository: Repository<Balance>, shopSettingsRepository: Repository<ShopSettings>, paymentInfoRepository: Repository<PaymentInfo>, addressRepository: Repository<Add>, userAddressRepository: Repository<UserAdd>, shopSocialsRepository: Repository<ShopSocials>, locationRepository: Repository<Location>, userRepository: Repository<User>, attachmentRepository: Repository<Attachment>, permissionRepository: Repository<Permission>, addressesService: AddressesService, cacheManager: Cache, cacheService: CacheService);
     private shops;
-    convertToSlug(text: any): Promise<string>;
+    convertToSlug(text: any): Promise<any>;
     create(createShopDto: CreateShopDto): Promise<Shop>;
     getShops({ search, limit, page }: GetShopsDto): Promise<ShopPaginator>;
     getStaffs({ shop_id, limit, page, orderBy, sortedBy, createdBy }: GetStaffsDto): Promise<any>;

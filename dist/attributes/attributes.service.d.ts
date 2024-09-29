@@ -14,7 +14,7 @@ export declare class AttributesService {
     private readonly cacheManager;
     private readonly logger;
     constructor(attributeRepository: Repository<Attribute>, attributeValueRepository: Repository<AttributeValue>, shopRepository: Repository<Shop>, cacheManager: Cache);
-    convertToSlug(text: any): Promise<string>;
+    convertToSlug(text: any): Promise<any>;
     getValueFromSearch(searchString: string, key: string): string | null;
     create(createAttributeDto: CreateAttributeDto): Promise<{
         message: string;

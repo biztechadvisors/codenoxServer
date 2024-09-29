@@ -36,6 +36,7 @@ const address_entity_1 = require("../address/entities/address.entity");
 const analytics_service_1 = require("../analytics/analytics.service");
 const analytics_entity_1 = require("../analytics/entities/analytics.entity");
 const refund_entity_1 = require("../refunds/entities/refund.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let OrdersModule = class OrdersModule {
 };
 OrdersModule = __decorate([
@@ -56,7 +57,7 @@ OrdersModule = __decorate([
             orders_controller_1.DownloadInvoiceController,
             orders_controller_1.ShiprocketController,
         ],
-        providers: [orders_service_1.OrdersService, analytics_service_1.AnalyticsService, shiprocket_service_1.ShiprocketService, mail_service_1.MailService, stocks_service_1.StocksService, notifications_service_1.NotificationService],
+        providers: [orders_service_1.OrdersService, analytics_service_1.AnalyticsService, shiprocket_service_1.ShiprocketService, mail_service_1.MailService, stocks_service_1.StocksService, notifications_service_1.NotificationService, cacheService_1.CacheService],
         exports: [orders_service_1.OrdersService],
     })
 ], OrdersModule);

@@ -30,8 +30,9 @@ const feedback_entity_1 = require("../feedbacks/entities/feedback.entity");
 const order_entity_1 = require("../orders/entities/order.entity");
 const reports_entity_1 = require("./entities/reports.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const cacheService_1 = require("../helpers/cacheService");
 let ReviewService = class ReviewService {
-    constructor(reviewRepository, productRepository, userRepository, shopRepository, feedbackRepository, orderkRepository, reportRepository, cacheManager) {
+    constructor(reviewRepository, productRepository, userRepository, shopRepository, feedbackRepository, orderkRepository, reportRepository, cacheManager, cacheService) {
         this.reviewRepository = reviewRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
@@ -40,6 +41,7 @@ let ReviewService = class ReviewService {
         this.orderkRepository = orderkRepository;
         this.reportRepository = reportRepository;
         this.cacheManager = cacheManager;
+        this.cacheService = cacheService;
     }
     async getReviewsFromDatabase() {
         return await this.reviewRepository.find();
@@ -179,7 +181,7 @@ ReviewService = __decorate([
         typeorm_1.Repository,
         typeorm_1.Repository,
         typeorm_1.Repository,
-        typeorm_1.Repository, Object])
+        typeorm_1.Repository, Object, cacheService_1.CacheService])
 ], ReviewService);
 exports.ReviewService = ReviewService;
 //# sourceMappingURL=reviews.service.js.map

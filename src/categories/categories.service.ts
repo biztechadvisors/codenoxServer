@@ -1,26 +1,19 @@
 /* eslint-disable prettier/prettier */
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
 import { CreateCategoryDto, CreateSubCategoryDto } from './dto/create-category.dto';
 import { CategoryPaginator, GetCategoriesDto, GetSubCategoriesDto, SubCategoryPaginator } from './dto/get-categories.dto';
 import { UpdateCategoryDto, UpdateSubCategoryDto } from './dto/update-category.dto';
 import { Category, SubCategory } from './entities/category.entity';
-import Fuse from 'fuse.js';
 import { paginate } from 'src/common/pagination/paginate';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { convertToSlug } from 'src/helpers';
-import { ILike, In, IsNull, Like, Repository } from 'typeorm';
+import { In, IsNull, Like, Repository } from 'typeorm';
 import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Region } from '../region/entities/region.entity';
 import { Type } from '../types/entities/type.entity';
-
-const options = {
-  keys: ['name', 'type.slug'],
-  threshold: 0.3,
-}
 
 @Injectable()
 export class CategoriesService {
@@ -35,6 +28,7 @@ export class CategoriesService {
     @InjectRepository(Region) private readonly regionRepository: Repository<Region>,
 
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+
   ) { }
 
   async convertToSlug(text) {

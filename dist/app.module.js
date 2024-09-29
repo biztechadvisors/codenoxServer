@@ -37,7 +37,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const schedule_1 = require("@nestjs/schedule");
 const platform_express_1 = require("@nestjs/platform-express");
 const cache_manager_1 = require("@nestjs/cache-manager");
-const redistStore = __importStar(require("cache-manager-redis-store"));
+const redisStore = __importStar(require("cache-manager-redis-store"));
 const users_module_1 = require("./users/users.module");
 const mail_module_1 = require("./mail/mail.module");
 const common_module_1 = require("./common/common.module");
@@ -135,12 +135,12 @@ AppModule = __decorate([
             cache_manager_1.CacheModule.registerAsync({
                 imports: [config_1.ConfigModule],
                 useFactory: async (configService) => ({
-                    store: redistStore,
+                    store: redisStore,
                     host: configService.get('REDIS_HOST'),
                     port: configService.get('REDIS_PORT'),
                     auth_pass: configService.get('REDIS_PASSWORD'),
                     ttl: configService.get('CACHE_TTL') || 3000,
-                    isGlobal: configService.get('CACHE_IS_GLOBAL'),
+                    isGlobal: true,
                 }),
                 inject: [config_1.ConfigService],
             }),

@@ -16,6 +16,7 @@ const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const vacancies_entity_1 = require("./entities/vacancies.entity");
 const address_entity_1 = require("../address/entities/address.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let CareerModule = class CareerModule {
 };
 CareerModule = __decorate([
@@ -23,7 +24,7 @@ CareerModule = __decorate([
         imports: [typeorm_1.TypeOrmModule.forFeature([career_entity_1.Career, shop_entity_1.Shop, vacancies_entity_1.Vacancy, address_entity_1.Add]),
             cache_manager_1.CacheModule.register(),
         ],
-        providers: [career_service_1.CareerService],
+        providers: [career_service_1.CareerService, cacheService_1.CacheService],
         controllers: [career_controller_1.CareerController, career_controller_1.VacancyController],
     })
 ], CareerModule);

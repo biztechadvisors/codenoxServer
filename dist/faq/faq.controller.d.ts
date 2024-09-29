@@ -3,9 +3,11 @@ import { FAQ } from './entities/faq.entity';
 import { QnA } from './entities/qna.entity';
 import { CreateFAQDto, UpdateFAQDto } from './dto/createfaqdto.dto';
 import { CreateQnADto, UpdateQnADto } from './dto/createqnadto.dto';
+import { CacheService } from '../helpers/cacheService';
 export declare class FAQController {
     private readonly faqService;
-    constructor(faqService: FAQService);
+    private readonly cacheService;
+    constructor(faqService: FAQService, cacheService: CacheService);
     createFAQ(createFAQDto: CreateFAQDto): Promise<FAQ>;
     getFAQById(id: number): Promise<FAQ>;
     getFAQsByShopSlug(shopSlug: string, page?: number, limit?: number): Promise<{

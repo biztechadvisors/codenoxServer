@@ -23,6 +23,7 @@ import { UserPaginator } from 'src/users/dto/get-users.dto'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
 import { AnalyticsService } from '../analytics/analytics.service'
+import { CacheService } from '../helpers/cacheService'
 
 @Injectable()
 export class ShopsService {
@@ -53,6 +54,9 @@ export class ShopsService {
     private readonly addressesService: AddressesService,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
+
+    private readonly cacheService: CacheService
+
   ) { }
 
   private shops: Shop[] = []
