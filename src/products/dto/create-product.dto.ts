@@ -3,6 +3,7 @@ import { OmitType } from '@nestjs/swagger';
 import { Product, Variation } from '../entities/product.entity';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Tax } from 'src/taxes/entities/tax.entity';
+import { IsOptional } from 'class-validator';
 
 export class CreateProductDto extends OmitType(Product, [
   'id',
@@ -57,6 +58,7 @@ export class VariationDto {
 }
 
 export class VariationOptionDto {
+  @IsOptional()
   id: number;
   name: string;
   value: string;

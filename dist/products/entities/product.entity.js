@@ -112,7 +112,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Product.prototype, "stocksSellOrders", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => shop_entity_1.Shop, (shop) => shop.products, { cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => shop_entity_1.Shop, (shop) => shop.products),
     __metadata("design:type", shop_entity_1.Shop)
 ], Product.prototype, "shop", void 0);
 __decorate([
