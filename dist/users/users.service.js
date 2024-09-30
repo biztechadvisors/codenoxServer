@@ -34,13 +34,8 @@ const create_address_dto_1 = require("../address/dto/create-address.dto");
 const update_address_dto_1 = require("../address/dto/update-address.dto");
 const analytics_service_1 = require("../analytics/analytics.service");
 const delaerForEnquiry_entity_1 = require("./entities/delaerForEnquiry.entity");
-const cacheService_1 = require("../helpers/cacheService");
-const options = {
-    keys: ['name', 'type.slug', 'categories.slug', 'status'],
-    threshold: 0.3,
-};
 let UsersService = class UsersService {
-    constructor(userRepository, addressRepository, profileRepository, attachmentRepository, dealerRepository, productRepository, categoryRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, shopRepository, socialRepository, permissionRepository, dealerEnquiryRepository, cacheManager, analyticsService, authService, addressesService, cacheService) {
+    constructor(userRepository, addressRepository, profileRepository, attachmentRepository, dealerRepository, productRepository, categoryRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, shopRepository, socialRepository, permissionRepository, dealerEnquiryRepository, cacheManager, analyticsService, authService, addressesService) {
         this.userRepository = userRepository;
         this.addressRepository = addressRepository;
         this.profileRepository = profileRepository;
@@ -58,7 +53,6 @@ let UsersService = class UsersService {
         this.analyticsService = analyticsService;
         this.authService = authService;
         this.addressesService = addressesService;
-        this.cacheService = cacheService;
     }
     async create(createUserDto) {
         var _a, _b;
@@ -546,17 +540,30 @@ let UsersService = class UsersService {
         return await this.dealerEnquiryRepository.save(dealerEnquiry);
     }
     async findAllDealerEnquiry(shopSlug) {
+        const cacheKey = `dealerEnquiries_${shopSlug}_all`;
+        let cachedDealerEnquiries = await this.cacheManager.get(cacheKey);
+        if (cachedDealerEnquiries) {
+            return cachedDealerEnquiries;
+        }
         const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
         if (!shop) {
             throw new common_1.NotFoundException('Shop not found');
         }
-        return await this.dealerEnquiryRepository.find({ where: { shop: { id: shop.id } } });
+        const dealerEnquiries = await this.dealerEnquiryRepository.find({ where: { shop: { id: shop.id } } });
+        await this.cacheManager.set(cacheKey, dealerEnquiries, 300);
+        return dealerEnquiries;
     }
     async findOneDealerEnquiry(id) {
+        const cacheKey = `dealerEnquiry_${id}`;
+        let cachedDealerEnquiry = await this.cacheManager.get(cacheKey);
+        if (cachedDealerEnquiry) {
+            return cachedDealerEnquiry;
+        }
         const enquiry = await this.dealerEnquiryRepository.findOne({ where: { id } });
         if (!enquiry) {
             throw new common_1.NotFoundException('Dealer enquiry not found');
         }
+        await this.cacheManager.set(cacheKey, enquiry, 300);
         return enquiry;
     }
     async updateDealerEnquiry(id, updateDealerEnquiryDto) {
@@ -599,8 +606,7 @@ UsersService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository, Object, analytics_service_1.AnalyticsService,
         auth_service_1.AuthService,
-        addresses_service_1.AddressesService,
-        cacheService_1.CacheService])
+        addresses_service_1.AddressesService])
 ], UsersService);
 exports.UsersService = UsersService;
 //# sourceMappingURL=users.service.js.map

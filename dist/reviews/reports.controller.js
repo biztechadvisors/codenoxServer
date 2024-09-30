@@ -18,9 +18,11 @@ const common_1 = require("@nestjs/common");
 const create_report_dto_1 = require("./dto/create-report.dto");
 const update_report_dto_1 = require("./dto/update-report.dto");
 const reports_service_1 = require("./reports.service");
+const cacheService_1 = require("../helpers/cacheService");
 let AbusiveReportsController = class AbusiveReportsController {
-    constructor(reportService) {
+    constructor(reportService, cacheService) {
         this.reportService = reportService;
+        this.cacheService = cacheService;
     }
     async findAll(shopSlug, userId, page = 1, limit = 10) {
         return this.reportService.findAllReports(shopSlug, userId, page, limit);
@@ -28,13 +30,16 @@ let AbusiveReportsController = class AbusiveReportsController {
     find(id) {
         return this.reportService.findReport(id);
     }
-    create(createReportDto) {
+    async create(createReportDto) {
+        await this.cacheService.invalidateCacheBySubstring('abusive_reports');
         return this.reportService.create(createReportDto);
     }
-    update(id, updateReportDto) {
+    async update(id, updateReportDto) {
+        await this.cacheService.invalidateCacheBySubstring('abusive_reports');
         return this.reportService.update(+id, updateReportDto);
     }
-    delete(id) {
+    async delete(id) {
+        await this.cacheService.invalidateCacheBySubstring('abusive_reports');
         return this.reportService.delete(+id);
     }
 };
@@ -63,7 +68,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_report_dto_1.CreateReportDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], AbusiveReportsController.prototype, "create", null);
 __decorate([
     (0, common_1.Put)(':id'),
@@ -72,7 +77,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_report_dto_1.UpdateReportDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], AbusiveReportsController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -80,11 +85,11 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], AbusiveReportsController.prototype, "delete", null);
 AbusiveReportsController = __decorate([
     (0, common_1.Controller)('abusive_reports'),
-    __metadata("design:paramtypes", [reports_service_1.AbusiveReportService])
+    __metadata("design:paramtypes", [reports_service_1.AbusiveReportService, cacheService_1.CacheService])
 ], AbusiveReportsController);
 exports.AbusiveReportsController = AbusiveReportsController;
 //# sourceMappingURL=reports.controller.js.map

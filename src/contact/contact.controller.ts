@@ -10,7 +10,7 @@ export class ContactController {
 
     @Post()
     async create(@Body() createContactDto: CreateContactDto): Promise<Contact> {
-        await this.cacheService.invalidateCacheBySubstring("contacts")
+        await this.cacheService.invalidateCacheBySubstring("contacts/shop")
         return this.contactService.create(createContactDto);
     }
 

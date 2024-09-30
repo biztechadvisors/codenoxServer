@@ -21,7 +21,6 @@ import { paginate } from 'src/common/pagination/paginate';
 import { NotificationService } from 'src/notifications/services/notifications.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from '@nestjs/cache-manager';
-import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class StocksService {
@@ -60,8 +59,6 @@ export class StocksService {
         private readonly orderRepository: Repository<Order>,
         @Inject(CACHE_MANAGER)
         private readonly cacheManager: Cache,
-
-        private readonly cacheService: CacheService
 
     ) { }
 

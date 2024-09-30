@@ -18,11 +18,14 @@ const common_1 = require("@nestjs/common");
 const create_permission_dto_1 = require("./dto/create-permission.dto");
 const update_permission_dto_1 = require("./dto/update-permission.dto");
 const permission_service_1 = require("./permission.service");
+const cacheService_1 = require("../helpers/cacheService");
 let PermissionController = class PermissionController {
-    constructor(permissionService) {
+    constructor(permissionService, cacheService) {
         this.permissionService = permissionService;
+        this.cacheService = cacheService;
     }
-    createPermission(createPermission) {
+    async createPermission(createPermission) {
+        await this.cacheService.invalidateCacheBySubstring('permission');
         return this.permissionService.create(createPermission);
     }
     getPermission(userId) {
@@ -31,10 +34,12 @@ let PermissionController = class PermissionController {
     getPermissionID(id) {
         return this.permissionService.getPermissionID(+id);
     }
-    updatePermission(id, updatePermissionDto) {
+    async updatePermission(id, updatePermissionDto) {
+        await this.cacheService.invalidateCacheBySubstring('permission');
         return this.permissionService.updatePermission(+id, updatePermissionDto);
     }
-    remove(id) {
+    async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring('permission');
         return this.permissionService.remove(+id);
     }
 };
@@ -44,7 +49,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_permission_dto_1.CreatePermissionDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], PermissionController.prototype, "createPermission", null);
 __decorate([
     (0, common_1.Get)(),
@@ -69,7 +74,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_permission_dto_1.UpdatePermissionDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], PermissionController.prototype, "updatePermission", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -77,11 +82,12 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], PermissionController.prototype, "remove", null);
 PermissionController = __decorate([
     (0, common_1.Controller)('permission'),
-    __metadata("design:paramtypes", [permission_service_1.PermissionService])
+    __metadata("design:paramtypes", [permission_service_1.PermissionService,
+        cacheService_1.CacheService])
 ], PermissionController);
 exports.PermissionController = PermissionController;
 //# sourceMappingURL=permission.controller.js.map

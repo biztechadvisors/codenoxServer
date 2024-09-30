@@ -4,7 +4,6 @@ import { Not, QueryFailedError, Repository } from 'typeorm';
 import { Region } from './entities/region.entity';
 import { Shop } from '../shops/entities/shop.entity';
 import { CreateRegionDto, UpdateRegionDto } from './dto/create-region.dto';
-import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class RegionService {
@@ -13,7 +12,6 @@ export class RegionService {
         private readonly regionRepository: Repository<Region>,
         @InjectRepository(Shop)
         private readonly shopRepository: Repository<Shop>,
-        private readonly cacheService: CacheService
     ) { }
 
     async createRegion(createRegionDto: CreateRegionDto): Promise<Region> {

@@ -10,7 +10,6 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { paginate } from '../common/pagination/paginate';
 import { MyReportPaginator } from '../reports/dto/get-reports.dto';
-import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class AbusiveReportService {
@@ -19,7 +18,6 @@ export class AbusiveReportService {
     private readonly reportRepository: Repository<Report>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
-    private readonly cacheService: CacheService
 
   ) { }
 

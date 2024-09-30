@@ -24,7 +24,7 @@ let ContactController = class ContactController {
         this.cacheService = cacheService;
     }
     async create(createContactDto) {
-        await this.cacheService.invalidateCacheBySubstring("contacts");
+        await this.cacheService.invalidateCacheBySubstring("contacts/shop");
         return this.contactService.create(createContactDto);
     }
     async findAllByShop(shopSlug, page = 1, limit = 10) {

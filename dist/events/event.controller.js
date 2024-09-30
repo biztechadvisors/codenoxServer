@@ -25,7 +25,7 @@ let EventController = class EventController {
         this.cacheService = cacheService;
     }
     async createEvent(createEventDto) {
-        await this.cacheService.invalidateCacheBySubstring("events");
+        await this.cacheService.invalidateCacheBySubstring("events/shop");
         return this.eventService.createEvent(createEventDto);
     }
     async getAllEvents(shopSlug, regionName, page = 1, limit = 10, filter, startDate, endDate, location) {

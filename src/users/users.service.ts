@@ -31,12 +31,6 @@ import { UpdateAddressDto } from '../address/dto/update-address.dto';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
 import { CreateDealerEnquiryDto, UpdateDealerEnquiryDto } from './dto/createDealerEnquiryDto.dto';
-import { CacheService } from '../helpers/cacheService';
-
-const options = {
-  keys: ['name', 'type.slug', 'categories.slug', 'status'],
-  threshold: 0.3,
-};
 
 @Injectable()
 export class UsersService {
@@ -60,8 +54,6 @@ export class UsersService {
     private readonly analyticsService: AnalyticsService,
     private readonly authService: AuthService,
     private readonly addressesService: AddressesService,
-
-    private readonly cacheService: CacheService
 
   ) { }
 
@@ -743,26 +735,51 @@ export class UsersService {
 
     const dealerEnquiry = this.dealerEnquiryRepository.create({
       ...createDealerEnquiryDto,
-      shop
+      shop,
     });
 
     return await this.dealerEnquiryRepository.save(dealerEnquiry);
   }
 
   async findAllDealerEnquiry(shopSlug: string): Promise<DealerEnquiry[]> {
+    const cacheKey = `dealerEnquiries_${shopSlug}_all`;
+
+    // Check cache first
+    let cachedDealerEnquiries = await this.cacheManager.get<DealerEnquiry[]>(cacheKey);
+    if (cachedDealerEnquiries) {
+      return cachedDealerEnquiries;
+    }
+
     const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
     if (!shop) {
       throw new NotFoundException('Shop not found');
     }
 
-    return await this.dealerEnquiryRepository.find({ where: { shop: { id: shop.id } } });
+    const dealerEnquiries = await this.dealerEnquiryRepository.find({ where: { shop: { id: shop.id } } });
+
+    // Cache the result
+    await this.cacheManager.set(cacheKey, dealerEnquiries, 300); // Cache for 5 minutes
+
+    return dealerEnquiries;
   }
 
   async findOneDealerEnquiry(id: number): Promise<DealerEnquiry> {
+    const cacheKey = `dealerEnquiry_${id}`;
+
+    // Check cache first
+    let cachedDealerEnquiry = await this.cacheManager.get<DealerEnquiry>(cacheKey);
+    if (cachedDealerEnquiry) {
+      return cachedDealerEnquiry;
+    }
+
     const enquiry = await this.dealerEnquiryRepository.findOne({ where: { id } });
     if (!enquiry) {
       throw new NotFoundException('Dealer enquiry not found');
     }
+
+    // Cache the result
+    await this.cacheManager.set(cacheKey, enquiry, 300); // Cache for 5 minutes
+
     return enquiry;
   }
 
@@ -776,5 +793,4 @@ export class UsersService {
     const enquiry = await this.findOneDealerEnquiry(id);
     await this.dealerEnquiryRepository.remove(enquiry);
   }
-
 }

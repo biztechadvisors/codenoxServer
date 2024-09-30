@@ -17,14 +17,16 @@ import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto'
 import { Shop } from './entities/shop.entity'
 import { GetStaffsDto } from './dto/get-staffs.dto'
 import { UserPaginator } from 'src/users/dto/get-users.dto'
-// import { AddStaffDto } from 'src/users/dto/add-staff.dto'
+import { CacheService } from '../helpers/cacheService'
 
 @Controller('shops')
 export class ShopsController {
-  constructor(private readonly shopsService: ShopsService) { }
+  constructor(private readonly shopsService: ShopsService,
+    private readonly cacheService: CacheService) { }
 
   @Post()
   async create(@Body() createShopDto: CreateShopDto): Promise<Shop> {
+    await this.cacheService.invalidateCacheBySubstring('shops')
     return this.shopsService.create(createShopDto);
   }
 
@@ -40,11 +42,13 @@ export class ShopsController {
 
   @Put(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateShopDto: UpdateShopDto): Promise<Shop> {
+    await this.cacheService.invalidateCacheBySubstring('shops')
     return this.shopsService.update(id, updateShopDto);
   }
 
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    await this.cacheService.invalidateCacheBySubstring('shops')
     return this.shopsService.remove(id);
   }
 

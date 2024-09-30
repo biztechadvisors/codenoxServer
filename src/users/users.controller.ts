@@ -21,13 +21,16 @@ import { DealerDto } from './dto/add-dealer.dto';
 import { Dealer } from './entities/dealer.entity';
 import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
 import { CreateDealerEnquiryDto, UpdateDealerEnquiryDto } from './dto/createDealerEnquiryDto.dto';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService,
+    private readonly cacheService: CacheService) { }
 
   @Post()
-  createUser(@Body() createUserDto: CreateUserDto) {
+  async createUser(@Body() createUserDto: CreateUserDto) {
+    await this.cacheService.invalidateCacheBySubstring('users_')
     return this.usersService.create(createUserDto);
   }
 
@@ -42,12 +45,15 @@ export class UsersController {
   }
 
   @Put(':id')
-  updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
+  async updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
+    await this.cacheService.invalidateCacheBySubstring('user_')
     return this.usersService.update(+id, updateUserDto);
   }
 
   @Delete(':id')
-  removeUser(@Param('id') id: string) {
+  async removeUser(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring('users_')
+    await this.cacheService.invalidateCacheBySubstring('user_')
     return this.usersService.removeUser(+id);
   }
 
@@ -69,30 +75,34 @@ export class UsersController {
 
 @Controller('profiles')
 export class ProfilesController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService, private readonly cacheService: CacheService) { }
 
   @Post()
-  createProfile(@Body() createProfileDto: CreateProfileDto) {
+  async createProfile(@Body() createProfileDto: CreateProfileDto) {
+    await this.cacheService.invalidateCacheBySubstring('user_')
     return this.usersService.createProfile(createProfileDto)
   }
 
   @Put(':id')
-  updateProfile(@Body() updateProfileDto: UpdateProfileDto) {
+  async updateProfile(@Body() updateProfileDto: UpdateProfileDto) {
+    await this.cacheService.invalidateCacheBySubstring('user_')
     return this.usersService.updateProfile(updateProfileDto)
   }
 
   @Delete(':id')
-  deleteProfile(@Param('id') id: number) {
+  async deleteProfile(@Param('id') id: number) {
+    await this.cacheService.invalidateCacheBySubstring('user_')
     return this.usersService.removeUser(id);
   }
 }
 
 @Controller('dealers')
 export class DealerController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService, private readonly cacheService: CacheService) { }
 
   @Post()
   async createDealer(@Body() dealerData: DealerDto) {
+    await this.cacheService.invalidateCacheBySubstring('dealers_')
     return this.usersService.createDealer(dealerData);
   }
 
@@ -108,11 +118,14 @@ export class DealerController {
 
   @Put(':id')
   async updateDealer(@Param('id') id: number, @Body() dealerData: DealerDto): Promise<Dealer> {
+    await this.cacheService.invalidateCacheBySubstring('dealer_')
+    await this.cacheService.invalidateCacheBySubstring('dealers_')
     return this.usersService.updateDealer(id, dealerData);
   }
 
   @Delete(':id')
   async deleteDealer(@Param('id') id: number): Promise<void> {
+    await this.cacheService.invalidateCacheBySubstring('dealers_')
     return this.usersService.deleteDealer(id);
   }
 
@@ -120,10 +133,11 @@ export class DealerController {
 
 @Controller('dealer-enquiries')
 export class DealerEnquiryController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService, private readonly cacheService: CacheService) { }
 
   @Post()
   async create(@Body() createDealerEnquiryDto: CreateDealerEnquiryDto): Promise<DealerEnquiry> {
+    await this.cacheService.invalidateCacheBySubstring(`dealerEnquiries_`);
     return this.usersService.CreateDealerEnquiry(createDealerEnquiryDto);
   }
 
@@ -139,11 +153,16 @@ export class DealerEnquiryController {
 
   @Patch(':id')
   async update(@Param('id') id: number, @Body() updateDealerEnquiryDto: UpdateDealerEnquiryDto): Promise<DealerEnquiry> {
+    await this.cacheService.invalidateCacheBySubstring(`dealerEnquiry_${id}`);
+    await this.cacheService.invalidateCacheBySubstring(`dealerEnquiries_`);
     return this.usersService.updateDealerEnquiry(id, updateDealerEnquiryDto);
   }
 
   @Delete(':id')
   async remove(@Param('id') id: number): Promise<void> {
+    // Invalidate the cache for this enquiry and the shop's enquiries
+    await this.cacheService.invalidateCacheBySubstring(`dealerEnquiry_${id}`);
+    await this.cacheService.invalidateCacheBySubstring(`dealerEnquiries_`);
     return this.usersService.removeDealerEnquiry(id);
   }
 }

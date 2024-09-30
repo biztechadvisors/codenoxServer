@@ -5,9 +5,11 @@ import { GetShopsDto, ShopPaginator } from './dto/get-shops.dto';
 import { Shop } from './entities/shop.entity';
 import { GetStaffsDto } from './dto/get-staffs.dto';
 import { UserPaginator } from 'src/users/dto/get-users.dto';
+import { CacheService } from '../helpers/cacheService';
 export declare class ShopsController {
     private readonly shopsService;
-    constructor(shopsService: ShopsService);
+    private readonly cacheService;
+    constructor(shopsService: ShopsService, cacheService: CacheService);
     create(createShopDto: CreateShopDto): Promise<Shop>;
     getShops(query: GetShopsDto): Promise<ShopPaginator>;
     getShop(slug: string): Promise<Shop | null>;

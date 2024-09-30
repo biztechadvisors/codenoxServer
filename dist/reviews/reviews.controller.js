@@ -19,9 +19,11 @@ const create_review_dto_1 = require("./dto/create-review.dto");
 const get_reviews_dto_1 = require("./dto/get-reviews.dto");
 const update_review_dto_1 = require("./dto/update-review.dto");
 const reviews_service_1 = require("./reviews.service");
+const cacheService_1 = require("../helpers/cacheService");
 let ReviewController = class ReviewController {
-    constructor(reviewService) {
+    constructor(reviewService, cacheService) {
         this.reviewService = reviewService;
+        this.cacheService = cacheService;
     }
     async findAll(query) {
         return this.reviewService.findAllReviews(query);
@@ -29,13 +31,16 @@ let ReviewController = class ReviewController {
     find(id) {
         return this.reviewService.findReview(+id);
     }
-    create(createReviewDto) {
+    async create(createReviewDto) {
+        await this.cacheService.invalidateCacheBySubstring('reviews');
         return this.reviewService.create(createReviewDto);
     }
-    update(id, updateReviewDto) {
+    async update(id, updateReviewDto) {
+        await this.cacheService.invalidateCacheBySubstring('reviews');
         return this.reviewService.update(+id, updateReviewDto);
     }
-    delete(id) {
+    async delete(id) {
+        await this.cacheService.invalidateCacheBySubstring('reviews');
         return this.reviewService.delete(+id);
     }
 };
@@ -61,7 +66,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_review_dto_1.CreateReviewDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ReviewController.prototype, "create", null);
 __decorate([
     (0, common_1.Put)(':id'),
@@ -70,7 +75,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_review_dto_1.UpdateReviewDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ReviewController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -78,11 +83,11 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ReviewController.prototype, "delete", null);
 ReviewController = __decorate([
     (0, common_1.Controller)('reviews'),
-    __metadata("design:paramtypes", [reviews_service_1.ReviewService])
+    __metadata("design:paramtypes", [reviews_service_1.ReviewService, cacheService_1.CacheService])
 ], ReviewController);
 exports.ReviewController = ReviewController;
 //# sourceMappingURL=reviews.controller.js.map

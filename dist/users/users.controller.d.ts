@@ -8,9 +8,11 @@ import { DealerDto } from './dto/add-dealer.dto';
 import { Dealer } from './entities/dealer.entity';
 import { DealerEnquiry } from './entities/delaerForEnquiry.entity';
 import { CreateDealerEnquiryDto, UpdateDealerEnquiryDto } from './dto/createDealerEnquiryDto.dto';
+import { CacheService } from '../helpers/cacheService';
 export declare class UsersController {
     private readonly usersService;
-    constructor(usersService: UsersService);
+    private readonly cacheService;
+    constructor(usersService: UsersService, cacheService: CacheService);
     createUser(createUserDto: CreateUserDto): Promise<import("./entities/user.entity").User>;
     getAllUsers(query: GetUsersDto): Promise<import("./dto/get-users.dto").UserPaginator>;
     getUser(id: string): Promise<import("./entities/user.entity").User>;
@@ -22,14 +24,16 @@ export declare class UsersController {
 }
 export declare class ProfilesController {
     private readonly usersService;
-    constructor(usersService: UsersService);
+    private readonly cacheService;
+    constructor(usersService: UsersService, cacheService: CacheService);
     createProfile(createProfileDto: CreateProfileDto): Promise<import("./entities/profile.entity").Profile>;
     updateProfile(updateProfileDto: UpdateProfileDto): Promise<import("./entities/profile.entity").Profile>;
     deleteProfile(id: number): Promise<string>;
 }
 export declare class DealerController {
     private readonly usersService;
-    constructor(usersService: UsersService);
+    private readonly cacheService;
+    constructor(usersService: UsersService, cacheService: CacheService);
     createDealer(dealerData: DealerDto): Promise<Dealer>;
     getAllDealers(createdBy: number): Promise<Dealer[]>;
     getDealerById(id: number): Promise<Dealer>;
@@ -38,7 +42,8 @@ export declare class DealerController {
 }
 export declare class DealerEnquiryController {
     private readonly usersService;
-    constructor(usersService: UsersService);
+    private readonly cacheService;
+    constructor(usersService: UsersService, cacheService: CacheService);
     create(createDealerEnquiryDto: CreateDealerEnquiryDto): Promise<DealerEnquiry>;
     findAll(shopSlug: string): Promise<DealerEnquiry[]>;
     findOne(id: number): Promise<DealerEnquiry>;

@@ -13,10 +13,11 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { GetReviewsDto, ReviewPaginator } from './dto/get-reviews.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewService } from './reviews.service';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('reviews')
 export class ReviewController {
-  constructor(private readonly reviewService: ReviewService) { }
+  constructor(private readonly reviewService: ReviewService, private readonly cacheService: CacheService) { }
 
   @Get()
   async findAll(@Query() query: GetReviewsDto) {
@@ -31,18 +32,21 @@ export class ReviewController {
 
   //  create a new review
   @Post()
-  create(@Body() createReviewDto: CreateReviewDto) {
+  async create(@Body() createReviewDto: CreateReviewDto) {
+    await this.cacheService.invalidateCacheBySubstring('reviews')
     return this.reviewService.create(createReviewDto);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
+  async update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
+    await this.cacheService.invalidateCacheBySubstring('reviews')
     return this.reviewService.update(+id, updateReviewDto);
   }
 
   // delete a review
   @Delete(':id')
-  delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring('reviews')
     return this.reviewService.delete(+id);
   }
 }

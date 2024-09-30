@@ -19,7 +19,6 @@ import { Product } from 'src/products/entities/product.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Region } from '../region/entities/region.entity';
-import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class TypesService {
@@ -36,7 +35,6 @@ export class TypesService {
     @InjectRepository(Product) private readonly productRepository: Repository<Product>,
     @InjectRepository(Region) private readonly regionRepository: Repository<Region>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-    private readonly cacheService: CacheService
 
   ) { }
 

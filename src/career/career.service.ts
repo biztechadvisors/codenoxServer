@@ -69,9 +69,18 @@ export class CareerService {
     }
 
     async getCareerById(id: number): Promise<Career> {
-        const career = await this.careerRepository.findOne({ where: { id }, relations: ['shop', 'vacancy'] });
+        const cacheKey = `career_${id}`;
+
+        // Try to get the data from cache first
+        let career = await this.cacheManager.get<Career>(cacheKey);
         if (!career) {
-            throw new NotFoundException(`Career with ID ${id} not found`);
+            career = await this.careerRepository.findOne({ where: { id }, relations: ['shop', 'vacancy'] });
+            if (!career) {
+                throw new NotFoundException(`Career with ID ${id} not found`);
+            }
+
+            // Cache the result
+            await this.cacheManager.set(cacheKey, career, 300); // Cache for 5 minutes
         }
         return career;
     }
@@ -84,45 +93,45 @@ export class CareerService {
         page: number = 1,
         limit: number = 10
     ): Promise<{ data: Career[], count: number }> {
-        const offset = (page - 1) * limit;
+        const cacheKey = `careers_${shopSlug}_${page}_${limit}_${location || 'all'}_${vacancyTitle || 'all'}_${position || 'all'}`;
 
-        // Find the shop by its slug
+        // Try to get the data from cache first
+        let cachedResult = await this.cacheManager.get<{ data: Career[], count: number }>(cacheKey);
+        if (cachedResult) {
+            return cachedResult;
+        }
+
+        const offset = (page - 1) * limit;
         const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
         if (!shop) {
             throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
         }
 
-        // Build query to find careers linked to the shop
         const queryBuilder = this.careerRepository.createQueryBuilder('career')
-            .leftJoinAndSelect('career.vacancy', 'vacancy') // Join with the Vacancy entity
+            .leftJoinAndSelect('career.vacancy', 'vacancy')
             .where('career.shopId = :shopId', { shopId: shop.id });
 
-        // Apply filters if provided
         if (location) {
             queryBuilder.andWhere('career.location = :location', { location });
         }
 
         if (vacancyTitle) {
-            queryBuilder.andWhere('vacancy.title ILIKE :vacancyTitle', { vacancyTitle: `%${vacancyTitle}%` }); // Case-insensitive
+            queryBuilder.andWhere('vacancy.title ILIKE :vacancyTitle', { vacancyTitle: `%${vacancyTitle}%` });
         }
 
         if (position) {
-            queryBuilder.andWhere('career.position ILIKE :position', { position: `%${position}%` }); // Case-insensitive
+            queryBuilder.andWhere('career.position ILIKE :position', { position: `%${position}%` });
         }
 
-        // Get the total count before applying pagination
         const count = await queryBuilder.getCount();
+        const data = await queryBuilder.skip(offset).take(limit).getMany();
 
-        // Apply pagination
-        const data = await queryBuilder
-            .skip(offset)
-            .take(limit)
-            .getMany();
+        // Cache the result
+        cachedResult = { data, count };
+        await this.cacheManager.set(cacheKey, cachedResult, 300); // Cache for 5 minutes
 
-        return { data, count };
+        return cachedResult;
     }
-
-
     async deleteCareer(id: number): Promise<void> {
         const career = await this.getCareerById(id);
         await this.careerRepository.remove(career);
@@ -205,9 +214,18 @@ export class CareerService {
     }
 
     async findVacancyById(id: number): Promise<Vacancy> {
-        const vacancy = await this.vacancyRepository.findOne({ where: { id }, relations: ['location', 'shop', 'career'] });
+        const cacheKey = `vacancy_${id}`;
+
+        // Try to get the data from cache first
+        let vacancy = await this.cacheManager.get<Vacancy>(cacheKey);
         if (!vacancy) {
-            throw new NotFoundException('Vacancy not found');
+            vacancy = await this.vacancyRepository.findOne({ where: { id }, relations: ['location', 'shop', 'career'] });
+            if (!vacancy) {
+                throw new NotFoundException('Vacancy not found');
+            }
+
+            // Cache the result
+            await this.cacheManager.set(cacheKey, vacancy, 300); // Cache for 5 minutes
         }
         return vacancy;
     }
@@ -220,11 +238,18 @@ export class CareerService {
     }
 
     async findAllVacancies(page: number, limit: number, city?: string): Promise<{ data: Vacancy[], count: number }> {
+        const cacheKey = `vacancies_${page}_${limit}_${city || 'all'}`;
+
+        // Try to get the data from cache first
+        let cachedResult = await this.cacheManager.get<{ data: Vacancy[], count: number }>(cacheKey);
+        if (cachedResult) {
+            return cachedResult;
+        }
+
         const queryBuilder = this.vacancyRepository.createQueryBuilder('vacancy')
-            .leftJoinAndSelect('vacancy.location', 'address') // Join with the address entity
+            .leftJoinAndSelect('vacancy.location', 'address')
             .leftJoinAndSelect('vacancy.shop', 'shop');
 
-        // Filter by city if provided
         if (city) {
             queryBuilder.andWhere('address.city = :city', { city });
         }
@@ -234,7 +259,11 @@ export class CareerService {
             .take(limit)
             .getManyAndCount();
 
-        return { data, count };
+        // Cache the result
+        cachedResult = { data, count };
+        await this.cacheManager.set(cacheKey, cachedResult, 300); // Cache for 5 minutes
+
+        return cachedResult;
     }
 
 }

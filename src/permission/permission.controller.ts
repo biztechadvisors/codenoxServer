@@ -5,13 +5,17 @@ import { CreatePermissionDto, CreatePermissionTypeDto } from "./dto/create-permi
 // import { Permission } from "@aws-sdk/client-s3";
 import { UpdatePermissionDto } from "./dto/update-permission.dto";
 import { PermissionService } from "./permission.service";
+import { CacheService } from "../helpers/cacheService";
 
 @Controller('permission')
 export class PermissionController {
-  constructor(private readonly permissionService: PermissionService) { }
+  constructor(private readonly permissionService: PermissionService,
+    private readonly cacheService: CacheService
+  ) { }
 
   @Post()
-  createPermission(@Body() createPermission: CreatePermissionDto) {
+  async createPermission(@Body() createPermission: CreatePermissionDto) {
+    await this.cacheService.invalidateCacheBySubstring('permission')
     return this.permissionService.create(createPermission);
   }
 
@@ -26,13 +30,15 @@ export class PermissionController {
   }
 
   @Put(':id')
-  updatePermission(@Param('id') id: string, @Body() updatePermissionDto: UpdatePermissionDto) {
+  async updatePermission(@Param('id') id: string, @Body() updatePermissionDto: UpdatePermissionDto) {
+    await this.cacheService.invalidateCacheBySubstring('permission')
     return this.permissionService.updatePermission(+id, updatePermissionDto);
   }
 
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring('permission')
     return this.permissionService.remove(+id);
   }
 }

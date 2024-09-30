@@ -20,11 +20,14 @@ const create_shop_dto_1 = require("./dto/create-shop.dto");
 const update_shop_dto_1 = require("./dto/update-shop.dto");
 const get_shops_dto_1 = require("./dto/get-shops.dto");
 const get_staffs_dto_1 = require("./dto/get-staffs.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let ShopsController = class ShopsController {
-    constructor(shopsService) {
+    constructor(shopsService, cacheService) {
         this.shopsService = shopsService;
+        this.cacheService = cacheService;
     }
     async create(createShopDto) {
+        await this.cacheService.invalidateCacheBySubstring('shops');
         return this.shopsService.create(createShopDto);
     }
     async getShops(query) {
@@ -34,9 +37,11 @@ let ShopsController = class ShopsController {
         return this.shopsService.getShop(slug);
     }
     async update(id, updateShopDto) {
+        await this.cacheService.invalidateCacheBySubstring('shops');
         return this.shopsService.update(id, updateShopDto);
     }
     async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring('shops');
         return this.shopsService.remove(id);
     }
     async approve(id) {
@@ -105,7 +110,8 @@ __decorate([
 ], ShopsController.prototype, "disapprove", null);
 ShopsController = __decorate([
     (0, common_1.Controller)('shops'),
-    __metadata("design:paramtypes", [shops_service_1.ShopsService])
+    __metadata("design:paramtypes", [shops_service_1.ShopsService,
+        cacheService_1.CacheService])
 ], ShopsController);
 exports.ShopsController = ShopsController;
 let StaffsController = class StaffsController {

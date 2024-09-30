@@ -16,14 +16,17 @@ import { StocksService } from './stocks.service';
 import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
 import { Stocks } from './entities/stocks.entity';
 import { UpdateOrderStatusDto } from 'src/orders/dto/create-order-status.dto';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('stocks')
 export class StocksController {
-    constructor(private readonly stocksService: StocksService) { }
+    constructor(private readonly stocksService: StocksService,
+        private readonly cacheService: CacheService) { }
 
     // Create a new stock
     @Post()
     async createStock(@Body() createStocksDto: any) {
+        await this.cacheService.invalidateCacheBySubstring('stocks')
         return this.stocksService.create(createStocksDto);
     }
 
@@ -58,6 +61,7 @@ export class StocksController {
     async updateStocksByAdmin(@Param('user_id') user_id: string, @Body() updateStkQuantityDto: any) {
         try {
             await this.stocksService.updateStocksbyAdmin(+user_id, updateStkQuantityDto);
+            await this.cacheService.invalidateCacheBySubstring('stocks')
             return { message: 'Quantity updated successfully' };
         } catch (err) {
             return { error: err.message || 'Internal Server Error' };
@@ -69,6 +73,7 @@ export class StocksController {
     async updateInventoryStocksByDealer(@Param('user_id') user_id: string, @Body() updateStkQuantityDto: any) {
         try {
             await this.stocksService.updateInventoryStocksByDealer(+user_id, updateStkQuantityDto);
+            await this.cacheService.invalidateCacheBySubstring('stocks')
             return { message: 'Quantity updated successfully' };
         } catch (err) {
             return { error: err.message || 'Internal Server Error' };
@@ -85,6 +90,7 @@ export class StocksController {
     @Post('order')
     async orderFromStocks(@Body() createOrderDto: any) {
         await this.stocksService.OrdfromStocks(createOrderDto)
+        await this.cacheService.invalidateCacheBySubstring('stocks/orders')
         return await this.stocksService.afterORD(createOrderDto);
     }
 

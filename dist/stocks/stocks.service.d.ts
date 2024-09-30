@@ -16,7 +16,6 @@ import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { NotificationService } from 'src/notifications/services/notifications.service';
 import { Cache } from '@nestjs/cache-manager';
-import { CacheService } from '../helpers/cacheService';
 export declare class StocksService {
     private readonly shiprocketService;
     private readonly MailService;
@@ -36,8 +35,7 @@ export declare class StocksService {
     private readonly variationRepository;
     private readonly orderRepository;
     private readonly cacheManager;
-    private readonly cacheService;
-    constructor(shiprocketService: ShiprocketService, MailService: MailService, notificationService: NotificationService, stocksRepository: Repository<Stocks>, inventoryStocksRepository: Repository<InventoryStocks>, userRepository: Repository<User>, dealerRepository: Repository<Dealer>, productRepository: Repository<Product>, StocksSellOrdRepository: Repository<StocksSellOrd>, orderProductPivotRepository: Repository<OrderProductPivot>, orderStatusRepository: Repository<OrderStatus>, couponRepository: Repository<Coupon>, userAddressRepository: Repository<UserAdd>, shopRepository: Repository<Shop>, permissionRepository: Repository<Permission>, variationRepository: Repository<Variation>, orderRepository: Repository<Order>, cacheManager: Cache, cacheService: CacheService);
+    constructor(shiprocketService: ShiprocketService, MailService: MailService, notificationService: NotificationService, stocksRepository: Repository<Stocks>, inventoryStocksRepository: Repository<InventoryStocks>, userRepository: Repository<User>, dealerRepository: Repository<Dealer>, productRepository: Repository<Product>, StocksSellOrdRepository: Repository<StocksSellOrd>, orderProductPivotRepository: Repository<OrderProductPivot>, orderStatusRepository: Repository<OrderStatus>, couponRepository: Repository<Coupon>, userAddressRepository: Repository<UserAdd>, shopRepository: Repository<Shop>, permissionRepository: Repository<Permission>, variationRepository: Repository<Variation>, orderRepository: Repository<Order>, cacheManager: Cache);
     create(createStocksDto: any): Promise<Stocks[]>;
     updateInventoryStocks(createStocksDto: any): Promise<InventoryStocks[]>;
     updateStocksbyAdmin(user_id: number, updateStkQuantityDto: any): Promise<void>;

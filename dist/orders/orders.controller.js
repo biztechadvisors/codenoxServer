@@ -28,15 +28,18 @@ const order_entity_1 = require("./entities/order.entity");
 const orders_service_1 = require("./orders.service");
 const shiprocket_service_1 = require("./shiprocket.service");
 const common_2 = require("@nestjs/common");
+const cacheService_1 = require("../helpers/cacheService");
 let OrdersController = OrdersController_1 = class OrdersController {
-    constructor(ordersService) {
+    constructor(ordersService, cacheService) {
         this.ordersService = ordersService;
+        this.cacheService = cacheService;
         this.logger = new common_2.Logger(OrdersController_1.name);
     }
     async create(createOrderDto) {
         try {
             const order = await this.ordersService.create(createOrderDto);
             await this.ordersService.updateShopAndProducts(createOrderDto);
+            await this.cacheService.invalidateCacheBySubstring('orders');
             return order;
         }
         catch (error) {
@@ -55,9 +58,11 @@ let OrdersController = OrdersController_1 = class OrdersController {
         return order;
     }
     async update(id, updateOrderDto) {
+        await this.cacheService.invalidateCacheBySubstring('orders');
         return this.ordersService.update(id, updateOrderDto);
     }
     async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring('orders');
         return this.ordersService.remove(id);
     }
     async verifyCheckout(body) {
@@ -152,7 +157,7 @@ __decorate([
 ], OrdersController.prototype, "submitPayment", null);
 OrdersController = OrdersController_1 = __decorate([
     (0, common_1.Controller)('orders'),
-    __metadata("design:paramtypes", [orders_service_1.OrdersService])
+    __metadata("design:paramtypes", [orders_service_1.OrdersService, cacheService_1.CacheService])
 ], OrdersController);
 exports.OrdersController = OrdersController;
 let OrderStatusController = OrderStatusController_1 = class OrderStatusController {

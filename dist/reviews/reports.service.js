@@ -19,12 +19,10 @@ const typeorm_2 = require("typeorm");
 const reports_entity_1 = require("./entities/reports.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const paginate_1 = require("../common/pagination/paginate");
-const cacheService_1 = require("../helpers/cacheService");
 let AbusiveReportService = class AbusiveReportService {
-    constructor(reportRepository, cacheManager, cacheService) {
+    constructor(reportRepository, cacheManager) {
         this.reportRepository = reportRepository;
         this.cacheManager = cacheManager;
-        this.cacheService = cacheService;
     }
     async findAllReports(shopSlug, userId, page = 1, limit = 10) {
         const cacheKey = `reports_${shopSlug || 'all'}_${userId || 'all'}_${page}_${limit}`;
@@ -64,7 +62,7 @@ AbusiveReportService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(reports_entity_1.Report)),
     __param(1, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
-    __metadata("design:paramtypes", [typeorm_2.Repository, Object, cacheService_1.CacheService])
+    __metadata("design:paramtypes", [typeorm_2.Repository, Object])
 ], AbusiveReportService);
 exports.AbusiveReportService = AbusiveReportService;
 //# sourceMappingURL=reports.service.js.map

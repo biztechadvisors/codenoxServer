@@ -2,9 +2,11 @@ import { StocksService } from './stocks.service';
 import { GetOrdersDto, OrderPaginator } from 'src/orders/dto/get-orders.dto';
 import { Stocks } from './entities/stocks.entity';
 import { UpdateOrderStatusDto } from 'src/orders/dto/create-order-status.dto';
+import { CacheService } from '../helpers/cacheService';
 export declare class StocksController {
     private readonly stocksService;
-    constructor(stocksService: StocksService);
+    private readonly cacheService;
+    constructor(stocksService: StocksService, cacheService: CacheService);
     createStock(createStocksDto: any): Promise<Stocks[]>;
     getAllUserStocks(id: number): Promise<unknown>;
     getStockByUserAndOrder(userId: string, orderId: string): Promise<Stocks[]>;

@@ -23,16 +23,14 @@ const attachment_entity_1 = require("../common/entities/attachment.entity");
 const shop_entity_1 = require("../shops/entities/shop.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const region_entity_1 = require("../region/entities/region.entity");
-const cacheService_1 = require("../helpers/cacheService");
 let TagsService = class TagsService {
-    constructor(tagRepository, attachmentRepository, typeRepository, shopRepository, regionRepository, cacheManager, cacheService) {
+    constructor(tagRepository, attachmentRepository, typeRepository, shopRepository, regionRepository, cacheManager) {
         this.tagRepository = tagRepository;
         this.attachmentRepository = attachmentRepository;
         this.typeRepository = typeRepository;
         this.shopRepository = shopRepository;
         this.regionRepository = regionRepository;
         this.cacheManager = cacheManager;
-        this.cacheService = cacheService;
     }
     async create(createTagDto) {
         const { name, icon, details, language, translatedLanguages, shopSlug, image, type_id, parent, region_name } = createTagDto;
@@ -237,7 +235,7 @@ TagsService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository, Object, cacheService_1.CacheService])
+        typeorm_2.Repository, Object])
 ], TagsService);
 exports.TagsService = TagsService;
 //# sourceMappingURL=tags.service.js.map

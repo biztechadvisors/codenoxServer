@@ -9,10 +9,12 @@ import { CheckoutVerificationDto } from './dto/verify-checkout.dto';
 import { Order } from './entities/order.entity';
 import { OrdersService } from './orders.service';
 import { ShiprocketService } from './shiprocket.service';
+import { CacheService } from '../helpers/cacheService';
 export declare class OrdersController {
     private readonly ordersService;
+    private readonly cacheService;
     private readonly logger;
-    constructor(ordersService: OrdersService);
+    constructor(ordersService: OrdersService, cacheService: CacheService);
     create(createOrderDto: CreateOrderDto): Promise<Order | {
         statusCode: number;
         message: string;

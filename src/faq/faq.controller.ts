@@ -12,7 +12,7 @@ export class FAQController {
 
     @Post()
     async createFAQ(@Body() createFAQDto: CreateFAQDto): Promise<FAQ> {
-        await this.cacheService.invalidateCacheBySubstring("faqs")
+        await this.cacheService.invalidateCacheBySubstring("faqs/shop")
         return this.faqService.createFAQ(createFAQDto);
     }
 
@@ -32,13 +32,13 @@ export class FAQController {
 
     @Put(':id')
     async updateFAQ(@Param('id') id: number, @Body() updateFAQDto: UpdateFAQDto): Promise<FAQ> {
-        await this.cacheService.invalidateCacheBySubstring("faqs")
+        await this.cacheService.invalidateCacheBySubstring("faqs/shop")
         return this.faqService.updateFAQ(id, updateFAQDto);
     }
 
     @Delete(':id')
     async deleteFAQ(@Param('id') id: number): Promise<void> {
-        await this.cacheService.invalidateCacheBySubstring("faqs")
+        await this.cacheService.invalidateCacheBySubstring("faqs/shop")
         return this.faqService.deleteFAQ(id);
     }
 

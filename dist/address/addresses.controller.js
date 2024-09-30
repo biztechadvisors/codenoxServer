@@ -25,7 +25,6 @@ let AddressesController = class AddressesController {
         this.cacheService = cacheService;
     }
     async createAddress(createAddressDto) {
-        await this.cacheService.invalidateCacheBySubstring("address");
         return this.addressesService.create(createAddressDto);
     }
     addresses(userId) {
@@ -39,7 +38,6 @@ let AddressesController = class AddressesController {
         return this.addressesService.update(+id, updateAddressDto);
     }
     async deleteAddress(id) {
-        await this.cacheService.invalidateCacheBySubstring("address");
         return this.addressesService.remove(+id);
     }
 };

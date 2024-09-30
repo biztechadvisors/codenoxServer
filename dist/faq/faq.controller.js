@@ -25,7 +25,7 @@ let FAQController = class FAQController {
         this.cacheService = cacheService;
     }
     async createFAQ(createFAQDto) {
-        await this.cacheService.invalidateCacheBySubstring("faqs");
+        await this.cacheService.invalidateCacheBySubstring("faqs/shop");
         return this.faqService.createFAQ(createFAQDto);
     }
     getFAQById(id) {
@@ -35,11 +35,11 @@ let FAQController = class FAQController {
         return this.faqService.getFAQsByShopSlug(shopSlug, page, limit);
     }
     async updateFAQ(id, updateFAQDto) {
-        await this.cacheService.invalidateCacheBySubstring("faqs");
+        await this.cacheService.invalidateCacheBySubstring("faqs/shop");
         return this.faqService.updateFAQ(id, updateFAQDto);
     }
     async deleteFAQ(id) {
-        await this.cacheService.invalidateCacheBySubstring("faqs");
+        await this.cacheService.invalidateCacheBySubstring("faqs/shop");
         return this.faqService.deleteFAQ(id);
     }
     async addQnA(faqId, createQnADto) {

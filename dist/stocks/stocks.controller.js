@@ -18,11 +18,14 @@ const common_1 = require("@nestjs/common");
 const stocks_service_1 = require("./stocks.service");
 const get_orders_dto_1 = require("../orders/dto/get-orders.dto");
 const create_order_status_dto_1 = require("../orders/dto/create-order-status.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let StocksController = class StocksController {
-    constructor(stocksService) {
+    constructor(stocksService, cacheService) {
         this.stocksService = stocksService;
+        this.cacheService = cacheService;
     }
     async createStock(createStocksDto) {
+        await this.cacheService.invalidateCacheBySubstring('stocks');
         return this.stocksService.create(createStocksDto);
     }
     async getAllUserStocks(id) {
@@ -43,6 +46,7 @@ let StocksController = class StocksController {
     async updateStocksByAdmin(user_id, updateStkQuantityDto) {
         try {
             await this.stocksService.updateStocksbyAdmin(+user_id, updateStkQuantityDto);
+            await this.cacheService.invalidateCacheBySubstring('stocks');
             return { message: 'Quantity updated successfully' };
         }
         catch (err) {
@@ -52,6 +56,7 @@ let StocksController = class StocksController {
     async updateInventoryStocksByDealer(user_id, updateStkQuantityDto) {
         try {
             await this.stocksService.updateInventoryStocksByDealer(+user_id, updateStkQuantityDto);
+            await this.cacheService.invalidateCacheBySubstring('stocks');
             return { message: 'Quantity updated successfully' };
         }
         catch (err) {
@@ -63,6 +68,7 @@ let StocksController = class StocksController {
     }
     async orderFromStocks(createOrderDto) {
         await this.stocksService.OrdfromStocks(createOrderDto);
+        await this.cacheService.invalidateCacheBySubstring('stocks/orders');
         return await this.stocksService.afterORD(createOrderDto);
     }
     async getOrders(query) {
@@ -185,7 +191,8 @@ __decorate([
 ], StocksController.prototype, "updatePaymentStatus", null);
 StocksController = __decorate([
     (0, common_1.Controller)('stocks'),
-    __metadata("design:paramtypes", [stocks_service_1.StocksService])
+    __metadata("design:paramtypes", [stocks_service_1.StocksService,
+        cacheService_1.CacheService])
 ], StocksController);
 exports.StocksController = StocksController;
 //# sourceMappingURL=stocks.controller.js.map

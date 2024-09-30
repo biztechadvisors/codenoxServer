@@ -18,9 +18,11 @@ const common_1 = require("@nestjs/common");
 const create_feedback_dto_1 = require("./dto/create-feedback.dto");
 const update_feedback_dto_1 = require("./dto/update-feedback.dto");
 const feedbacks_service_1 = require("./feedbacks.service");
+const cacheService_1 = require("../helpers/cacheService");
 let FeedbackController = class FeedbackController {
-    constructor(feedbackService) {
+    constructor(feedbackService, cacheService) {
         this.feedbackService = feedbackService;
+        this.cacheService = cacheService;
     }
     async findAll(shopSlug, search) {
         return this.feedbackService.findAllFeedBacks(shopSlug, search);
@@ -82,7 +84,7 @@ __decorate([
 ], FeedbackController.prototype, "delete", null);
 FeedbackController = __decorate([
     (0, common_1.Controller)('feedbacks'),
-    __metadata("design:paramtypes", [feedbacks_service_1.FeedbackService])
+    __metadata("design:paramtypes", [feedbacks_service_1.FeedbackService, cacheService_1.CacheService])
 ], FeedbackController);
 exports.FeedbackController = FeedbackController;
 //# sourceMappingURL=feedbacks.controller.js.map

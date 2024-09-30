@@ -78,7 +78,7 @@ let AnalyticsController = AnalyticsController_1 = class AnalyticsController {
     async createAnalytics(createAnalyticsDto) {
         const { analyticsData, saleData } = createAnalyticsDto;
         const analytics = await this.analyticsService.createAnalyticsWithTotalYearSale(analyticsData, saleData);
-        this.cacheService.invalidateCacheBySubstring('analytics');
+        this.cacheService.invalidateCacheBySubstring('analytics/create');
         return this.mapToResponseDTO(analytics);
     }
     async getAnalyticsById(id) {

@@ -25,7 +25,7 @@ let BlogController = class BlogController {
         this.cacheService = cacheService;
     }
     async createBlog(createBlogDto) {
-        await this.cacheService.invalidateCacheBySubstring("blogs");
+        await this.cacheService.invalidateCacheBySubstring("blogs/shop");
         return this.blogService.createBlog(createBlogDto);
     }
     getAllBlogs(shopSlug, regionName, tagName, page = 1, limit = 10, startDate, endDate) {

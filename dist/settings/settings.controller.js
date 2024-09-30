@@ -18,20 +18,25 @@ const common_1 = require("@nestjs/common");
 const create_setting_dto_1 = require("./dto/create-setting.dto");
 const settings_service_1 = require("./settings.service");
 const update_setting_dto_1 = require("./dto/update-setting.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let SettingsController = class SettingsController {
-    constructor(settingsService) {
+    constructor(settingsService, cacheService) {
         this.settingsService = settingsService;
+        this.cacheService = cacheService;
     }
-    create(shopId, createSettingDto) {
+    async create(shopId, createSettingDto) {
+        await this.cacheService.invalidateCacheBySubstring('settings_shop');
         return this.settingsService.create(shopId, createSettingDto);
     }
-    update(id, updateSettingDto) {
+    async update(id, updateSettingDto) {
+        await this.cacheService.invalidateCacheBySubstring('settings_shop');
         return this.settingsService.update(id, updateSettingDto);
     }
     findOne(shopSlug) {
         return this.settingsService.findOne(shopSlug);
     }
-    remove(id) {
+    async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring('settings_shop');
         return this.settingsService.remove(id);
     }
 };
@@ -42,7 +47,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, create_setting_dto_1.CreateSettingDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "create", null);
 __decorate([
     (0, common_1.Put)('/:id'),
@@ -51,7 +56,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, update_setting_dto_1.UpdateSettingDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "update", null);
 __decorate([
     (0, common_1.Get)(''),
@@ -67,11 +72,12 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "remove", null);
 SettingsController = __decorate([
     (0, common_1.Controller)('settings'),
-    __metadata("design:paramtypes", [settings_service_1.SettingsService])
+    __metadata("design:paramtypes", [settings_service_1.SettingsService,
+        cacheService_1.CacheService])
 ], SettingsController);
 exports.SettingsController = SettingsController;
 //# sourceMappingURL=settings.controller.js.map

@@ -50,24 +50,20 @@ const typeorm_2 = require("typeorm");
 const permission_entity_1 = require("../permission/entities/permission.entity");
 const twilio_1 = __importDefault(require("twilio"));
 const notifications_service_1 = require("../notifications/services/notifications.service");
-const cache_manager_1 = require("@nestjs/cache-manager");
 const axios_1 = __importDefault(require("axios"));
 const config_1 = require("@nestjs/config");
 const session_service_1 = require("./auth-helper/session.service");
 const analytics_service_1 = require("../analytics/analytics.service");
-const cacheService_1 = require("../helpers/cacheService");
 let AuthService = AuthService_1 = class AuthService {
-    constructor(userRepository, permissionRepository, cacheManager, jwtService, mailService, sessionService, analyticsService, notificationService, configService, cacheService) {
+    constructor(userRepository, permissionRepository, jwtService, mailService, sessionService, analyticsService, notificationService, configService) {
         this.userRepository = userRepository;
         this.permissionRepository = permissionRepository;
-        this.cacheManager = cacheManager;
         this.jwtService = jwtService;
         this.mailService = mailService;
         this.sessionService = sessionService;
         this.analyticsService = analyticsService;
         this.notificationService = notificationService;
         this.configService = configService;
-        this.cacheService = cacheService;
         this.logger = new common_1.Logger(AuthService_1.name);
         this.otpExpiryTime = 60 * 1000;
         this.emailVerificationCodes = new Map();
@@ -689,12 +685,6 @@ let AuthService = AuthService_1 = class AuthService {
         };
     }
     async me(email, id) {
-        const cacheKey = `user:${email || id}`;
-        const cachedUser = await this.cacheManager.get(cacheKey);
-        if (cachedUser) {
-            this.logger.log(`Cache hit for key: ${cacheKey}`);
-            return cachedUser;
-        }
         const relations = await this.getRelations(email);
         const user = await this.userRepository.findOne({
             where: email ? { email } : { id },
@@ -703,8 +693,6 @@ let AuthService = AuthService_1 = class AuthService {
         if (!user) {
             throw new common_1.NotFoundException(`User with email ${email} and id ${id} not found`);
         }
-        await this.cacheManager.set(cacheKey, user, 60);
-        this.logger.log(`Data cached with key: ${cacheKey}`);
         return user;
     }
     async getRelations(email) {
@@ -838,15 +826,14 @@ AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __param(1, (0, typeorm_1.InjectRepository)(permission_entity_1.Permission)),
-    __param(2, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository, Object, jwt_1.JwtService,
+        typeorm_2.Repository,
+        jwt_1.JwtService,
         mail_service_1.MailService,
         session_service_1.SessionService,
         analytics_service_1.AnalyticsService,
         notifications_service_1.NotificationService,
-        config_1.ConfigService,
-        cacheService_1.CacheService])
+        config_1.ConfigService])
 ], AuthService);
 exports.AuthService = AuthService;
 //# sourceMappingURL=auth.service.js.map

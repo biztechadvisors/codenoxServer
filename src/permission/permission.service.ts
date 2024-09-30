@@ -8,8 +8,6 @@ import { UpdatePermissionDto } from "./dto/update-permission.dto";
 import { User } from "src/users/entities/user.entity";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
-import { ShiprocketService } from "../orders/shiprocket.service";
-import { CacheService } from "../helpers/cacheService";
 
 @Injectable()
 export class PermissionService {
@@ -19,8 +17,6 @@ export class PermissionService {
     @InjectRepository(PermissionType) private readonly permissionTypeRepository: Repository<PermissionType>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-
-    private readonly cacheService: CacheService
 
   ) { }
 

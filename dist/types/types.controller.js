@@ -19,11 +19,14 @@ const types_service_1 = require("./types.service");
 const create_type_dto_1 = require("./dto/create-type.dto");
 const update_type_dto_1 = require("./dto/update-type.dto");
 const get_types_dto_1 = require("./dto/get-types.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let TypesController = class TypesController {
-    constructor(typesService) {
+    constructor(typesService, cacheService) {
         this.typesService = typesService;
+        this.cacheService = cacheService;
     }
-    create(createTypeDto) {
+    async create(createTypeDto) {
+        await this.cacheService.invalidateCacheBySubstring('types_');
         return this.typesService.create(createTypeDto);
     }
     findAll(query) {
@@ -32,10 +35,12 @@ let TypesController = class TypesController {
     getTypeBySlug(slug) {
         return this.typesService.getTypeBySlug(slug);
     }
-    update(id, updateTypeDto) {
+    async update(id, updateTypeDto) {
+        await this.cacheService.invalidateCacheBySubstring('types_');
         return this.typesService.update(+id, updateTypeDto);
     }
-    remove(id) {
+    async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring('types_');
         return this.typesService.remove(+id);
     }
 };
@@ -45,7 +50,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_type_dto_1.CreateTypeDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TypesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
@@ -70,7 +75,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_type_dto_1.UpdateTypeDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TypesController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -78,11 +83,11 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TypesController.prototype, "remove", null);
 TypesController = __decorate([
     (0, common_1.Controller)('types'),
-    __metadata("design:paramtypes", [types_service_1.TypesService])
+    __metadata("design:paramtypes", [types_service_1.TypesService, cacheService_1.CacheService])
 ], TypesController);
 exports.TypesController = TypesController;
 //# sourceMappingURL=types.controller.js.map

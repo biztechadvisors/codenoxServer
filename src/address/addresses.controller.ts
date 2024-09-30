@@ -22,7 +22,6 @@ export class AddressesController {
 
   @Post()
   async createAddress(@Body() createAddressDto: CreateAddressDto) {
-    await this.cacheService.invalidateCacheBySubstring("address")
     return this.addressesService.create(createAddressDto);
   }
 
@@ -47,7 +46,6 @@ export class AddressesController {
 
   @Delete(':id')
   async deleteAddress(@Param('id') id: string) {
-    await this.cacheService.invalidateCacheBySubstring("address")
     return this.addressesService.remove(+id);
   }
 }

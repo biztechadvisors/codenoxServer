@@ -25,8 +25,6 @@ export class WishlistsService {
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
 
-    private readonly cacheService: CacheService,
-
   ) { }
 
   async findAllWishlists({ limit = 30, page = 1, search }: GetWishlistDto, userId?: number) {

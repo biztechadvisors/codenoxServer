@@ -15,13 +15,14 @@ const feedback_entity_1 = require("./entities/feedback.entity");
 const question_entity_1 = require("../questions/entities/question.entity");
 const user_entity_1 = require("../users/entities/user.entity");
 const shop_entity_1 = require("../shops/entities/shop.entity");
+const cacheService_1 = require("../helpers/cacheService");
 let FeedbackModule = class FeedbackModule {
 };
 FeedbackModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([feedback_entity_1.Feedback, question_entity_1.Question, user_entity_1.User, shop_entity_1.Shop])],
         controllers: [feedbacks_controller_1.FeedbackController],
-        providers: [feedbacks_service_1.FeedbackService],
+        providers: [feedbacks_service_1.FeedbackService, cacheService_1.CacheService],
     })
 ], FeedbackModule);
 exports.FeedbackModule = FeedbackModule;

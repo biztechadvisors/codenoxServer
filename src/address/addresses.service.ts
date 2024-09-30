@@ -8,7 +8,6 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Repository } from 'typeorm';
-import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class AddressesService {
@@ -65,7 +64,7 @@ export class AddressesService {
       });
 
       if (addresses.length) {
-        await this.cacheManager.set(cacheKey, addresses, 60);
+        await this.cacheManager.set(cacheKey, addresses, 3600);
       }
     }
 
@@ -87,7 +86,7 @@ export class AddressesService {
         throw new NotFoundException(`Address with ID ${id} not found`);
       }
 
-      await this.cacheManager.set(cacheKey, address, 60);
+      await this.cacheManager.set(cacheKey, address, 3600);
     }
 
     return address;

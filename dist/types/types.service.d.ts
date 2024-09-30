@@ -11,7 +11,6 @@ import { Category } from 'src/categories/entities/category.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { Cache } from 'cache-manager';
 import { Region } from '../region/entities/region.entity';
-import { CacheService } from '../helpers/cacheService';
 export declare class TypesService {
     private readonly uploadsService;
     private readonly typeRepository;
@@ -24,8 +23,7 @@ export declare class TypesService {
     private readonly productRepository;
     private readonly regionRepository;
     private readonly cacheManager;
-    private readonly cacheService;
-    constructor(uploadsService: UploadsService, typeRepository: Repository<Type>, typeSettingsRepository: Repository<TypeSettings>, bannerRepository: Repository<Banner>, attachmentRepository: Repository<Attachment>, shopRepository: Repository<Shop>, tagRepository: Repository<Tag>, categoryRepository: Repository<Category>, productRepository: Repository<Product>, regionRepository: Repository<Region>, cacheManager: Cache, cacheService: CacheService);
+    constructor(uploadsService: UploadsService, typeRepository: Repository<Type>, typeSettingsRepository: Repository<TypeSettings>, bannerRepository: Repository<Banner>, attachmentRepository: Repository<Attachment>, shopRepository: Repository<Shop>, tagRepository: Repository<Tag>, categoryRepository: Repository<Category>, productRepository: Repository<Product>, regionRepository: Repository<Region>, cacheManager: Cache);
     convertToSlug(text: any): Promise<any>;
     findAll(query: GetTypesDto): Promise<Type[]>;
     getTypeBySlug(slug: string): Promise<Type>;

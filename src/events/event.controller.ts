@@ -11,7 +11,7 @@ export class EventController {
 
     @Post()
     async createEvent(@Body() createEventDto: CreateEventDto): Promise<Event> {
-        await this.cacheService.invalidateCacheBySubstring("events")
+        await this.cacheService.invalidateCacheBySubstring("events/shop")
         return this.eventService.createEvent(createEventDto);
     }
 

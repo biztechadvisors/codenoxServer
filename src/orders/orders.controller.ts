@@ -27,13 +27,14 @@ import { OrdersService } from './orders.service';
 import { ShiprocketService } from './shiprocket.service';
 import { StocksService } from 'src/stocks/stocks.service';
 import { Logger } from '@nestjs/common';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('orders')
 export class OrdersController {
   private readonly logger = new Logger(OrdersController.name);
 
   constructor(
-    private readonly ordersService: OrdersService,
+    private readonly ordersService: OrdersService, private readonly cacheService: CacheService,
   ) { }
 
   @Post()
@@ -42,10 +43,9 @@ export class OrdersController {
     try {
 
       const order = await this.ordersService.create(createOrderDto);
-
       // Update shop order count and product quantities in a single method
       await this.ordersService.updateShopAndProducts(createOrderDto);
-
+      await this.cacheService.invalidateCacheBySubstring('orders')
       return order;
     } catch (error) {
       this.logger.error('Error creating order:', error.message || error);
@@ -71,11 +71,13 @@ export class OrdersController {
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateOrderDto: UpdateOrderDto) {
+    await this.cacheService.invalidateCacheBySubstring('orders')
     return this.ordersService.update(id, updateOrderDto);
   }
 
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
+    await this.cacheService.invalidateCacheBySubstring('orders')
     return this.ordersService.remove(id);
   }
 

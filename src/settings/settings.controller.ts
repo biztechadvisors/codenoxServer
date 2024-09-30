@@ -4,25 +4,29 @@ import { CreateSettingDto } from './dto/create-setting.dto'
 import { SettingsService } from './settings.service'
 import { UpdateSettingDto } from './dto/update-setting.dto'
 import { query } from 'express'
+import { CacheService } from '../helpers/cacheService'
 
 
 @Controller('settings')
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) { }
+  constructor(private readonly settingsService: SettingsService,
+    private readonly cacheService: CacheService) { }
 
   @Post()
-  create(
+  async create(
     @Query('shopId') shopId: number,
     @Body() createSettingDto: CreateSettingDto
   ) {
+    await this.cacheService.invalidateCacheBySubstring('settings_shop')
     return this.settingsService.create(shopId, createSettingDto);
   }
 
   @Put('/:id')
-  update(
+  async update(
     @Param('id') id: number,
     @Body() updateSettingDto: UpdateSettingDto
   ) {
+    await this.cacheService.invalidateCacheBySubstring('settings_shop')
     return this.settingsService.update(id, updateSettingDto);
   }
 
@@ -32,7 +36,8 @@ export class SettingsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  async remove(@Param('id') id: number) {
+    await this.cacheService.invalidateCacheBySubstring('settings_shop')
     return this.settingsService.remove(id)
   }
 }

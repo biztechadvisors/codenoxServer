@@ -13,13 +13,15 @@ import { TypesService } from './types.service'
 import { CreateTypeDto } from './dto/create-type.dto'
 import { UpdateTypeDto } from './dto/update-type.dto'
 import { GetTypesDto } from './dto/get-types.dto'
+import { CacheService } from '../helpers/cacheService'
 
 @Controller('types')
 export class TypesController {
-  constructor(private readonly typesService: TypesService) { }
+  constructor(private readonly typesService: TypesService, private readonly cacheService: CacheService) { }
 
   @Post()
-  create(@Body() createTypeDto: CreateTypeDto) {
+  async create(@Body() createTypeDto: CreateTypeDto) {
+    await this.cacheService.invalidateCacheBySubstring('types_')
     return this.typesService.create(createTypeDto);
   }
 
@@ -34,12 +36,14 @@ export class TypesController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateTypeDto: UpdateTypeDto) {
+  async update(@Param('id') id: string, @Body() updateTypeDto: UpdateTypeDto) {
+    await this.cacheService.invalidateCacheBySubstring('types_')
     return this.typesService.update(+id, updateTypeDto)
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring('types_')
     return this.typesService.remove(+id)
   }
 }

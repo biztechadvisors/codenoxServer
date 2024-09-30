@@ -13,13 +13,15 @@ import { TagsService } from './tags.service'
 import { CreateTagDto } from './dto/create-tag.dto'
 import { UpdateTagDto } from './dto/update-tag.dto'
 import { GetTagsDto, TagPaginator } from './dto/get-tags.dto'
+import { CacheService } from '../helpers/cacheService'
 
 @Controller('tags')
 export class TagsController {
-  constructor(private readonly tagsService: TagsService) { }
+  constructor(private readonly tagsService: TagsService, private readonly cacheService: CacheService) { }
 
   @Post()
-  create(@Body() createTagDto: CreateTagDto) {
+  async create(@Body() createTagDto: CreateTagDto) {
+    await this.cacheService.invalidateCacheBySubstring('tags')
     return this.tagsService.create(createTagDto)
   }
 
@@ -34,12 +36,14 @@ export class TagsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
+  async update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
+    await this.cacheService.invalidateCacheBySubstring('tags')
     return this.tagsService.update(+id, updateTagDto)
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring('tags')
     return this.tagsService.remove(+id)
   }
 }

@@ -85,7 +85,7 @@ export class AnalyticsController {
   ): Promise<AnalyticsResponseDTO> {
     const { analyticsData, saleData } = createAnalyticsDto;
     const analytics: Analytics = await this.analyticsService.createAnalyticsWithTotalYearSale(analyticsData, saleData);
-    this.cacheService.invalidateCacheBySubstring('analytics')
+    this.cacheService.invalidateCacheBySubstring('analytics/create')
     return this.mapToResponseDTO(analytics);
   }
 

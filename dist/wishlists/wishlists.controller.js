@@ -19,9 +19,11 @@ const create_wishlists_dto_1 = require("./dto/create-wishlists.dto");
 const get_wishlists_dto_1 = require("./dto/get-wishlists.dto");
 const update_wishlists_dto_1 = require("./dto/update-wishlists.dto");
 const wishlists_service_1 = require("./wishlists.service");
+const cacheService_1 = require("../helpers/cacheService");
 let WishlistsController = class WishlistsController {
-    constructor(wishlistService) {
+    constructor(wishlistService, cacheService) {
         this.wishlistService = wishlistService;
+        this.cacheService = cacheService;
     }
     findAll(query, userId) {
         return this.wishlistService.findAllWishlists(query, userId);
@@ -29,13 +31,18 @@ let WishlistsController = class WishlistsController {
     find(id) {
         return this.wishlistService.findWishlist(+id);
     }
-    create(createWishlistDto) {
+    async create(createWishlistDto) {
+        await this.cacheService.invalidateCacheBySubstring('wishlists_');
         return this.wishlistService.create(createWishlistDto);
     }
-    update(id, updateWishlistDto) {
+    async update(id, updateWishlistDto) {
+        await this.cacheService.invalidateCacheBySubstring('wishlists_');
+        await this.cacheService.invalidateCacheBySubstring(`wishlist_${id}`);
         return this.wishlistService.update(+id, updateWishlistDto);
     }
-    delete(id) {
+    async delete(id) {
+        await this.cacheService.invalidateCacheBySubstring('wishlists_');
+        await this.cacheService.invalidateCacheBySubstring(`wishlist_${id}`);
         return this.wishlistService.delete(+id);
     }
     toggle(CreateWishlistDto) {
@@ -68,7 +75,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_wishlists_dto_1.CreateWishlistDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], WishlistsController.prototype, "create", null);
 __decorate([
     (0, common_1.Put)(':id'),
@@ -77,7 +84,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_wishlists_dto_1.UpdateWishlistDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], WishlistsController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -85,7 +92,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], WishlistsController.prototype, "delete", null);
 __decorate([
     (0, common_1.Post)('/toggle'),
@@ -105,7 +112,7 @@ __decorate([
 ], WishlistsController.prototype, "inWishlist", null);
 WishlistsController = __decorate([
     (0, common_1.Controller)('wishlists'),
-    __metadata("design:paramtypes", [wishlists_service_1.WishlistsService])
+    __metadata("design:paramtypes", [wishlists_service_1.WishlistsService, cacheService_1.CacheService])
 ], WishlistsController);
 exports.WishlistsController = WishlistsController;
 //# sourceMappingURL=wishlists.controller.js.map

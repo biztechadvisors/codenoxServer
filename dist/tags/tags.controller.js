@@ -19,11 +19,14 @@ const tags_service_1 = require("./tags.service");
 const create_tag_dto_1 = require("./dto/create-tag.dto");
 const update_tag_dto_1 = require("./dto/update-tag.dto");
 const get_tags_dto_1 = require("./dto/get-tags.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let TagsController = class TagsController {
-    constructor(tagsService) {
+    constructor(tagsService, cacheService) {
         this.tagsService = tagsService;
+        this.cacheService = cacheService;
     }
-    create(createTagDto) {
+    async create(createTagDto) {
+        await this.cacheService.invalidateCacheBySubstring('tags');
         return this.tagsService.create(createTagDto);
     }
     async findAll(query) {
@@ -32,10 +35,12 @@ let TagsController = class TagsController {
     findOne(param, language) {
         return this.tagsService.findOne(param, language);
     }
-    update(id, updateTagDto) {
+    async update(id, updateTagDto) {
+        await this.cacheService.invalidateCacheBySubstring('tags');
         return this.tagsService.update(+id, updateTagDto);
     }
-    remove(id) {
+    async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring('tags');
         return this.tagsService.remove(+id);
     }
 };
@@ -45,7 +50,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_tag_dto_1.CreateTagDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TagsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
@@ -71,7 +76,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_tag_dto_1.UpdateTagDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TagsController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -79,11 +84,11 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TagsController.prototype, "remove", null);
 TagsController = __decorate([
     (0, common_1.Controller)('tags'),
-    __metadata("design:paramtypes", [tags_service_1.TagsService])
+    __metadata("design:paramtypes", [tags_service_1.TagsService, cacheService_1.CacheService])
 ], TagsController);
 exports.TagsController = TagsController;
 //# sourceMappingURL=tags.controller.js.map

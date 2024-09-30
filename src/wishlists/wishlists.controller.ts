@@ -13,10 +13,11 @@ import { CreateWishlistDto } from './dto/create-wishlists.dto';
 import { GetWishlistDto } from './dto/get-wishlists.dto';
 import { UpdateWishlistDto } from './dto/update-wishlists.dto';
 import { WishlistsService } from './wishlists.service';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('wishlists')
 export class WishlistsController {
-  constructor(private wishlistService: WishlistsService) { }
+  constructor(private wishlistService: WishlistsService, private readonly cacheService: CacheService) { }
 
   @Get()
   findAll(@Query() query: GetWishlistDto, @Query('userId') userId?: number) {
@@ -31,22 +32,27 @@ export class WishlistsController {
 
   // create
   @Post()
-  create(@Body() createWishlistDto: CreateWishlistDto) {
+  async create(@Body() createWishlistDto: CreateWishlistDto) {
+    await this.cacheService.invalidateCacheBySubstring('wishlists_')
     return this.wishlistService.create(createWishlistDto);
   }
 
   // update
   @Put(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateWishlistDto: UpdateWishlistDto,
   ) {
+    await this.cacheService.invalidateCacheBySubstring('wishlists_')
+    await this.cacheService.invalidateCacheBySubstring(`wishlist_${id}`)
     return this.wishlistService.update(+id, updateWishlistDto);
   }
 
   // delete
   @Delete(':id')
-  delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring('wishlists_')
+    await this.cacheService.invalidateCacheBySubstring(`wishlist_${id}`)
     return this.wishlistService.delete(+id);
   }
 

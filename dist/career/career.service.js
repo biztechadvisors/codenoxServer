@@ -71,13 +71,23 @@ let CareerService = class CareerService {
         return this.careerRepository.save(career);
     }
     async getCareerById(id) {
-        const career = await this.careerRepository.findOne({ where: { id }, relations: ['shop', 'vacancy'] });
+        const cacheKey = `career_${id}`;
+        let career = await this.cacheManager.get(cacheKey);
         if (!career) {
-            throw new common_1.NotFoundException(`Career with ID ${id} not found`);
+            career = await this.careerRepository.findOne({ where: { id }, relations: ['shop', 'vacancy'] });
+            if (!career) {
+                throw new common_1.NotFoundException(`Career with ID ${id} not found`);
+            }
+            await this.cacheManager.set(cacheKey, career, 300);
         }
         return career;
     }
     async findAllByShop(shopSlug, location, vacancyTitle, position, page = 1, limit = 10) {
+        const cacheKey = `careers_${shopSlug}_${page}_${limit}_${location || 'all'}_${vacancyTitle || 'all'}_${position || 'all'}`;
+        let cachedResult = await this.cacheManager.get(cacheKey);
+        if (cachedResult) {
+            return cachedResult;
+        }
         const offset = (page - 1) * limit;
         const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
         if (!shop) {
@@ -96,11 +106,10 @@ let CareerService = class CareerService {
             queryBuilder.andWhere('career.position ILIKE :position', { position: `%${position}%` });
         }
         const count = await queryBuilder.getCount();
-        const data = await queryBuilder
-            .skip(offset)
-            .take(limit)
-            .getMany();
-        return { data, count };
+        const data = await queryBuilder.skip(offset).take(limit).getMany();
+        cachedResult = { data, count };
+        await this.cacheManager.set(cacheKey, cachedResult, 300);
+        return cachedResult;
     }
     async deleteCareer(id) {
         const career = await this.getCareerById(id);
@@ -158,9 +167,14 @@ let CareerService = class CareerService {
         return this.vacancyRepository.save(vacancy);
     }
     async findVacancyById(id) {
-        const vacancy = await this.vacancyRepository.findOne({ where: { id }, relations: ['location', 'shop', 'career'] });
+        const cacheKey = `vacancy_${id}`;
+        let vacancy = await this.cacheManager.get(cacheKey);
         if (!vacancy) {
-            throw new common_1.NotFoundException('Vacancy not found');
+            vacancy = await this.vacancyRepository.findOne({ where: { id }, relations: ['location', 'shop', 'career'] });
+            if (!vacancy) {
+                throw new common_1.NotFoundException('Vacancy not found');
+            }
+            await this.cacheManager.set(cacheKey, vacancy, 300);
         }
         return vacancy;
     }
@@ -171,6 +185,11 @@ let CareerService = class CareerService {
         }
     }
     async findAllVacancies(page, limit, city) {
+        const cacheKey = `vacancies_${page}_${limit}_${city || 'all'}`;
+        let cachedResult = await this.cacheManager.get(cacheKey);
+        if (cachedResult) {
+            return cachedResult;
+        }
         const queryBuilder = this.vacancyRepository.createQueryBuilder('vacancy')
             .leftJoinAndSelect('vacancy.location', 'address')
             .leftJoinAndSelect('vacancy.shop', 'shop');
@@ -181,7 +200,9 @@ let CareerService = class CareerService {
             .skip((page - 1) * limit)
             .take(limit)
             .getManyAndCount();
-        return { data, count };
+        cachedResult = { data, count };
+        await this.cacheManager.set(cacheKey, cachedResult, 300);
+        return cachedResult;
     }
 };
 CareerService = __decorate([

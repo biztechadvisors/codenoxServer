@@ -29,7 +29,6 @@ import { EntityNotFoundError, Repository, UpdateValuesMissingError } from 'typeo
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
-import { CacheService } from '../helpers/cacheService'
 
 @Injectable()
 export class SettingsService {
@@ -80,8 +79,6 @@ export class SettingsService {
     private ServerInfoRepository: Repository<ServerInfo>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
-
-    private readonly cacheService: CacheService
 
   ) { }
 
@@ -333,7 +330,7 @@ export class SettingsService {
   }
 
   async findOne(shop_slug: string): Promise<any> {
-    const cacheKey = `shop_${shop_slug}`;
+    const cacheKey = `settings_shop_${shop_slug}`;
 
     // Try to retrieve the shop data from the cache
     let mergedData = await this.cacheManager.get<any>(cacheKey);

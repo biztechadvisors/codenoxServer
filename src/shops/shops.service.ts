@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { ApproveShopDto, CreateShopDto } from './dto/create-shop.dto'
 import { UpdateShopDto } from './dto/update-shop.dto'
 import { PaymentInfo, Shop } from './entities/shop.entity'
@@ -16,14 +16,11 @@ import { User, UserType } from 'src/users/entities/user.entity'
 import { Attachment } from 'src/common/entities/attachment.entity'
 import { ShopSettings } from './entities/shopSettings.entity'
 import { AddressesService } from 'src/address/addresses.service'
-import { CreateAddressDto } from 'src/address/dto/create-address.dto'
 import { Permission } from 'src/permission/entities/permission.entity'
-import { Brackets, FindOperator, ILike, Repository } from 'typeorm'
-import { UserPaginator } from 'src/users/dto/get-users.dto'
+import { FindOperator, ILike, Repository } from 'typeorm'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
 import { AnalyticsService } from '../analytics/analytics.service'
-import { CacheService } from '../helpers/cacheService'
 
 @Injectable()
 export class ShopsService {
@@ -55,11 +52,7 @@ export class ShopsService {
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
 
-    private readonly cacheService: CacheService
-
   ) { }
-
-  private shops: Shop[] = []
 
   async convertToSlug(text) {
     return await convertToSlug(text)

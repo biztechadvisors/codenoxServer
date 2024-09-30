@@ -17,11 +17,14 @@ const openapi = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const get_inspired_service_1 = require("./get-inspired.service");
 const create_get_inspired_dto_1 = require("./dto/create-get-inspired.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let GetInspiredController = class GetInspiredController {
-    constructor(getInspiredService) {
+    constructor(getInspiredService, cacheService) {
         this.getInspiredService = getInspiredService;
+        this.cacheService = cacheService;
     }
-    createGetInspired(createGetInspiredDto) {
+    async createGetInspired(createGetInspiredDto) {
+        await this.cacheService.invalidateCacheBySubstring("get-inspired-shop");
         return this.getInspiredService.createGetInspired(createGetInspiredDto);
     }
     async getAllGetInspired(shopSlug, type, tagIds, page = 1, limit = 10) {
@@ -31,10 +34,12 @@ let GetInspiredController = class GetInspiredController {
     getGetInspiredById(id) {
         return this.getInspiredService.getGetInspiredById(id);
     }
-    updateGetInspired(id, updateGetInspiredDto) {
+    async updateGetInspired(id, updateGetInspiredDto) {
+        await this.cacheService.invalidateCacheBySubstring("get-inspired-shop");
         return this.getInspiredService.updateGetInspired(id, updateGetInspiredDto);
     }
-    deleteGetInspired(id) {
+    async deleteGetInspired(id) {
+        await this.cacheService.invalidateCacheBySubstring("get-inspired-shop");
         return this.getInspiredService.deleteGetInspired(id);
     }
 };
@@ -85,7 +90,7 @@ __decorate([
 ], GetInspiredController.prototype, "deleteGetInspired", null);
 GetInspiredController = __decorate([
     (0, common_1.Controller)('get-inspired'),
-    __metadata("design:paramtypes", [get_inspired_service_1.GetInspiredService])
+    __metadata("design:paramtypes", [get_inspired_service_1.GetInspiredService, cacheService_1.CacheService])
 ], GetInspiredController);
 exports.GetInspiredController = GetInspiredController;
 //# sourceMappingURL=get-inspired.controller.js.map

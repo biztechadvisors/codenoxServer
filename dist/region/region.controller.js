@@ -17,11 +17,14 @@ const openapi = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const create_region_dto_1 = require("./dto/create-region.dto");
 const region_service_1 = require("./region.service");
+const cacheService_1 = require("../helpers/cacheService");
 let RegionController = class RegionController {
-    constructor(regionService) {
+    constructor(regionService, cacheService) {
         this.regionService = regionService;
+        this.cacheService = cacheService;
     }
     async create(createRegionDto) {
+        await this.cacheService.invalidateCacheBySubstring('regions');
         return this.regionService.createRegion(createRegionDto);
     }
     async findAllRegionByShop(shopSlug) {
@@ -31,9 +34,11 @@ let RegionController = class RegionController {
         return this.regionService.findOne(id);
     }
     async update(id, updateRegionDto) {
+        await this.cacheService.invalidateCacheBySubstring('regions');
         return this.regionService.update(id, updateRegionDto);
     }
     async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring('regions');
         return this.regionService.remove(id);
     }
 };
@@ -80,7 +85,7 @@ __decorate([
 ], RegionController.prototype, "remove", null);
 RegionController = __decorate([
     (0, common_1.Controller)('regions'),
-    __metadata("design:paramtypes", [region_service_1.RegionService])
+    __metadata("design:paramtypes", [region_service_1.RegionService, cacheService_1.CacheService])
 ], RegionController);
 exports.RegionController = RegionController;
 //# sourceMappingURL=region.controller.js.map

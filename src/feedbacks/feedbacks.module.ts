@@ -7,10 +7,11 @@ import { Feedback } from './entities/feedback.entity';
 import { Question } from 'src/questions/entities/question.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Shop } from 'src/shops/entities/shop.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Feedback, Question, User, Shop])],
   controllers: [FeedbackController],
-  providers: [FeedbackService],
+  providers: [FeedbackService, CacheService],
 })
 export class FeedbackModule { }

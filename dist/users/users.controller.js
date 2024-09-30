@@ -23,11 +23,14 @@ const update_profile_dto_1 = require("./dto/update-profile.dto");
 const get_users_dto_1 = require("./dto/get-users.dto");
 const add_dealer_dto_1 = require("./dto/add-dealer.dto");
 const createDealerEnquiryDto_dto_1 = require("./dto/createDealerEnquiryDto.dto");
+const cacheService_1 = require("../helpers/cacheService");
 let UsersController = class UsersController {
-    constructor(usersService) {
+    constructor(usersService, cacheService) {
         this.usersService = usersService;
+        this.cacheService = cacheService;
     }
-    createUser(createUserDto) {
+    async createUser(createUserDto) {
+        await this.cacheService.invalidateCacheBySubstring('users_');
         return this.usersService.create(createUserDto);
     }
     getAllUsers(query) {
@@ -36,10 +39,13 @@ let UsersController = class UsersController {
     getUser(id) {
         return this.usersService.findOne(+id);
     }
-    updateUser(id, updateUserDto) {
+    async updateUser(id, updateUserDto) {
+        await this.cacheService.invalidateCacheBySubstring('user_');
         return this.usersService.update(+id, updateUserDto);
     }
-    removeUser(id) {
+    async removeUser(id) {
+        await this.cacheService.invalidateCacheBySubstring('users_');
+        await this.cacheService.invalidateCacheBySubstring('user_');
         return this.usersService.removeUser(+id);
     }
     activeUser(id) {
@@ -58,7 +64,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "createUser", null);
 __decorate([
     (0, common_1.Get)('all'),
@@ -83,7 +89,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, update_user_dto_1.UpdateUserDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateUser", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -91,7 +97,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "removeUser", null);
 __decorate([
     (0, common_1.Post)('unblock-user'),
@@ -119,20 +125,25 @@ __decorate([
 ], UsersController.prototype, "makeAdmin", null);
 UsersController = __decorate([
     (0, common_1.Controller)('users'),
-    __metadata("design:paramtypes", [users_service_1.UsersService])
+    __metadata("design:paramtypes", [users_service_1.UsersService,
+        cacheService_1.CacheService])
 ], UsersController);
 exports.UsersController = UsersController;
 let ProfilesController = class ProfilesController {
-    constructor(usersService) {
+    constructor(usersService, cacheService) {
         this.usersService = usersService;
+        this.cacheService = cacheService;
     }
-    createProfile(createProfileDto) {
+    async createProfile(createProfileDto) {
+        await this.cacheService.invalidateCacheBySubstring('user_');
         return this.usersService.createProfile(createProfileDto);
     }
-    updateProfile(updateProfileDto) {
+    async updateProfile(updateProfileDto) {
+        await this.cacheService.invalidateCacheBySubstring('user_');
         return this.usersService.updateProfile(updateProfileDto);
     }
-    deleteProfile(id) {
+    async deleteProfile(id) {
+        await this.cacheService.invalidateCacheBySubstring('user_');
         return this.usersService.removeUser(id);
     }
 };
@@ -142,7 +153,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_profile_dto_1.CreateProfileDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ProfilesController.prototype, "createProfile", null);
 __decorate([
     (0, common_1.Put)(':id'),
@@ -150,7 +161,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [update_profile_dto_1.UpdateProfileDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ProfilesController.prototype, "updateProfile", null);
 __decorate([
     (0, common_1.Delete)(':id'),
@@ -158,18 +169,20 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ProfilesController.prototype, "deleteProfile", null);
 ProfilesController = __decorate([
     (0, common_1.Controller)('profiles'),
-    __metadata("design:paramtypes", [users_service_1.UsersService])
+    __metadata("design:paramtypes", [users_service_1.UsersService, cacheService_1.CacheService])
 ], ProfilesController);
 exports.ProfilesController = ProfilesController;
 let DealerController = class DealerController {
-    constructor(usersService) {
+    constructor(usersService, cacheService) {
         this.usersService = usersService;
+        this.cacheService = cacheService;
     }
     async createDealer(dealerData) {
+        await this.cacheService.invalidateCacheBySubstring('dealers_');
         return this.usersService.createDealer(dealerData);
     }
     async getAllDealers(createdBy) {
@@ -179,9 +192,12 @@ let DealerController = class DealerController {
         return this.usersService.getDealerById(id);
     }
     async updateDealer(id, dealerData) {
+        await this.cacheService.invalidateCacheBySubstring('dealer_');
+        await this.cacheService.invalidateCacheBySubstring('dealers_');
         return this.usersService.updateDealer(id, dealerData);
     }
     async deleteDealer(id) {
+        await this.cacheService.invalidateCacheBySubstring('dealers_');
         return this.usersService.deleteDealer(id);
     }
 };
@@ -228,14 +244,16 @@ __decorate([
 ], DealerController.prototype, "deleteDealer", null);
 DealerController = __decorate([
     (0, common_1.Controller)('dealers'),
-    __metadata("design:paramtypes", [users_service_1.UsersService])
+    __metadata("design:paramtypes", [users_service_1.UsersService, cacheService_1.CacheService])
 ], DealerController);
 exports.DealerController = DealerController;
 let DealerEnquiryController = class DealerEnquiryController {
-    constructor(usersService) {
+    constructor(usersService, cacheService) {
         this.usersService = usersService;
+        this.cacheService = cacheService;
     }
     async create(createDealerEnquiryDto) {
+        await this.cacheService.invalidateCacheBySubstring(`dealerEnquiries_`);
         return this.usersService.CreateDealerEnquiry(createDealerEnquiryDto);
     }
     async findAll(shopSlug) {
@@ -245,9 +263,13 @@ let DealerEnquiryController = class DealerEnquiryController {
         return this.usersService.findOneDealerEnquiry(id);
     }
     async update(id, updateDealerEnquiryDto) {
+        await this.cacheService.invalidateCacheBySubstring(`dealerEnquiry_${id}`);
+        await this.cacheService.invalidateCacheBySubstring(`dealerEnquiries_`);
         return this.usersService.updateDealerEnquiry(id, updateDealerEnquiryDto);
     }
     async remove(id) {
+        await this.cacheService.invalidateCacheBySubstring(`dealerEnquiry_${id}`);
+        await this.cacheService.invalidateCacheBySubstring(`dealerEnquiries_`);
         return this.usersService.removeDealerEnquiry(id);
     }
 };
@@ -294,7 +316,7 @@ __decorate([
 ], DealerEnquiryController.prototype, "remove", null);
 DealerEnquiryController = __decorate([
     (0, common_1.Controller)('dealer-enquiries'),
-    __metadata("design:paramtypes", [users_service_1.UsersService])
+    __metadata("design:paramtypes", [users_service_1.UsersService, cacheService_1.CacheService])
 ], DealerEnquiryController);
 exports.DealerEnquiryController = DealerEnquiryController;
 //# sourceMappingURL=users.controller.js.map

@@ -4,13 +4,15 @@ import { Controller, Post, Get, Put, Delete, Param, Body, Query } from '@nestjs/
 import { GetInspiredService } from './get-inspired.service';
 import { CreateGetInspiredDto, UpdateGetInspiredDto } from './dto/create-get-inspired.dto';
 import { GetInspired } from './entities/get-inspired.entity';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('get-inspired')
 export class GetInspiredController {
-    constructor(private readonly getInspiredService: GetInspiredService) { }
+    constructor(private readonly getInspiredService: GetInspiredService, private readonly cacheService: CacheService) { }
 
     @Post()
-    createGetInspired(@Body() createGetInspiredDto: CreateGetInspiredDto): Promise<GetInspired> {
+    async createGetInspired(@Body() createGetInspiredDto: CreateGetInspiredDto): Promise<GetInspired> {
+        await this.cacheService.invalidateCacheBySubstring("get-inspired-shop")
         return this.getInspiredService.createGetInspired(createGetInspiredDto);
     }
 
@@ -24,7 +26,6 @@ export class GetInspiredController {
     ): Promise<{ data: GetInspired[], total: number, page: number, limit: number }> {
         // Convert comma-separated tagIds string to an array of numbers
         const tagIdsArray = tagIds ? tagIds.split(',').map(id => parseInt(id, 10)) : [];
-
         return this.getInspiredService.getAllGetInspired(shopSlug, type, tagIdsArray, page, limit);
     }
 
@@ -34,12 +35,14 @@ export class GetInspiredController {
     }
 
     @Put(':id')
-    updateGetInspired(@Param('id') id: number, @Body() updateGetInspiredDto: UpdateGetInspiredDto): Promise<GetInspired> {
+    async updateGetInspired(@Param('id') id: number, @Body() updateGetInspiredDto: UpdateGetInspiredDto): Promise<GetInspired> {
+        await this.cacheService.invalidateCacheBySubstring("get-inspired-shop")
         return this.getInspiredService.updateGetInspired(id, updateGetInspiredDto);
     }
 
     @Delete(':id')
-    deleteGetInspired(@Param('id') id: number): Promise<void> {
+    async deleteGetInspired(@Param('id') id: number): Promise<void> {
+        await this.cacheService.invalidateCacheBySubstring("get-inspired-shop")
         return this.getInspiredService.deleteGetInspired(id);
     }
 }

@@ -48,7 +48,6 @@ import { UserAdd } from '../address/entities/address.entity';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { SortOrder } from '../common/dto/generic-conditions.dto';
 import { convertToSlug } from '../helpers';
-import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class OrdersService {
@@ -88,7 +87,6 @@ export class OrdersService {
     private readonly couponRepository: Repository<Coupon>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
-    private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
   ) { }
 

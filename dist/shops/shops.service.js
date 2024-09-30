@@ -33,9 +33,8 @@ const permission_entity_1 = require("../permission/entities/permission.entity");
 const typeorm_2 = require("typeorm");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const analytics_service_1 = require("../analytics/analytics.service");
-const cacheService_1 = require("../helpers/cacheService");
 let ShopsService = class ShopsService {
-    constructor(analyticsService, shopRepository, balanceRepository, shopSettingsRepository, paymentInfoRepository, addressRepository, userAddressRepository, shopSocialsRepository, locationRepository, userRepository, attachmentRepository, permissionRepository, addressesService, cacheManager, cacheService) {
+    constructor(analyticsService, shopRepository, balanceRepository, shopSettingsRepository, paymentInfoRepository, addressRepository, userAddressRepository, shopSocialsRepository, locationRepository, userRepository, attachmentRepository, permissionRepository, addressesService, cacheManager) {
         this.analyticsService = analyticsService;
         this.shopRepository = shopRepository;
         this.balanceRepository = balanceRepository;
@@ -50,8 +49,6 @@ let ShopsService = class ShopsService {
         this.permissionRepository = permissionRepository;
         this.addressesService = addressesService;
         this.cacheManager = cacheManager;
-        this.cacheService = cacheService;
-        this.shops = [];
     }
     async convertToSlug(text) {
         return await (0, helpers_1.convertToSlug)(text);
@@ -680,7 +677,7 @@ ShopsService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        addresses_service_1.AddressesService, Object, cacheService_1.CacheService])
+        addresses_service_1.AddressesService, Object])
 ], ShopsService);
 exports.ShopsService = ShopsService;
 //# sourceMappingURL=shops.service.js.map

@@ -53,7 +53,7 @@ let AddressesService = class AddressesService {
                 relations: ['address'],
             });
             if (addresses.length) {
-                await this.cacheManager.set(cacheKey, addresses, 60);
+                await this.cacheManager.set(cacheKey, addresses, 3600);
             }
         }
         return addresses;
@@ -69,7 +69,7 @@ let AddressesService = class AddressesService {
             if (!address) {
                 throw new common_1.NotFoundException(`Address with ID ${id} not found`);
             }
-            await this.cacheManager.set(cacheKey, address, 60);
+            await this.cacheManager.set(cacheKey, address, 3600);
         }
         return address;
     }

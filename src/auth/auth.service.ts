@@ -24,14 +24,11 @@ import { FindOperator, ILike, IsNull, Not, Repository } from 'typeorm';
 import { Permission } from 'src/permission/entities/permission.entity';
 import Twilio from 'twilio';
 import { NotificationService } from 'src/notifications/services/notifications.service';
-import { Cache } from 'cache-manager';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { SessionService } from './auth-helper/session.service';
 import { UsersService } from '../users/users.service';
 import { AnalyticsService } from '../analytics/analytics.service';
-import { CacheService } from '../helpers/cacheService';
 
 @Injectable()
 export class AuthService {
@@ -44,14 +41,12 @@ export class AuthService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly sessionService: SessionService,
     private readonly analyticsService: AnalyticsService,
     private readonly notificationService: NotificationService,
     private readonly configService: ConfigService,
-    private readonly cacheService: CacheService
   ) {
     this.twilioVerifyServiceSid = this.configService.get<string>('TWILIO_VERIFY_SERVICE_SID');
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
@@ -782,14 +777,6 @@ export class AuthService {
   }
 
   async me(email: string, id: number): Promise<User> {
-    // Generate a cache key based on the email or id
-    const cacheKey = `user:${email || id}`;
-    const cachedUser = await this.cacheManager.get<User>(cacheKey);
-
-    if (cachedUser) {
-      this.logger.log(`Cache hit for key: ${cacheKey}`);
-      return cachedUser;
-    }
 
     const relations = await this.getRelations(email);
 
@@ -801,10 +788,6 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException(`User with email ${email} and id ${id} not found`);
     }
-
-    // Cache the user data
-    await this.cacheManager.set(cacheKey, user, 60); // Cache for 30 minutes
-    this.logger.log(`Data cached with key: ${cacheKey}`);
 
     return user;
   }

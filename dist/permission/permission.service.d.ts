@@ -4,14 +4,12 @@ import { Repository } from "typeorm";
 import { UpdatePermissionDto } from "./dto/update-permission.dto";
 import { User } from "src/users/entities/user.entity";
 import { Cache } from "cache-manager";
-import { CacheService } from "../helpers/cacheService";
 export declare class PermissionService {
     private readonly permissionRepository;
     private readonly permissionTypeRepository;
     private readonly userRepository;
     private readonly cacheManager;
-    private readonly cacheService;
-    constructor(permissionRepository: Repository<Permission>, permissionTypeRepository: Repository<PermissionType>, userRepository: Repository<User>, cacheManager: Cache, cacheService: CacheService);
+    constructor(permissionRepository: Repository<Permission>, permissionTypeRepository: Repository<PermissionType>, userRepository: Repository<User>, cacheManager: Cache);
     create(createPermission: CreatePermissionDto): Promise<string>;
     getPermission(userId: any): Promise<Permission[]>;
     getPermissionID(id: number): Promise<unknown>;

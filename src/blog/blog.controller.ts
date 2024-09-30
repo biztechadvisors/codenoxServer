@@ -13,7 +13,7 @@ export class BlogController {
 
     @Post()
     async createBlog(@Body() createBlogDto: CreateBlogDto): Promise<Blog> {
-        await this.cacheService.invalidateCacheBySubstring("blogs");
+        await this.cacheService.invalidateCacheBySubstring("blogs/shop");
         return this.blogService.createBlog(createBlogDto);
     }
 

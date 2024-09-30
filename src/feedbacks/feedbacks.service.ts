@@ -7,7 +7,6 @@ import { Feedback } from './entities/feedback.entity';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Question } from 'src/questions/entities/question.entity';
-import { UpdateQuestionDto } from 'src/questions/dto/update-question.dto';
 import { Shop } from 'src/shops/entities/shop.entity';
 
 @Injectable()

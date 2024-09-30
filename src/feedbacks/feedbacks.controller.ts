@@ -12,11 +12,11 @@ import {
 import { CreateFeedBackDto } from './dto/create-feedback.dto';
 import { UpdateFeedBackDto } from './dto/update-feedback.dto';
 import { FeedbackService } from './feedbacks.service';
-import { UpdateQuestionDto } from 'src/questions/dto/update-question.dto';
+import { CacheService } from '../helpers/cacheService';
 
 @Controller('feedbacks')
 export class FeedbackController {
-  constructor(private feedbackService: FeedbackService) { }
+  constructor(private feedbackService: FeedbackService, private readonly cacheService: CacheService) { }
 
   @Get()
   async findAll(@Query('shopSlug') shopSlug?: string, @Query('search') search?: string) {
