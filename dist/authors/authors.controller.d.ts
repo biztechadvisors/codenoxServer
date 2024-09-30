@@ -11,7 +11,7 @@ export declare class AuthorsController {
     getAuthors(query: GetAuthorDto): Promise<AuthorPaginator>;
     getAuthorBySlug(slug: string): Promise<Author>;
     update(id: string, updateAuthorDto: UpdateAuthorDto): Promise<Author>;
-    remove(id: string): Promise<Author | import("../settings/entities/setting.entity").ShopSocials[]>;
+    remove(id: string): Promise<import("../settings/entities/setting.entity").ShopSocials[] | Author>;
 }
 export declare class TopAuthors {
     private authorsService;

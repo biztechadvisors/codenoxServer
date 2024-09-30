@@ -30,5 +30,5 @@ export declare class AuthorsService {
     getAuthorBySlug(slug: string): Promise<Author>;
     getTopAuthors({ limit }: GetTopAuthorsDto): Promise<Author[]>;
     update(id: number, updateAuthorDto: UpdateAuthorDto): Promise<Author>;
-    remove(id: number): Promise<Author | ShopSocials[]>;
+    remove(id: number): Promise<ShopSocials[] | Author>;
 }

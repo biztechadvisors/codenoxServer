@@ -44,6 +44,7 @@ let AttributesController = class AttributesController {
     async delete(id) {
         await this.attributesService.delete(id);
         await this.cacheService.invalidateCacheBySubstring("attributes");
+        await this.cacheService.invalidateCacheBySubstring("attributes");
         return { message: 'Attribute deleted successfully', status: true };
     }
 };

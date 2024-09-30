@@ -137,6 +137,9 @@ let UploadXlService = class UploadXlService {
             throw new Error('Error parsing Excel file.');
         }
     }
+    async splitAttributeValues(value) {
+        return value.split(/[,/|]/).map(v => v.trim()).filter(v => v);
+    }
     async findAttributeValue(attributeValue) {
         return this.attributeValueRepository.findOne({ where: { value: attributeValue } });
     }

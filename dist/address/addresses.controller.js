@@ -25,6 +25,7 @@ let AddressesController = class AddressesController {
         this.cacheService = cacheService;
     }
     async createAddress(createAddressDto) {
+        await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${createAddressDto.customer_id}`);
         return this.addressesService.create(createAddressDto);
     }
     addresses(userId) {
@@ -34,10 +35,13 @@ let AddressesController = class AddressesController {
         return this.addressesService.findOne(+id);
     }
     async updateAddress(id, updateAddressDto) {
-        await this.cacheService.invalidateCacheBySubstring("address");
+        await this.cacheService.invalidateCacheBySubstring(`address:id:${id}`);
+        await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${updateAddressDto.customer_id}`);
         return this.addressesService.update(+id, updateAddressDto);
     }
     async deleteAddress(id) {
+        await this.cacheService.invalidateCacheBySubstring(`address:id:${id}`);
+        await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${id}`);
         return this.addressesService.remove(+id);
     }
 };

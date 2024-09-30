@@ -144,8 +144,9 @@ PopularProductsController = __decorate([
 ], PopularProductsController);
 exports.PopularProductsController = PopularProductsController;
 let UploadProductsXl = class UploadProductsXl {
-    constructor(uploadXlService) {
+    constructor(uploadXlService, cacheService) {
         this.uploadXlService = uploadXlService;
+        this.cacheService = cacheService;
     }
     async uploadProducts(file, shopSlug) {
         if (!file) {
@@ -156,7 +157,6 @@ let UploadProductsXl = class UploadProductsXl {
         }
         const buffer = file.buffer;
         await this.uploadXlService.uploadProductsFromExcel(buffer, shopSlug);
-        await this.cacheService.invalidateCacheBySubstring("products");
         return { message: 'Products uploaded successfully' };
     }
 };
@@ -172,7 +172,8 @@ __decorate([
 ], UploadProductsXl.prototype, "uploadProducts", null);
 UploadProductsXl = __decorate([
     (0, common_1.Controller)('uploadxl-products'),
-    __metadata("design:paramtypes", [uploadProductsXl_1.UploadXlService])
+    __metadata("design:paramtypes", [uploadProductsXl_1.UploadXlService,
+        cacheService_1.CacheService])
 ], UploadProductsXl);
 exports.UploadProductsXl = UploadProductsXl;
 //# sourceMappingURL=products.controller.js.map

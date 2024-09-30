@@ -134,6 +134,11 @@ export class UploadXlService {
         }
     }
 
+    // Utility to split attribute values by comma, slash, or space
+    async splitAttributeValues(value: string): Promise<string[]> {
+        return value.split(/[,/|]/).map(v => v.trim()).filter(v => v);
+    }
+
     async findAttributeValue(attributeValue: string): Promise<AttributeValue | undefined> {
         return this.attributeValueRepository.findOne({ where: { value: attributeValue } });
     }

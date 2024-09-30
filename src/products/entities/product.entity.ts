@@ -124,7 +124,7 @@ export class Product extends CoreEntity {
   max_price?: number;
   @Column({ nullable: true })
   min_price?: number;
-  @Column()
+  @Column({ nullable: true })
   sku?: string;
   @Column()
   status: ProductStatus;

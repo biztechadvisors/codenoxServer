@@ -32,8 +32,8 @@ export declare class PopularProductsController {
 }
 export declare class UploadProductsXl {
     private readonly uploadXlService;
-    cacheService: any;
-    constructor(uploadXlService: UploadXlService);
+    private readonly cacheService;
+    constructor(uploadXlService: UploadXlService, cacheService: CacheService);
     uploadProducts(file: any, shopSlug: string): Promise<{
         message: string;
     }>;

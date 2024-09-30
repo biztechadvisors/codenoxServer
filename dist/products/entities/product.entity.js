@@ -167,7 +167,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Product.prototype, "min_price", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Product.prototype, "sku", void 0);
 __decorate([

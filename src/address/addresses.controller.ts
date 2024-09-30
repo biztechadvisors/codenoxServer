@@ -22,6 +22,7 @@ export class AddressesController {
 
   @Post()
   async createAddress(@Body() createAddressDto: CreateAddressDto) {
+    await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${createAddressDto.customer_id}`)
     return this.addressesService.create(createAddressDto);
   }
 
@@ -40,12 +41,15 @@ export class AddressesController {
     @Param('id') id: string,
     @Body() updateAddressDto: UpdateAddressDto,
   ) {
-    await this.cacheService.invalidateCacheBySubstring("address")
+    await this.cacheService.invalidateCacheBySubstring(`address:id:${id}`)
+    await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${updateAddressDto.customer_id}`)
     return this.addressesService.update(+id, updateAddressDto);
   }
 
   @Delete(':id')
   async deleteAddress(@Param('id') id: string) {
+    await this.cacheService.invalidateCacheBySubstring(`address:id:${id}`)
+    await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${id}`)
     return this.addressesService.remove(+id);
   }
 }

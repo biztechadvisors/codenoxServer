@@ -52,6 +52,7 @@ export class AttributesController {
   async delete(@Param('id') id: number): Promise<{ message: string; status: boolean }> {
     await this.attributesService.delete(id);
     await this.cacheService.invalidateCacheBySubstring("attributes")
+    await this.cacheService.invalidateCacheBySubstring("attributes")
     return { message: 'Attribute deleted successfully', status: true };
   }
 

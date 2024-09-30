@@ -34,6 +34,7 @@ export declare class UploadXlService {
     logger: any;
     constructor(productsService: ProductsService, productRepository: Repository<Product>, orderProductPivotRepository: Repository<OrderProductPivot>, variationRepository: Repository<Variation>, variationOptionRepository: Repository<VariationOption>, attachmentRepository: Repository<Attachment>, tagRepository: Repository<Tag>, typeRepository: Repository<Type>, shopRepository: Repository<Shop>, categoryRepository: Repository<Category>, attributeValueRepository: Repository<AttributeValue>, fileRepository: Repository<File>, dealerRepository: Repository<Dealer>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, userRepository: Repository<User>, taxRepository: Repository<Tax>, subCategoryRepository: Repository<SubCategory>);
     parseExcelToDto(fileBuffer: Buffer, shopSlug: string): Promise<any[]>;
+    splitAttributeValues(value: string): Promise<string[]>;
     findAttributeValue(attributeValue: string): Promise<AttributeValue | undefined>;
     getOrCreateAttributeValue(attributeValue: string): Promise<AttributeValue>;
     getOrCreateAttributeValues(attributeValues: string[]): Promise<AttributeValue[]>;

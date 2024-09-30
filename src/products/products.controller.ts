@@ -93,8 +93,10 @@ export class PopularProductsController {
 
 @Controller('uploadxl-products')
 export class UploadProductsXl {
-  cacheService: any;
-  constructor(private readonly uploadXlService: UploadXlService) { }
+  constructor(
+    private readonly uploadXlService: UploadXlService,
+    private readonly cacheService: CacheService // Properly inject the cache service
+  ) { }
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
@@ -108,7 +110,7 @@ export class UploadProductsXl {
 
     const buffer = file.buffer;
     await this.uploadXlService.uploadProductsFromExcel(buffer, shopSlug);
-    await this.cacheService.invalidateCacheBySubstring("products");
+    // await this.cacheService.invalidateCacheBySubstring("products");
     return { message: 'Products uploaded successfully' };
   }
 }
