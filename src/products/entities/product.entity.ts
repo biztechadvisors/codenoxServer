@@ -204,7 +204,7 @@ export class Variation {
   price: number;
   @Column()
   sku: string;
-  @Column()
+  @Column({ default: false })
   is_disable: boolean;
   @Column()
   sale_price?: number;

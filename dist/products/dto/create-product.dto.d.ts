@@ -1,7 +1,7 @@
 import { Product } from '../entities/product.entity';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Tax } from 'src/taxes/entities/tax.entity';
-declare const CreateProductDto_base: import("@nestjs/common").Type<Omit<Product, "id" | "slug" | "type" | "categories" | "subCategories" | "tags" | "variations" | "variation_options" | "pivot" | "orders" | "shop" | "related_products" | "taxes" | "height" | "length" | "width" | "translated_languages" | "created_at" | "updated_at" | "regionName">>;
+declare const CreateProductDto_base: import("@nestjs/common").Type<Omit<Product, "id" | "slug" | "created_at" | "updated_at" | "orders" | "pivot" | "shop" | "categories" | "subCategories" | "tags" | "type" | "related_products" | "variations" | "variation_options" | "translated_languages" | "taxes" | "height" | "length" | "width" | "regionName">>;
 export declare class CreateProductDto extends CreateProductDto_base {
     categories: number[];
     subCategories: number[];
@@ -22,6 +22,7 @@ export declare class CreateProductDto extends CreateProductDto_base {
 export declare class VariationDto {
     is_digital: boolean;
     sku: string;
+    name: string;
     quantity: number;
     sale_price: number;
     price: number;

@@ -47,7 +47,7 @@ class CreateProductDto extends (0, swagger_1.OmitType)(product_entity_1.Product,
 exports.CreateProductDto = CreateProductDto;
 class VariationDto {
     static _OPENAPI_METADATA_FACTORY() {
-        return { is_digital: { required: true, type: () => Boolean }, sku: { required: true, type: () => String }, quantity: { required: true, type: () => Number }, sale_price: { required: true, type: () => Number }, price: { required: true, type: () => Number }, is_disable: { required: true, type: () => Boolean }, title: { required: true, type: () => String }, image: { required: true, type: () => require("./create-product.dto").FileDto }, options: { required: true, type: () => [require("./create-product.dto").VariationOptionDto] }, id: { required: true, type: () => Object } };
+        return { is_digital: { required: true, type: () => Boolean }, sku: { required: true, type: () => String }, name: { required: true, type: () => String }, quantity: { required: true, type: () => Number }, sale_price: { required: true, type: () => Number }, price: { required: true, type: () => Number }, is_disable: { required: true, type: () => Boolean }, title: { required: true, type: () => String }, image: { required: true, type: () => require("./create-product.dto").FileDto }, options: { required: true, type: () => [require("./create-product.dto").VariationOptionDto] }, id: { required: true, type: () => Object } };
     }
 }
 exports.VariationDto = VariationDto;

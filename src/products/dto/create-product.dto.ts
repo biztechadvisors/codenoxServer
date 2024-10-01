@@ -47,6 +47,7 @@ export class CreateProductDto extends OmitType(Product, [
 export class VariationDto {
   is_digital: boolean;
   sku: string;
+  name: string;
   quantity: number;
   sale_price: number;
   price: number;

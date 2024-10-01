@@ -325,7 +325,7 @@ __decorate([
     __metadata("design:type", String)
 ], Variation.prototype, "sku", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], Variation.prototype, "is_disable", void 0);
 __decorate([

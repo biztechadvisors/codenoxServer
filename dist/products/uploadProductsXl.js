@@ -105,7 +105,7 @@ let UploadXlService = class UploadXlService {
                     }
                     const variationOptions = await this.createVariation(row, headerRow);
                     const variations = await this.getVariations(row, headerRow);
-                    const attributes = this.parseAttributes(row, headerRow);
+                    const attributes = await this.parseAttributes(row, headerRow);
                     products[parentId].attributes.push(attributes);
                     products[parentId].variations.push(...variations);
                     products[parentId].variation_options.upsert.push(variationOptions);
@@ -113,12 +113,11 @@ let UploadXlService = class UploadXlService {
                 else if (productType === 'parent' || productType === 'Parent') {
                     const productIdIndex = headerRow.indexOf('Product ID');
                     const productId = row[productIdIndex];
-                    const parentVariations = [];
+                    let parentVariations = [];
                     for (const childRow of rows) {
                         const childProductType = childRow[headerRow.indexOf('Product Type')];
                         const childParentId = childRow[headerRow.indexOf('Parent ID')];
-                        if ((childProductType === 'child' || childProductType === 'Child') &&
-                            childParentId === productId) {
+                        if ((childProductType === 'child' || childProductType === 'Child') && childParentId === productId) {
                             const variationOptions = await this.createVariation(childRow, headerRow);
                             parentVariations.push(variationOptions);
                         }
@@ -139,17 +138,13 @@ let UploadXlService = class UploadXlService {
         }
     }
     async createMainProduct(row, headerRow, shopSlug, variations) {
-        const category = [];
-        const subCategories = [];
-        const tags = [];
+        let category = [];
+        let subCategories = [];
+        let tags = [];
         if (row[headerRow.indexOf('Product Category')]) {
-            const categoryNames = row[headerRow.indexOf('Product Category')]
-                .split(',')
-                .map((name) => name.trim());
+            const categoryNames = row[headerRow.indexOf('Product Category')].split(',').map(name => name.trim());
             for (const categoryName of categoryNames) {
-                const categoryRecord = await this.categoryRepository.findOne({
-                    where: { name: categoryName },
-                });
+                const categoryRecord = await this.categoryRepository.findOne({ where: { name: categoryName } });
                 if (categoryRecord) {
                     category.push(categoryRecord.id);
                 }
@@ -159,13 +154,9 @@ let UploadXlService = class UploadXlService {
             }
         }
         if (row[headerRow.indexOf('Product SubCategory')]) {
-            const subCategoryNames = row[headerRow.indexOf('Product SubCategory')]
-                .split(',')
-                .map((name) => name.trim());
+            const subCategoryNames = row[headerRow.indexOf('Product SubCategory')].split(',').map(name => name.trim());
             for (const subCategoryName of subCategoryNames) {
-                const subCategoryRecord = await this.subCategoryRepository.findOne({
-                    where: { name: subCategoryName },
-                });
+                const subCategoryRecord = await this.subCategoryRepository.findOne({ where: { name: subCategoryName } });
                 if (subCategoryRecord) {
                     subCategories.push(subCategoryRecord.id);
                 }
@@ -175,13 +166,9 @@ let UploadXlService = class UploadXlService {
             }
         }
         if (row[headerRow.indexOf('Product Tags')]) {
-            const tagNames = row[headerRow.indexOf('Product Tags')]
-                .split(',')
-                .map((name) => name.trim());
+            const tagNames = row[headerRow.indexOf('Product Tags')].split(',').map(name => name.trim());
             for (const tagName of tagNames) {
-                const tagRecord = await this.tagRepository.findOne({
-                    where: { name: tagName },
-                });
+                const tagRecord = await this.tagRepository.findOne({ where: { name: tagName } });
                 if (tagRecord) {
                     tags.push(tagRecord.id);
                 }
@@ -192,9 +179,7 @@ let UploadXlService = class UploadXlService {
         }
         let type = null;
         if (row[headerRow.indexOf('Product Collection')]) {
-            type = await this.typeRepository.findOne({
-                where: { name: row[headerRow.indexOf('Product Collection')] },
-            });
+            type = await this.typeRepository.findOne({ where: { name: row[headerRow.indexOf('Product Collection')] } });
             if (!type) {
                 console.warn(`Type '${row[headerRow.indexOf('Product Collection')]}' not found in the database`);
             }
@@ -206,9 +191,9 @@ let UploadXlService = class UploadXlService {
                 throw new Error(`Shop with slug '${shopSlug}' not found`);
             }
         }
-        const prices = [];
+        let prices = [];
         let totalQuantity = 0;
-        variations.forEach((variation) => {
+        variations.forEach(variation => {
             if (variation.sale_price !== undefined && variation.sale_price !== null) {
                 prices.push(parseFloat(variation.sale_price));
             }
@@ -219,18 +204,18 @@ let UploadXlService = class UploadXlService {
         });
         const min_price = prices.length > 0 ? Math.min(...prices) : 0;
         const max_price = prices.length > 0 ? Math.max(...prices) : 0;
-        const status = row[headerRow.indexOf('Product Status')] || 'Published';
+        const status = row[headerRow.indexOf('Product Status')] || "Published";
         const unit = row[headerRow.indexOf('Product Unit')] || 1;
         const sku = row[headerRow.indexOf('Product SKU')] || null;
-        const price = parseFloat(row[headerRow.indexOf('Price')] || '0');
-        const salePrice = parseFloat(row[headerRow.indexOf('Sale Price')] || '0');
+        const price = parseFloat(row[headerRow.indexOf('Price')] || "0");
+        const salePrice = parseFloat(row[headerRow.indexOf('Sale Price')] || "0");
         const height = row[headerRow.indexOf('Height')] || 1;
         const length = row[headerRow.indexOf('Length')] || 1;
         const width = row[headerRow.indexOf('Width')] || 1;
         return {
             name: row[headerRow.indexOf('Product Name')],
             description: row[headerRow.indexOf('Product Description')],
-            product_type: 'variable',
+            product_type: "variable",
             status: status,
             quantity: totalQuantity,
             min_price: min_price,
@@ -248,77 +233,66 @@ let UploadXlService = class UploadXlService {
             attributes: [],
             variation_options: {
                 delete: [],
-                upsert: [],
+                upsert: []
             },
             height: height,
             length: length,
             width: width,
             related_products: [],
-            translated_languages: [],
+            translated_languages: []
         };
     }
-    async splitAttributeValues(value) {
+    splitAttributeValues(value) {
         return value
             .split(/[,|\/]/)
             .map((v) => v.trim())
-            .filter((v) => v);
+            .filter(Boolean);
     }
     async findAttributeValue(attributeValue) {
-        return this.attributeValueRepository.findOne({
-            where: { value: attributeValue },
-        });
-    }
-    async getOrCreateAttributeValue(attributeValue) {
-        const attrValue = await this.findAttributeValue(attributeValue);
-        if (!attrValue) {
-            throw new common_1.NotFoundException(`Attribute value '${attributeValue}' not found.`);
-        }
-        return attrValue;
-    }
-    async getOrCreateAttributeValues(attributeValues) {
-        const promises = attributeValues.map((attrValue) => this.getOrCreateAttributeValue(attrValue));
-        return Promise.all(promises);
+        return this.attributeValueRepository.findOne({ where: { value: attributeValue } });
     }
     async createVariation(row, headerRow) {
         const options = await this.createVariationOptions(row, headerRow);
         let title = '';
         let i = 1;
-        while (row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined &&
-            row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined) {
-            const attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
-            if (attributeValue) {
-                if (title) {
-                    title += '/';
+        while (row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined && row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined) {
+            let attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
+            attributeValue = this.splitAttributeValues(attributeValue);
+            attributeValue.forEach(element => {
+                if (element) {
+                    if (title) {
+                        title += '/';
+                    }
+                    title += element;
                 }
-                title += attributeValue;
-            }
+            });
             i++;
         }
         return {
             is_digital: row[headerRow.indexOf('Is Digital')] === true,
             sku: row[headerRow.indexOf('Product SKU')],
-            quantity: parseInt(row[headerRow.indexOf('Child Inventory')], 10),
+            name: row[headerRow.indexOf('Product Name')],
+            quantity: parseInt(row[headerRow.indexOf('Child Inventory')]),
             sale_price: parseFloat(row[headerRow.indexOf('Sale Price')]),
             price: parseFloat(row[headerRow.indexOf('Price')]),
             is_disable: row[headerRow.indexOf('Is Disable')] === true,
             title,
             options,
-            id: null,
+            id: null
         };
     }
     async getVariations(row, headerRow) {
         const variations = [];
         let i = 1;
-        while (row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined &&
-            row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined) {
+        while (row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined && row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined) {
             const attributeName = row[headerRow.indexOf(`Attribute ${i} Name`)];
-            const attributeValueString = row[headerRow.indexOf(`Attribute ${i} Value`)];
-            if (attributeName && attributeValueString) {
-                const attributeValues = await this.splitAttributeValues(attributeValueString);
-                for (const attributeValue of attributeValues) {
-                    const fetchedAttributeValue = await this.findAttributeValue(attributeValue);
+            let attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
+            attributeValue = this.splitAttributeValues(attributeValue);
+            if (attributeName && attributeValue) {
+                for (const element of attributeValue) {
+                    const fetchedAttributeValue = await this.findAttributeValue(element);
                     if (!fetchedAttributeValue) {
-                        throw new common_1.NotFoundException(`Attribute value '${attributeValue}' not found.`);
+                        console.warn(`Attribute value '${element}' not found.`);
                     }
                     variations.push({ attribute_value_id: fetchedAttributeValue.id });
                 }
@@ -327,32 +301,49 @@ let UploadXlService = class UploadXlService {
         }
         return variations;
     }
-    parseAttributes(row, headerRow) {
+    async parseAttributes(row, headerRow) {
         const attributes = {};
-        for (let i = 1; row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined &&
-            row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined; i++) {
+        let i = 1;
+        while (row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined && row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined) {
             const attributeName = row[headerRow.indexOf(`Attribute ${i} Name`)];
-            const attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
+            let attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
+            attributeValue = this.splitAttributeValues(attributeValue);
             if (attributeName && attributeValue) {
-                attributes[attributeName] = attributeValue;
+                for (const element of attributeValue) {
+                    const fetchedAttributeValue = await this.findAttributeValue(element);
+                    if (!fetchedAttributeValue) {
+                        console.warn(`Attribute value '${element}' not found.`);
+                    }
+                    if (!attributes[attributeName]) {
+                        attributes[attributeName] = [];
+                    }
+                    attributes[attributeName].push(fetchedAttributeValue.id);
+                }
             }
+            i++;
         }
         return attributes;
     }
     async createVariationOptions(row, headerRow) {
         const variationOptions = [];
         let i = 1;
-        while (row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined &&
-            row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined) {
+        while (row[headerRow.indexOf(`Attribute ${i} Name`)] !== undefined && row[headerRow.indexOf(`Attribute ${i} Value`)] !== undefined) {
             const attributeName = row[headerRow.indexOf(`Attribute ${i} Name`)];
-            const attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
+            let attributeValue = row[headerRow.indexOf(`Attribute ${i} Value`)];
+            attributeValue = this.splitAttributeValues(attributeValue);
             if (attributeName && attributeValue) {
-                const variationOption = {
-                    id: null,
-                    name: attributeName,
-                    value: attributeValue,
-                };
-                variationOptions.push(variationOption);
+                for (const element of attributeValue) {
+                    const attribute = await this.attributeValueRepository.findOne({ where: { value: element } });
+                    if (attribute) {
+                        variationOptions.push({
+                            name: attributeName,
+                            value: element,
+                        });
+                    }
+                    else {
+                        console.warn(`Attribute value '${element}' not found.`);
+                    }
+                }
             }
             i++;
         }
@@ -379,29 +370,19 @@ let UploadXlService = class UploadXlService {
         var _a, _b;
         try {
             const existingProduct = await this.productRepository.findOne({
-                where: [
-                    { name: createProductDto.name },
-                    { slug: createProductDto.slug },
-                ],
+                where: [{ name: createProductDto.name }, { slug: createProductDto.slug }]
             });
             let product;
             if (existingProduct) {
                 product = existingProduct;
                 product.name = createProductDto.name;
-                product.slug = createProductDto.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/(^-|-$)/g, '');
+                product.slug = createProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
                 product.description = createProductDto.description;
                 product.product_type = createProductDto.product_type;
                 product.status = createProductDto.status;
                 product.quantity = this.validateNumber(createProductDto.quantity);
-                product.max_price =
-                    this.validateNumber(createProductDto.max_price) ||
-                        this.validateNumber(createProductDto.price);
-                product.min_price =
-                    this.validateNumber(createProductDto.min_price) ||
-                        this.validateNumber(createProductDto.sale_price);
+                product.max_price = this.validateNumber(createProductDto.max_price) || this.validateNumber(createProductDto.price);
+                product.min_price = this.validateNumber(createProductDto.min_price) || this.validateNumber(createProductDto.sale_price);
                 product.price = this.validateNumber(createProductDto.price);
                 product.sale_price = this.validateNumber(createProductDto.sale_price);
                 product.unit = createProductDto.unit ? createProductDto.unit : 1;
@@ -410,20 +391,15 @@ let UploadXlService = class UploadXlService {
                 product.width = createProductDto.width ? createProductDto.width : 1;
                 product.sku = createProductDto.sku;
                 product.language = createProductDto.language || 'en';
-                product.translated_languages =
-                    createProductDto.translated_languages || ['en'];
+                product.translated_languages = createProductDto.translated_languages || ['en'];
                 if (createProductDto.taxes) {
-                    const tax = await this.taxRepository.findOne({
-                        where: { id: createProductDto.taxes.id },
-                    });
+                    const tax = await this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } });
                     if (tax) {
                         product.taxes = tax;
                     }
                 }
                 if (createProductDto.type_id) {
-                    const type = await this.typeRepository.findOne({
-                        where: { id: createProductDto.type_id },
-                    });
+                    const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
                     if (!type) {
                         throw new common_1.NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
                     }
@@ -431,9 +407,7 @@ let UploadXlService = class UploadXlService {
                     product.type_id = type.id;
                 }
                 if (createProductDto.shop_id) {
-                    const shop = await this.shopRepository.findOne({
-                        where: { id: createProductDto.shop_id },
-                    });
+                    const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
                     if (!shop) {
                         throw new common_1.NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
                     }
@@ -457,20 +431,13 @@ let UploadXlService = class UploadXlService {
             else {
                 product = new product_entity_1.Product();
                 product.name = createProductDto.name;
-                product.slug = createProductDto.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/(^-|-$)/g, '');
+                product.slug = createProductDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
                 product.description = createProductDto.description;
                 product.product_type = createProductDto.product_type;
                 product.status = createProductDto.status;
                 product.quantity = this.validateNumber(createProductDto.quantity);
-                product.max_price =
-                    this.validateNumber(createProductDto.max_price) ||
-                        this.validateNumber(createProductDto.price);
-                product.min_price =
-                    this.validateNumber(createProductDto.min_price) ||
-                        this.validateNumber(createProductDto.sale_price);
+                product.max_price = this.validateNumber(createProductDto.max_price) || this.validateNumber(createProductDto.price);
+                product.min_price = this.validateNumber(createProductDto.min_price) || this.validateNumber(createProductDto.sale_price);
                 product.price = this.validateNumber(createProductDto.price);
                 product.sale_price = this.validateNumber(createProductDto.sale_price);
                 product.unit = createProductDto.unit ? createProductDto.unit : 1;
@@ -479,20 +446,15 @@ let UploadXlService = class UploadXlService {
                 product.width = createProductDto.width ? createProductDto.width : 1;
                 product.sku = createProductDto.sku;
                 product.language = createProductDto.language || 'en';
-                product.translated_languages =
-                    createProductDto.translated_languages || ['en'];
+                product.translated_languages = createProductDto.translated_languages || ['en'];
                 if (createProductDto.taxes) {
-                    const tax = await this.taxRepository.findOne({
-                        where: { id: createProductDto.taxes.id },
-                    });
+                    const tax = await this.taxRepository.findOne({ where: { id: createProductDto.taxes.id } });
                     if (tax) {
                         product.taxes = tax;
                     }
                 }
                 if (createProductDto.type_id) {
-                    const type = await this.typeRepository.findOne({
-                        where: { id: createProductDto.type_id },
-                    });
+                    const type = await this.typeRepository.findOne({ where: { id: createProductDto.type_id } });
                     if (!type) {
                         throw new common_1.NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
                     }
@@ -513,9 +475,7 @@ let UploadXlService = class UploadXlService {
                 }
             }
             if (createProductDto.shop_id) {
-                const shop = await this.shopRepository.findOne({
-                    where: { id: createProductDto.shop_id },
-                });
+                const shop = await this.shopRepository.findOne({ where: { id: createProductDto.shop_id } });
                 if (!shop) {
                     throw new common_1.NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
                 }
@@ -541,66 +501,94 @@ let UploadXlService = class UploadXlService {
                 product.gallery = galleryAttachments;
             }
             if (createProductDto.variations) {
-                const uniqueVariations = new Set();
-                const attributeValues = [];
-                for (const variation of createProductDto.variations) {
-                    const attributeValue = await this.attributeValueRepository.findOne({
-                        where: { id: variation.attribute_value_id },
+                try {
+                    const attributeValueIds = [...new Set(createProductDto.variations.map(v => v.attribute_value_id))];
+                    const attributeValues = await this.attributeValueRepository.findByIds(attributeValueIds);
+                    const attributeValueMap = new Map(attributeValues.map(attr => [attr.id, attr]));
+                    const uniqueVariations = new Set();
+                    product.variations = createProductDto.variations
+                        .filter(variation => {
+                        if (uniqueVariations.has(variation.attribute_value_id)) {
+                            console.warn(`Duplicate attribute value ID ${variation.attribute_value_id} found and ignored`);
+                            return false;
+                        }
+                        uniqueVariations.add(variation.attribute_value_id);
+                        return true;
+                    })
+                        .map(variation => {
+                        const attributeValue = attributeValueMap.get(variation.attribute_value_id);
+                        if (!attributeValue) {
+                            throw new common_1.NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
+                        }
+                        return attributeValue;
                     });
-                    if (!attributeValue) {
-                        throw new common_1.NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
+                    await this.productRepository.save(product);
+                }
+                catch (error) {
+                    console.error('Error handling variations:', error);
+                    if (error instanceof common_1.NotFoundException) {
+                        throw error;
                     }
-                    const uniqueKey = `${product.id}-${attributeValue.id}`;
-                    if (!uniqueVariations.has(uniqueKey)) {
-                        uniqueVariations.add(uniqueKey);
-                        attributeValues.push(attributeValue);
+                    else {
+                        throw new common_1.InternalServerErrorException('An error occurred while processing variations');
                     }
                 }
-                product.variations = attributeValues;
             }
-            await this.productRepository.save(product);
+            else {
+                console.warn('No variations provided in createProductDto');
+            }
             if (product.product_type === product_entity_1.ProductType.VARIABLE &&
                 createProductDto.variation_options &&
                 createProductDto.variation_options.upsert) {
-                const variationOptions = [];
-                for (const variationDto of createProductDto.variation_options.upsert) {
-                    const newVariation = new product_entity_1.Variation();
-                    newVariation.title = variationDto === null || variationDto === void 0 ? void 0 : variationDto.title;
-                    newVariation.price = this.validateNumber(variationDto === null || variationDto === void 0 ? void 0 : variationDto.price);
-                    newVariation.sku = variationDto === null || variationDto === void 0 ? void 0 : variationDto.sku;
-                    newVariation.is_disable = variationDto === null || variationDto === void 0 ? void 0 : variationDto.is_disable;
-                    newVariation.sale_price = this.validateNumber(variationDto === null || variationDto === void 0 ? void 0 : variationDto.sale_price);
-                    newVariation.quantity = this.validateNumber(variationDto === null || variationDto === void 0 ? void 0 : variationDto.quantity);
-                    if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) {
-                        let image = await this.fileRepository.findOne({
-                            where: { id: variationDto.image.id },
-                        });
-                        if (!image) {
-                            image = new product_entity_1.File();
-                            image.attachment_id = variationDto.image.id;
-                            image.url = variationDto.image.original;
-                            image.fileable_id = newVariation.id;
-                            await this.fileRepository.save(image);
+                try {
+                    const variationOptions = [];
+                    for (const variationDto of createProductDto.variation_options.upsert) {
+                        const newVariation = new product_entity_1.Variation();
+                        newVariation.title = variationDto === null || variationDto === void 0 ? void 0 : variationDto.title;
+                        newVariation.name = variationDto === null || variationDto === void 0 ? void 0 : variationDto.name;
+                        newVariation.price = this.validateNumber(variationDto === null || variationDto === void 0 ? void 0 : variationDto.price);
+                        newVariation.sku = variationDto === null || variationDto === void 0 ? void 0 : variationDto.sku;
+                        newVariation.is_disable = variationDto === null || variationDto === void 0 ? void 0 : variationDto.is_disable;
+                        newVariation.sale_price = this.validateNumber(variationDto === null || variationDto === void 0 ? void 0 : variationDto.sale_price);
+                        newVariation.quantity = this.validateNumber(variationDto === null || variationDto === void 0 ? void 0 : variationDto.quantity);
+                        newVariation.created_at = new Date();
+                        newVariation.updated_at = new Date();
+                        if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) {
+                            let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
+                            if (!image) {
+                                image = new product_entity_1.File();
+                                image.attachment_id = variationDto.image.id;
+                                image.url = variationDto.image.original;
+                                image.fileable_id = newVariation.id;
+                                await this.fileRepository.save(image);
+                            }
+                            newVariation.image = image;
                         }
-                        newVariation.image = image;
-                    }
-                    const savedVariation = await this.variationRepository.save(newVariation);
-                    const variationOptionEntities = [];
-                    if (variationDto && variationDto.options) {
-                        for (const option of variationDto.options) {
-                            const newVariationOption = new product_entity_1.VariationOption();
-                            newVariationOption.name = option.name;
-                            newVariationOption.value = option.value;
-                            const savedVariationOption = await this.variationOptionRepository.save(newVariationOption);
-                            variationOptionEntities.push(savedVariationOption);
+                        const savedVariation = await this.variationRepository.save(newVariation);
+                        const variationOptionEntities = [];
+                        if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.options) {
+                            for (const option of variationDto.options) {
+                                const newVariationOption = new product_entity_1.VariationOption();
+                                newVariationOption.name = option.name;
+                                newVariationOption.value = option.value;
+                                const savedVariationOption = await this.variationOptionRepository.save(newVariationOption);
+                                variationOptionEntities.push(savedVariationOption);
+                            }
                         }
+                        savedVariation.options = variationOptionEntities;
+                        await this.variationRepository.save(savedVariation);
+                        variationOptions.push(savedVariation);
                     }
-                    savedVariation.options = variationOptionEntities;
-                    await this.variationRepository.save(savedVariation);
-                    variationOptions.push(savedVariation);
+                    product.variation_options = variationOptions;
+                    await this.productRepository.save(product);
                 }
-                product.variation_options = variationOptions;
-                await this.productRepository.save(product);
+                catch (error) {
+                    console.error('Error handling variation options:', error);
+                    throw new common_1.InternalServerErrorException('An error occurred while processing variation options');
+                }
+            }
+            else {
+                console.warn('No variation options provided in createProductDto');
             }
             if (product) {
                 await this.productsService.updateShopProductsCount(product.shop_id, product.id);
@@ -619,20 +607,7 @@ let UploadXlService = class UploadXlService {
         return Number(value);
     }
     async remove(name) {
-        const products = await this.productRepository.find({
-            where: { name: name },
-            relations: [
-                'type',
-                'shop',
-                'image',
-                'categories',
-                'tags',
-                'gallery',
-                'related_products',
-                'variations',
-                'variation_options',
-            ],
-        });
+        const products = await this.productRepository.find({ where: { name: name }, relations: ['type', 'shop', 'image', 'categories', 'tags', 'gallery', 'related_products', 'variations', 'variation_options'] });
         for (const product of products) {
             if (!product) {
                 throw new common_1.NotFoundException(`Product with Name ${name} not found`);
@@ -641,45 +616,36 @@ let UploadXlService = class UploadXlService {
                 const image = product.image;
                 product.image = null;
                 await this.productRepository.save(product);
-                const file = await this.fileRepository.findOne({
-                    where: { attachment_id: image.id },
-                });
+                const file = await this.fileRepository.findOne({ where: { attachment_id: image.id } });
                 if (file) {
                     await this.fileRepository.remove(file);
                 }
                 await this.attachmentRepository.remove(image);
             }
-            const gallery = await this.attachmentRepository.findByIds(product.gallery.map((g) => g.id));
+            const gallery = await this.attachmentRepository.findByIds(product.gallery.map(g => g.id));
             await this.attachmentRepository.remove(gallery);
             const variations = await Promise.all(product.variation_options.map(async (v) => {
-                const variation = await this.variationRepository.findOne({
-                    where: { id: v.id },
-                    relations: ['options', 'image'],
-                });
+                const variation = await this.variationRepository.findOne({ where: { id: v.id }, relations: ['options', 'image'] });
                 if (!variation) {
                     throw new common_1.NotFoundException(`Variation with ID ${v.id} not found`);
                 }
                 return variation;
             }));
             await Promise.all([
-                ...variations.flatMap((v) => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+                ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
                 ...variations.map(async (v) => {
                     if (v.image) {
                         const image = v.image;
                         v.image = null;
                         await this.variationRepository.save(v);
-                        const file = await this.fileRepository.findOne({
-                            where: { id: image.id },
-                        });
+                        const file = await this.fileRepository.findOne({ where: { id: image.id } });
                         if (file) {
                             file.attachment_id = null;
                             await this.fileRepository.save(file).then(async () => {
                                 await this.fileRepository.remove(file);
                             });
                         }
-                        const attachment = await this.attachmentRepository.findOne({
-                            where: { id: image.attachment_id },
-                        });
+                        const attachment = await this.attachmentRepository.findOne({ where: { id: image.attachment_id } });
                         if (attachment) {
                             await this.attachmentRepository.remove(attachment);
                         }
