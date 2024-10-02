@@ -255,10 +255,10 @@ export class UploadXlService {
         };
     }
 
-    // Utility to split attribute values by comma, slash, or pipe
+    // Utility to split attribute values by comma, slash, pipe, or backslash
     splitAttributeValues(value: string): string[] {
         return value
-            .split(/[,|\/]/) // Split by comma, pipe, or slash
+            .split(/[,\|\/\\]/) // Split by comma, pipe, slash, or backslash
             .map((v) => v.trim()) // Trim whitespace
             .filter(Boolean); // Filter out empty values
     }

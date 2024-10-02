@@ -303,14 +303,7 @@ let ShopsService = class ShopsService {
         const queryBuilder = this.userRepository.createQueryBuilder('user');
         queryBuilder
             .leftJoinAndSelect('user.profile', 'profile')
-            .leftJoinAndSelect('user.dealer', 'dealer')
-            .leftJoinAndSelect('user.owned_shops', 'owned_shops')
-            .leftJoinAndSelect('user.inventoryStocks', 'inventoryStocks')
-            .leftJoinAndSelect('user.stocks', 'stocks')
-            .leftJoinAndSelect('user.managed_shop', 'managed_shop')
             .leftJoinAndSelect('user.address', 'address')
-            .leftJoinAndSelect('user.orders', 'orders')
-            .leftJoinAndSelect('user.stocksSellOrd', 'stocksSellOrd')
             .leftJoinAndSelect('user.permission', 'permission');
         queryBuilder.skip(startIndex).take(limitNum);
         if (orderBy && sortedBy) {
@@ -319,7 +312,7 @@ let ShopsService = class ShopsService {
         if (shop_id) {
             queryBuilder.andWhere('user.shop_id = :shop_id', { shop_id });
         }
-        const permission = await this.permissionRepository.findOne({ where: { type_name: 'Staff' } });
+        const permission = await this.permissionRepository.findOne({ where: { type_name: user_entity_1.UserType.Staff } });
         if (!permission) {
             throw new common_1.NotFoundException(`Permission for type "Staff" not found.`);
         }

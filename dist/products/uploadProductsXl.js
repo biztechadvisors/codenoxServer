@@ -244,7 +244,7 @@ let UploadXlService = class UploadXlService {
     }
     splitAttributeValues(value) {
         return value
-            .split(/[,|\/]/)
+            .split(/[,\|\/\\]/)
             .map((v) => v.trim())
             .filter(Boolean);
     }

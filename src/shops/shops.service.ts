@@ -384,14 +384,14 @@ export class ShopsService {
     // Adding relations
     queryBuilder
       .leftJoinAndSelect('user.profile', 'profile')
-      .leftJoinAndSelect('user.dealer', 'dealer')
-      .leftJoinAndSelect('user.owned_shops', 'owned_shops')
-      .leftJoinAndSelect('user.inventoryStocks', 'inventoryStocks')
-      .leftJoinAndSelect('user.stocks', 'stocks')
-      .leftJoinAndSelect('user.managed_shop', 'managed_shop')
+      // .leftJoinAndSelect('user.dealer', 'dealer')
+      // .leftJoinAndSelect('user.owned_shops', 'owned_shops')
+      // .leftJoinAndSelect('user.inventoryStocks', 'inventoryStocks')
+      // .leftJoinAndSelect('user.stocks', 'stocks')
+      // .leftJoinAndSelect('user.managed_shop', 'managed_shop')
       .leftJoinAndSelect('user.address', 'address')
-      .leftJoinAndSelect('user.orders', 'orders')
-      .leftJoinAndSelect('user.stocksSellOrd', 'stocksSellOrd')
+      // .leftJoinAndSelect('user.orders', 'orders')
+      // .leftJoinAndSelect('user.stocksSellOrd', 'stocksSellOrd')
       .leftJoinAndSelect('user.permission', 'permission');
 
     // Pagination
@@ -408,7 +408,7 @@ export class ShopsService {
     }
 
     // Filtering by user type
-    const permission = await this.permissionRepository.findOne({ where: { type_name: 'Staff' } });
+    const permission = await this.permissionRepository.findOne({ where: { type_name: UserType.Staff } });
     if (!permission) {
       throw new NotFoundException(`Permission for type "Staff" not found.`);
     }
