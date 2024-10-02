@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { AttributeValueDto, CreateAttributeDto } from './dto/create-attribute.dto';
+import { AttributeResponseDto, AttributeValueDto, CreateAttributeDto } from './dto/create-attribute.dto';
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
 import { Attribute } from './entities/attribute.entity';
 import { plainToClass } from 'class-transformer';
@@ -156,8 +156,6 @@ export class AttributesService {
     return formattedAttributes;
   }
 
-
-
   async findOne(param: GetAttributeArgs): Promise<{ message: string } | Attribute | undefined> {
     // Generate a cache key based on the parameters
     const cacheKey = `attribute:${param.id || param.slug}`;
@@ -191,9 +189,8 @@ export class AttributesService {
   }
 
 
-  async update(id: number, updateAttributeDto: UpdateAttributeDto): Promise<{ message: string; status: boolean } | Attribute> {
+  async update(id: number, updateAttributeDto: UpdateAttributeDto): Promise<{ message: string; status: boolean } | AttributeResponseDto> {
     // Check if the attribute exists
-
     const attribute = await this.attributeRepository.findOne({
       where: { id },
       relations: ['values'], // Load the attribute values
@@ -208,7 +205,7 @@ export class AttributesService {
       };
     }
 
-    // Update the attribute values
+    // Update the attribute properties
     attribute.name = updateAttributeDto.name;
     attribute.slug = await this.convertToSlug(updateAttributeDto.name);
     attribute.shop_id = updateAttributeDto.shop_id;
@@ -246,9 +243,18 @@ export class AttributesService {
     // Update the attribute in the database
     await this.attributeRepository.save(attribute);
 
-    return attribute;
-  }
+    // Construct response DTO
+    const responseDto: AttributeResponseDto = {
+      id: attribute.id,
+      name: attribute.name,
+      slug: attribute.slug,
+      shop_id: parseInt(attribute.shop_id),
+      language: attribute.language,
+      values: attribute.values.map((value) => ({ value: value.value, meta: value.meta })), // Avoid circular references
+    };
 
+    return responseDto; // Return the DTO
+  }
 
   async delete(id: number) {
     // Get the attribute with the specified ID, including all of the associated attribute values.

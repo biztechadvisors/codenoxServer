@@ -21,12 +21,13 @@ import { FindOperator, ILike, Repository } from 'typeorm'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
 import { AnalyticsService } from '../analytics/analytics.service'
+import { CreateAddressDto } from '../address/dto/create-address.dto'
 
 @Injectable()
 export class ShopsService {
   constructor(
     private readonly analyticsService: AnalyticsService,
-
+    private readonly addressService: AddressesService,
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
     @InjectRepository(Balance)
@@ -48,7 +49,6 @@ export class ShopsService {
     @InjectRepository(Attachment)
     private readonly attachmentRepository: Repository<Attachment>,
     @InjectRepository(Permission) private readonly permissionRepository: Repository<Permission>,
-    private readonly addressesService: AddressesService,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
 
@@ -60,9 +60,9 @@ export class ShopsService {
 
   async create(createShopDto: CreateShopDto): Promise<Shop> {
     const newShop = new Shop();
-    const newBalance = new Balance();
 
     try {
+      // Retrieve the user
       const userToUpdate = await this.userRepository.findOne({
         where: { id: createShopDto.user.id },
         relations: ['permission'],
@@ -73,118 +73,109 @@ export class ShopsService {
       }
 
       if (userToUpdate.permission.type_name !== UserType.Company) {
-        throw new Error('User is not a vendor');
+        throw new Error('User is not authorized to create a shop');
       }
 
+      // Handle address creation using the AddressService
       let addressId: UserAdd | undefined;
-
       if (createShopDto.address) {
-        const addressExists = await this.userAddressRepository.findOne({
-          where: { customer_id: createShopDto.user.id }, // Assuming customer_id is used to identify addresses
-        });
+        const addressDto: CreateAddressDto = {
+          customer_id: userToUpdate.id, // Ensure this is correctly set to the user ID
+          title: `${createShopDto.address.street_address} ${createShopDto.address.city} ${createShopDto.address.state}`,
+          type: AddressType.SHOP,
+          default: true,
+          address: {
+            street_address: createShopDto.address.street_address,
+            country: createShopDto.address.country,
+            city: createShopDto.address.city,
+            state: createShopDto.address.state,
+            zip: createShopDto.address.zip,
+            id: 0,
+            customer_id: 0,
+            created_at: new Date(),
+            updated_at: new Date()
+          },
+        };
 
-        if (!addressExists) {
-          const userAdd = new UserAdd()
-          userAdd.city = createShopDto.address.city;
-          userAdd.country = createShopDto.address.country;
-          userAdd.customer_id = userToUpdate?.id;
-          userAdd.state = createShopDto.address.state;
-          userAdd.street_address = createShopDto.address.street_address;
-          userAdd.zip = createShopDto.address?.zip;
-          userAdd.created_at = createShopDto.address.created_at;
-          userAdd.updated_at = createShopDto.address.updated_at;
-          addressId = await this.userAddressRepository.save(userAdd)
-
-          const address = new Add()
-          address.address = addressId;
-          address.title = `${createShopDto.address.street_address + " " + createShopDto.address.city + " " + createShopDto.address.state}`
-          address.customer = userToUpdate;
-          address.default = true;
-          address.type = AddressType.SHOP;
-          address.created_at = new Date();
-          address.updated_at = new Date();
-          this.addressRepository.save(address)
-        }
-        addressId = addressExists;
+        const savedAddress = await this.addressService.create(addressDto); // Call the AddressService
+        addressId = savedAddress.address; // Assuming savedAddress contains the UserAdd
       }
 
+      // Shop settings logic
       let settingId: ShopSettings | undefined;
-
       if (createShopDto.settings) {
         const newSettings = this.shopSettingsRepository.create(createShopDto.settings);
 
-        if (createShopDto.settings.socials && createShopDto.settings.socials.length > 0) {
-          const socials: ShopSocials[] = [];
-          for (const social of createShopDto.settings.socials) {
-            const newSocial = this.shopSocialsRepository.create(social);
-            const savedSocial = await this.shopSocialsRepository.save(newSocial);
-            socials.push(savedSocial);
-          }
-          newSettings.socials = socials;
+        // Handle shop socials if provided
+        if (createShopDto.settings.socials?.length > 0) {
+          const savedSocials = await Promise.all(
+            createShopDto.settings.socials.map((social) =>
+              this.shopSocialsRepository.save(this.shopSocialsRepository.create(social))
+            )
+          );
+          newSettings.socials = savedSocials;
         }
 
+        // Handle shop location
         if (createShopDto.settings.location) {
-          const newLocation = this.locationRepository.create(createShopDto.settings.location);
-          const savedLocation = await this.locationRepository.save(newLocation);
+          const savedLocation = await this.locationRepository.save(
+            this.locationRepository.create(createShopDto.settings.location)
+          );
           newSettings.location = savedLocation;
         }
 
-        newSettings.contact = createShopDto.settings.contact;
-        newSettings.website = createShopDto.settings.website;
-
+        // Save settings
         settingId = await this.shopSettingsRepository.save(newSettings);
-
-        if (settingId.socials) {
-          const socialIds = settingId.socials.map((social) => social);
-          settingId.socials = socialIds;
-        }
       }
 
+      // Create and save the shop
       newShop.name = createShopDto.name;
       newShop.slug = await this.convertToSlug(createShopDto.name);
       newShop.description = createShopDto.description;
       newShop.owner = userToUpdate;
       newShop.owner_id = createShopDto.user.id;
-
-      // Handle cover_image relationship
-      if (createShopDto.cover_image && createShopDto.cover_image.length > 0) {
-        const attachments = await this.attachmentRepository.findByIds(createShopDto.cover_image);
-        newShop.cover_image = attachments;
-      }
-
-      newShop.logo = createShopDto.logo ? await this.attachmentRepository.findOne({ where: { id: createShopDto.logo.id } }) : undefined;
-      newShop.address = addressId;
+      newShop.address = addressId; // This should now have the correct address ID
       newShop.settings = settingId;
       newShop.created_at = new Date();
 
+      // Handle cover image if provided
+      if (createShopDto.cover_image?.length > 0) {
+        newShop.cover_image = await this.attachmentRepository.findByIds(createShopDto.cover_image);
+      }
+
+      // Handle logo if provided
+      newShop.logo = createShopDto.logo
+        ? await this.attachmentRepository.findOne({ where: { id: createShopDto.logo.id } })
+        : undefined;
+
       const shop = await this.shopRepository.save(newShop);
 
+      // Handle balance logic
       if (createShopDto.balance) {
-        let savedPaymentInfo: PaymentInfo | undefined;
+        const newBalance = this.balanceRepository.create({
+          admin_commission_rate: createShopDto.balance.admin_commission_rate,
+          current_balance: createShopDto.balance.current_balance,
+          total_earnings: createShopDto.balance.total_earnings,
+          withdrawn_amount: createShopDto.balance.withdrawn_amount,
+          shop: shop,
+        });
+
         if (createShopDto.balance.payment_info) {
-          const newPaymentInfo = this.paymentInfoRepository.create(createShopDto.balance.payment_info);
-          savedPaymentInfo = await this.paymentInfoRepository.save(newPaymentInfo);
-        }
-        newBalance.admin_commission_rate = createShopDto.balance.admin_commission_rate;
-        newBalance.current_balance = createShopDto.balance.current_balance;
-
-        if (savedPaymentInfo) {
-          newBalance.payment_info = savedPaymentInfo;
+          newBalance.payment_info = await this.paymentInfoRepository.save(
+            this.paymentInfoRepository.create(createShopDto.balance.payment_info)
+          );
         }
 
-        newBalance.total_earnings = createShopDto.balance.total_earnings;
-        newBalance.withdrawn_amount = createShopDto.balance.withdrawn_amount;
-        newBalance.shop = shop;
-        const balance = await this.balanceRepository.save(newBalance);
-        shop.balance = balance;
+        const savedBalance = await this.balanceRepository.save(newBalance);
+        shop.balance = savedBalance;
       }
 
-      if (createShopDto.user) {
-        userToUpdate.shop_id = shop.id;
-        userToUpdate.managed_shop = shop;
-        await this.userRepository.save(userToUpdate);
-      }
+      // Assign the shop to the user
+      userToUpdate.shop_id = shop.id;
+      userToUpdate.managed_shop = shop;
+      await this.userRepository.save(userToUpdate);
 
+      // Handle permissions if provided
       if (createShopDto.permission) {
         const permission = await this.permissionRepository.findOne({
           where: { permission_name: ILike(createShopDto.permission) as unknown as FindOperator<string> },
@@ -195,12 +186,13 @@ export class ShopsService {
 
           // Set dealerCount only if the user is of type Company
           if (permission.type_name === UserType.Company) {
-            createShopDto.dealerCount = createShopDto.dealerCount || 0;
+            newShop.dealerCount = createShopDto.dealerCount || 0;
           }
         }
       }
 
-      if (createShopDto.additionalPermissions.length > 0) {
+      // Handle additional permissions if provided
+      if (createShopDto.additionalPermissions?.length > 0) {
         const additionalPermissions = await this.permissionRepository.find({
           where: { permission_name: ILike(createShopDto.additionalPermissions) as unknown as FindOperator<string> },
         });
@@ -211,6 +203,8 @@ export class ShopsService {
       }
 
       await this.shopRepository.save(newShop);
+
+      // Fetch and return the created shop with balance relations
       const createdShop = await this.shopRepository.findOne({
         where: { id: shop.id },
         relations: ['balance'],
@@ -225,6 +219,7 @@ export class ShopsService {
       throw new InternalServerErrorException('An error occurred while creating the shop.');
     }
   }
+
 
   async getShops({ search, limit, page }: GetShopsDto): Promise<ShopPaginator> {
     page = page ? page : 1;

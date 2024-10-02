@@ -31,7 +31,14 @@ let AddressesService = class AddressesService {
         if (!user) {
             throw new common_1.NotFoundException('User does not exist');
         }
-        const userAddress = this.userAddressRepository.create(createAddressDto.address);
+        const userAddress = this.userAddressRepository.create({
+            street_address: createAddressDto.address.street_address,
+            country: createAddressDto.address.country,
+            city: createAddressDto.address.city,
+            state: createAddressDto.address.state,
+            zip: createAddressDto.address.zip,
+            customer_id: user.id,
+        });
         const savedUserAddress = await this.userAddressRepository.save(userAddress);
         const address = this.addressRepository.create({
             title: createAddressDto.title,

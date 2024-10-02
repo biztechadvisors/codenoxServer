@@ -39,15 +39,13 @@ __decorate([
 ], Shop.prototype, "owner_id", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.owned_shops, {
-        cascade: true,
-        onDelete: 'CASCADE',
         nullable: true,
     }),
     (0, typeorm_1.JoinColumn)({ name: 'owner_id' }),
     __metadata("design:type", user_entity_1.User)
 ], Shop.prototype, "owner", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => user_entity_1.User, (user) => user.managed_shop, { onDelete: 'CASCADE', }),
+    (0, typeorm_1.OneToMany)(() => user_entity_1.User, (user) => user.managed_shop, { onDelete: 'CASCADE' }),
     __metadata("design:type", Array)
 ], Shop.prototype, "staffs", void 0);
 __decorate([
@@ -93,12 +91,12 @@ __decorate([
     __metadata("design:type", Array)
 ], Shop.prototype, "cover_image", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { cascade: true, nullable: true, eager: true }),
+    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { nullable: true, eager: true }),
     (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", attachment_entity_1.Attachment)
 ], Shop.prototype, "logo", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => address_entity_1.UserAdd, { onDelete: "CASCADE", nullable: true }),
+    (0, typeorm_1.ManyToOne)(() => address_entity_1.UserAdd, { nullable: true }),
     (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", address_entity_1.UserAdd)
 ], Shop.prototype, "address", void 0);

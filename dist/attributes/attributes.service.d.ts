@@ -1,4 +1,4 @@
-import { CreateAttributeDto } from './dto/create-attribute.dto';
+import { AttributeResponseDto, CreateAttributeDto } from './dto/create-attribute.dto';
 import { UpdateAttributeDto } from './dto/update-attribute.dto';
 import { Attribute } from './entities/attribute.entity';
 import { AttributeValue } from './entities/attribute-value.entity';
@@ -37,6 +37,6 @@ export declare class AttributesService {
     update(id: number, updateAttributeDto: UpdateAttributeDto): Promise<{
         message: string;
         status: boolean;
-    } | Attribute>;
+    } | AttributeResponseDto>;
     delete(id: number): Promise<void>;
 }

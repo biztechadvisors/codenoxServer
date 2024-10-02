@@ -54,6 +54,6 @@ export class Add extends CoreEntity {
   })
   type: AddressType;
 
-  @ManyToOne(() => User, (user) => user.address, { onDelete: "SET NULL" })
+  @ManyToOne(() => User, (user) => user.address)
   customer: User;
 }

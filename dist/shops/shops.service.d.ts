@@ -16,6 +16,7 @@ import { Cache } from 'cache-manager';
 import { AnalyticsService } from '../analytics/analytics.service';
 export declare class ShopsService {
     private readonly analyticsService;
+    private readonly addressService;
     private readonly shopRepository;
     private readonly balanceRepository;
     private readonly shopSettingsRepository;
@@ -27,9 +28,8 @@ export declare class ShopsService {
     private readonly userRepository;
     private readonly attachmentRepository;
     private readonly permissionRepository;
-    private readonly addressesService;
     private readonly cacheManager;
-    constructor(analyticsService: AnalyticsService, shopRepository: Repository<Shop>, balanceRepository: Repository<Balance>, shopSettingsRepository: Repository<ShopSettings>, paymentInfoRepository: Repository<PaymentInfo>, addressRepository: Repository<Add>, userAddressRepository: Repository<UserAdd>, shopSocialsRepository: Repository<ShopSocials>, locationRepository: Repository<Location>, userRepository: Repository<User>, attachmentRepository: Repository<Attachment>, permissionRepository: Repository<Permission>, addressesService: AddressesService, cacheManager: Cache);
+    constructor(analyticsService: AnalyticsService, addressService: AddressesService, shopRepository: Repository<Shop>, balanceRepository: Repository<Balance>, shopSettingsRepository: Repository<ShopSettings>, paymentInfoRepository: Repository<PaymentInfo>, addressRepository: Repository<Add>, userAddressRepository: Repository<UserAdd>, shopSocialsRepository: Repository<ShopSocials>, locationRepository: Repository<Location>, userRepository: Repository<User>, attachmentRepository: Repository<Attachment>, permissionRepository: Repository<Permission>, cacheManager: Cache);
     convertToSlug(text: any): Promise<any>;
     create(createShopDto: CreateShopDto): Promise<Shop>;
     getShops({ search, limit, page }: GetShopsDto): Promise<ShopPaginator>;

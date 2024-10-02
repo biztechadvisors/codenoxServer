@@ -87,7 +87,7 @@ __decorate([
     __metadata("design:type", String)
 ], Add.prototype, "type", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.address, { onDelete: "SET NULL" }),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.address),
     __metadata("design:type", user_entity_1.User)
 ], Add.prototype, "customer", void 0);
 Add = __decorate([

@@ -182,7 +182,15 @@ let AttributesService = AttributesService_1 = class AttributesService {
             await this.attributeValueRepository.save(attributeValue);
         }
         await this.attributeRepository.save(attribute);
-        return attribute;
+        const responseDto = {
+            id: attribute.id,
+            name: attribute.name,
+            slug: attribute.slug,
+            shop_id: parseInt(attribute.shop_id),
+            language: attribute.language,
+            values: attribute.values.map((value) => ({ value: value.value, meta: value.meta })),
+        };
+        return responseDto;
     }
     async delete(id) {
         const attribute = await this.attributeRepository.findOne({

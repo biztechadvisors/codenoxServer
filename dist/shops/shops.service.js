@@ -34,8 +34,9 @@ const typeorm_2 = require("typeorm");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const analytics_service_1 = require("../analytics/analytics.service");
 let ShopsService = class ShopsService {
-    constructor(analyticsService, shopRepository, balanceRepository, shopSettingsRepository, paymentInfoRepository, addressRepository, userAddressRepository, shopSocialsRepository, locationRepository, userRepository, attachmentRepository, permissionRepository, addressesService, cacheManager) {
+    constructor(analyticsService, addressService, shopRepository, balanceRepository, shopSettingsRepository, paymentInfoRepository, addressRepository, userAddressRepository, shopSocialsRepository, locationRepository, userRepository, attachmentRepository, permissionRepository, cacheManager) {
         this.analyticsService = analyticsService;
+        this.addressService = addressService;
         this.shopRepository = shopRepository;
         this.balanceRepository = balanceRepository;
         this.shopSettingsRepository = shopSettingsRepository;
@@ -47,16 +48,14 @@ let ShopsService = class ShopsService {
         this.userRepository = userRepository;
         this.attachmentRepository = attachmentRepository;
         this.permissionRepository = permissionRepository;
-        this.addressesService = addressesService;
         this.cacheManager = cacheManager;
     }
     async convertToSlug(text) {
         return await (0, helpers_1.convertToSlug)(text);
     }
     async create(createShopDto) {
-        var _a;
+        var _a, _b, _c;
         const newShop = new shop_entity_1.Shop();
-        const newBalance = new balance_entity_1.Balance();
         try {
             const userToUpdate = await this.userRepository.findOne({
                 where: { id: createShopDto.user.id },
@@ -66,97 +65,75 @@ let ShopsService = class ShopsService {
                 throw new Error('User does not exist');
             }
             if (userToUpdate.permission.type_name !== user_entity_1.UserType.Company) {
-                throw new Error('User is not a vendor');
+                throw new Error('User is not authorized to create a shop');
             }
             let addressId;
             if (createShopDto.address) {
-                const addressExists = await this.userAddressRepository.findOne({
-                    where: { customer_id: createShopDto.user.id },
-                });
-                if (!addressExists) {
-                    const userAdd = new address_entity_1.UserAdd();
-                    userAdd.city = createShopDto.address.city;
-                    userAdd.country = createShopDto.address.country;
-                    userAdd.customer_id = userToUpdate === null || userToUpdate === void 0 ? void 0 : userToUpdate.id;
-                    userAdd.state = createShopDto.address.state;
-                    userAdd.street_address = createShopDto.address.street_address;
-                    userAdd.zip = (_a = createShopDto.address) === null || _a === void 0 ? void 0 : _a.zip;
-                    userAdd.created_at = createShopDto.address.created_at;
-                    userAdd.updated_at = createShopDto.address.updated_at;
-                    addressId = await this.userAddressRepository.save(userAdd);
-                    const address = new address_entity_1.Add();
-                    address.address = addressId;
-                    address.title = `${createShopDto.address.street_address + " " + createShopDto.address.city + " " + createShopDto.address.state}`;
-                    address.customer = userToUpdate;
-                    address.default = true;
-                    address.type = address_entity_1.AddressType.SHOP;
-                    address.created_at = new Date();
-                    address.updated_at = new Date();
-                    this.addressRepository.save(address);
-                }
-                addressId = addressExists;
+                const addressDto = {
+                    customer_id: userToUpdate.id,
+                    title: `${createShopDto.address.street_address} ${createShopDto.address.city} ${createShopDto.address.state}`,
+                    type: address_entity_1.AddressType.SHOP,
+                    default: true,
+                    address: {
+                        street_address: createShopDto.address.street_address,
+                        country: createShopDto.address.country,
+                        city: createShopDto.address.city,
+                        state: createShopDto.address.state,
+                        zip: createShopDto.address.zip,
+                        id: 0,
+                        customer_id: 0,
+                        created_at: new Date(),
+                        updated_at: new Date()
+                    },
+                };
+                const savedAddress = await this.addressService.create(addressDto);
+                addressId = savedAddress.address;
             }
             let settingId;
             if (createShopDto.settings) {
                 const newSettings = this.shopSettingsRepository.create(createShopDto.settings);
-                if (createShopDto.settings.socials && createShopDto.settings.socials.length > 0) {
-                    const socials = [];
-                    for (const social of createShopDto.settings.socials) {
-                        const newSocial = this.shopSocialsRepository.create(social);
-                        const savedSocial = await this.shopSocialsRepository.save(newSocial);
-                        socials.push(savedSocial);
-                    }
-                    newSettings.socials = socials;
+                if (((_a = createShopDto.settings.socials) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+                    const savedSocials = await Promise.all(createShopDto.settings.socials.map((social) => this.shopSocialsRepository.save(this.shopSocialsRepository.create(social))));
+                    newSettings.socials = savedSocials;
                 }
                 if (createShopDto.settings.location) {
-                    const newLocation = this.locationRepository.create(createShopDto.settings.location);
-                    const savedLocation = await this.locationRepository.save(newLocation);
+                    const savedLocation = await this.locationRepository.save(this.locationRepository.create(createShopDto.settings.location));
                     newSettings.location = savedLocation;
                 }
-                newSettings.contact = createShopDto.settings.contact;
-                newSettings.website = createShopDto.settings.website;
                 settingId = await this.shopSettingsRepository.save(newSettings);
-                if (settingId.socials) {
-                    const socialIds = settingId.socials.map((social) => social);
-                    settingId.socials = socialIds;
-                }
             }
             newShop.name = createShopDto.name;
             newShop.slug = await this.convertToSlug(createShopDto.name);
             newShop.description = createShopDto.description;
             newShop.owner = userToUpdate;
             newShop.owner_id = createShopDto.user.id;
-            if (createShopDto.cover_image && createShopDto.cover_image.length > 0) {
-                const attachments = await this.attachmentRepository.findByIds(createShopDto.cover_image);
-                newShop.cover_image = attachments;
-            }
-            newShop.logo = createShopDto.logo ? await this.attachmentRepository.findOne({ where: { id: createShopDto.logo.id } }) : undefined;
             newShop.address = addressId;
             newShop.settings = settingId;
             newShop.created_at = new Date();
+            if (((_b = createShopDto.cover_image) === null || _b === void 0 ? void 0 : _b.length) > 0) {
+                newShop.cover_image = await this.attachmentRepository.findByIds(createShopDto.cover_image);
+            }
+            newShop.logo = createShopDto.logo
+                ? await this.attachmentRepository.findOne({ where: { id: createShopDto.logo.id } })
+                : undefined;
             const shop = await this.shopRepository.save(newShop);
             if (createShopDto.balance) {
-                let savedPaymentInfo;
+                const newBalance = this.balanceRepository.create({
+                    admin_commission_rate: createShopDto.balance.admin_commission_rate,
+                    current_balance: createShopDto.balance.current_balance,
+                    total_earnings: createShopDto.balance.total_earnings,
+                    withdrawn_amount: createShopDto.balance.withdrawn_amount,
+                    shop: shop,
+                });
                 if (createShopDto.balance.payment_info) {
-                    const newPaymentInfo = this.paymentInfoRepository.create(createShopDto.balance.payment_info);
-                    savedPaymentInfo = await this.paymentInfoRepository.save(newPaymentInfo);
+                    newBalance.payment_info = await this.paymentInfoRepository.save(this.paymentInfoRepository.create(createShopDto.balance.payment_info));
                 }
-                newBalance.admin_commission_rate = createShopDto.balance.admin_commission_rate;
-                newBalance.current_balance = createShopDto.balance.current_balance;
-                if (savedPaymentInfo) {
-                    newBalance.payment_info = savedPaymentInfo;
-                }
-                newBalance.total_earnings = createShopDto.balance.total_earnings;
-                newBalance.withdrawn_amount = createShopDto.balance.withdrawn_amount;
-                newBalance.shop = shop;
-                const balance = await this.balanceRepository.save(newBalance);
-                shop.balance = balance;
+                const savedBalance = await this.balanceRepository.save(newBalance);
+                shop.balance = savedBalance;
             }
-            if (createShopDto.user) {
-                userToUpdate.shop_id = shop.id;
-                userToUpdate.managed_shop = shop;
-                await this.userRepository.save(userToUpdate);
-            }
+            userToUpdate.shop_id = shop.id;
+            userToUpdate.managed_shop = shop;
+            await this.userRepository.save(userToUpdate);
             if (createShopDto.permission) {
                 const permission = await this.permissionRepository.findOne({
                     where: { permission_name: (0, typeorm_2.ILike)(createShopDto.permission) },
@@ -164,11 +141,11 @@ let ShopsService = class ShopsService {
                 if (permission) {
                     newShop.permission = permission;
                     if (permission.type_name === user_entity_1.UserType.Company) {
-                        createShopDto.dealerCount = createShopDto.dealerCount || 0;
+                        newShop.dealerCount = createShopDto.dealerCount || 0;
                     }
                 }
             }
-            if (createShopDto.additionalPermissions.length > 0) {
+            if (((_c = createShopDto.additionalPermissions) === null || _c === void 0 ? void 0 : _c.length) > 0) {
                 const additionalPermissions = await this.permissionRepository.find({
                     where: { permission_name: (0, typeorm_2.ILike)(createShopDto.additionalPermissions) },
                 });
@@ -653,19 +630,20 @@ let ShopsService = class ShopsService {
 };
 ShopsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(1, (0, typeorm_1.InjectRepository)(shop_entity_1.Shop)),
-    __param(2, (0, typeorm_1.InjectRepository)(balance_entity_1.Balance)),
-    __param(3, (0, typeorm_1.InjectRepository)(shopSettings_entity_1.ShopSettings)),
-    __param(4, (0, typeorm_1.InjectRepository)(shop_entity_1.PaymentInfo)),
-    __param(5, (0, typeorm_1.InjectRepository)(address_entity_1.Add)),
-    __param(6, (0, typeorm_1.InjectRepository)(address_entity_1.UserAdd)),
-    __param(7, (0, typeorm_1.InjectRepository)(setting_entity_1.ShopSocials)),
-    __param(8, (0, typeorm_1.InjectRepository)(setting_entity_1.Location)),
-    __param(9, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __param(10, (0, typeorm_1.InjectRepository)(attachment_entity_1.Attachment)),
-    __param(11, (0, typeorm_1.InjectRepository)(permission_entity_1.Permission)),
+    __param(2, (0, typeorm_1.InjectRepository)(shop_entity_1.Shop)),
+    __param(3, (0, typeorm_1.InjectRepository)(balance_entity_1.Balance)),
+    __param(4, (0, typeorm_1.InjectRepository)(shopSettings_entity_1.ShopSettings)),
+    __param(5, (0, typeorm_1.InjectRepository)(shop_entity_1.PaymentInfo)),
+    __param(6, (0, typeorm_1.InjectRepository)(address_entity_1.Add)),
+    __param(7, (0, typeorm_1.InjectRepository)(address_entity_1.UserAdd)),
+    __param(8, (0, typeorm_1.InjectRepository)(setting_entity_1.ShopSocials)),
+    __param(9, (0, typeorm_1.InjectRepository)(setting_entity_1.Location)),
+    __param(10, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
+    __param(11, (0, typeorm_1.InjectRepository)(attachment_entity_1.Attachment)),
+    __param(12, (0, typeorm_1.InjectRepository)(permission_entity_1.Permission)),
     __param(13, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [analytics_service_1.AnalyticsService,
+        addresses_service_1.AddressesService,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
@@ -676,8 +654,7 @@ ShopsService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository,
-        addresses_service_1.AddressesService, Object])
+        typeorm_2.Repository, Object])
 ], ShopsService);
 exports.ShopsService = ShopsService;
 //# sourceMappingURL=shops.service.js.map

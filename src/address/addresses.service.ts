@@ -23,32 +23,44 @@ export class AddressesService {
 
   ) { }
 
-  // Create new address
   async create(createAddressDto: CreateAddressDto): Promise<Add> {
+    // Fetch the user from the database using the provided customer ID
     const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id } });
 
+    // If the user doesn't exist, throw a NotFoundException
     if (!user) {
       throw new NotFoundException('User does not exist');
     }
 
-    // Create UserAdd (Address details)
-    const userAddress = this.userAddressRepository.create(createAddressDto.address);
+    // Create UserAdd (Address details) using the properties from createAddressDto.address
+    const userAddress = this.userAddressRepository.create({
+      street_address: createAddressDto.address.street_address,
+      country: createAddressDto.address.country,
+      city: createAddressDto.address.city,
+      state: createAddressDto.address.state,
+      zip: createAddressDto.address.zip,
+      customer_id: user.id, // Set customer_id to the user's ID
+    });
+
+    // Save the UserAdd entity to the database
     const savedUserAddress = await this.userAddressRepository.save(userAddress);
 
-    // Create Add (Address entity linked to User and UserAdd)
+    // Create the Add entity linked to User and UserAdd
     const address = this.addressRepository.create({
       title: createAddressDto.title,
       type: createAddressDto.type,
       default: createAddressDto.default,
-      address: savedUserAddress,
-      customer: user,
+      address: savedUserAddress, // Link the saved address
+      customer: user, // Associate with the user
     });
 
+    // Save the Add entity to the database
     const savedAddress = await this.addressRepository.save(address);
 
-    // Invalidate cache for user addresses
+    // Invalidate the cache for user addresses to ensure the data is fresh
     await this.cacheManager.del(`addresses:userId:${user.id}`);
 
+    // Return the saved address entity
     return savedAddress;
   }
 

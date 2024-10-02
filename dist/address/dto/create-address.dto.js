@@ -10,7 +10,7 @@ class CreateAddressDto extends (0, swagger_1.PickType)(address_entity_1.Add, [
     'default',
 ]) {
     static _OPENAPI_METADATA_FACTORY() {
-        return { 'address': { required: true, type: () => require("../entities/address.entity").UserAdd }, 'customer_id': { required: true, type: () => Number } };
+        return { address: { required: true, type: () => require("../entities/address.entity").UserAdd }, customer_id: { required: true, type: () => Number } };
     }
 }
 exports.CreateAddressDto = CreateAddressDto;

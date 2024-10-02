@@ -32,14 +32,12 @@ export class Shop extends CoreEntity {
   owner_id: number;
 
   @ManyToOne(() => User, (user) => user.owned_shops, {
-    cascade: true,
-    onDelete: 'CASCADE',
     nullable: true,
   })
   @JoinColumn({ name: 'owner_id' })
   owner: User;
 
-  @OneToMany(() => User, (user) => user.managed_shop, { onDelete: 'CASCADE', })
+  @OneToMany(() => User, (user) => user.managed_shop, { onDelete: 'CASCADE' })
   staffs?: User[];
 
   @Column({ default: true })
@@ -75,11 +73,11 @@ export class Shop extends CoreEntity {
   })
   cover_image?: Attachment[];
 
-  @ManyToOne(() => Attachment, { cascade: true, nullable: true, eager: true })
+  @ManyToOne(() => Attachment, { nullable: true, eager: true })
   @JoinColumn()
   logo?: Attachment;
 
-  @ManyToOne(() => UserAdd, { onDelete: "CASCADE", nullable: true })
+  @ManyToOne(() => UserAdd, { nullable: true })
   @JoinColumn()
   address?: UserAdd;
 
