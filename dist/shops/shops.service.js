@@ -277,51 +277,52 @@ let ShopsService = class ShopsService {
         return Object.assign({ data: mappedResults }, (0, paginate_1.paginate)(data.length, page, limit, results.length, `/shops?search=${search}&limit=${limit}`));
     }
     async getStaffs({ shop_id, limit, page, orderBy, sortedBy, createdBy }) {
-        const limitNum = limit || 10;
-        const pageNum = page || 1;
+        const limitNum = limit && limit > 0 ? limit : 10;
+        const pageNum = page && page > 0 ? page : 1;
         const startIndex = (pageNum - 1) * limitNum;
+        if (!createdBy) {
+            return {
+                data: [],
+                message: 'The "createdBy" parameter is required',
+            };
+        }
+        const creator = await this.userRepository.findOne({ where: { id: createdBy } });
+        if (!creator) {
+            return {
+                data: [],
+                message: 'Invalid "createdBy" parameter. No user found for the given ID.',
+            };
+        }
         const cacheKey = `staffs_${shop_id}_${limit}_${page}_${orderBy}_${sortedBy}_${createdBy}`;
         const cachedResult = await this.cacheManager.get(cacheKey);
         if (cachedResult) {
             return cachedResult;
         }
-        if (createdBy) {
-            const creator = await this.userRepository.findOne({ where: { createdBy: { id: createdBy } } });
-            if (!creator) {
-                return {
-                    data: [],
-                    message: 'Invalid createdBy parameter'
-                };
-            }
-        }
-        else {
-            return {
-                data: [],
-                message: 'createdBy parameter is required'
-            };
-        }
         const queryBuilder = this.userRepository.createQueryBuilder('user');
         queryBuilder
             .leftJoinAndSelect('user.profile', 'profile')
-            .leftJoinAndSelect('user.address', 'address')
-            .leftJoinAndSelect('user.permission', 'permission');
-        queryBuilder.skip(startIndex).take(limitNum);
-        if (orderBy && sortedBy) {
-            queryBuilder.addOrderBy(`user.${orderBy}`, sortedBy.toUpperCase());
-        }
+            .leftJoinAndSelect('user.adds', 'address')
+            .leftJoinAndSelect('user.permission', 'permission')
+            .where('user.createdBy = :createdBy', { createdBy });
         if (shop_id) {
             queryBuilder.andWhere('user.shop_id = :shop_id', { shop_id });
         }
-        const permission = await this.permissionRepository.findOne({ where: { type_name: user_entity_1.UserType.Staff } });
-        if (!permission) {
-            throw new common_1.NotFoundException(`Permission for type "Staff" not found.`);
+        const staffPermission = await this.permissionRepository.findOne({
+            where: { type_name: user_entity_1.UserType.Staff },
+        });
+        if (!staffPermission) {
+            throw new common_1.NotFoundException('Staff permission type not found');
         }
-        queryBuilder.andWhere('user.permission = :permission', { permission: permission.id });
-        queryBuilder.andWhere('user.createdBy = :createdBy', { createdBy });
+        queryBuilder.andWhere('user.permission = :permission', { permission: staffPermission.id });
+        queryBuilder.skip(startIndex).take(limitNum);
+        if (orderBy && sortedBy) {
+            const sortDirection = sortedBy.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+            queryBuilder.addOrderBy(`user.${orderBy}`, sortDirection);
+        }
         const [users, total] = await queryBuilder.getManyAndCount();
         const url = `/users?type=staff&limit=${limitNum}`;
         const result = Object.assign({ data: users }, (0, paginate_1.paginate)(total, pageNum, limitNum, total, url));
-        await this.cacheManager.set(cacheKey, result, 60);
+        await this.cacheManager.set(cacheKey, result, 300);
         return result;
     }
     async getShop(slug) {
@@ -486,8 +487,6 @@ let ShopsService = class ShopsService {
             address.customer = existingShop === null || existingShop === void 0 ? void 0 : existingShop.owner;
             address.default = true;
             address.type = address_entity_1.AddressType.SHOP;
-            address.created_at = new Date();
-            address.updated_at = new Date();
             this.addressRepository.save(address);
             existingShop.address = await this.userAddressRepository.save(Object.assign(Object.assign({}, existingShop.address), updatedAddress));
         }

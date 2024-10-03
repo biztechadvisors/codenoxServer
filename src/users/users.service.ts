@@ -413,17 +413,9 @@ export class UsersService {
     const user = await this.userRepository.findOne({
       where: { id: id }, relations: ["profile", "address", "owned_shops", "orders", "permission"]
     });
-
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-
-    // First, remove the related entities
-    await Promise.all(user.address.map(address => this.addressesService.remove(address.id)));
-    await this.profileRepository.remove(user.profile);
-    await this.shopRepository.remove(user.owned_shops);
-    // await this.ordersRepository.remove(user.orders);
-
     // Then, remove the user
     await this.userRepository.remove(user);
 
@@ -446,7 +438,6 @@ export class UsersService {
 
     return user;
   }
-
 
   async banUser(id: number) {
     const user = await this.userRepository.findOne({ where: { id: id } });

@@ -57,9 +57,9 @@ UserAdd = __decorate([
     (0, typeorm_1.Entity)()
 ], UserAdd);
 exports.UserAdd = UserAdd;
-let Add = class Add extends core_entity_1.CoreEntity {
+let Add = class Add {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, title: { required: true, type: () => String }, default: { required: true, type: () => Boolean }, address: { required: true, type: () => require("./address.entity").UserAdd }, type: { required: true, enum: require("./address.entity").AddressType }, customer: { required: true, type: () => require("../../users/entities/user.entity").User } };
+        return { id: { required: true, type: () => Number }, title: { required: true, type: () => String }, type: { required: true, type: () => String }, default: { required: true, type: () => Boolean }, customer: { required: true, type: () => require("../../users/entities/user.entity").User }, address: { required: true, type: () => require("./address.entity").UserAdd } };
     }
 };
 __decorate([
@@ -71,27 +71,25 @@ __decorate([
     __metadata("design:type", String)
 ], Add.prototype, "title", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: true }),
-    __metadata("design:type", Boolean)
-], Add.prototype, "default", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => UserAdd, { onDelete: "CASCADE", eager: true }),
-    (0, typeorm_1.JoinColumn)(),
-    __metadata("design:type", UserAdd)
-], Add.prototype, "address", void 0);
-__decorate([
-    (0, typeorm_1.Column)({
-        type: 'enum',
-        enum: AddressType,
-    }),
+    (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Add.prototype, "type", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.address),
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", Boolean)
+], Add.prototype, "default", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.adds),
+    (0, typeorm_1.JoinColumn)({ name: 'customer_id' }),
     __metadata("design:type", user_entity_1.User)
 ], Add.prototype, "customer", void 0);
+__decorate([
+    (0, typeorm_1.OneToOne)(() => UserAdd, { onDelete: "CASCADE" }),
+    (0, typeorm_1.JoinColumn)({ name: 'address_id' }),
+    __metadata("design:type", UserAdd)
+], Add.prototype, "address", void 0);
 Add = __decorate([
-    (0, typeorm_1.Entity)()
+    (0, typeorm_1.Entity)('add')
 ], Add);
 exports.Add = Add;
 //# sourceMappingURL=address.entity.js.map

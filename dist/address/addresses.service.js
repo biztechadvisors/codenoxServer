@@ -40,14 +40,18 @@ let AddressesService = class AddressesService {
             customer_id: user.id,
         });
         const savedUserAddress = await this.userAddressRepository.save(userAddress);
-        const address = this.addressRepository.create({
-            title: createAddressDto.title,
-            type: createAddressDto.type,
-            default: createAddressDto.default,
-            address: savedUserAddress,
-            customer: user,
-        });
-        const savedAddress = await this.addressRepository.save(address);
+        const addressOb = new address_entity_1.Add();
+        addressOb.title = createAddressDto.title;
+        addressOb.type = createAddressDto.type;
+        addressOb.default = createAddressDto.default;
+        addressOb.address = savedUserAddress;
+        addressOb.customer = user;
+        const savedAddress = await this.addressRepository.save(addressOb);
+        console.log('Saved Add:', savedAddress);
+        if (!savedAddress.customer) {
+            savedAddress.customer = user;
+            await this.addressRepository.save(savedAddress);
+        }
         await this.cacheManager.del(`addresses:userId:${user.id}`);
         return savedAddress;
     }

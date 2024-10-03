@@ -1,6 +1,6 @@
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, JoinColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, JoinColumn, OneToOne } from 'typeorm';
 
 export enum AddressType {
   BILLING = 'billing',
@@ -33,27 +33,26 @@ export class UserAdd extends CoreEntity {
 
 }
 
-@Entity()
-export class Add extends CoreEntity {
+@Entity('add')
+export class Add {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
   title: string;
 
-  @Column({ default: true })
+  @Column()
+  type: string;
+
+  @Column()
   default: boolean;
 
-  @ManyToOne(() => UserAdd, { onDelete: "CASCADE", eager: true })
-  @JoinColumn()
-  address: UserAdd;
-
-  @Column({
-    type: 'enum',
-    enum: AddressType,
-  })
-  type: AddressType;
-
-  @ManyToOne(() => User, (user) => user.address)
+  @ManyToOne(() => User, (user) => user.adds)
+  @JoinColumn({ name: 'customer_id' })
   customer: User;
+
+  @OneToOne(() => UserAdd, { onDelete: "CASCADE" })
+  @JoinColumn({ name: 'address_id' })
+  address: UserAdd;
 }
+

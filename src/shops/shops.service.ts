@@ -350,85 +350,79 @@ export class ShopsService {
   }
 
   async getStaffs({ shop_id, limit, page, orderBy, sortedBy, createdBy }: GetStaffsDto): Promise<any> {
-    const limitNum = limit || 10;
-    const pageNum = page || 1;
+    const limitNum = limit && limit > 0 ? limit : 10;
+    const pageNum = page && page > 0 ? page : 1;
     const startIndex = (pageNum - 1) * limitNum;
 
-    // Generate a unique cache key based on the input parameters
+    if (!createdBy) {
+      return {
+        data: [],
+        message: 'The "createdBy" parameter is required',
+      };
+    }
+
+    // Validate createdBy exists in the database
+    const creator = await this.userRepository.findOne({ where: { id: createdBy } });
+    if (!creator) {
+      return {
+        data: [],
+        message: 'Invalid "createdBy" parameter. No user found for the given ID.',
+      };
+    }
+
+    // Generate a cache key using query parameters
     const cacheKey = `staffs_${shop_id}_${limit}_${page}_${orderBy}_${sortedBy}_${createdBy}`;
 
-    // Check if the data is already cached
+    // Attempt to retrieve the result from the cache
     const cachedResult = await this.cacheManager.get(cacheKey);
     if (cachedResult) {
       return cachedResult;
     }
 
-    // Validate createdBy
-    if (createdBy) {
-      const creator = await this.userRepository.findOne({ where: { createdBy: { id: createdBy } } });
-      if (!creator) {
-        return {
-          data: [],
-          message: 'Invalid createdBy parameter'
-        };
-      }
-    } else {
-      return {
-        data: [],
-        message: 'createdBy parameter is required'
-      };
-    }
-
     const queryBuilder = this.userRepository.createQueryBuilder('user');
 
-    // Adding relations
+    // Add relations and filters
     queryBuilder
       .leftJoinAndSelect('user.profile', 'profile')
-      // .leftJoinAndSelect('user.dealer', 'dealer')
-      // .leftJoinAndSelect('user.owned_shops', 'owned_shops')
-      // .leftJoinAndSelect('user.inventoryStocks', 'inventoryStocks')
-      // .leftJoinAndSelect('user.stocks', 'stocks')
-      // .leftJoinAndSelect('user.managed_shop', 'managed_shop')
-      .leftJoinAndSelect('user.address', 'address')
-      // .leftJoinAndSelect('user.orders', 'orders')
-      // .leftJoinAndSelect('user.stocksSellOrd', 'stocksSellOrd')
-      .leftJoinAndSelect('user.permission', 'permission');
+      .leftJoinAndSelect('user.adds', 'address') // Assuming 'adds' is for address relation
+      .leftJoinAndSelect('user.permission', 'permission')
+      .where('user.createdBy = :createdBy', { createdBy });
 
-    // Pagination
-    queryBuilder.skip(startIndex).take(limitNum);
-
-    // Ordering
-    if (orderBy && sortedBy) {
-      queryBuilder.addOrderBy(`user.${orderBy}`, sortedBy.toUpperCase() as 'ASC' | 'DESC');
-    }
-
-    // Filtering by shop_id
+    // Filter by shop_id if provided
     if (shop_id) {
       queryBuilder.andWhere('user.shop_id = :shop_id', { shop_id });
     }
 
-    // Filtering by user type
-    const permission = await this.permissionRepository.findOne({ where: { type_name: UserType.Staff } });
-    if (!permission) {
-      throw new NotFoundException(`Permission for type "Staff" not found.`);
+    // Ensure staff user type is selected
+    const staffPermission = await this.permissionRepository.findOne({
+      where: { type_name: UserType.Staff },
+    });
+
+    if (!staffPermission) {
+      throw new NotFoundException('Staff permission type not found');
     }
-    queryBuilder.andWhere('user.permission = :permission', { permission: permission.id });
 
-    // Filtering by createdBy
-    queryBuilder.andWhere('user.createdBy = :createdBy', { createdBy });
+    queryBuilder.andWhere('user.permission = :permission', { permission: staffPermission.id });
 
-    // Execute the query and get results
+    // Pagination
+    queryBuilder.skip(startIndex).take(limitNum);
+
+    // Sorting
+    if (orderBy && sortedBy) {
+      const sortDirection = sortedBy.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+      queryBuilder.addOrderBy(`user.${orderBy}`, sortDirection);
+    }
+
+    // Execute the query and retrieve data
     const [users, total] = await queryBuilder.getManyAndCount();
-
-    // Prepare paginated response
     const url = `/users?type=staff&limit=${limitNum}`;
     const result = {
       data: users,
       ...paginate(total, pageNum, limitNum, total, url),
     };
 
-    // Cache the result for future requests
-    await this.cacheManager.set(cacheKey, result, 60); // Cache for 5 minutes
+    // Cache the result for 5 minutes
+    await this.cacheManager.set(cacheKey, result, 300);
 
     return result;
   }
@@ -628,8 +622,6 @@ export class ShopsService {
       address.customer = existingShop?.owner;
       address.default = true;
       address.type = AddressType.SHOP;
-      address.created_at = new Date();
-      address.updated_at = new Date();
       this.addressRepository.save(address)
       existingShop.address = await this.userAddressRepository.save({ ...existingShop.address, ...updatedAddress });
     }

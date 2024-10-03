@@ -14,11 +14,11 @@ export declare class UserAdd extends CoreEntity {
     zip: string;
     customer_id: number;
 }
-export declare class Add extends CoreEntity {
+export declare class Add {
     id: number;
     title: string;
+    type: string;
     default: boolean;
-    address: UserAdd;
-    type: AddressType;
     customer: User;
+    address: UserAdd;
 }

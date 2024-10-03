@@ -63,11 +63,11 @@ export class Product extends CoreEntity {
   @JoinTable({ name: "product_tags" })
   tags: Tag[];
 
-  @ManyToMany(() => AttributeValue, { eager: true, cascade: true, })
+  @ManyToMany(() => AttributeValue, { eager: true, onDelete: "CASCADE" })
   @JoinTable({ name: "products_attributeValue" })
   variations?: AttributeValue[];
 
-  @ManyToMany(() => Variation, { eager: true, cascade: true })
+  @ManyToMany(() => Variation, { eager: true, onDelete: "CASCADE" })
   @JoinTable({ name: "products_variationOptions" })
   variation_options: Variation[];
 
@@ -211,7 +211,7 @@ export class Variation {
   @Column()
   quantity: number;
 
-  @ManyToMany(() => VariationOption, { cascade: true, eager: true })
+  @ManyToMany(() => VariationOption, { onDelete: "CASCADE", eager: true })
   @JoinTable({ name: "variation_variationOption" })
   options: VariationOption[];
 

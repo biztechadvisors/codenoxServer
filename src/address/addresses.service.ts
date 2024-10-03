@@ -45,17 +45,27 @@ export class AddressesService {
     // Save the UserAdd entity to the database
     const savedUserAddress = await this.userAddressRepository.save(userAddress);
 
-    // Create the Add entity linked to User and UserAdd
-    const address = this.addressRepository.create({
-      title: createAddressDto.title,
-      type: createAddressDto.type,
-      default: createAddressDto.default,
-      address: savedUserAddress, // Link the saved address
-      customer: user, // Associate with the user
-    });
+    // Create the Add entity and link it to User and UserAdd
+    const addressOb = new Add();
+    addressOb.title = createAddressDto.title;
+    addressOb.type = createAddressDto.type;
+    addressOb.default = createAddressDto.default;
+    addressOb.address = savedUserAddress; // Link the saved address
+
+    // Assign the user to the customer relation
+    addressOb.customer = user;
 
     // Save the Add entity to the database
-    const savedAddress = await this.addressRepository.save(address);
+    const savedAddress = await this.addressRepository.save(addressOb);
+
+    // Debug: Ensure the customer_id is saved
+    console.log('Saved Add:', savedAddress);
+
+    // Manually update and ensure relation
+    if (!savedAddress.customer) {
+      savedAddress.customer = user;
+      await this.addressRepository.save(savedAddress);
+    }
 
     // Invalidate the cache for user addresses to ensure the data is fresh
     await this.cacheManager.del(`addresses:userId:${user.id}`);

@@ -313,9 +313,6 @@ let UsersService = class UsersService {
         if (!user) {
             throw new common_1.NotFoundException(`User with id ${id} not found`);
         }
-        await Promise.all(user.address.map(address => this.addressesService.remove(address.id)));
-        await this.profileRepository.remove(user.profile);
-        await this.shopRepository.remove(user.owned_shops);
         await this.userRepository.remove(user);
         return `User with id ${id} has been removed`;
     }

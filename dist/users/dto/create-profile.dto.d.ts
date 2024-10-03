@@ -1,5 +1,5 @@
 import { Profile } from '../entities/profile.entity';
-declare const CreateProfileDto_base: import("@nestjs/common").Type<Pick<Profile, "socials" | "contact" | "avatar" | "bio">>;
+declare const CreateProfileDto_base: import("@nestjs/common").Type<Pick<Profile, "contact" | "avatar" | "bio" | "socials">>;
 export declare class CreateProfileDto extends CreateProfileDto_base {
     customer: ConnectBelongsTo;
 }

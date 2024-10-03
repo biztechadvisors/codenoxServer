@@ -90,12 +90,12 @@ __decorate([
     __metadata("design:type", Array)
 ], Product.prototype, "tags", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attribute_value_entity_1.AttributeValue, { eager: true, cascade: true, }),
+    (0, typeorm_1.ManyToMany)(() => attribute_value_entity_1.AttributeValue, { eager: true, onDelete: "CASCADE" }),
     (0, typeorm_1.JoinTable)({ name: "products_attributeValue" }),
     __metadata("design:type", Array)
 ], Product.prototype, "variations", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => Variation, { eager: true, cascade: true }),
+    (0, typeorm_1.ManyToMany)(() => Variation, { eager: true, onDelete: "CASCADE" }),
     (0, typeorm_1.JoinTable)({ name: "products_variationOptions" }),
     __metadata("design:type", Array)
 ], Product.prototype, "variation_options", void 0);
@@ -337,7 +337,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Variation.prototype, "quantity", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => VariationOption, { cascade: true, eager: true }),
+    (0, typeorm_1.ManyToMany)(() => VariationOption, { onDelete: "CASCADE", eager: true }),
     (0, typeorm_1.JoinTable)({ name: "variation_variationOption" }),
     __metadata("design:type", Array)
 ], Variation.prototype, "options", void 0);

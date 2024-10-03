@@ -80,10 +80,10 @@ export class User extends CoreEntity {
   stocks?: Stocks[];
 
   @Column({ default: true })
-  is_active?: boolean;
+  is_active: boolean;
 
-  @OneToMany(() => Add, add => add.customer, { onDelete: "CASCADE", eager: true })
-  address?: Add[];
+  @OneToMany(() => Add, (add) => add.customer, { onDelete: "CASCADE", eager: true })
+  adds: Add[];
 
   @OneToMany(() => Order, order => order.customer, { onDelete: "CASCADE" })
   orders: Order[];

@@ -35,8 +35,8 @@ export declare class User extends CoreEntity {
     managed_shop?: Shop;
     inventoryStocks?: InventoryStocks[];
     stocks?: Stocks[];
-    is_active?: boolean;
-    address?: Add[];
+    is_active: boolean;
+    adds: Add[];
     orders: Order[];
     stockOrd: StocksSellOrd[];
     stocksSellOrd: StocksSellOrd[];
