@@ -27,10 +27,10 @@ export declare class AttributesController {
     findOne(param: GetAttributeArgs): Promise<{
         message: string;
     } | Attribute | undefined>;
-    update(id: string, updateAttributeDto: UpdateAttributeDto): Promise<import("./dto/create-attribute.dto").AttributeResponseDto | {
+    update(id: string, updateAttributeDto: UpdateAttributeDto): Promise<{
         message: string;
         status: boolean;
-    }>;
+    } | import("./dto/create-attribute.dto").AttributeResponseDto>;
     delete(id: number): Promise<{
         message: string;
         status: boolean;
