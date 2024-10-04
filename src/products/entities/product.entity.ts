@@ -50,17 +50,12 @@ export class Product extends CoreEntity {
   product_type: ProductType
 
   @ManyToOne(() => Type, (type) => type.products, {
-    eager: true,
-    onDelete: 'SET NULL',
+    eager: true
   })
   @JoinColumn({ name: 'typeId' })
   type: Type | null
 
-  @ManyToMany(() => Region, (region) => region.products, {
-    eager: true,
-    nullable: true,
-    cascade: true,
-  })
+  @ManyToMany(() => Region, (region) => region.products, { eager: true, nullable: true })
   @JoinTable({
     name: 'product_regions',
     joinColumn: { name: 'productId', referencedColumnName: 'id' },
@@ -76,10 +71,7 @@ export class Product extends CoreEntity {
   @JoinTable({ name: 'product_category' })
   categories: Category[]
 
-  @ManyToMany(() => SubCategory, (subCategory) => subCategory.products, {
-    eager: true,
-    cascade: true,
-  })
+  @ManyToMany(() => SubCategory, (subCategory) => subCategory.products, { eager: true })
   @JoinTable({ name: 'product_subcategory' })
   subCategories: SubCategory[]
 
@@ -87,9 +79,9 @@ export class Product extends CoreEntity {
   @JoinTable({ name: 'product_tags' })
   tags: Tag[]
 
-  @ManyToMany(() => AttributeValue, { eager: true, onDelete: 'CASCADE' })
+  @ManyToMany(() => AttributeValue, { eager: true })
   @JoinTable({ name: 'products_attributeValue' })
-  variations?: AttributeValue[]
+  variations?: AttributeValue[];
 
   @ManyToMany(() => Variation, { eager: true, cascade: ['insert', 'update'] })
   @JoinTable({
@@ -121,17 +113,17 @@ export class Product extends CoreEntity {
   @JoinTable({ name: 'products_relatedProducts' })
   related_products?: Product[]
 
-  @OneToMany(() => Review, (review) => review.product, { eager: true })
+  @OneToMany(() => Review, (review) => review.product, { eager: true, onDelete: "CASCADE" })
   my_review?: Review[]
 
-  @ManyToOne(() => Tax, (tax) => tax.products, { eager: true, cascade: true })
+  @ManyToOne(() => Tax, (tax) => tax.products, { eager: true })
   taxes: Tax
 
-  @ManyToMany(() => Attachment, { cascade: true, eager: true })
+  @ManyToMany(() => Attachment, { eager: true })
   @JoinTable({ name: 'products_gallery' })
   gallery?: Attachment[]
 
-  @ManyToOne(() => Attachment, { cascade: true, eager: true, nullable: true })
+  @ManyToOne(() => Attachment, { eager: true, nullable: true })
   @JoinColumn({ name: 'image_id' })
   image?: Attachment
 

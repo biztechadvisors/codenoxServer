@@ -62,18 +62,13 @@ __decorate([
 ], Product.prototype, "product_type", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => type_entity_1.Type, (type) => type.products, {
-        eager: true,
-        onDelete: 'SET NULL',
+        eager: true
     }),
     (0, typeorm_1.JoinColumn)({ name: 'typeId' }),
     __metadata("design:type", type_entity_1.Type)
 ], Product.prototype, "type", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => region_entity_1.Region, (region) => region.products, {
-        eager: true,
-        nullable: true,
-        cascade: true,
-    }),
+    (0, typeorm_1.ManyToMany)(() => region_entity_1.Region, (region) => region.products, { eager: true, nullable: true }),
     (0, typeorm_1.JoinTable)({
         name: 'product_regions',
         joinColumn: { name: 'productId', referencedColumnName: 'id' },
@@ -91,10 +86,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Product.prototype, "categories", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => category_entity_1.SubCategory, (subCategory) => subCategory.products, {
-        eager: true,
-        cascade: true,
-    }),
+    (0, typeorm_1.ManyToMany)(() => category_entity_1.SubCategory, (subCategory) => subCategory.products, { eager: true }),
     (0, typeorm_1.JoinTable)({ name: 'product_subcategory' }),
     __metadata("design:type", Array)
 ], Product.prototype, "subCategories", void 0);
@@ -104,7 +96,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Product.prototype, "tags", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attribute_value_entity_1.AttributeValue, { eager: true, onDelete: 'CASCADE' }),
+    (0, typeorm_1.ManyToMany)(() => attribute_value_entity_1.AttributeValue, { eager: true }),
     (0, typeorm_1.JoinTable)({ name: 'products_attributeValue' }),
     __metadata("design:type", Array)
 ], Product.prototype, "variations", void 0);
@@ -143,20 +135,20 @@ __decorate([
     __metadata("design:type", Array)
 ], Product.prototype, "related_products", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => review_entity_1.Review, (review) => review.product, { eager: true }),
+    (0, typeorm_1.OneToMany)(() => review_entity_1.Review, (review) => review.product, { eager: true, onDelete: "CASCADE" }),
     __metadata("design:type", Array)
 ], Product.prototype, "my_review", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => tax_entity_1.Tax, (tax) => tax.products, { eager: true, cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => tax_entity_1.Tax, (tax) => tax.products, { eager: true }),
     __metadata("design:type", tax_entity_1.Tax)
 ], Product.prototype, "taxes", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { cascade: true, eager: true }),
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { eager: true }),
     (0, typeorm_1.JoinTable)({ name: 'products_gallery' }),
     __metadata("design:type", Array)
 ], Product.prototype, "gallery", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { cascade: true, eager: true, nullable: true }),
+    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { eager: true, nullable: true }),
     (0, typeorm_1.JoinColumn)({ name: 'image_id' }),
     __metadata("design:type", attachment_entity_1.Attachment)
 ], Product.prototype, "image", void 0);
