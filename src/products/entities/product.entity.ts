@@ -61,7 +61,8 @@ export class Product extends CoreEntity {
     joinColumn: { name: 'productId', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'regionId', referencedColumnName: 'id' },
   })
-  regions: Region[]
+  regions: Region[];
+
 
   @ManyToMany(() => Category, (category) => category.products, {
     eager: true,

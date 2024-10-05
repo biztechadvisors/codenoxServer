@@ -32,7 +32,7 @@ export declare class UploadXlService {
     private readonly subCategoryRepository;
     logger: any;
     constructor(productsService: ProductsService, productRepository: Repository<Product>, orderProductPivotRepository: Repository<OrderProductPivot>, variationRepository: Repository<Variation>, variationOptionRepository: Repository<VariationOption>, attachmentRepository: Repository<Attachment>, tagRepository: Repository<Tag>, typeRepository: Repository<Type>, shopRepository: Repository<Shop>, categoryRepository: Repository<Category>, attributeValueRepository: Repository<AttributeValue>, dealerRepository: Repository<Dealer>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, userRepository: Repository<User>, taxRepository: Repository<Tax>, subCategoryRepository: Repository<SubCategory>);
-    generateSKU(productName: string): Promise<string>;
+    generateSKU(productName: any): Promise<string>;
     parseExcelToDto(fileBuffer: Buffer, shopSlug: string): Promise<any[]>;
     createMainProduct(row: any, headerRow: any, shopSlug: string, variations: any[]): Promise<any>;
     splitAttributeValues(value: string): string[];

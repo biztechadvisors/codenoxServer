@@ -32,7 +32,7 @@ import {
   DealerProductMargin,
 } from 'src/users/entities/dealer.entity'
 import { User } from 'src/users/entities/user.entity'
-import { DeepPartial, Repository } from 'typeorm'
+import { DeepPartial, In, Repository } from 'typeorm'
 import { error } from 'console'
 import { throwError } from 'rxjs'
 
@@ -70,9 +70,12 @@ export class UploadXlService {
     private readonly subCategoryRepository: Repository<SubCategory>,
   ) { }
 
-  async generateSKU(productName: string): Promise<string> {
-    // Get the first 3-5 letters from the product name and remove spaces, making it uppercase
-    const namePart = productName.replace(/\s+/g, '').substring(0, 5).toUpperCase();
+  async generateSKU(productName: any): Promise<string> {
+    // Ensure productName is a string
+    const name = typeof productName === 'string' ? productName : String(productName);
+
+    // Get the first 3-5 letters from the product name, remove spaces, and make it uppercase
+    const namePart = name.replace(/\s+/g, '').substring(0, 5).toUpperCase();
 
     // Get the current timestamp in milliseconds
     const timestamp = Date.now();
@@ -741,21 +744,18 @@ export class UploadXlService {
       if (createProductDto.variations && createProductDto.variations.length > 0) {
         try {
           // Fetch unique attribute value IDs
-          const attributeValueIds = Array.from(
-            new Set(createProductDto.variations.map((v) => v.attribute_value_id)),
-          );
-
+          const attributeValueIds = [...new Set(createProductDto.variations.map(v => v.attribute_value_id))];
           console.log("attributeValueIds ", attributeValueIds);
 
           if (attributeValueIds.length > 0) {
             // Fetch attribute values in bulk
             const attributeValues = await this.attributeValueRepository.findByIds(attributeValueIds);
-            const attributeValueMap = new Map(attributeValues.map((attr) => [attr.id, attr]));
+            const attributeValueMap = new Map(attributeValues.map(attr => [attr.id, attr]));
 
             // Filter and map variations to ensure uniqueness
             const uniqueVariations = new Set<number>();
             product.variations = createProductDto.variations
-              .filter((variation) => {
+              .filter(variation => {
                 const { attribute_value_id } = variation;
                 if (uniqueVariations.has(attribute_value_id)) {
                   console.warn(`Duplicate attribute value ID ${attribute_value_id} found and ignored`);
@@ -764,7 +764,7 @@ export class UploadXlService {
                 uniqueVariations.add(attribute_value_id);
                 return true;
               })
-              .map((variation) => {
+              .map(variation => {
                 const attributeValue = attributeValueMap.get(variation.attribute_value_id);
                 if (!attributeValue) {
                   console.warn(`Attribute value with ID ${variation.attribute_value_id} not found`);
@@ -791,6 +791,19 @@ export class UploadXlService {
       if (product.product_type === ProductType.VARIABLE && createProductDto.variation_options?.upsert) {
         try {
           const variationOptions = await Promise.all(createProductDto.variation_options.upsert.map(async (variationDto) => {
+            // Find existing variations with the same title
+            const existingVariations = await this.variationRepository.find({
+              where: { title: variationDto.title },
+              relations: ['options'],
+            });
+
+            // Delete existing variation options from the join table
+            for (const existingVariation of existingVariations) {
+              for (const option of existingVariation.options) {
+                await this.variationOptionRepository.delete(option.id);
+              }
+            }
+
             const newVariation = this.variationRepository.create({
               title: variationDto.title,
               name: variationDto.name,
@@ -805,17 +818,16 @@ export class UploadXlService {
 
             // Handle image if present
             if (variationDto?.image) {
-              let image = await this.attachmentRepository.findOne({
-                where: { id: variationDto.image.id },
-              })
+              let image = await this.attachmentRepository.findOne({ where: { id: variationDto.image.id } });
               if (!image) {
-                image = new Attachment()
-                image.id = variationDto.image.id
-                image.original = variationDto.image.original
-                image.thumbnail = variationDto.image.thumbnail
-                await this.attachmentRepository.save(image)
+                image = this.attachmentRepository.create({
+                  id: variationDto.image.id,
+                  original: variationDto.image.original,
+                  thumbnail: variationDto.image.thumbnail,
+                });
+                await this.attachmentRepository.save(image);
               }
-              newVariation.image = image
+              newVariation.image = image;
             }
 
             const savedVariation = await this.variationRepository.save(newVariation);
@@ -830,6 +842,7 @@ export class UploadXlService {
             }));
 
             savedVariation.options = variationOptionEntities; // Link options to savedVariation
+            await this.variationRepository.save(savedVariation); // Ensure savedVariation is updated with options
             return savedVariation; // Return the saved variation
           }));
 
@@ -865,77 +878,48 @@ export class UploadXlService {
   }
 
   async remove(name: string): Promise<void> {
-    const products = await this.productRepository.find({
-      where: { name: name },
-      relations: [
-        'type',
-        'shop',
-        'image',
-        'categories',
-        'tags',
-        'gallery',
-        'related_products',
-        'variations',
-        'variation_options',
-      ],
-    })
 
+    const products = await this.productRepository.find({ where: { name: name }, relations: ['type', 'shop', 'image', 'categories', 'tags', 'gallery', 'related_products', 'variations', 'variation_options'] });
     for (const product of products) {
       if (!product) {
-        throw new NotFoundException(`Product with Name ${name} not found`)
+        throw new NotFoundException(`Product with Name ${name} not found`);
       }
       if (product.image) {
-        const image = product.image
-        product.image = null
-        await this.productRepository.save(product)
-        const V_image = await this.attachmentRepository.findOne({
-          where: { id: image.id },
-        })
-        if (V_image) {
-          await this.attachmentRepository.remove(V_image)
-        }
-        await this.attachmentRepository.remove(image)
+        const image = product.image;
+        product.image = null;
+        await this.productRepository.save(product);
+        await this.attachmentRepository.remove(image);
       }
 
       // Remove gallery attachments
-      const gallery = await this.attachmentRepository.findByIds(
-        product.gallery.map((g) => g.id),
-      )
-      await this.attachmentRepository.remove(gallery)
+      const gallery = await this.attachmentRepository.findByIds(product.gallery.map(g => g.id));
+      await this.attachmentRepository.remove(gallery);
 
       // Fetch related entities
-      const variations = await Promise.all(
-        product.variation_options.map(async (v) => {
-          const variation = await this.variationRepository.findOne({
-            where: { id: v.id },
-            relations: ['options', 'image'],
-          })
-          if (!variation) {
-            throw new NotFoundException(`Variation with ID ${v.id} not found`)
-          }
-          return variation
-        }),
-      )
+      const variations = await Promise.all(product.variation_options.map(async v => {
+        const variation = await this.variationRepository.findOne({ where: { id: v.id }, relations: ['options', 'image'] });
+        if (!variation) {
+          throw new NotFoundException(`Variation with ID ${v.id} not found`);
+        }
+        return variation;
+      }));
+
       await Promise.all([
-        ...variations.flatMap((v) =>
-          v.options ? [this.variationOptionRepository.remove(v.options)] : [],
-        ),
-        ...variations.map(async (v) => {
+        ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+        ...variations.map(async v => {
           if (v.image) {
-            const image = v.image
-            v.image = null
-            await this.variationRepository.save(v)
-            const attachment = await this.attachmentRepository.findOne({
-              where: { id: image.id },
-            })
+            const image = v.image;
+            v.image = null;
+            await this.variationRepository.save(v);
+            const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
             if (attachment) {
-              await this.attachmentRepository.remove(attachment)
+              await this.attachmentRepository.remove(attachment);
             }
           }
         }),
         this.variationRepository.remove(variations),
         this.productRepository.remove(product),
-      ])
+      ]);
     }
   }
 }
