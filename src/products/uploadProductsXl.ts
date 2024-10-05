@@ -496,7 +496,7 @@ export class UploadXlService {
       if (products && products.length > 0) {
         for (const product of products) {
           this.saveProducts(product)
-          throwError
+          console.log('product saved **** 499')
         }
       } else {
         this.logger.warn('No products found in Excel file.') // Use logger here
