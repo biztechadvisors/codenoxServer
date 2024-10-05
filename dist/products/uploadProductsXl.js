@@ -53,7 +53,7 @@ const user_entity_1 = require("../users/entities/user.entity");
 const typeorm_2 = require("typeorm");
 const rxjs_1 = require("rxjs");
 let UploadXlService = class UploadXlService {
-    constructor(productsService, productRepository, orderProductPivotRepository, variationRepository, variationOptionRepository, attachmentRepository, tagRepository, typeRepository, shopRepository, categoryRepository, attributeValueRepository, fileRepository, dealerRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, userRepository, taxRepository, subCategoryRepository) {
+    constructor(productsService, productRepository, orderProductPivotRepository, variationRepository, variationOptionRepository, attachmentRepository, tagRepository, typeRepository, shopRepository, categoryRepository, attributeValueRepository, dealerRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, userRepository, taxRepository, subCategoryRepository) {
         this.productsService = productsService;
         this.productRepository = productRepository;
         this.orderProductPivotRepository = orderProductPivotRepository;
@@ -65,13 +65,18 @@ let UploadXlService = class UploadXlService {
         this.shopRepository = shopRepository;
         this.categoryRepository = categoryRepository;
         this.attributeValueRepository = attributeValueRepository;
-        this.fileRepository = fileRepository;
         this.dealerRepository = dealerRepository;
         this.dealerProductMarginRepository = dealerProductMarginRepository;
         this.dealerCategoryMarginRepository = dealerCategoryMarginRepository;
         this.userRepository = userRepository;
         this.taxRepository = taxRepository;
         this.subCategoryRepository = subCategoryRepository;
+    }
+    async generateSKU(productName) {
+        const namePart = productName.replace(/\s+/g, '').substring(0, 5).toUpperCase();
+        const timestamp = Date.now();
+        const sku = `${namePart}-${timestamp}`;
+        return sku;
     }
     async parseExcelToDto(fileBuffer, shopSlug) {
         try {
@@ -222,7 +227,7 @@ let UploadXlService = class UploadXlService {
         const max_price = prices.length > 0 ? Math.max(...prices) : 0;
         const status = row[headerRow.indexOf('Product Status')] || 'Published';
         const unit = row[headerRow.indexOf('Product Unit')] || 1;
-        const sku = row[headerRow.indexOf('Product SKU')] || null;
+        const sku = row[headerRow.indexOf('Product SKU')] || this.generateSKU(row[headerRow.indexOf('Product Name')]);
         const price = parseFloat(row[headerRow.indexOf('Price')] || '0');
         const salePrice = parseFloat(row[headerRow.indexOf('Sale Price')] || '0');
         const height = row[headerRow.indexOf('Height')] || 1;
@@ -289,7 +294,7 @@ let UploadXlService = class UploadXlService {
         }
         return {
             is_digital: row[headerRow.indexOf('Is Digital')] === true,
-            sku: row[headerRow.indexOf('Product SKU')],
+            sku: row[headerRow.indexOf('Product SKU')] || this.generateSKU(row[headerRow.indexOf('Product Name')]),
             name: row[headerRow.indexOf('Product Name')],
             quantity: parseInt(row[headerRow.indexOf('Child Inventory')]),
             sale_price: parseFloat(row[headerRow.indexOf('Sale Price')]),
@@ -616,15 +621,15 @@ let UploadXlService = class UploadXlService {
                             updated_at: new Date(),
                         });
                         if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) {
-                            let image = await this.fileRepository.findOne({
+                            let image = await this.attachmentRepository.findOne({
                                 where: { id: variationDto.image.id },
                             });
                             if (!image) {
-                                image = new product_entity_1.File();
-                                image.attachment_id = variationDto.image.id;
-                                image.url = variationDto.image.original;
-                                image.fileable_id = newVariation.id;
-                                await this.fileRepository.save(image);
+                                image = new attachment_entity_1.Attachment();
+                                image.id = variationDto.image.id;
+                                image.original = variationDto.image.original;
+                                image.thumbnail = variationDto.image.thumbnail;
+                                await this.attachmentRepository.save(image);
                             }
                             newVariation.image = image;
                         }
@@ -689,11 +694,11 @@ let UploadXlService = class UploadXlService {
                 const image = product.image;
                 product.image = null;
                 await this.productRepository.save(product);
-                const file = await this.fileRepository.findOne({
-                    where: { attachment_id: image.id },
+                const V_image = await this.attachmentRepository.findOne({
+                    where: { id: image.id },
                 });
-                if (file) {
-                    await this.fileRepository.remove(file);
+                if (V_image) {
+                    await this.attachmentRepository.remove(V_image);
                 }
                 await this.attachmentRepository.remove(image);
             }
@@ -716,17 +721,8 @@ let UploadXlService = class UploadXlService {
                         const image = v.image;
                         v.image = null;
                         await this.variationRepository.save(v);
-                        const file = await this.fileRepository.findOne({
-                            where: { id: image.id },
-                        });
-                        if (file) {
-                            file.attachment_id = null;
-                            await this.fileRepository.save(file).then(async () => {
-                                await this.fileRepository.remove(file);
-                            });
-                        }
                         const attachment = await this.attachmentRepository.findOne({
-                            where: { id: image.attachment_id },
+                            where: { id: image.id },
                         });
                         if (attachment) {
                             await this.attachmentRepository.remove(attachment);
@@ -751,15 +747,13 @@ UploadXlService = __decorate([
     __param(8, (0, typeorm_1.InjectRepository)(shop_entity_1.Shop)),
     __param(9, (0, typeorm_1.InjectRepository)(category_entity_1.Category)),
     __param(10, (0, typeorm_1.InjectRepository)(attribute_value_entity_1.AttributeValue)),
-    __param(11, (0, typeorm_1.InjectRepository)(product_entity_1.File)),
-    __param(12, (0, typeorm_1.InjectRepository)(dealer_entity_1.Dealer)),
-    __param(13, (0, typeorm_1.InjectRepository)(dealer_entity_1.DealerProductMargin)),
-    __param(14, (0, typeorm_1.InjectRepository)(dealer_entity_1.DealerCategoryMargin)),
-    __param(15, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __param(16, (0, typeorm_1.InjectRepository)(tax_entity_1.Tax)),
-    __param(17, (0, typeorm_1.InjectRepository)(category_entity_1.SubCategory)),
+    __param(11, (0, typeorm_1.InjectRepository)(dealer_entity_1.Dealer)),
+    __param(12, (0, typeorm_1.InjectRepository)(dealer_entity_1.DealerProductMargin)),
+    __param(13, (0, typeorm_1.InjectRepository)(dealer_entity_1.DealerCategoryMargin)),
+    __param(14, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
+    __param(15, (0, typeorm_1.InjectRepository)(tax_entity_1.Tax)),
+    __param(16, (0, typeorm_1.InjectRepository)(category_entity_1.SubCategory)),
     __metadata("design:paramtypes", [products_service_1.ProductsService,
-        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

@@ -210,8 +210,13 @@ export class OrderProductPivot extends CoreEntity {
 export class File extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number
-  @Column({ nullable: true })
+
+  @ManyToMany(() => Attachment, { eager: true })
+  @JoinTable({ name: 'products_gallery' })
+  gallery?: Attachment[]
+  @ManyToMany(() => Attachment)
   attachment_id: number
+
   @Column({ nullable: true })
   url: string
   @Column({ nullable: true })
@@ -230,8 +235,8 @@ export class Variation {
   slug: string
   @Column()
   price: number
-  @Column()
-  sku: string
+  @Column({ nullable: true })
+  sku?: string
   @Column({ default: false })
   is_disable: boolean
   @Column()
@@ -247,9 +252,9 @@ export class Variation {
   @JoinTable({ name: 'variation_variationOption' })
   options: VariationOption[]
 
-  @ManyToOne(() => File)
+  @ManyToOne(() => Attachment)
   @JoinColumn({ name: 'image_id' })
-  image: File
+  image: Attachment
 
   @Column()
   value: string

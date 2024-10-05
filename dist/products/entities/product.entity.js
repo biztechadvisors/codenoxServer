@@ -287,7 +287,7 @@ OrderProductPivot = __decorate([
 exports.OrderProductPivot = OrderProductPivot;
 let File = class File extends core_entity_1.CoreEntity {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, attachment_id: { required: true, type: () => Number }, url: { required: true, type: () => String }, fileable_id: { required: true, type: () => Number } };
+        return { id: { required: true, type: () => Number }, gallery: { required: false, type: () => [require("../../common/entities/attachment.entity").Attachment] }, attachment_id: { required: true, type: () => Number }, url: { required: true, type: () => String }, fileable_id: { required: true, type: () => Number } };
     }
 };
 __decorate([
@@ -295,7 +295,12 @@ __decorate([
     __metadata("design:type", Number)
 ], File.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { eager: true }),
+    (0, typeorm_1.JoinTable)({ name: 'products_gallery' }),
+    __metadata("design:type", Array)
+], File.prototype, "gallery", void 0);
+__decorate([
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment),
     __metadata("design:type", Number)
 ], File.prototype, "attachment_id", void 0);
 __decorate([
@@ -312,7 +317,7 @@ File = __decorate([
 exports.File = File;
 let Variation = class Variation {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, title: { required: true, type: () => String }, name: { required: true, type: () => String }, slug: { required: true, type: () => String }, price: { required: true, type: () => Number }, sku: { required: true, type: () => String }, is_disable: { required: true, type: () => Boolean }, sale_price: { required: false, type: () => Number }, quantity: { required: true, type: () => Number }, options: { required: true, type: () => [require("./product.entity").VariationOption] }, image: { required: true, type: () => require("./product.entity").File }, value: { required: true, type: () => String }, meta: { required: true, type: () => String }, created_at: { required: true, type: () => Date }, updated_at: { required: true, type: () => Date } };
+        return { id: { required: true, type: () => Number }, title: { required: true, type: () => String }, name: { required: true, type: () => String }, slug: { required: true, type: () => String }, price: { required: true, type: () => Number }, sku: { required: false, type: () => String }, is_disable: { required: true, type: () => Boolean }, sale_price: { required: false, type: () => Number }, quantity: { required: true, type: () => Number }, options: { required: true, type: () => [require("./product.entity").VariationOption] }, image: { required: true, type: () => require("../../common/entities/attachment.entity").Attachment }, value: { required: true, type: () => String }, meta: { required: true, type: () => String }, created_at: { required: true, type: () => Date }, updated_at: { required: true, type: () => Date } };
     }
 };
 __decorate([
@@ -336,7 +341,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Variation.prototype, "price", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Variation.prototype, "sku", void 0);
 __decorate([
@@ -361,9 +366,9 @@ __decorate([
     __metadata("design:type", Array)
 ], Variation.prototype, "options", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => File),
+    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment),
     (0, typeorm_1.JoinColumn)({ name: 'image_id' }),
-    __metadata("design:type", File)
+    __metadata("design:type", attachment_entity_1.Attachment)
 ], Variation.prototype, "image", void 0);
 __decorate([
     (0, typeorm_1.Column)(),

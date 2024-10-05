@@ -1,6 +1,6 @@
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto, UpdateQuantityDto } from './dto/update-product.dto';
-import { File, OrderProductPivot, Product, Variation, VariationOption } from './entities/product.entity';
+import { OrderProductPivot, Product, Variation, VariationOption } from './entities/product.entity';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 import { Attachment } from 'src/common/entities/attachment.entity';
 import { Tag } from 'src/tags/entities/tag.entity';
@@ -27,7 +27,6 @@ export declare class ProductsService {
     private readonly categoryRepository;
     private readonly subCategoryRepository;
     private readonly attributeValueRepository;
-    private readonly fileRepository;
     private readonly dealerRepository;
     private readonly dealerProductMarginRepository;
     private readonly dealerCategoryMarginRepository;
@@ -36,7 +35,7 @@ export declare class ProductsService {
     private readonly regionRepository;
     private readonly cacheManager;
     private readonly logger;
-    constructor(productRepository: Repository<Product>, orderProductPivotRepository: Repository<OrderProductPivot>, variationRepository: Repository<Variation>, variationOptionRepository: Repository<VariationOption>, attachmentRepository: Repository<Attachment>, tagRepository: Repository<Tag>, typeRepository: Repository<Type>, shopRepository: Repository<Shop>, categoryRepository: Repository<Category>, subCategoryRepository: Repository<SubCategory>, attributeValueRepository: Repository<AttributeValue>, fileRepository: Repository<File>, dealerRepository: Repository<Dealer>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, userRepository: Repository<User>, taxRepository: Repository<Tax>, regionRepository: Repository<Region>, cacheManager: Cache);
+    constructor(productRepository: Repository<Product>, orderProductPivotRepository: Repository<OrderProductPivot>, variationRepository: Repository<Variation>, variationOptionRepository: Repository<VariationOption>, attachmentRepository: Repository<Attachment>, tagRepository: Repository<Tag>, typeRepository: Repository<Type>, shopRepository: Repository<Shop>, categoryRepository: Repository<Category>, subCategoryRepository: Repository<SubCategory>, attributeValueRepository: Repository<AttributeValue>, dealerRepository: Repository<Dealer>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, userRepository: Repository<User>, taxRepository: Repository<Tax>, regionRepository: Repository<Region>, cacheManager: Cache);
     onModuleInit(): Promise<void>;
     updateProductStockStatus(): Promise<void>;
     getValueFromSearch(searchString: string, key: string): string | null;

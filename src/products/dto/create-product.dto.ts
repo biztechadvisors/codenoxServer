@@ -4,6 +4,7 @@ import { Product, Variation } from '../entities/product.entity';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { IsOptional } from 'class-validator';
+import { AttachmentDTO } from '@db/src/common/dto/attachment.dto';
 
 export class CreateProductDto extends OmitType(Product, [
   'id',
@@ -53,7 +54,7 @@ export class VariationDto {
   price: number;
   is_disable: boolean;
   title: string;
-  image: FileDto;
+  image: AttachmentDTO;
   options: VariationOptionDto[];
   id: any;
 }
@@ -65,9 +66,9 @@ export class VariationOptionDto {
   value: string;
 }
 
-export class FileDto {
-  thumbnail: string;
-  original: string;
-  id: number;
-  file_name: string;
-}
+// export class FileDto {
+//   thumbnail: string;
+//   original: string;
+//   id: number;
+//   file_name: string;
+// }

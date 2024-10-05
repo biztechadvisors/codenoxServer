@@ -2,7 +2,7 @@
 import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto, UpdateQuantityDto } from './dto/update-product.dto';
-import { File, OrderProductPivot, Product, ProductType, Variation, VariationOption } from './entities/product.entity';
+import { OrderProductPivot, Product, ProductType, Variation, VariationOption } from './entities/product.entity';
 import { paginate } from 'src/common/pagination/paginate';
 import { GetPopularProductsDto } from './dto/get-popular-products.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -40,7 +40,6 @@ export class ProductsService {
     @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
     @InjectRepository(SubCategory) private readonly subCategoryRepository: Repository<SubCategory>,
     @InjectRepository(AttributeValue) private readonly attributeValueRepository: Repository<AttributeValue>,
-    @InjectRepository(File) private readonly fileRepository: Repository<File>,
     @InjectRepository(Dealer) private readonly dealerRepository: Repository<Dealer>,
     @InjectRepository(DealerProductMargin) private readonly dealerProductMarginRepository: Repository<DealerProductMargin>,
     @InjectRepository(DealerCategoryMargin) private readonly dealerCategoryMarginRepository: Repository<DealerCategoryMargin>,
@@ -241,14 +240,13 @@ export class ProductsService {
         const savedVariation = await this.variationRepository.save(newVariation);
 
         if (variationDto?.image) {
-          let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
+          let image = await this.attachmentRepository.findOne({ where: { id: variationDto.image.id } });
           if (!image) {
-            image = this.fileRepository.create({
-              attachment_id: variationDto.image.id,
-              url: variationDto.image.original,
-              fileable_id: savedVariation.id
+            image = this.attachmentRepository.create({
+              original: variationDto.image.original,
+              thumbnail: variationDto.image.thumbnail,
             });
-            await this.fileRepository.save(image);
+            await this.attachmentRepository.save(image);
           }
           savedVariation.image = image;
         }
@@ -876,13 +874,13 @@ export class ProductsService {
         variation.sale_price = upsertVariationDto.sale_price;
         variation.quantity = upsertVariationDto.quantity;
         if (upsertVariationDto.image) {
-          let image = await this.fileRepository.findOne({ where: { id: upsertVariationDto.image.id } });
+          let image = await this.attachmentRepository.findOne({ where: { id: upsertVariationDto.image.id } });
           if (!image) {
-            image = new File();
-            image.attachment_id = upsertVariationDto.image.id;
-            image.url = upsertVariationDto.image.original;
-            image.fileable_id = variation.id;
-            await this.fileRepository.save(image);
+            image = new Attachment();
+            image.id = upsertVariationDto.image.id;
+            image.original = upsertVariationDto.image.original;
+            image.thumbnail = upsertVariationDto.image.thumbnail;
+            await this.attachmentRepository.save(image);
           }
           variation.image = image;
         }
@@ -921,7 +919,7 @@ export class ProductsService {
           const variationImage = variation.image;
           if (variationImage) {
             variation.image = null;
-            await this.fileRepository.remove(variationImage);
+            await this.attachmentRepository.remove(variationImage);
           }
           await this.variationRepository.remove(variation);
         }
@@ -1033,9 +1031,9 @@ export class ProductsService {
       const image = product.image;
       product.image = null;
       await this.productRepository.save(product);
-      const file = await this.fileRepository.findOne({ where: { attachment_id: image.id } });
-      if (file) {
-        await this.fileRepository.remove(file);
+      const V_image = await this.attachmentRepository.findOne({ where: { id: image.id } });
+      if (V_image) {
+        await this.attachmentRepository.remove(V_image);
       }
       await this.attachmentRepository.remove(image);
     }
@@ -1062,14 +1060,7 @@ export class ProductsService {
           const image = v.image;
           v.image = null;
           await this.variationRepository.save(v);
-          const file = await this.fileRepository.findOne({ where: { id: image.id } });
-          if (file) {
-            file.attachment_id = null;
-            await this.fileRepository.save(file).then(async () => {
-              await this.fileRepository.remove(file);
-            });
-          }
-          const attachment = await this.attachmentRepository.findOne({ where: { id: image.attachment_id } });
+          const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
           if (attachment) {
             await this.attachmentRepository.remove(attachment);
           }

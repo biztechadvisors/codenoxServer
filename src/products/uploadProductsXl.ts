@@ -8,15 +8,13 @@ import {
 import {
   CreateProductDto,
   VariationDto,
-  VariationOptionDto,
-  FileDto,
+  VariationOptionDto
 } from './dto/create-product.dto'
 import { ProductsService } from './products.service'
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity'
 import { Tax } from 'src/taxes/entities/tax.entity'
 import { InjectRepository } from '@nestjs/typeorm'
 import {
-  File,
   OrderProductPivot,
   Product,
   ProductType,
@@ -60,7 +58,6 @@ export class UploadXlService {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(AttributeValue)
     private readonly attributeValueRepository: Repository<AttributeValue>,
-    @InjectRepository(File) private readonly fileRepository: Repository<File>,
     @InjectRepository(Dealer)
     private readonly dealerRepository: Repository<Dealer>,
     @InjectRepository(DealerProductMargin)
@@ -72,6 +69,19 @@ export class UploadXlService {
     @InjectRepository(SubCategory)
     private readonly subCategoryRepository: Repository<SubCategory>,
   ) { }
+
+  async generateSKU(productName: string): Promise<string> {
+    // Get the first 3-5 letters from the product name and remove spaces, making it uppercase
+    const namePart = productName.replace(/\s+/g, '').substring(0, 5).toUpperCase();
+
+    // Get the current timestamp in milliseconds
+    const timestamp = Date.now();
+
+    // Combine the name part and the timestamp to form the SKU
+    const sku = `${namePart}-${timestamp}`;
+
+    return sku;
+  }
 
   async parseExcelToDto(fileBuffer: Buffer, shopSlug: string): Promise<any[]> {
     try {
@@ -282,7 +292,7 @@ export class UploadXlService {
     // Handle undefined optional values gracefully
     const status = row[headerRow.indexOf('Product Status')] || 'Published'
     const unit = row[headerRow.indexOf('Product Unit')] || 1
-    const sku = row[headerRow.indexOf('Product SKU')] || null
+    const sku = row[headerRow.indexOf('Product SKU')] || this.generateSKU(row[headerRow.indexOf('Product Name')]);
     const price = parseFloat(row[headerRow.indexOf('Price')] || '0')
     const salePrice = parseFloat(row[headerRow.indexOf('Sale Price')] || '0')
     const height = row[headerRow.indexOf('Height')] || 1
@@ -364,7 +374,7 @@ export class UploadXlService {
 
     return {
       is_digital: row[headerRow.indexOf('Is Digital')] === true,
-      sku: row[headerRow.indexOf('Product SKU')],
+      sku: row[headerRow.indexOf('Product SKU')] || this.generateSKU(row[headerRow.indexOf('Product Name')]),
       name: row[headerRow.indexOf('Product Name')],
       quantity: parseInt(row[headerRow.indexOf('Child Inventory')]),
       sale_price: parseFloat(row[headerRow.indexOf('Sale Price')]),
@@ -795,15 +805,15 @@ export class UploadXlService {
 
             // Handle image if present
             if (variationDto?.image) {
-              let image = await this.fileRepository.findOne({
+              let image = await this.attachmentRepository.findOne({
                 where: { id: variationDto.image.id },
               })
               if (!image) {
-                image = new File()
-                image.attachment_id = variationDto.image.id
-                image.url = variationDto.image.original
-                image.fileable_id = newVariation.id
-                await this.fileRepository.save(image)
+                image = new Attachment()
+                image.id = variationDto.image.id
+                image.original = variationDto.image.original
+                image.thumbnail = variationDto.image.thumbnail
+                await this.attachmentRepository.save(image)
               }
               newVariation.image = image
             }
@@ -878,11 +888,11 @@ export class UploadXlService {
         const image = product.image
         product.image = null
         await this.productRepository.save(product)
-        const file = await this.fileRepository.findOne({
-          where: { attachment_id: image.id },
+        const V_image = await this.attachmentRepository.findOne({
+          where: { id: image.id },
         })
-        if (file) {
-          await this.fileRepository.remove(file)
+        if (V_image) {
+          await this.attachmentRepository.remove(V_image)
         }
         await this.attachmentRepository.remove(image)
       }
@@ -915,17 +925,8 @@ export class UploadXlService {
             const image = v.image
             v.image = null
             await this.variationRepository.save(v)
-            const file = await this.fileRepository.findOne({
-              where: { id: image.id },
-            })
-            if (file) {
-              file.attachment_id = null
-              await this.fileRepository.save(file).then(async () => {
-                await this.fileRepository.remove(file)
-              })
-            }
             const attachment = await this.attachmentRepository.findOne({
-              where: { id: image.attachment_id },
+              where: { id: image.id },
             })
             if (attachment) {
               await this.attachmentRepository.remove(attachment)
