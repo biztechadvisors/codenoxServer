@@ -33,7 +33,7 @@ const cache_manager_1 = require("@nestjs/cache-manager");
 const region_entity_1 = require("../region/entities/region.entity");
 const helpers_1 = require("../helpers");
 let ProductsService = ProductsService_1 = class ProductsService {
-    constructor(productRepository, orderProductPivotRepository, variationRepository, variationOptionRepository, attachmentRepository, tagRepository, typeRepository, shopRepository, categoryRepository, subCategoryRepository, attributeValueRepository, fileRepository, dealerRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, userRepository, taxRepository, regionRepository, cacheManager) {
+    constructor(productRepository, orderProductPivotRepository, variationRepository, variationOptionRepository, attachmentRepository, tagRepository, typeRepository, shopRepository, categoryRepository, subCategoryRepository, attributeValueRepository, dealerRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, userRepository, taxRepository, regionRepository, cacheManager) {
         this.productRepository = productRepository;
         this.orderProductPivotRepository = orderProductPivotRepository;
         this.variationRepository = variationRepository;
@@ -45,7 +45,6 @@ let ProductsService = ProductsService_1 = class ProductsService {
         this.categoryRepository = categoryRepository;
         this.subCategoryRepository = subCategoryRepository;
         this.attributeValueRepository = attributeValueRepository;
-        this.fileRepository = fileRepository;
         this.dealerRepository = dealerRepository;
         this.dealerProductMarginRepository = dealerProductMarginRepository;
         this.dealerCategoryMarginRepository = dealerCategoryMarginRepository;
@@ -181,14 +180,13 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 const newVariation = this.variationRepository.create(variationDto);
                 const savedVariation = await this.variationRepository.save(newVariation);
                 if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) {
-                    let image = await this.fileRepository.findOne({ where: { id: variationDto.image.id } });
+                    let image = await this.attachmentRepository.findOne({ where: { id: variationDto.image.id } });
                     if (!image) {
-                        image = this.fileRepository.create({
-                            attachment_id: variationDto.image.id,
-                            url: variationDto.image.original,
-                            fileable_id: savedVariation.id
+                        image = this.attachmentRepository.create({
+                            original: variationDto.image.original,
+                            thumbnail: variationDto.image.thumbnail,
                         });
-                        await this.fileRepository.save(image);
+                        await this.attachmentRepository.save(image);
                     }
                     savedVariation.image = image;
                 }
@@ -668,13 +666,13 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 variation.sale_price = upsertVariationDto.sale_price;
                 variation.quantity = upsertVariationDto.quantity;
                 if (upsertVariationDto.image) {
-                    let image = await this.fileRepository.findOne({ where: { id: upsertVariationDto.image.id } });
+                    let image = await this.attachmentRepository.findOne({ where: { id: upsertVariationDto.image.id } });
                     if (!image) {
-                        image = new product_entity_1.File();
-                        image.attachment_id = upsertVariationDto.image.id;
-                        image.url = upsertVariationDto.image.original;
-                        image.fileable_id = variation.id;
-                        await this.fileRepository.save(image);
+                        image = new attachment_entity_1.Attachment();
+                        image.id = upsertVariationDto.image.id;
+                        image.original = upsertVariationDto.image.original;
+                        image.thumbnail = upsertVariationDto.image.thumbnail;
+                        await this.attachmentRepository.save(image);
                     }
                     variation.image = image;
                 }
@@ -712,7 +710,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
                     const variationImage = variation.image;
                     if (variationImage) {
                         variation.image = null;
-                        await this.fileRepository.remove(variationImage);
+                        await this.attachmentRepository.remove(variationImage);
                     }
                     await this.variationRepository.remove(variation);
                 }
@@ -791,9 +789,9 @@ let ProductsService = ProductsService_1 = class ProductsService {
             const image = product.image;
             product.image = null;
             await this.productRepository.save(product);
-            const file = await this.fileRepository.findOne({ where: { attachment_id: image.id } });
-            if (file) {
-                await this.fileRepository.remove(file);
+            const V_image = await this.attachmentRepository.findOne({ where: { id: image.id } });
+            if (V_image) {
+                await this.attachmentRepository.remove(V_image);
             }
             await this.attachmentRepository.remove(image);
         }
@@ -815,14 +813,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
                     const image = v.image;
                     v.image = null;
                     await this.variationRepository.save(v);
-                    const file = await this.fileRepository.findOne({ where: { id: image.id } });
-                    if (file) {
-                        file.attachment_id = null;
-                        await this.fileRepository.save(file).then(async () => {
-                            await this.fileRepository.remove(file);
-                        });
-                    }
-                    const attachment = await this.attachmentRepository.findOne({ where: { id: image.attachment_id } });
+                    const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
                     if (attachment) {
                         await this.attachmentRepository.remove(attachment);
                     }
@@ -860,16 +851,14 @@ ProductsService = ProductsService_1 = __decorate([
     __param(8, (0, typeorm_1.InjectRepository)(category_entity_1.Category)),
     __param(9, (0, typeorm_1.InjectRepository)(category_entity_1.SubCategory)),
     __param(10, (0, typeorm_1.InjectRepository)(attribute_value_entity_1.AttributeValue)),
-    __param(11, (0, typeorm_1.InjectRepository)(product_entity_1.File)),
-    __param(12, (0, typeorm_1.InjectRepository)(dealer_entity_1.Dealer)),
-    __param(13, (0, typeorm_1.InjectRepository)(dealer_entity_1.DealerProductMargin)),
-    __param(14, (0, typeorm_1.InjectRepository)(dealer_entity_1.DealerCategoryMargin)),
-    __param(15, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __param(16, (0, typeorm_1.InjectRepository)(tax_entity_1.Tax)),
-    __param(17, (0, typeorm_1.InjectRepository)(region_entity_1.Region)),
-    __param(18, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
+    __param(11, (0, typeorm_1.InjectRepository)(dealer_entity_1.Dealer)),
+    __param(12, (0, typeorm_1.InjectRepository)(dealer_entity_1.DealerProductMargin)),
+    __param(13, (0, typeorm_1.InjectRepository)(dealer_entity_1.DealerCategoryMargin)),
+    __param(14, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
+    __param(15, (0, typeorm_1.InjectRepository)(tax_entity_1.Tax)),
+    __param(16, (0, typeorm_1.InjectRepository)(region_entity_1.Region)),
+    __param(17, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

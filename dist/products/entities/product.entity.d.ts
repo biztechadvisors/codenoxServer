@@ -75,6 +75,7 @@ export declare class OrderProductPivot extends CoreEntity {
 }
 export declare class File extends CoreEntity {
     id: number;
+    gallery?: Attachment[];
     attachment_id: number;
     url: string;
     fileable_id: number;
@@ -85,12 +86,12 @@ export declare class Variation {
     name: string;
     slug: string;
     price: number;
-    sku: string;
+    sku?: string;
     is_disable: boolean;
     sale_price?: number;
     quantity: number;
     options: VariationOption[];
-    image: File;
+    image: Attachment;
     value: string;
     meta: string;
     created_at: Date;

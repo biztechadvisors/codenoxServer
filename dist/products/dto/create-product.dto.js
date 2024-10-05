@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FileDto = exports.VariationOptionDto = exports.VariationDto = exports.CreateProductDto = void 0;
+exports.VariationOptionDto = exports.VariationDto = exports.CreateProductDto = void 0;
 const openapi = require("@nestjs/swagger");
 const swagger_1 = require("@nestjs/swagger");
 const product_entity_1 = require("../entities/product.entity");
@@ -47,7 +47,7 @@ class CreateProductDto extends (0, swagger_1.OmitType)(product_entity_1.Product,
 exports.CreateProductDto = CreateProductDto;
 class VariationDto {
     static _OPENAPI_METADATA_FACTORY() {
-        return { is_digital: { required: true, type: () => Boolean }, sku: { required: true, type: () => String }, name: { required: true, type: () => String }, quantity: { required: true, type: () => Number }, sale_price: { required: true, type: () => Number }, price: { required: true, type: () => Number }, is_disable: { required: true, type: () => Boolean }, title: { required: true, type: () => String }, image: { required: true, type: () => require("./create-product.dto").FileDto }, options: { required: true, type: () => [require("./create-product.dto").VariationOptionDto] }, id: { required: true, type: () => Object } };
+        return { is_digital: { required: true, type: () => Boolean }, sku: { required: true, type: () => String }, name: { required: true, type: () => String }, quantity: { required: true, type: () => Number }, sale_price: { required: true, type: () => Number }, price: { required: true, type: () => Number }, is_disable: { required: true, type: () => Boolean }, title: { required: true, type: () => String }, image: { required: true, type: () => require("../../common/dto/attachment.dto").AttachmentDTO }, options: { required: true, type: () => [require("./create-product.dto").VariationOptionDto] }, id: { required: true, type: () => Object } };
     }
 }
 exports.VariationDto = VariationDto;
@@ -61,10 +61,4 @@ __decorate([
     __metadata("design:type", Number)
 ], VariationOptionDto.prototype, "id", void 0);
 exports.VariationOptionDto = VariationOptionDto;
-class FileDto {
-    static _OPENAPI_METADATA_FACTORY() {
-        return { thumbnail: { required: true, type: () => String }, original: { required: true, type: () => String }, id: { required: true, type: () => Number }, file_name: { required: true, type: () => String } };
-    }
-}
-exports.FileDto = FileDto;
 //# sourceMappingURL=create-product.dto.js.map

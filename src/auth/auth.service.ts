@@ -801,9 +801,9 @@ export class AuthService {
 
     let relations: string[];
     if (userWithDealer) {
-      relations = ["profile", "address", "owned_shops", "orders", "profile.socials", "address.address", "permission", "dealer", "managed_shop", "createdBy", "createdBy.managed_shop"];
+      relations = ["profile", "adds", "owned_shops", "orders", "profile.socials", "adds.address", "permission", "dealer", "managed_shop", "createdBy", "createdBy.managed_shop"];
     } else {
-      relations = ["profile", "address", "owned_shops", "orders", "profile.socials", "address.address", "permission", "managed_shop", "createdBy", "createdBy.managed_shop"];
+      relations = ["profile", "adds", "owned_shops", "orders", "profile.socials", "adds.address", "permission", "managed_shop", "createdBy", "createdBy.managed_shop"];
     }
 
     return relations;
