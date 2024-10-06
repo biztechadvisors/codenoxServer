@@ -101,7 +101,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Product.prototype, "variations", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => Variation, { eager: true, cascade: ['insert', 'update'] }),
+    (0, typeorm_1.ManyToMany)(() => Variation, { eager: true, cascade: true, onDelete: 'CASCADE' }),
     (0, typeorm_1.JoinTable)({
         name: 'products_variationOptions',
         joinColumn: { name: 'productId', referencedColumnName: 'id' },
