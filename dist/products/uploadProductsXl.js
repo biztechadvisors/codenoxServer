@@ -410,135 +410,112 @@ let UploadXlService = class UploadXlService {
                     { name: createProductDto.name },
                     { slug: createProductDto.slug },
                 ],
+                relations: [
+                    'type',
+                    'shop',
+                    'image',
+                    'categories',
+                    'tags',
+                    'gallery',
+                    'related_products',
+                    'variations',
+                    'variation_options',
+                    'subCategories',
+                ],
             });
-            let product;
             if (existingProduct) {
-                product = existingProduct;
-                product.name = createProductDto.name;
-                product.slug = createProductDto.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/(^-|-$)/g, '');
-                product.description = createProductDto.description;
-                product.product_type = createProductDto.product_type;
-                product.status = createProductDto.status;
-                product.quantity = this.validateNumber(createProductDto.quantity);
-                product.max_price =
-                    this.validateNumber(createProductDto.max_price) ||
-                        this.validateNumber(createProductDto.price);
-                product.min_price =
-                    this.validateNumber(createProductDto.min_price) ||
-                        this.validateNumber(createProductDto.sale_price);
-                product.price = this.validateNumber(createProductDto.price);
-                product.sale_price = this.validateNumber(createProductDto.sale_price);
-                product.unit = createProductDto.unit ? createProductDto.unit : 1;
-                product.height = createProductDto.height ? createProductDto.height : 1;
-                product.length = createProductDto.length ? createProductDto.length : 1;
-                product.width = createProductDto.width ? createProductDto.width : 1;
-                product.sku = createProductDto.sku;
-                product.language = createProductDto.language || 'en';
-                product.translated_languages =
-                    createProductDto.translated_languages || ['en'];
-                if (createProductDto.taxes) {
-                    const tax = await this.taxRepository.findOne({
-                        where: { id: createProductDto.taxes.id },
+                const variations = await Promise.all(existingProduct.variation_options.map(async (v) => {
+                    const variation = await this.variationRepository.findOne({
+                        where: { id: v.id },
+                        relations: ['options', 'image'],
                     });
-                    if (tax) {
-                        product.taxes = tax;
+                    if (!variation) {
+                        throw new common_1.NotFoundException(`Variation with ID ${v.id} not found`);
                     }
-                }
-                if (createProductDto.type_id) {
-                    const type = await this.typeRepository.findOne({
-                        where: { id: createProductDto.type_id },
-                    });
-                    if (!type) {
-                        throw new common_1.NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
-                    }
-                    product.type = type;
-                    product.type_id = type.id;
-                }
-                if (createProductDto.shop_id) {
-                    const shop = await this.shopRepository.findOne({
-                        where: { id: createProductDto.shop_id },
-                    });
-                    if (!shop) {
-                        throw new common_1.NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
-                    }
-                    product.shop = shop;
-                    product.shop_id = shop.id;
-                }
-                if (createProductDto.category) {
-                    const categories = await this.categoryRepository.findByIds(createProductDto.category);
-                    product.categories = categories;
-                }
-                if (createProductDto.subCategories) {
-                    const subCategories = await this.subCategoryRepository.findByIds(createProductDto.subCategories);
-                    product.subCategories = subCategories;
-                }
-                if (createProductDto.tags) {
-                    const tags = await this.tagRepository.findByIds(createProductDto.tags);
-                    product.tags = tags;
-                }
-                await this.remove(product.name);
-                console.log('variation options and variations Deleted');
+                    return variation;
+                }));
+                await Promise.all([
+                    ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+                    ...variations.map(async (v) => {
+                        if (v.image) {
+                            const image = v.image;
+                            v.image = null;
+                            await this.variationRepository.save(v);
+                            const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
+                            if (attachment) {
+                                await this.attachmentRepository.remove(attachment);
+                            }
+                        }
+                    }),
+                ]);
+                await this.variationRepository.remove(variations);
+                console.log('Variation options, variations, and product deleted');
             }
-            else {
-                product = new product_entity_1.Product();
-                product.name = createProductDto.name;
-                product.slug = createProductDto.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/(^-|-$)/g, '');
-                product.description = createProductDto.description;
-                product.product_type = createProductDto.product_type;
-                product.status = createProductDto.status;
-                product.quantity = this.validateNumber(createProductDto.quantity);
-                product.max_price =
-                    this.validateNumber(createProductDto.max_price) ||
-                        this.validateNumber(createProductDto.price);
-                product.min_price =
-                    this.validateNumber(createProductDto.min_price) ||
-                        this.validateNumber(createProductDto.sale_price);
-                product.price = this.validateNumber(createProductDto.price);
-                product.sale_price = this.validateNumber(createProductDto.sale_price);
-                product.unit = createProductDto.unit ? createProductDto.unit : 1;
-                product.height = createProductDto.height ? createProductDto.height : 1;
-                product.length = createProductDto.length ? createProductDto.length : 1;
-                product.width = createProductDto.width ? createProductDto.width : 1;
-                product.sku = createProductDto.sku;
-                product.language = createProductDto.language || 'en';
-                product.translated_languages =
-                    createProductDto.translated_languages || ['en'];
-                if (createProductDto.taxes) {
-                    const tax = await this.taxRepository.findOne({
-                        where: { id: createProductDto.taxes.id },
-                    });
-                    if (tax) {
-                        product.taxes = tax;
-                    }
+            let product = existingProduct ? existingProduct : new product_entity_1.Product();
+            product.name = createProductDto.name;
+            product.slug = createProductDto.name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '');
+            product.description = createProductDto.description;
+            product.product_type = createProductDto.product_type;
+            product.status = createProductDto.status;
+            product.quantity = this.validateNumber(createProductDto.quantity);
+            product.max_price =
+                this.validateNumber(createProductDto.max_price) ||
+                    this.validateNumber(createProductDto.price);
+            product.min_price =
+                this.validateNumber(createProductDto.min_price) ||
+                    this.validateNumber(createProductDto.sale_price);
+            product.price = this.validateNumber(createProductDto.price);
+            product.sale_price = this.validateNumber(createProductDto.sale_price);
+            product.unit = createProductDto.unit ? createProductDto.unit : 1;
+            product.height = createProductDto.height ? createProductDto.height : 1;
+            product.length = createProductDto.length ? createProductDto.length : 1;
+            product.width = createProductDto.width ? createProductDto.width : 1;
+            product.sku = createProductDto.sku;
+            product.language = createProductDto.language || 'en';
+            product.translated_languages =
+                createProductDto.translated_languages || ['en'];
+            if (createProductDto.taxes) {
+                const tax = await this.taxRepository.findOne({
+                    where: { id: createProductDto.taxes.id },
+                });
+                if (tax) {
+                    product.taxes = tax;
                 }
-                if (createProductDto.type_id) {
-                    const type = await this.typeRepository.findOne({
-                        where: { id: createProductDto.type_id },
-                    });
-                    if (!type) {
-                        throw new common_1.NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
-                    }
-                    product.type = type;
-                    product.type_id = type.id;
+            }
+            if (createProductDto.type_id) {
+                const type = await this.typeRepository.findOne({
+                    where: { id: createProductDto.type_id },
+                });
+                if (!type) {
+                    throw new common_1.NotFoundException(`Type with ID ${createProductDto.type_id} not found`);
                 }
-                if (createProductDto.category) {
-                    const categories = await this.categoryRepository.findByIds(createProductDto.category);
-                    product.categories = categories;
+                product.type = type;
+                product.type_id = type.id;
+            }
+            if (createProductDto.shop_id) {
+                const shop = await this.shopRepository.findOne({
+                    where: { id: createProductDto.shop_id },
+                });
+                if (!shop) {
+                    throw new common_1.NotFoundException(`Shop with ID ${createProductDto.shop_id} not found`);
                 }
-                if (createProductDto.subCategories) {
-                    const subCategories = await this.subCategoryRepository.findByIds(createProductDto.subCategories);
-                    product.subCategories = subCategories;
-                }
-                if (createProductDto.tags) {
-                    const tags = await this.tagRepository.findByIds(createProductDto.tags);
-                    product.tags = tags;
-                }
+                product.shop = shop;
+                product.shop_id = shop.id;
+            }
+            if (createProductDto.category) {
+                const categories = await this.categoryRepository.findByIds(createProductDto.category);
+                product.categories = categories;
+            }
+            if (createProductDto.subCategories) {
+                const subCategories = await this.subCategoryRepository.findByIds(createProductDto.subCategories);
+                product.subCategories = subCategories;
+            }
+            if (createProductDto.tags) {
+                const tags = await this.tagRepository.findByIds(createProductDto.tags);
+                product.tags = tags;
             }
             if (createProductDto.shop_id) {
                 const shop = await this.shopRepository.findOne({
@@ -688,6 +665,7 @@ let UploadXlService = class UploadXlService {
         }
         return Number(value);
     }
+<<<<<<< HEAD
     async remove(name) {
         const products = await this.productRepository.find({
             where: { name: name },
@@ -747,6 +725,8 @@ let UploadXlService = class UploadXlService {
             }
         }
     }
+=======
+>>>>>>> 10535dc419ae3926e2bb3769c14544bbf18f80e2
 };
 UploadXlService = __decorate([
     (0, common_1.Injectable)(),

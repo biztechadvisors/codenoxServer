@@ -46,5 +46,4 @@ export declare class UploadXlService {
     uploadProductsFromExcel(fileBuffer: Buffer, shopSlug: string): Promise<void>;
     saveProducts(createProductDto: CreateProductDto): Promise<Product>;
     private validateNumber;
-    remove(name: string): Promise<void>;
 }

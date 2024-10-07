@@ -84,13 +84,13 @@ export class Product extends CoreEntity {
   @JoinTable({ name: 'products_attributeValue' })
   variations?: AttributeValue[];
 
-  @ManyToMany(() => Variation, { eager: true, cascade: ['insert', 'update'] })
+  @ManyToMany(() => Variation, { eager: true, cascade: true, onDelete: 'CASCADE' })
   @JoinTable({
     name: 'products_variationOptions',
     joinColumn: { name: 'productId', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'variationId', referencedColumnName: 'id' },
   })
-  variation_options: Variation[]
+  variation_options: Variation[];
 
   @OneToMany(
     () => OrderProductPivot,
@@ -227,23 +227,31 @@ export class File extends CoreEntity {
 @Entity()
 export class Variation {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
+
   @Column()
-  title: string
+  title: string;
+
   @Column()
-  name: string
+  name: string;
+
   @Column()
-  slug: string
+  slug: string;
+
   @Column()
-  price: number
+  price: number;
+
   @Column({ nullable: true })
-  sku?: string
+  sku?: string;
+
   @Column({ default: false })
-  is_disable: boolean
+  is_disable: boolean;
+
   @Column()
-  sale_price?: number
+  sale_price?: number;
+
   @Column()
-  quantity: number
+  quantity: number;
 
   @ManyToMany(() => VariationOption, {
     onDelete: 'CASCADE',
@@ -251,21 +259,25 @@ export class Variation {
     eager: true,
   })
   @JoinTable({ name: 'variation_variationOption' })
-  options: VariationOption[]
+  options: VariationOption[];
 
   @ManyToOne(() => Attachment)
   @JoinColumn({ name: 'image_id' })
-  image: Attachment
+  image: Attachment;
 
   @Column()
-  value: string
+  value: string;
+
   @Column()
-  meta: string
+  meta: string;
+
   @Column()
-  created_at: Date
+  created_at: Date;
+
   @Column()
-  updated_at: Date
+  updated_at: Date;
 }
+
 
 @Entity()
 export class VariationOption {

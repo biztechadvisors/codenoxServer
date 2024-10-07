@@ -531,177 +531,145 @@ export class UploadXlService {
           { name: createProductDto.name },
           { slug: createProductDto.slug },
         ],
-      })
+        relations: [
+          'type',
+          'shop',
+          'image',
+          'categories',
+          'tags',
+          'gallery',
+          'related_products',
+          'variations',
+          'variation_options',
+          'subCategories',
+        ],
+      });
 
-      let product: Product
       if (existingProduct) {
-        // Update existing product
-        product = existingProduct
-        // Update product details
-        product.name = createProductDto.name
-        product.slug = createProductDto.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '')
-        product.description = createProductDto.description
-        product.product_type = createProductDto.product_type
-        product.status = createProductDto.status
-        product.quantity = this.validateNumber(createProductDto.quantity)
-        product.max_price =
-          this.validateNumber(createProductDto.max_price) ||
-          this.validateNumber(createProductDto.price)
-        product.min_price =
-          this.validateNumber(createProductDto.min_price) ||
-          this.validateNumber(createProductDto.sale_price)
-        product.price = this.validateNumber(createProductDto.price)
-        product.sale_price = this.validateNumber(createProductDto.sale_price)
-        product.unit = createProductDto.unit ? createProductDto.unit : 1
-        product.height = createProductDto.height ? createProductDto.height : 1
-        product.length = createProductDto.length ? createProductDto.length : 1
-        product.width = createProductDto.width ? createProductDto.width : 1
-        product.sku = createProductDto.sku
-        product.language = createProductDto.language || 'en'
-        product.translated_languages =
-          createProductDto.translated_languages || ['en']
 
-        // Update tax
-        if (createProductDto.taxes) {
-          const tax = await this.taxRepository.findOne({
-            where: { id: createProductDto.taxes.id },
-          })
-          if (tax) {
-            product.taxes = tax
+        // Fetch related variations and their options
+        const variations = await Promise.all(existingProduct.variation_options.map(async (v) => {
+          const variation = await this.variationRepository.findOne({
+            where: { id: v.id },
+            relations: ['options', 'image'],
+          });
+
+          if (!variation) {
+            throw new NotFoundException(`Variation with ID ${v.id} not found`);
           }
-        }
 
-        // Update type
-        if (createProductDto.type_id) {
-          const type = await this.typeRepository.findOne({
-            where: { id: createProductDto.type_id },
-          })
-          if (!type) {
-            throw new NotFoundException(
-              `Type with ID ${createProductDto.type_id} not found`,
-            )
-          }
-          product.type = type
-          product.type_id = type.id
-        }
+          return variation;
+        }));
 
-        // Update shop
-        if (createProductDto.shop_id) {
-          const shop = await this.shopRepository.findOne({
-            where: { id: createProductDto.shop_id },
-          })
-          if (!shop) {
-            throw new NotFoundException(
-              `Shop with ID ${createProductDto.shop_id} not found`,
-            )
-          }
-          product.shop = shop
-          product.shop_id = shop.id
-        }
+        // Delete variation options and images
+        await Promise.all([
+          ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+          ...variations.map(async (v) => {
+            if (v.image) {
+              const image = v.image;
+              v.image = null; // Unlink the image from the variation
+              await this.variationRepository.save(v); // Save the variation without the image
+              const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
+              if (attachment) {
+                await this.attachmentRepository.remove(attachment);
+              }
+            }
+          }),
+        ]);
 
-        // Update categories
-        if (createProductDto.category) {
-          const categories = await this.categoryRepository.findByIds(
-            createProductDto.category,
+        // Remove all the variations
+        await this.variationRepository.remove(variations);
+
+        console.log('Variation options, variations, and product deleted');
+      }
+
+      // Update existing product
+      let product: Product = existingProduct ? existingProduct : new Product()
+
+      product.name = createProductDto.name
+      product.slug = createProductDto.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+      product.description = createProductDto.description
+      product.product_type = createProductDto.product_type
+      product.status = createProductDto.status
+      product.quantity = this.validateNumber(createProductDto.quantity)
+      product.max_price =
+        this.validateNumber(createProductDto.max_price) ||
+        this.validateNumber(createProductDto.price)
+      product.min_price =
+        this.validateNumber(createProductDto.min_price) ||
+        this.validateNumber(createProductDto.sale_price)
+      product.price = this.validateNumber(createProductDto.price)
+      product.sale_price = this.validateNumber(createProductDto.sale_price)
+      product.unit = createProductDto.unit ? createProductDto.unit : 1
+      product.height = createProductDto.height ? createProductDto.height : 1
+      product.length = createProductDto.length ? createProductDto.length : 1
+      product.width = createProductDto.width ? createProductDto.width : 1
+      product.sku = createProductDto.sku
+      product.language = createProductDto.language || 'en'
+      product.translated_languages =
+        createProductDto.translated_languages || ['en']
+
+      // Update tax
+      if (createProductDto.taxes) {
+        const tax = await this.taxRepository.findOne({
+          where: { id: createProductDto.taxes.id },
+        })
+        if (tax) {
+          product.taxes = tax
+        }
+      }
+
+      // Update type
+      if (createProductDto.type_id) {
+        const type = await this.typeRepository.findOne({
+          where: { id: createProductDto.type_id },
+        })
+        if (!type) {
+          throw new NotFoundException(
+            `Type with ID ${createProductDto.type_id} not found`,
           )
-          product.categories = categories
         }
+        product.type = type
+        product.type_id = type.id
+      }
 
-        // Update subcategories
-        if (createProductDto.subCategories) {
-          const subCategories = await this.subCategoryRepository.findByIds(
-            createProductDto.subCategories,
+      // Update shop
+      if (createProductDto.shop_id) {
+        const shop = await this.shopRepository.findOne({
+          where: { id: createProductDto.shop_id },
+        })
+        if (!shop) {
+          throw new NotFoundException(
+            `Shop with ID ${createProductDto.shop_id} not found`,
           )
-          product.subCategories = subCategories
         }
+        product.shop = shop
+        product.shop_id = shop.id
+      }
 
-        // Update tags
-        if (createProductDto.tags) {
-          const tags = await this.tagRepository.findByIds(createProductDto.tags)
-          product.tags = tags
-        }
+      // Update categories
+      if (createProductDto.category) {
+        const categories = await this.categoryRepository.findByIds(
+          createProductDto.category,
+        )
+        product.categories = categories
+      }
 
-        // Delete existing variation options and variations
-        await this.remove(product.name)
-        console.log('variation options and variations Deleted')
-      } else {
-        // Create new product
-        product = new Product()
-        // Set product details
-        product.name = createProductDto.name
-        product.slug = createProductDto.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '')
-        product.description = createProductDto.description
-        product.product_type = createProductDto.product_type
-        product.status = createProductDto.status
-        product.quantity = this.validateNumber(createProductDto.quantity)
-        product.max_price =
-          this.validateNumber(createProductDto.max_price) ||
-          this.validateNumber(createProductDto.price)
-        product.min_price =
-          this.validateNumber(createProductDto.min_price) ||
-          this.validateNumber(createProductDto.sale_price)
-        product.price = this.validateNumber(createProductDto.price)
-        product.sale_price = this.validateNumber(createProductDto.sale_price)
-        product.unit = createProductDto.unit ? createProductDto.unit : 1
-        product.height = createProductDto.height ? createProductDto.height : 1
-        product.length = createProductDto.length ? createProductDto.length : 1
-        product.width = createProductDto.width ? createProductDto.width : 1
-        product.sku = createProductDto.sku
-        product.language = createProductDto.language || 'en'
-        product.translated_languages =
-          createProductDto.translated_languages || ['en']
+      // Update subcategories
+      if (createProductDto.subCategories) {
+        const subCategories = await this.subCategoryRepository.findByIds(
+          createProductDto.subCategories,
+        )
+        product.subCategories = subCategories
+      }
 
-        // Set tax
-        if (createProductDto.taxes) {
-          const tax = await this.taxRepository.findOne({
-            where: { id: createProductDto.taxes.id },
-          })
-          if (tax) {
-            product.taxes = tax
-          }
-        }
-
-        // Set type
-        if (createProductDto.type_id) {
-          const type = await this.typeRepository.findOne({
-            where: { id: createProductDto.type_id },
-          })
-          if (!type) {
-            throw new NotFoundException(
-              `Type with ID ${createProductDto.type_id} not found`,
-            )
-          }
-          product.type = type
-          product.type_id = type.id
-        }
-
-        // Set categories
-        if (createProductDto.category) {
-          const categories = await this.categoryRepository.findByIds(
-            createProductDto.category,
-          )
-          product.categories = categories
-        }
-
-        // Set subcategories
-        if (createProductDto.subCategories) {
-          const subCategories = await this.subCategoryRepository.findByIds(
-            createProductDto.subCategories,
-          )
-          product.subCategories = subCategories
-        }
-
-        // Set tags
-        if (createProductDto.tags) {
-          const tags = await this.tagRepository.findByIds(createProductDto.tags)
-          product.tags = tags
-        }
+      // Update tags
+      if (createProductDto.tags) {
+        const tags = await this.tagRepository.findByIds(createProductDto.tags)
+        product.tags = tags
       }
 
       // Set shop
@@ -914,81 +882,5 @@ export class UploadXlService {
       return 0
     }
     return Number(value)
-  }
-
-  async remove(name: string): Promise<void> {
-    const products = await this.productRepository.find({
-      where: { name: name },
-      relations: [
-        'type',
-        'shop',
-        'image',
-        'categories',
-        'tags',
-        'gallery',
-        'related_products',
-        'variations',
-        'variation_options',
-      ],
-    })
-
-    if (!products || products.length === 0) {
-      throw new NotFoundException(`Product with Name ${name} not found`)
-    }
-
-    for (const product of products) {
-      try {
-        // Remove product's main image if exists
-        if (product.image) {
-          const image = product.image
-          product.image = null
-          await this.productRepository.save(product)
-          await this.attachmentRepository.remove(image)
-        }
-
-        // Remove gallery attachments
-        if (product.gallery && product.gallery.length > 0) {
-          const gallery = await this.attachmentRepository.findByIds(
-            product.gallery.map((g) => g.id),
-          )
-          await this.attachmentRepository.remove(gallery)
-        }
-
-        // Remove variation options
-        if (product.variation_options && product.variation_options.length > 0) {
-          for (const v of product.variation_options) {
-            const option = await this.variationOptionRepository.findOne({
-              where: { id: v.id },
-            })
-            if (option) {
-              await this.variationOptionRepository.remove(option)
-            }
-          }
-        }
-
-        // Remove variations
-        if (product.variations && product.variations.length > 0) {
-          const variations = await this.variationRepository.findByIds(
-            product.variations.map((v) => v.id),
-          )
-
-          for (const variation of variations) {
-            if (variation.image) {
-              const image = variation.image
-              variation.image = null
-              await this.variationRepository.save(variation)
-              await this.attachmentRepository.remove(image)
-            }
-          }
-
-          await this.variationRepository.remove(variations)
-        }
-
-        // Finally, remove the product itself
-        await this.productRepository.remove(product)
-      } catch (error) {
-        console.error(`Failed to remove product with name ${name}:`, error)
-      }
-    }
   }
 }
