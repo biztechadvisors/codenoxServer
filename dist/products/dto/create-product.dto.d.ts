@@ -2,7 +2,7 @@ import { Product } from '../entities/product.entity';
 import { AttributeValue } from 'src/attributes/entities/attribute-value.entity';
 import { Tax } from 'src/taxes/entities/tax.entity';
 import { AttachmentDTO } from '@db/src/common/dto/attachment.dto';
-declare const CreateProductDto_base: import("@nestjs/common").Type<Omit<Product, "id" | "slug" | "subCategories" | "type" | "shop" | "translated_languages" | "created_at" | "updated_at" | "tags" | "categories" | "orders" | "variations" | "variation_options" | "pivot" | "related_products" | "taxes" | "height" | "length" | "width" | "regionName">>;
+declare const CreateProductDto_base: import("@nestjs/common").Type<Omit<Product, "created_at" | "updated_at" | "id" | "slug" | "tags" | "categories" | "shop" | "type" | "translated_languages" | "subCategories" | "orders" | "variation_options" | "variations" | "pivot" | "related_products" | "taxes" | "height" | "length" | "width" | "regionName">>;
 export declare class CreateProductDto extends CreateProductDto_base {
     categories: number[];
     subCategories: number[];

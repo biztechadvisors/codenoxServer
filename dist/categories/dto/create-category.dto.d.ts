@@ -1,5 +1,5 @@
 import { Category } from '../entities/category.entity';
-declare const CreateCategoryDto_base: import("@nestjs/common").Type<Pick<Category, "parent" | "name" | "details" | "image" | "icon" | "type" | "language">>;
+declare const CreateCategoryDto_base: import("@nestjs/common").Type<Pick<Category, "name" | "image" | "icon" | "language" | "type" | "parent" | "details">>;
 export declare class CreateCategoryDto extends CreateCategoryDto_base {
     shop_id: number;
     type_id: number;

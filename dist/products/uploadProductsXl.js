@@ -389,8 +389,7 @@ let UploadXlService = class UploadXlService {
             const products = await this.parseExcelToDto(fileBuffer, shopSlug);
             if (products && products.length > 0) {
                 for (const product of products) {
-                    this.saveProducts(product);
-                    console.log('product saved **** 499');
+                    await this.saveProducts(product);
                 }
             }
             else {
@@ -434,14 +433,19 @@ let UploadXlService = class UploadXlService {
                     }
                     return variation;
                 }));
+                existingProduct.variation_options = [];
+                existingProduct.variations = [];
+                await this.productRepository.save(existingProduct);
                 await Promise.all([
-                    ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+                    ...variations.flatMap((v) => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
                     ...variations.map(async (v) => {
                         if (v.image) {
                             const image = v.image;
                             v.image = null;
                             await this.variationRepository.save(v);
-                            const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
+                            const attachment = await this.attachmentRepository.findOne({
+                                where: { id: image.id },
+                            });
                             if (attachment) {
                                 await this.attachmentRepository.remove(attachment);
                             }
@@ -449,6 +453,7 @@ let UploadXlService = class UploadXlService {
                     }),
                 ]);
                 await this.variationRepository.remove(variations);
+                await this.productRepository.remove(existingProduct);
                 console.log('Variation options, variations, and product deleted');
             }
             let product = existingProduct ? existingProduct : new product_entity_1.Product();
@@ -475,8 +480,9 @@ let UploadXlService = class UploadXlService {
             product.width = createProductDto.width ? createProductDto.width : 1;
             product.sku = createProductDto.sku;
             product.language = createProductDto.language || 'en';
-            product.translated_languages =
-                createProductDto.translated_languages || ['en'];
+            product.translated_languages = createProductDto.translated_languages || [
+                'en',
+            ];
             if (createProductDto.taxes) {
                 const tax = await this.taxRepository.findOne({
                     where: { id: createProductDto.taxes.id },
@@ -551,7 +557,6 @@ let UploadXlService = class UploadXlService {
                     const attributeValueIds = [
                         ...new Set(createProductDto.variations.map((v) => v.attribute_value_id)),
                     ];
-                    console.log('attributeValueIds:', attributeValueIds);
                     if (attributeValueIds.length > 0) {
                         const attributeValues = await this.attributeValueRepository.findByIds(attributeValueIds);
                         const attributeValueMap = new Map(attributeValues.map((attr) => [attr.id, attr]));
@@ -665,68 +670,6 @@ let UploadXlService = class UploadXlService {
         }
         return Number(value);
     }
-<<<<<<< HEAD
-    async remove(name) {
-        const products = await this.productRepository.find({
-            where: { name: name },
-            relations: [
-                'type',
-                'shop',
-                'image',
-                'categories',
-                'tags',
-                'gallery',
-                'related_products',
-                'variations',
-                'variation_options',
-            ],
-        });
-        if (!products || products.length === 0) {
-            throw new common_1.NotFoundException(`Product with Name ${name} not found`);
-        }
-        for (const product of products) {
-            try {
-                if (product.image) {
-                    const image = product.image;
-                    product.image = null;
-                    await this.productRepository.save(product);
-                    await this.attachmentRepository.remove(image);
-                }
-                if (product.gallery && product.gallery.length > 0) {
-                    const gallery = await this.attachmentRepository.findByIds(product.gallery.map((g) => g.id));
-                    await this.attachmentRepository.remove(gallery);
-                }
-                if (product.variation_options && product.variation_options.length > 0) {
-                    for (const v of product.variation_options) {
-                        const option = await this.variationOptionRepository.findOne({
-                            where: { id: v.id },
-                        });
-                        if (option) {
-                            await this.variationOptionRepository.remove(option);
-                        }
-                    }
-                }
-                if (product.variations && product.variations.length > 0) {
-                    const variations = await this.variationRepository.findByIds(product.variations.map((v) => v.id));
-                    for (const variation of variations) {
-                        if (variation.image) {
-                            const image = variation.image;
-                            variation.image = null;
-                            await this.variationRepository.save(variation);
-                            await this.attachmentRepository.remove(image);
-                        }
-                    }
-                    await this.variationRepository.remove(variations);
-                }
-                await this.productRepository.remove(product);
-            }
-            catch (error) {
-                console.error(`Failed to remove product with name ${name}:`, error);
-            }
-        }
-    }
-=======
->>>>>>> 10535dc419ae3926e2bb3769c14544bbf18f80e2
 };
 UploadXlService = __decorate([
     (0, common_1.Injectable)(),

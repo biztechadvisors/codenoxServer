@@ -1,4 +1,6 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable prefer-const */
+/* eslint-disable prettier/prettier */
 import * as XLSX from 'xlsx'
 import {
   Injectable,
@@ -512,8 +514,7 @@ export class UploadXlService {
 
       if (products && products.length > 0) {
         for (const product of products) {
-          this.saveProducts(product)
-          console.log('product saved **** 499')
+          await this.saveProducts(product)
         }
       } else {
         this.logger.warn('No products found in Excel file.') // Use logger here
@@ -543,44 +544,54 @@ export class UploadXlService {
           'variation_options',
           'subCategories',
         ],
-      });
+      })
 
       if (existingProduct) {
-
         // Fetch related variations and their options
-        const variations = await Promise.all(existingProduct.variation_options.map(async (v) => {
-          const variation = await this.variationRepository.findOne({
-            where: { id: v.id },
-            relations: ['options', 'image'],
-          });
+        const variations = await Promise.all(
+          existingProduct.variation_options.map(async (v) => {
+            const variation = await this.variationRepository.findOne({
+              where: { id: v.id },
+              relations: ['options', 'image'],
+            })
 
-          if (!variation) {
-            throw new NotFoundException(`Variation with ID ${v.id} not found`);
-          }
+            if (!variation) {
+              throw new NotFoundException(`Variation with ID ${v.id} not found`)
+            }
 
-          return variation;
-        }));
+            return variation
+          }),
+        )
+        existingProduct.variation_options = []
+        existingProduct.variations = []
+
+        await this.productRepository.save(existingProduct)
 
         // Delete variation options and images
         await Promise.all([
-          ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+          ...variations.flatMap((v) =>
+            v.options ? [this.variationOptionRepository.remove(v.options)] : [],
+          ),
           ...variations.map(async (v) => {
             if (v.image) {
-              const image = v.image;
-              v.image = null; // Unlink the image from the variation
-              await this.variationRepository.save(v); // Save the variation without the image
-              const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
+              const image = v.image
+              v.image = null // Unlink the image from the variation
+              await this.variationRepository.save(v) // Save the variation without the image
+              const attachment = await this.attachmentRepository.findOne({
+                where: { id: image.id },
+              })
               if (attachment) {
-                await this.attachmentRepository.remove(attachment);
+                await this.attachmentRepository.remove(attachment)
               }
             }
           }),
-        ]);
+        ])
 
         // Remove all the variations
-        await this.variationRepository.remove(variations);
+        await this.variationRepository.remove(variations)
+        await this.productRepository.remove(existingProduct)
 
-        console.log('Variation options, variations, and product deleted');
+        console.log('Variation options, variations, and product deleted')
       }
 
       // Update existing product
@@ -609,8 +620,9 @@ export class UploadXlService {
       product.width = createProductDto.width ? createProductDto.width : 1
       product.sku = createProductDto.sku
       product.language = createProductDto.language || 'en'
-      product.translated_languages =
-        createProductDto.translated_languages || ['en']
+      product.translated_languages = createProductDto.translated_languages || [
+        'en',
+      ]
 
       // Update tax
       if (createProductDto.taxes) {
@@ -725,7 +737,6 @@ export class UploadXlService {
               createProductDto.variations.map((v) => v.attribute_value_id),
             ),
           ]
-          console.log('attributeValueIds:', attributeValueIds)
 
           if (attributeValueIds.length > 0) {
             const attributeValues =

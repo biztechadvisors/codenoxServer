@@ -1,7 +1,7 @@
 import { CoreMutationOutput } from 'src/common/dto/core-mutation-output.dto';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { User } from 'src/users/entities/user.entity';
-declare const RegisterDto_base: import("@nestjs/common").Type<Pick<User, "name" | "permission" | "contact" | "email" | "password" | "createdBy">>;
+declare const RegisterDto_base: import("@nestjs/common").Type<Pick<User, "name" | "contact" | "permission" | "email" | "password" | "createdBy">>;
 export declare class RegisterDto extends RegisterDto_base {
     permission: Permission;
     isVerified: boolean;
