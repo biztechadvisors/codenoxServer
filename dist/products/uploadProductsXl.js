@@ -51,7 +51,6 @@ const category_entity_1 = require("../categories/entities/category.entity");
 const dealer_entity_1 = require("../users/entities/dealer.entity");
 const user_entity_1 = require("../users/entities/user.entity");
 const typeorm_2 = require("typeorm");
-const rxjs_1 = require("rxjs");
 let UploadXlService = class UploadXlService {
     constructor(productsService, productRepository, orderProductPivotRepository, variationRepository, variationOptionRepository, attachmentRepository, tagRepository, typeRepository, shopRepository, categoryRepository, attributeValueRepository, dealerRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, userRepository, taxRepository, subCategoryRepository) {
         this.productsService = productsService;
@@ -228,7 +227,8 @@ let UploadXlService = class UploadXlService {
         const max_price = prices.length > 0 ? Math.max(...prices) : 0;
         const status = row[headerRow.indexOf('Product Status')] || 'Published';
         const unit = row[headerRow.indexOf('Product Unit')] || 1;
-        const sku = row[headerRow.indexOf('Product SKU')] || this.generateSKU(row[headerRow.indexOf('Product Name')]);
+        const sku = row[headerRow.indexOf('Product SKU')] ||
+            this.generateSKU(row[headerRow.indexOf('Product Name')]);
         const price = parseFloat(row[headerRow.indexOf('Price')] || '0');
         const salePrice = parseFloat(row[headerRow.indexOf('Sale Price')] || '0');
         const height = row[headerRow.indexOf('Height')] || 1;
@@ -295,7 +295,8 @@ let UploadXlService = class UploadXlService {
         }
         return {
             is_digital: row[headerRow.indexOf('Is Digital')] === true,
-            sku: row[headerRow.indexOf('Product SKU')] || this.generateSKU(row[headerRow.indexOf('Product Name')]),
+            sku: row[headerRow.indexOf('Product SKU')] ||
+                this.generateSKU(row[headerRow.indexOf('Product Name')]),
             name: row[headerRow.indexOf('Product Name')],
             quantity: parseInt(row[headerRow.indexOf('Child Inventory')]),
             sale_price: parseFloat(row[headerRow.indexOf('Sale Price')]),
@@ -389,7 +390,7 @@ let UploadXlService = class UploadXlService {
             if (products && products.length > 0) {
                 for (const product of products) {
                     this.saveProducts(product);
-                    rxjs_1.throwError;
+                    console.log('product saved **** 499');
                 }
             }
             else {
@@ -567,16 +568,19 @@ let UploadXlService = class UploadXlService {
                 }
                 product.gallery = galleryAttachments;
             }
-            if (createProductDto.variations && createProductDto.variations.length > 0) {
+            if (createProductDto.variations &&
+                createProductDto.variations.length > 0) {
                 try {
-                    const attributeValueIds = [...new Set(createProductDto.variations.map(v => v.attribute_value_id))];
-                    console.log("attributeValueIds ", attributeValueIds);
+                    const attributeValueIds = [
+                        ...new Set(createProductDto.variations.map((v) => v.attribute_value_id)),
+                    ];
+                    console.log('attributeValueIds:', attributeValueIds);
                     if (attributeValueIds.length > 0) {
                         const attributeValues = await this.attributeValueRepository.findByIds(attributeValueIds);
-                        const attributeValueMap = new Map(attributeValues.map(attr => [attr.id, attr]));
+                        const attributeValueMap = new Map(attributeValues.map((attr) => [attr.id, attr]));
                         const uniqueVariations = new Set();
                         product.variations = createProductDto.variations
-                            .filter(variation => {
+                            .filter((variation) => {
                             const { attribute_value_id } = variation;
                             if (uniqueVariations.has(attribute_value_id)) {
                                 console.warn(`Duplicate attribute value ID ${attribute_value_id} found and ignored`);
@@ -585,7 +589,7 @@ let UploadXlService = class UploadXlService {
                             uniqueVariations.add(attribute_value_id);
                             return true;
                         })
-                            .map(variation => {
+                            .map((variation) => {
                             const attributeValue = attributeValueMap.get(variation.attribute_value_id);
                             if (!attributeValue) {
                                 console.warn(`Attribute value with ID ${variation.attribute_value_id} not found`);
@@ -607,7 +611,8 @@ let UploadXlService = class UploadXlService {
             else {
                 console.warn('No variations provided in createProductDto');
             }
-            if (product.product_type === product_entity_1.ProductType.VARIABLE && ((_c = createProductDto.variation_options) === null || _c === void 0 ? void 0 : _c.upsert)) {
+            if (product.product_type === product_entity_1.ProductType.VARIABLE &&
+                ((_c = createProductDto.variation_options) === null || _c === void 0 ? void 0 : _c.upsert)) {
                 try {
                     const variationOptions = await Promise.all(createProductDto.variation_options.upsert.map(async (variationDto) => {
                         const existingVariations = await this.variationRepository.find({
@@ -631,7 +636,9 @@ let UploadXlService = class UploadXlService {
                             updated_at: new Date(),
                         });
                         if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) {
-                            let image = await this.attachmentRepository.findOne({ where: { id: variationDto.image.id } });
+                            let image = await this.attachmentRepository.findOne({
+                                where: { id: variationDto.image.id },
+                            });
                             if (!image) {
                                 image = this.attachmentRepository.create({
                                     id: variationDto.image.id,
@@ -682,42 +689,62 @@ let UploadXlService = class UploadXlService {
         return Number(value);
     }
     async remove(name) {
-        const products = await this.productRepository.find({ where: { name: name }, relations: ['type', 'shop', 'image', 'categories', 'tags', 'gallery', 'related_products', 'variations', 'variation_options'] });
+        const products = await this.productRepository.find({
+            where: { name: name },
+            relations: [
+                'type',
+                'shop',
+                'image',
+                'categories',
+                'tags',
+                'gallery',
+                'related_products',
+                'variations',
+                'variation_options',
+            ],
+        });
+        if (!products || products.length === 0) {
+            throw new common_1.NotFoundException(`Product with Name ${name} not found`);
+        }
         for (const product of products) {
-            if (!product) {
-                throw new common_1.NotFoundException(`Product with Name ${name} not found`);
-            }
-            if (product.image) {
-                const image = product.image;
-                product.image = null;
-                await this.productRepository.save(product);
-                await this.attachmentRepository.remove(image);
-            }
-            const gallery = await this.attachmentRepository.findByIds(product.gallery.map(g => g.id));
-            await this.attachmentRepository.remove(gallery);
-            const variations = await Promise.all(product.variation_options.map(async (v) => {
-                const variation = await this.variationRepository.findOne({ where: { id: v.id }, relations: ['options', 'image'] });
-                if (!variation) {
-                    throw new common_1.NotFoundException(`Variation with ID ${v.id} not found`);
+            try {
+                if (product.image) {
+                    const image = product.image;
+                    product.image = null;
+                    await this.productRepository.save(product);
+                    await this.attachmentRepository.remove(image);
                 }
-                return variation;
-            }));
-            await Promise.all([
-                ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
-                ...variations.map(async (v) => {
-                    if (v.image) {
-                        const image = v.image;
-                        v.image = null;
-                        await this.variationRepository.save(v);
-                        const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
-                        if (attachment) {
-                            await this.attachmentRepository.remove(attachment);
+                if (product.gallery && product.gallery.length > 0) {
+                    const gallery = await this.attachmentRepository.findByIds(product.gallery.map((g) => g.id));
+                    await this.attachmentRepository.remove(gallery);
+                }
+                if (product.variation_options && product.variation_options.length > 0) {
+                    for (const v of product.variation_options) {
+                        const option = await this.variationOptionRepository.findOne({
+                            where: { id: v.id },
+                        });
+                        if (option) {
+                            await this.variationOptionRepository.remove(option);
                         }
                     }
-                }),
-                this.variationRepository.remove(variations),
-                this.productRepository.remove(product),
-            ]);
+                }
+                if (product.variations && product.variations.length > 0) {
+                    const variations = await this.variationRepository.findByIds(product.variations.map((v) => v.id));
+                    for (const variation of variations) {
+                        if (variation.image) {
+                            const image = variation.image;
+                            variation.image = null;
+                            await this.variationRepository.save(variation);
+                            await this.attachmentRepository.remove(image);
+                        }
+                    }
+                    await this.variationRepository.remove(variations);
+                }
+                await this.productRepository.remove(product);
+            }
+            catch (error) {
+                console.error(`Failed to remove product with name ${name}:`, error);
+            }
         }
     }
 };
