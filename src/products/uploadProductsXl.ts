@@ -34,9 +34,7 @@ import {
   DealerProductMargin,
 } from 'src/users/entities/dealer.entity'
 import { User } from 'src/users/entities/user.entity'
-import { DeepPartial, In, Repository } from 'typeorm'
-import { error } from 'console'
-import { throwError } from 'rxjs'
+import { Repository } from 'typeorm'
 
 @Injectable()
 export class UploadXlService {
@@ -70,7 +68,7 @@ export class UploadXlService {
     @InjectRepository(Tax) private readonly taxRepository: Repository<Tax>,
     @InjectRepository(SubCategory)
     private readonly subCategoryRepository: Repository<SubCategory>,
-  ) {}
+  ) { }
 
   async generateSKU(productName: any): Promise<string> {
     // Ensure productName is a string
@@ -263,8 +261,7 @@ export class UploadXlService {
       })
       if (!type) {
         console.warn(
-          `Type '${
-            row[headerRow.indexOf('Product Collection')]
+          `Type '${row[headerRow.indexOf('Product Collection')]
           }' not found in the database`,
         )
       }
@@ -589,9 +586,8 @@ export class UploadXlService {
 
         // Remove all the variations
         await this.variationRepository.remove(variations)
-        await this.productRepository.remove(existingProduct)
 
-        console.log('Variation options, variations, and product deleted')
+        console.log('Variation options, variations deleted')
       }
 
       // Update existing product
@@ -780,8 +776,8 @@ export class UploadXlService {
           throw error instanceof NotFoundException
             ? error
             : new InternalServerErrorException(
-                'An error occurred while processing variations',
-              )
+              'An error occurred while processing variations',
+            )
         }
       } else {
         console.warn('No variations provided in createProductDto')

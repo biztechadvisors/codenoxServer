@@ -453,8 +453,7 @@ let UploadXlService = class UploadXlService {
                     }),
                 ]);
                 await this.variationRepository.remove(variations);
-                await this.productRepository.remove(existingProduct);
-                console.log('Variation options, variations, and product deleted');
+                console.log('Variation options, variations deleted');
             }
             let product = existingProduct ? existingProduct : new product_entity_1.Product();
             product.name = createProductDto.name;
