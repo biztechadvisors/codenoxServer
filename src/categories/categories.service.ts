@@ -107,6 +107,7 @@ export class CategoriesService {
       orderBy = '',
       sortedBy = 'DESC',
       region_name,
+      type, // Add type parameter
     } = query;
 
     const numericPage = Number(page);
@@ -117,7 +118,7 @@ export class CategoriesService {
     }
 
     const skip = (numericPage - 1) * numericLimit;
-    const cacheKey = `categories-${numericPage}-${numericLimit}-${search || 'all'}-${parent || 'all'}-${shopSlug || 'all'}-${shopId || 'all'}-${language || 'all'}-${orderBy || 'none'}-${sortedBy || 'none'}-${region_name || 'all'}`;
+    const cacheKey = `categories-${numericPage}-${numericLimit}-${search || 'all'}-${parent || 'all'}-${shopSlug || 'all'}-${shopId || 'all'}-${language || 'all'}-${orderBy || 'none'}-${sortedBy || 'none'}-${region_name || 'all'}-${type || 'all'}`;
 
     let categories = await this.cacheManager.get<CategoryPaginator>(cacheKey);
 
@@ -161,6 +162,17 @@ export class CategoriesService {
         where.regions = { id: region.id };
       }
 
+      // Filter by type name
+      if (type) {
+        const typeEntity = await this.typeRepository.findOne({
+          where: { name: type },
+        });
+        if (!typeEntity) {
+          throw new NotFoundException('Type not found');
+        }
+        where.type = { id: typeEntity.id };
+      }
+
       const order = orderBy && sortedBy ? { [orderBy]: sortedBy.toUpperCase() } : {};
 
       const [data, total] = await this.categoryRepository.findAndCount({
@@ -171,7 +183,7 @@ export class CategoriesService {
         order,
       });
 
-      const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}&shopSlug=${shopSlug}&shopId=${shopId}&language=${language}&region_name=${region_name}`;
+      const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}&shopSlug=${shopSlug}&shopId=${shopId}&language=${language}&region_name=${region_name}&type=${type}`;
 
       categories = {
         data,

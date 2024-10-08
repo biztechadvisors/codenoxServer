@@ -16,7 +16,7 @@ class GetCategoriesDto extends pagination_args_dto_1.PaginationArgs {
         this.parent = 'null';
     }
     static _OPENAPI_METADATA_FACTORY() {
-        return { orderBy: { required: false, enum: require("./get-categories.dto").QueryCategoriesOrderByColumn }, sortedBy: { required: false, enum: require("../../common/dto/generic-conditions.dto").SortOrder }, search: { required: false, type: () => String }, shopSlug: { required: false, type: () => String }, shopId: { required: false, type: () => Number }, parent: { required: false, type: () => Object, default: 'null' }, language: { required: false, type: () => String }, region_name: { required: false, type: () => String } };
+        return { orderBy: { required: false, enum: require("./get-categories.dto").QueryCategoriesOrderByColumn }, sortedBy: { required: false, enum: require("../../common/dto/generic-conditions.dto").SortOrder }, search: { required: false, type: () => String }, shopSlug: { required: false, type: () => String }, shopId: { required: false, type: () => Number }, parent: { required: false, type: () => Object, default: 'null' }, language: { required: false, type: () => String }, type: { required: false, type: () => String }, region_name: { required: false, type: () => String } };
     }
 }
 exports.GetCategoriesDto = GetCategoriesDto;

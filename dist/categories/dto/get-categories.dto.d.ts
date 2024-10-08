@@ -13,6 +13,7 @@ export declare class GetCategoriesDto extends PaginationArgs {
     shopId?: number;
     parent?: number | string;
     language?: string;
+    type?: string;
     region_name?: string;
 }
 export declare enum QueryCategoriesOrderByColumn {
