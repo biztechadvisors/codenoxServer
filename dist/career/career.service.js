@@ -95,7 +95,7 @@ let CareerService = class CareerService {
         }
         const queryBuilder = this.careerRepository.createQueryBuilder('career')
             .leftJoinAndSelect('career.vacancy', 'vacancy')
-            .where('career.shopId = :shopId', { shopId: shop.id });
+            .where('career.shop = :shopId', { shopId: shop.id });
         if (location) {
             queryBuilder.andWhere('career.location = :location', { location });
         }
