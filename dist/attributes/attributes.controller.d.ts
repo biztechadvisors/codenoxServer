@@ -9,10 +9,10 @@ export declare class AttributesController {
     private readonly attributesService;
     private readonly cacheService;
     constructor(attributesService: AttributesService, cacheService: CacheService);
-    create(createAttributeDto: CreateAttributeDto): Promise<Attribute | {
+    create(createAttributeDto: CreateAttributeDto): Promise<{
         message: string;
         status: boolean;
-    }>;
+    } | Attribute>;
     findAll(query: GetAttributesArgs): Promise<{
         id: number;
         name: string;
