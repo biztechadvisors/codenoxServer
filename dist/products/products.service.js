@@ -177,10 +177,21 @@ let ProductsService = ProductsService_1 = class ProductsService {
         }
         if (product.product_type === product_entity_1.ProductType.VARIABLE && (variation_options === null || variation_options === void 0 ? void 0 : variation_options.upsert)) {
             const variationOptions = await Promise.all(variation_options.upsert.map(async (variationDto) => {
-                const newVariation = this.variationRepository.create(variationDto);
+                const newVariation = this.variationRepository.create({
+                    title: variationDto.title,
+                    name: variationDto.name,
+                    slug: (0, helpers_1.convertToSlug)(variationDto.name),
+                    price: variationDto.price,
+                    sku: variationDto.sku,
+                    is_disable: variationDto.is_disable,
+                    sale_price: variationDto.sale_price,
+                    quantity: variationDto.quantity,
+                });
                 const savedVariation = await this.variationRepository.save(newVariation);
                 if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) {
-                    let image = await this.attachmentRepository.findOne({ where: { id: variationDto.image.id } });
+                    let image = await this.attachmentRepository.findOne({
+                        where: { id: variationDto.image.id },
+                    });
                     if (!image) {
                         image = this.attachmentRepository.create({
                             original: variationDto.image.original,
@@ -188,14 +199,14 @@ let ProductsService = ProductsService_1 = class ProductsService {
                         });
                         await this.attachmentRepository.save(image);
                     }
-                    savedVariation.image = image;
+                    savedVariation.image = [image];
                 }
                 const variationOptionEntities = await Promise.all((variationDto.options || []).map(async (option) => {
                     const values = option.value.split(',');
                     return Promise.all(values.map(async (value) => {
                         const newVariationOption = this.variationOptionRepository.create({
                             name: option.name,
-                            value: value.trim()
+                            value: value.trim(),
                         });
                         return this.variationOptionRepository.save(newVariationOption);
                     }));
@@ -219,7 +230,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
         return product;
     }
     async getProducts(query) {
-        const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName, regionNames, minPrice, maxPrice } = query;
+        const { limit = 20, page = 1, search, filter, dealerId, shop_id = 1, shopName, regionNames, minPrice, maxPrice } = query;
         const startIndex = (page - 1) * limit;
         if (!shop_id && (!shopName && !dealerId)) {
             const products = {
@@ -807,16 +818,20 @@ let ProductsService = ProductsService_1 = class ProductsService {
             return variation;
         }));
         await Promise.all([
-            ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+            ...variations.flatMap((v) => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
             ...variations.map(async (v) => {
-                if (v.image) {
-                    const image = v.image;
+                if (v.image && v.image.length > 0) {
+                    const images = v.image;
                     v.image = null;
                     await this.variationRepository.save(v);
-                    const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
-                    if (attachment) {
-                        await this.attachmentRepository.remove(attachment);
-                    }
+                    await Promise.all(images.map(async (image) => {
+                        const attachment = await this.attachmentRepository.findOne({
+                            where: { id: image.id },
+                        });
+                        if (attachment) {
+                            await this.attachmentRepository.remove(attachment);
+                        }
+                    }));
                 }
             }),
             this.variationRepository.remove(variations),

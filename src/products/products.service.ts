@@ -235,39 +235,68 @@ export class ProductsService {
 
     // Handle variation options
     if (product.product_type === ProductType.VARIABLE && variation_options?.upsert) {
-      const variationOptions = await Promise.all(variation_options.upsert.map(async (variationDto) => {
-        const newVariation = this.variationRepository.create(variationDto);
-        const savedVariation = await this.variationRepository.save(newVariation);
+      const variationOptions = await Promise.all(
+        variation_options.upsert.map(async (variationDto) => {
+          // Create and save the variation
+          const newVariation = this.variationRepository.create({
+            title: variationDto.title,
+            name: variationDto.name,
+            slug: convertToSlug(variationDto.name),
+            price: variationDto.price,
+            sku: variationDto.sku,
+            is_disable: variationDto.is_disable,
+            sale_price: variationDto.sale_price,
+            quantity: variationDto.quantity,
+          });
+          const savedVariation = await this.variationRepository.save(newVariation);
 
-        if (variationDto?.image) {
-          let image = await this.attachmentRepository.findOne({ where: { id: variationDto.image.id } });
-          if (!image) {
-            image = this.attachmentRepository.create({
-              original: variationDto.image.original,
-              thumbnail: variationDto.image.thumbnail,
+          // Handle image association
+          if (variationDto?.image) {
+            let image = await this.attachmentRepository.findOne({
+              where: { id: variationDto.image.id },
             });
-            await this.attachmentRepository.save(image);
+
+            if (!image) {
+              // Create and save new image if not found
+              image = this.attachmentRepository.create({
+                original: variationDto.image.original,
+                thumbnail: variationDto.image.thumbnail,
+              });
+              await this.attachmentRepository.save(image);
+            }
+
+            // Associate the image with the variation
+            savedVariation.image = [image];
           }
-          savedVariation.image = image;
-        }
 
-        const variationOptionEntities = await Promise.all((variationDto.options || []).map(async (option) => {
-          const values = option.value.split(',');
-          return Promise.all(values.map(async (value) => {
-            const newVariationOption = this.variationOptionRepository.create({
-              name: option.name,
-              value: value.trim()
-            });
-            return this.variationOptionRepository.save(newVariationOption);
-          }));
-        }));
+          // Handle variation options
+          const variationOptionEntities = await Promise.all(
+            (variationDto.options || []).map(async (option) => {
+              const values = option.value.split(',');
+              return Promise.all(
+                values.map(async (value) => {
+                  const newVariationOption = this.variationOptionRepository.create({
+                    name: option.name,
+                    value: value.trim(),
+                  });
+                  return this.variationOptionRepository.save(newVariationOption);
+                })
+              );
+            })
+          );
 
-        savedVariation.options = [].concat(...variationOptionEntities); // Flatten the array
-        await this.variationRepository.save(savedVariation);
-        return savedVariation;
-      }));
+          // Flatten the array of variation options and assign them to the variation
+          savedVariation.options = ([] as VariationOption[]).concat(
+            ...variationOptionEntities
+          );
+          await this.variationRepository.save(savedVariation);
 
-      product.variation_options = variationOptions;
+          return savedVariation;
+        })
+      );
+
+      // Associate the variations with the product
+      product.variation_options = variationOptions as Variation[];
     }
 
     // Handle regions
@@ -298,7 +327,7 @@ export class ProductsService {
       search,
       filter,
       dealerId,
-      shop_id,
+      shop_id = 1,
       shopName,
       regionNames,
       minPrice,
@@ -1053,21 +1082,32 @@ export class ProductsService {
       return variation;
     }));
 
+    // Handle removal of variations, images, and options
     await Promise.all([
-      ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+      ...variations.flatMap((v) =>
+        v.options ? [this.variationOptionRepository.remove(v.options)] : []
+      ),
       ...variations.map(async (v) => {
-        if (v.image) {
-          const image = v.image;
-          v.image = null;
+        if (v.image && v.image.length > 0) {
+          const images = v.image;
+          v.image = null; // Unlink the image from the variation
           await this.variationRepository.save(v);
-          const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
-          if (attachment) {
-            await this.attachmentRepository.remove(attachment);
-          }
+
+          // Remove images if they exist
+          await Promise.all(
+            images.map(async (image) => {
+              const attachment = await this.attachmentRepository.findOne({
+                where: { id: image.id },
+              });
+              if (attachment) {
+                await this.attachmentRepository.remove(attachment);
+              }
+            })
+          );
         }
       }),
-      this.variationRepository.remove(variations),
-      this.productRepository.remove(product),
+      this.variationRepository.remove(variations), // Remove the variations
+      this.productRepository.remove(product), // Remove the product
     ]);
 
   }

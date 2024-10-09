@@ -317,7 +317,7 @@ File = __decorate([
 exports.File = File;
 let Variation = class Variation {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, title: { required: true, type: () => String }, name: { required: true, type: () => String }, slug: { required: true, type: () => String }, price: { required: true, type: () => Number }, sku: { required: false, type: () => String }, is_disable: { required: true, type: () => Boolean }, sale_price: { required: false, type: () => Number }, quantity: { required: true, type: () => Number }, options: { required: true, type: () => [require("./product.entity").VariationOption] }, image: { required: true, type: () => require("../../common/entities/attachment.entity").Attachment }, value: { required: true, type: () => String }, meta: { required: true, type: () => String }, created_at: { required: true, type: () => Date }, updated_at: { required: true, type: () => Date } };
+        return { id: { required: true, type: () => Number }, title: { required: true, type: () => String }, name: { required: true, type: () => String }, slug: { required: true, type: () => String }, price: { required: true, type: () => Number }, sku: { required: false, type: () => String }, is_disable: { required: true, type: () => Boolean }, sale_price: { required: false, type: () => Number }, quantity: { required: true, type: () => Number }, options: { required: true, type: () => [require("./product.entity").VariationOption] }, image: { required: false, type: () => [require("../../common/entities/attachment.entity").Attachment] }, value: { required: true, type: () => String }, meta: { required: true, type: () => String }, created_at: { required: true, type: () => Date }, updated_at: { required: true, type: () => Date } };
     }
 };
 __decorate([
@@ -366,9 +366,9 @@ __decorate([
     __metadata("design:type", Array)
 ], Variation.prototype, "options", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment),
-    (0, typeorm_1.JoinColumn)({ name: 'image_id' }),
-    __metadata("design:type", attachment_entity_1.Attachment)
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { eager: true }),
+    (0, typeorm_1.JoinTable)({ name: 'Variation_image' }),
+    __metadata("design:type", Array)
 ], Variation.prototype, "image", void 0);
 __decorate([
     (0, typeorm_1.Column)(),

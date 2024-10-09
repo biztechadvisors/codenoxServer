@@ -261,9 +261,9 @@ export class Variation {
   @JoinTable({ name: 'variation_variationOption' })
   options: VariationOption[];
 
-  @ManyToOne(() => Attachment)
-  @JoinColumn({ name: 'image_id' })
-  image: Attachment;
+  @ManyToMany(() => Attachment, { eager: true })
+  @JoinTable({ name: 'Variation_image' })
+  image?: Attachment[]
 
   @Column()
   value: string;

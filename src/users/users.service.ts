@@ -128,6 +128,9 @@ export class UsersService {
     type,
   }: GetUsersDto): Promise<UserPaginator> {
 
+    console.log("usrById", usrById)
+    console.log("type", type)
+
     if (!usrById && !type) {
       const emptyUserPaginator: UserPaginator = {
         data: [],
@@ -182,7 +185,7 @@ export class UsersService {
           // 'inventoryStocks',
           // 'stocks',
           'managed_shop',
-          'address',
+          'adds',
           // 'orders',
           // 'stockOrd',
           // 'stocksSellOrd',
@@ -205,7 +208,7 @@ export class UsersService {
       // .leftJoinAndSelect('user.inventoryStocks', 'inventoryStocks')
       // .leftJoinAndSelect('user.stocks', 'stocks')
       .leftJoinAndSelect('user.managed_shop', 'managed_shop')
-      .leftJoinAndSelect('user.address', 'address')
+      .leftJoinAndSelect('user.adds', 'adds')
       // .leftJoinAndSelect('user.orders', 'orders')
       // .leftJoinAndSelect('user.stockOrd', 'stockOrd')
       // .leftJoinAndSelect('user.stocksSellOrd', 'stocksSellOrd')
@@ -304,7 +307,7 @@ export class UsersService {
     // Fetch user from the database if not cached
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['profile', 'address', 'owned_shops', 'orders', 'address.address', 'permission'],
+      relations: ['profile', 'adds', 'owned_shops', 'orders', 'adds.address', 'permission'],
     });
 
     if (!user) {
@@ -321,7 +324,7 @@ export class UsersService {
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ["profile", "address", "owned_shops", "orders", "profile.socials", "permission"]
+      relations: ["profile", "adds", "owned_shops", "orders", "profile.socials", "permission"]
     });
 
     if (!user) {
@@ -411,7 +414,7 @@ export class UsersService {
 
   async removeUser(id: number) {
     const user = await this.userRepository.findOne({
-      where: { id: id }, relations: ["profile", "address", "owned_shops", "orders", "permission"]
+      where: { id: id }, relations: ["profile", "adds", "owned_shops", "orders", "permission"]
     });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);

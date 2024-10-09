@@ -102,6 +102,8 @@ let UsersService = class UsersService {
         return usr;
     }
     async getUsers({ searchJoin = 'and', limit = 30, page = 1, name, orderBy, sortedBy, usrById, search, type, }) {
+        console.log("usrById", usrById);
+        console.log("type", type);
         if (!usrById && !type) {
             const emptyUserPaginator = {
                 data: [],
@@ -146,7 +148,7 @@ let UsersService = class UsersService {
                     'dealer',
                     'owned_shops',
                     'managed_shop',
-                    'address',
+                    'adds',
                     'permission',
                 ],
             });
@@ -160,7 +162,7 @@ let UsersService = class UsersService {
             .leftJoinAndSelect('user.dealer', 'dealer')
             .leftJoinAndSelect('user.owned_shops', 'owned_shops')
             .leftJoinAndSelect('user.managed_shop', 'managed_shop')
-            .leftJoinAndSelect('user.address', 'address')
+            .leftJoinAndSelect('user.adds', 'adds')
             .leftJoinAndSelect('user.permission', 'permission');
         queryBuilder.skip(startIndex).take(limitNum);
         if (orderBy && sortedBy) {
@@ -221,7 +223,7 @@ let UsersService = class UsersService {
         }
         const user = await this.userRepository.findOne({
             where: { id },
-            relations: ['profile', 'address', 'owned_shops', 'orders', 'address.address', 'permission'],
+            relations: ['profile', 'adds', 'owned_shops', 'orders', 'adds.address', 'permission'],
         });
         if (!user) {
             throw new common_1.NotFoundException(`User with id ${id} not found`);
@@ -233,7 +235,7 @@ let UsersService = class UsersService {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
         const user = await this.userRepository.findOne({
             where: { id },
-            relations: ["profile", "address", "owned_shops", "orders", "profile.socials", "permission"]
+            relations: ["profile", "adds", "owned_shops", "orders", "profile.socials", "permission"]
         });
         if (!user) {
             throw new common_1.NotFoundException(`User with id ${id} not found`);
@@ -308,7 +310,7 @@ let UsersService = class UsersService {
     }
     async removeUser(id) {
         const user = await this.userRepository.findOne({
-            where: { id: id }, relations: ["profile", "address", "owned_shops", "orders", "permission"]
+            where: { id: id }, relations: ["profile", "adds", "owned_shops", "orders", "permission"]
         });
         if (!user) {
             throw new common_1.NotFoundException(`User with id ${id} not found`);

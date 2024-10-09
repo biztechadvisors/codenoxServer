@@ -79,7 +79,7 @@ let BlogService = class BlogService {
         if (!shop) {
             throw new common_1.NotFoundException(`Shop with slug '${shopSlug}' not found`);
         }
-        let region = null;
+        let region;
         if (regionName) {
             region = await this.regionRepository.findOne({ where: { name: regionName } });
             if (!region) {

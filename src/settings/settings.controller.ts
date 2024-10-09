@@ -31,8 +31,13 @@ export class SettingsController {
   }
 
   @Get('')
-  findOne(@Query('shopSlug') shopSlug: string) {
-    return this.settingsService.findOne(shopSlug);
+  async findOne(@Query('shopSlug') shopSlug: string) {
+    const settings = await this.settingsService.findOne(shopSlug);
+    // Return a default value or handle null case
+    if (!settings) {
+      return {}; // or handle appropriately
+    }
+    return settings;
   }
 
   @Delete(':id')

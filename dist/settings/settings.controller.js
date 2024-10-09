@@ -32,8 +32,12 @@ let SettingsController = class SettingsController {
         await this.cacheService.invalidateCacheBySubstring('settings_shop');
         return this.settingsService.update(id, updateSettingDto);
     }
-    findOne(shopSlug) {
-        return this.settingsService.findOne(shopSlug);
+    async findOne(shopSlug) {
+        const settings = await this.settingsService.findOne(shopSlug);
+        if (!settings) {
+            return {};
+        }
+        return settings;
     }
     async remove(id) {
         await this.cacheService.invalidateCacheBySubstring('settings_shop');
@@ -64,7 +68,7 @@ __decorate([
     __param(0, (0, common_1.Query)('shopSlug')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Delete)(':id'),
