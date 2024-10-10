@@ -307,7 +307,9 @@ export class UsersService {
     // Fetch user from the database if not cached
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['profile', 'adds', 'owned_shops', 'orders', 'adds.address', 'permission'],
+      relations: ['profile', 'adds', 'owned_shops',
+        // 'orders',
+        'adds.address', 'permission'],
     });
 
     if (!user) {

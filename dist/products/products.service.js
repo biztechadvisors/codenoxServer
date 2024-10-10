@@ -230,9 +230,9 @@ let ProductsService = ProductsService_1 = class ProductsService {
         return product;
     }
     async getProducts(query) {
-        const { limit = 20, page = 1, search, filter, dealerId, shop_id = 1, shopName, regionNames, minPrice, maxPrice } = query;
+        const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName, regionNames, minPrice, maxPrice } = query;
         const startIndex = (page - 1) * limit;
-        if (!shop_id && (!shopName && !dealerId)) {
+        if (!shop_id && !shopName && !dealerId) {
             const products = {
                 data: [],
                 count: 0,
@@ -276,16 +276,14 @@ let ProductsService = ProductsService_1 = class ProductsService {
             .leftJoinAndSelect('product.variation_options', 'variation_options')
             .leftJoinAndSelect('product.gallery', 'gallery')
             .leftJoinAndSelect('product.my_review', 'my_review')
-            .leftJoinAndSelect('product.variations', 'attributeValues')
-            .leftJoinAndSelect('attributeValues.attribute', 'attribute')
             .leftJoinAndSelect('product.regions', 'regions');
         if (shop_id) {
             productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
         }
         else if (shopName) {
-            productQueryBuilder.andWhere('(shop.name LIKE :shopName OR shop.slug LIKE :shopName)', { shopName: `%${shopName}%` });
+            productQueryBuilder.andWhere('(shop.name = :shopName OR shop.slug = :shopName)', { shopName });
         }
-        if (dealerId) {
+        else if (dealerId) {
             productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
         }
         if (regionsArray.length > 0) {

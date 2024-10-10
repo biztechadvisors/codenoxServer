@@ -327,7 +327,7 @@ export class ProductsService {
       search,
       filter,
       dealerId,
-      shop_id = 1,
+      shop_id,
       shopName,
       regionNames,
       minPrice,
@@ -336,7 +336,7 @@ export class ProductsService {
 
     const startIndex = (page - 1) * limit;
 
-    if (!shop_id && (!shopName && !dealerId)) {
+    if (!shop_id && !shopName && !dealerId) {
       const products: ProductPaginator = {
         data: [],
         count: 0,
@@ -387,18 +387,14 @@ export class ProductsService {
       .leftJoinAndSelect('product.variation_options', 'variation_options')
       .leftJoinAndSelect('product.gallery', 'gallery')
       .leftJoinAndSelect('product.my_review', 'my_review')
-      .leftJoinAndSelect('product.variations', 'attributeValues')
-      .leftJoinAndSelect('attributeValues.attribute', 'attribute')
-      .leftJoinAndSelect('product.regions', 'regions'); // Ensure proper join with region entity
+      .leftJoinAndSelect('product.regions', 'regions');
 
     // Add filters for shop or dealer
     if (shop_id) {
       productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
     } else if (shopName) {
-      productQueryBuilder.andWhere('(shop.name LIKE :shopName OR shop.slug LIKE :shopName)', { shopName: `%${shopName}%` });
-    }
-
-    if (dealerId) {
+      productQueryBuilder.andWhere('(shop.name = :shopName OR shop.slug = :shopName)', { shopName });
+    } else if (dealerId) {
       productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
     }
 

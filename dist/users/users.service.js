@@ -223,7 +223,8 @@ let UsersService = class UsersService {
         }
         const user = await this.userRepository.findOne({
             where: { id },
-            relations: ['profile', 'adds', 'owned_shops', 'orders', 'adds.address', 'permission'],
+            relations: ['profile', 'adds', 'owned_shops',
+                'adds.address', 'permission'],
         });
         if (!user) {
             throw new common_1.NotFoundException(`User with id ${id} not found`);

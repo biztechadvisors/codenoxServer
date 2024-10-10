@@ -84,7 +84,7 @@ __decorate([
     __metadata("design:type", user_entity_1.User)
 ], Add.prototype, "customer", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => UserAdd, { onDelete: "CASCADE" }),
+    (0, typeorm_1.OneToOne)(() => UserAdd, { onDelete: "CASCADE", eager: true }),
     (0, typeorm_1.JoinColumn)({ name: 'address_id' }),
     __metadata("design:type", UserAdd)
 ], Add.prototype, "address", void 0);
