@@ -419,10 +419,9 @@ export class ProductsService {
       // Parse filter conditions
       if (filter) {
         const parseSearchParams = filter.split(';');
-        parseSearchParams.forEach(searchParam => {
+        parseSearchParams.forEach((searchParam) => {
           const [key, value] = searchParam.split(':');
           const searchTerm = `%${value}%`;
-
           switch (key) {
             case 'product':
               searchConditions.push('(product.name LIKE :productSearchTerm OR product.slug LIKE :productSearchTerm)');
@@ -447,7 +446,7 @@ export class ProductsService {
               break;
             case 'variations':
               const variationParams = value.split(',');
-              const variationSearchTerm = variationParams.map(param => param.split('=')[1]).join('/');
+              const variationSearchTerm = variationParams.map((param) => param.split('=')[1]).join('/');
               searchConditions.push('(variation_options.title LIKE :variationSearchTerm)');
               searchParams.variationSearchTerm = `%${variationSearchTerm}%`;
               break;
@@ -459,16 +458,18 @@ export class ProductsService {
 
       // Add general search conditions
       if (search) {
-        const filterTerms = search.split(' ').map(term => `%${term}%`);
-        const searchTermsConditions = filterTerms.map((_, index) =>
-          `(product.name LIKE :filterSearchTerm${index} OR ` +
-          `product.sku LIKE :filterSearchTerm${index} OR ` +
-          `categories.name LIKE :filterSearchTerm${index} OR ` +
-          `subCategories.name LIKE :filterSearchTerm${index} OR ` +
-          `type.name LIKE :filterSearchTerm${index} OR ` +
-          `tags.name LIKE :filterSearchTerm${index} OR ` +
-          `variation_options.title LIKE :filterSearchTerm${index})`
-        ).join(' OR ');
+        const filterTerms = search.split(' ').map((term) => `%${term}%`);
+        const searchTermsConditions = filterTerms
+          .map((_, index) => (
+            `product.name LIKE :filterSearchTerm${index} OR
+        product.sku LIKE :filterSearchTerm${index} OR
+        categories.name LIKE :filterSearchTerm${index} OR
+        subCategories.name LIKE :filterSearchTerm${index} OR
+        type.name LIKE :filterSearchTerm${index} OR
+        tags.name LIKE :filterSearchTerm${index} OR
+        variation_options.title LIKE :filterSearchTerm${index}`
+          ))
+          .join(' OR ');
 
         filterTerms.forEach((term, index) => {
           searchParams[`filterSearchTerm${index}`] = term;
@@ -586,7 +587,7 @@ export class ProductsService {
         where: { slug: slug, shop_id: shop_id },
         relations: [
           'type',
-          'shop',
+          // 'shop',
           'image',
           'categories',
           'subCategories',
