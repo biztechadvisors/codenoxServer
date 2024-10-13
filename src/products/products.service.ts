@@ -544,7 +544,19 @@ export class ProductsService {
       }
 
       // Generate pagination data
-      const url = `/products?search=${search}&limit=${limit}&page=${page}`;
+      const queryParams = [
+        shop_id ? `shop_id=${shop_id}` : '',
+        shopName ? `shopName=${encodeURIComponent(shopName)}` : '',
+        dealerId ? `dealerId=${dealerId}` : '',
+        search ? `search=${encodeURIComponent(search)}` : '',
+        `limit=${limit}`,
+        `page=${page}`,
+      ]
+        .filter(Boolean) // Remove empty strings (falsey values)
+        .join('&'); // Join parameters with '&'
+
+      const url = `/products?${queryParams}`;
+
       const paginator = paginate(total, page, limit, products.length, url);
 
       const result = {

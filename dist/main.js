@@ -20,8 +20,8 @@ async function bootstrap() {
     app.use((0, helmet_1.default)());
     app.use((0, compression_1.default)());
     app.use((0, express_session_1.default)({
-        name: process.env.SESSION_NAME || 'sessionName',
-        secret: process.env.SESSION_SECRET || 'notagoodsecretnoreallydontusethisone',
+        name: process.env.SESSION_NAME,
+        secret: process.env.SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
         cookie: {
@@ -46,7 +46,7 @@ async function bootstrap() {
         const document = swagger_1.SwaggerModule.createDocument(app, config);
         swagger_1.SwaggerModule.setup('docs', app, document);
     }
-    const PORT = process.env.PORT || 5000;
+    const PORT = process.env.PORT;
     await app.listen(PORT);
     common_2.Logger.log(`Application is running on: ${await app.getUrl()}/api`);
 }

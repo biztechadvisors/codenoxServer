@@ -541,7 +541,19 @@ export class UploadXlService {
           'variation_options',
           'subCategories',
         ],
-      })
+      });
+
+      // Extract tag IDs from the incoming DTO and the existing product
+      const incomingTagIds = createProductDto.tags.map(tag => tag); // Assuming tags are passed with an 'id'
+      const existingTagIds = existingProduct ? existingProduct.tags.map(tag => tag.id) : [];
+
+      // Check if the tag associations match
+      const isSameTagAssociation =
+        incomingTagIds.length === existingTagIds.length &&
+        incomingTagIds.every(id => existingTagIds.includes(id));
+
+      let product: Product =
+        isSameTagAssociation && existingProduct ? existingProduct : new Product();
 
       if (existingProduct) {
         // Fetch related variations and their options
@@ -550,52 +562,41 @@ export class UploadXlService {
             const variation = await this.variationRepository.findOne({
               where: { id: v.id },
               relations: ['options', 'image'],
-            })
-
+            });
             if (!variation) {
-              throw new NotFoundException(`Variation with ID ${v.id} not found`)
+              throw new NotFoundException(`Variation with ID ${v.id} not found`);
             }
-
-            return variation
+            return variation;
           }),
-        )
-        existingProduct.variation_options = []
-        existingProduct.variations = []
+        );
 
-        await this.productRepository.save(existingProduct)
+        existingProduct.variation_options = [];
+        existingProduct.variations = [];
+        await this.productRepository.save(existingProduct);
 
         // Delete variation options and images
         await Promise.all([
-          ...variations.flatMap((v) =>
-            v.options ? [this.variationOptionRepository.remove(v.options)] : [],
-          ),
-          ...variations.map(async (v) => {
+          ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+          ...variations.map(async v => {
             if (v.image) {
-              const image = v.image
-              v.image = null // Unlink the image from the variation
-              await this.variationRepository.save(v) // Save the variation without the image
-              let attachment
+              const image = v.image;
+              v.image = null;
+              await this.variationRepository.save(v);
               for (let i = 0; i < image.length; i++) {
-                attachment = await this.attachmentRepository.findOne({
-                  where: { id: i },
-                })
-              }
-              if (attachment) {
-                await this.attachmentRepository.remove(attachment)
+                const attachment = await this.attachmentRepository.findOne({ where: { id: image[i].id } });
+                if (attachment) {
+                  await this.attachmentRepository.remove(attachment);
+                }
               }
             }
           }),
-        ])
+        ]);
 
         // Remove all the variations
-        await this.variationRepository.remove(variations)
-
-        console.log('Variation options, variations deleted')
+        await this.variationRepository.remove(variations);
+        console.log('Variation options and variations deleted');
       }
-
-      // Update existing product
-      let product: Product = existingProduct ? existingProduct : new Product()
-
+      
       product.name = createProductDto.name
       product.slug = createProductDto.name
         .toLowerCase()
@@ -697,193 +698,231 @@ export class UploadXlService {
         product.shop_id = shop.id
       }
 
-      // // Set image
-      // if (createProductDto?.image?.id) {
-      //   const image = await this.attachmentRepository.findOne(
-      //     createProductDto.image.id,
-      //   )
-      //   if (!image) {
-      //     throw new NotFoundException(
-      //       `Image with ID ${createProductDto.image.id} not found`,
-      //     )
-      //   }
-      //   product.image = image
-      // }
+      // Set image
+      if (createProductDto?.image?.id) {
+        const image = await this.attachmentRepository.findOne(
+          createProductDto.image.id,
+        )
+        if (!image) {
+          throw new NotFoundException(
+            `Image with ID ${createProductDto.image.id} not found`,
+          )
+        }
+        product.image = image
+      }
 
-      // // Set gallery
-      // if (createProductDto?.gallery?.length > 0) {
-      //   const galleryAttachments = []
-      //   for (const galleryImage of createProductDto.gallery) {
-      //     const image = await this.attachmentRepository.findOne(galleryImage.id)
-      //     if (!image) {
-      //       throw new NotFoundException(
-      //         `Gallery image with ID ${galleryImage.id} not found`,
-      //       )
-      //     }
-      //     galleryAttachments.push(image)
-      //   }
-      //   product.gallery = galleryAttachments
-      // }
+      // Set gallery
+      if (createProductDto?.gallery?.length > 0) {
+        const galleryAttachments = []
+        for (const galleryImage of createProductDto.gallery) {
+          const image = await this.attachmentRepository.findOne(galleryImage.id)
+          if (!image) {
+            throw new NotFoundException(
+              `Gallery image with ID ${galleryImage.id} not found`,
+            )
+          }
+          galleryAttachments.push(image)
+        }
+        product.gallery = galleryAttachments
+      }
 
-      // // Handle variations
-      // if (
-      //   createProductDto.variations &&
-      //   createProductDto.variations.length > 0
-      // ) {
-      //   try {
-      //     const attributeValueIds = [
-      //       ...new Set(
-      //         createProductDto.variations.map((v) => v.attribute_value_id),
-      //       ),
-      //     ]
+      ;
 
-      //     if (attributeValueIds.length > 0) {
-      //       const attributeValues =
-      //         await this.attributeValueRepository.findByIds(attributeValueIds)
-      //       const attributeValueMap = new Map(
-      //         attributeValues.map((attr) => [attr.id, attr]),
-      //       )
+      // Handle variations
+      if (createProductDto.variations && createProductDto.variations.length > 0) {
+        try {
+          const attributeValueIds = [
+            ...new Set(createProductDto.variations.map((v) => v.attribute_value_id)),
+          ];
+          if (attributeValueIds.length > 0) {
+            const attributeValues =
+              await this.attributeValueRepository.findByIds(attributeValueIds);
+            const attributeValueMap = new Map(
+              attributeValues.map((attr) => [attr.id, attr]),
+            );
+            const uniqueVariations = new Set<number>();
+            product.variations = createProductDto.variations
+              .filter((variation) => {
+                const { attribute_value_id } = variation;
+                if (uniqueVariations.has(attribute_value_id)) {
+                  console.warn(
+                    `Duplicate attribute value ID ${attribute_value_id} found and ignored`,
+                  );
+                  return false;
+                }
+                uniqueVariations.add(attribute_value_id);
+                return true;
+              })
+              .map((variation) => {
+                const attributeValue = attributeValueMap.get(
+                  variation.attribute_value_id,
+                );
+                if (!attributeValue) {
+                  console.warn(
+                    `Attribute value with ID ${variation.attribute_value_id} not found`,
+                  );
+                  return null;
+                }
+                return attributeValue;
+              })
+              .filter(Boolean);
+            // Save the product first
+            await this.productRepository.save(product);
+          }
+        } catch (error) {
+          console.error('Error handling variations:', error);
+          throw error instanceof NotFoundException
+            ? error
+            : new InternalServerErrorException(
+              'An error occurred while processing variations',
+            );
+        }
+      } else {
+        console.warn('No variations provided in createProductDto');
+      }
 
-      //       const uniqueVariations = new Set<number>()
-      //       product.variations = createProductDto.variations
-      //         .filter((variation) => {
-      //           const { attribute_value_id } = variation
-      //           if (uniqueVariations.has(attribute_value_id)) {
-      //             console.warn(
-      //               `Duplicate attribute value ID ${attribute_value_id} found and ignored`,
-      //             )
-      //             return false
-      //           }
-      //           uniqueVariations.add(attribute_value_id)
-      //           return true
-      //         })
-      //         .map((variation) => {
-      //           const attributeValue = attributeValueMap.get(
-      //             variation.attribute_value_id,
-      //           )
-      //           if (!attributeValue) {
-      //             console.warn(
-      //               `Attribute value with ID ${variation.attribute_value_id} not found`,
-      //             )
-      //             return null
-      //           }
-      //           return attributeValue
-      //         })
-      //         .filter(Boolean)
+      // Handle variation options
+      if (
+        product.product_type === ProductType.VARIABLE &&
+        createProductDto.variation_options?.upsert
+      ) {
+        try {
+          const variationOptions = await Promise.all(
+            createProductDto.variation_options.upsert.map(
+              async (variationDto) => {
+                const existingVariations = await this.variationRepository.find({
+                  where: { title: variationDto.title },
+                  relations: ['options'],
+                });
 
-      //       // Save the product first
-      //       await this.productRepository.save(product)
-      //     }
-      //   } catch (error) {
-      //     console.error('Error handling variations:', error)
-      //     throw error instanceof NotFoundException
-      //       ? error
-      //       : new InternalServerErrorException(
-      //         'An error occurred while processing variations',
-      //       )
-      //   }
-      // } else {
-      //   console.warn('No variations provided in createProductDto')
-      // }
+                // Delete existing variation options
+                for (const existingVariation of existingVariations) {
+                  for (const option of existingVariation.options) {
+                    await this.variationOptionRepository.delete(option.id);
+                  }
+                }
 
-      // // Handle variation options
-      // if (
-      //   product.product_type === ProductType.VARIABLE &&
-      //   createProductDto.variation_options?.upsert
-      // ) {
-      //   try {
-      //     const variationOptions = await Promise.all(
-      //       createProductDto.variation_options.upsert.map(
-      //         async (variationDto) => {
-      //           const existingVariations = await this.variationRepository.find({
-      //             where: { title: variationDto.title },
-      //             relations: ['options'],
-      //           })
+                const newVariation = this.variationRepository.create({
+                  title: variationDto.title,
+                  name: variationDto.name,
+                  price: this.validateNumber(variationDto.price),
+                  sku: variationDto.sku,
+                  is_disable: variationDto.is_disable,
+                  sale_price: this.validateNumber(variationDto.sale_price),
+                  quantity: this.validateNumber(variationDto.quantity),
+                  created_at: new Date(),
+                  updated_at: new Date(),
+                });
 
-      //           // Delete existing variation options
-      //           for (const existingVariation of existingVariations) {
-      //             for (const option of existingVariation.options) {
-      //               await this.variationOptionRepository.delete(option.id)
-      //             }
-      //           }
+                // Handle images if present
+                if (variationDto?.image && Array.isArray(variationDto.image)) {
+                  const images: Attachment[] = [];
+                  for (const img of variationDto.image) {
+                    let image = await this.attachmentRepository.findOne({
+                      where: { id: img.id },
+                    });
+                    if (!image) {
+                      image = this.attachmentRepository.create({
+                        id: img.id,
+                        original: img.original,
+                        thumbnail: img.thumbnail,
+                      });
+                      await this.attachmentRepository.save(image);
+                    }
+                    images.push(image);
+                  }
+                  newVariation.image = images; // Assign an array of images
+                } else if (variationDto?.image && !Array.isArray(variationDto.image)) {
+                  // Handle the case where a single image is provided instead of an array
+                  let image = await this.attachmentRepository.findOne({
+                    where: { id: variationDto.image.id },
+                  });
+                  if (!image) {
+                    image = this.attachmentRepository.create({
+                      id: variationDto.image.id,
+                      original: variationDto.image.original,
+                      thumbnail: variationDto.image.thumbnail,
+                    });
+                    await this.attachmentRepository.save(image);
+                  }
+                  newVariation.image = [image]; // Assign as an array with one image
+                }
 
-      //           const newVariation = this.variationRepository.create({
-      //             title: variationDto.title,
-      //             name: variationDto.name,
-      //             price: this.validateNumber(variationDto.price),
-      //             sku: variationDto.sku,
-      //             is_disable: variationDto.is_disable,
-      //             sale_price: this.validateNumber(variationDto.sale_price),
-      //             quantity: this.validateNumber(variationDto.quantity),
-      //             created_at: new Date(),
-      //             updated_at: new Date(),
-      //           })
+                const savedVariation = await this.variationRepository.save(
+                  newVariation,
+                );
 
-      //           // Handle image if present
-      //           if (variationDto?.image) {
-      //             let image = await this.attachmentRepository.findOne({
-      //               where: { id: variationDto.image.id },
-      //             })
-      //             if (!image) {
-      //               image = this.attachmentRepository.create({
-      //                 id: variationDto.image.id,
-      //                 original: variationDto.image.original,
-      //                 thumbnail: variationDto.image.thumbnail,
-      //               })
-      //               await this.attachmentRepository.save(image)
-      //             }
-      //             newVariation.image = image
-      //           }
+                // Handle variation options
+                const variationOptionEntities = await Promise.all(
+                  (variationDto.options || []).map(async (option) => {
+                    const newVariationOption =
+                      this.variationOptionRepository.create({
+                        name: option.name,
+                        value: option.value,
+                      });
+                    return await this.variationOptionRepository.save(
+                      newVariationOption,
+                    );
+                  }),
+                );
 
-      //           const savedVariation = await this.variationRepository.save(
-      //             newVariation,
-      //           )
+                savedVariation.options = variationOptionEntities;
+                await this.variationRepository.save(savedVariation);
 
-      //           // Handle variation options
-      //           const variationOptionEntities = await Promise.all(
-      //             (variationDto.options || []).map(async (option) => {
-      //               const newVariationOption =
-      //                 this.variationOptionRepository.create({
-      //                   name: option.name,
-      //                   value: option.value,
-      //                 })
-      //               return await this.variationOptionRepository.save(
-      //                 newVariationOption,
-      //               )
-      //             }),
-      //           )
+                // Check and insert into variation_variationOption table
+                await Promise.all(
+                  savedVariation.options.map(async (opt) => {
+                    const existingEntry = await this.variationOptionRepository
+                      .createQueryBuilder()
+                      .select()
+                      .from('variation_variationOption', 'vvo')
+                      .where('vvo.variationId = :variationId AND vvo.variationOptionId = :variationOptionId', {
+                        variationId: savedVariation.id,
+                        variationOptionId: opt.id,
+                      })
+                      .getOne();
 
-      //           savedVariation.options = variationOptionEntities
-      //           await this.variationRepository.save(savedVariation)
+                    if (!existingEntry) {
+                      await this.variationOptionRepository
+                        .createQueryBuilder()
+                        .insert()
+                        .into('variation_variationOption')
+                        .values({
+                          variationId: savedVariation.id,
+                          variationOptionId: opt.id,
+                        })
+                        .execute();
+                    }
+                  })
+                );
 
-      //           return savedVariation
-      //         },
-      //       ),
-      //     )
+                return savedVariation;
+              },
+            ),
+          );
+          product.variation_options = variationOptions;
+          await this.productRepository.save(product);
+        } catch (error) {
+          console.error('Error handling variation options:', error);
+          throw new InternalServerErrorException(
+            'An error occurred while processing variation options',
+          );
+        }
+      } else {
+        console.warn('No variation options provided in createProductDto');
+      }
 
-      //     product.variation_options = variationOptions
-      //     await this.productRepository.save(product)
-      //   } catch (error) {
-      //     console.error('Error handling variation options:', error)
-      //     throw new InternalServerErrorException(
-      //       'An error occurred while processing variation options',
-      //     )
-      //   }
-      // } else {
-      //   console.warn('No variation options provided in createProductDto')
-      // }
+      if (product) {
+        await this.productsService.updateShopProductsCount(
+          product.shop_id,
+          product.id,
+        );
+      }
 
-      // if (product) {
-      //   await this.productsService.updateShopProductsCount(
-      //     product.shop_id,
-      //     product.id,
-      //   )
-      // }
-
-      return product
+      return product;
     } catch (error) {
-      console.log('error', error)
-      throw new Error('Error saving products: ' + error.message)
+      console.log('error', error);
+      throw new Error('Error saving products: ' + error.message);
     }
   }
 

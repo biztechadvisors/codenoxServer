@@ -38,7 +38,8 @@ export class StoreNoticesService {
     }
 
     const results = data.slice(startIndex, endIndex)
-    const url = `/store-notices?search=${search}&limit=${limit}`
+    const url = `/store-notices?search=${search || ''}&limit=${limit || 15}`;
+
     return {
       data: results,
       ...paginate(data.length, page, limit, results.length, url),

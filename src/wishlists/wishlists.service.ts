@@ -55,7 +55,16 @@ export class WishlistsService {
     }
 
     const results = data.slice(startIndex, startIndex + limit);
-    const url = `/wishlists?with=shop&orderBy=created_at&sortedBy=desc`;
+    const withParam = 'shop'; // Example parameter, can be changed to a variable
+    const orderBy = 'created_at'; // Example parameter, can be changed to a variable
+    const sortedBy = 'desc'; // Example parameter, can be changed to a variable
+
+    const url = `/wishlists?${[
+      withParam ? `with=${withParam}` : '',
+      orderBy ? `orderBy=${orderBy}` : '',
+      sortedBy ? `sortedBy=${sortedBy}` : '',
+    ].filter(Boolean).join('&')}`;
+
     const paginatedData = {
       data: results,
       ...paginate(data.length, page, limit, results.length, url),

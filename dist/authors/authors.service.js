@@ -99,7 +99,13 @@ let AuthorsService = class AuthorsService {
             data = approvedData;
         }
         const results = data.slice(startIndex, endIndex);
-        const url = `/authors?search=${search}&limit=${limit}`;
+        const queryParams = [
+            search ? `search=${encodeURIComponent(search)}` : '',
+            `limit=${limit}`
+        ]
+            .filter(Boolean)
+            .join('&');
+        const url = `/authors?${queryParams}`;
         return Object.assign({ data: results }, (0, paginate_1.paginate)(data.length, page, limit, results.length, url));
     }
     async getAuthorBySlug(slug) {

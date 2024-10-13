@@ -68,7 +68,7 @@ export class MailService {
   }
 
   async sendUserConfirmation(userOrEmail: string | { email: string; name: string }, token: string) {
-    const url = `https://example.com/auth/confirm?token=${token}`;
+    const url = `https://${process.env.FRONTEND_APP_URL}/auth/confirm?token=${token}`;
     let email, name;
 
     // Determine if it's a User object or email string
@@ -99,7 +99,7 @@ export class MailService {
   }
 
   async resendUserConfirmation(user: User, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`;
+    const url = `https://${process.env.FRONTEND_APP_URL}/auth/confirm?token=${token}`;
     try {
       await this.mailerService.sendMail({
         to: user.email,
@@ -118,7 +118,7 @@ export class MailService {
   }
 
   async forgetPasswordUserConfirmation(user: User, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`;
+    const url = `https://${process.env.FRONTEND_APP_URL}/auth/confirm?token=${token}`;
     try {
       await this.mailerService.sendMail({
         to: user.email,
@@ -450,7 +450,7 @@ export class MailService {
         slug: item.slug
       }));
 
-      const CartUrl = "https://www.Codenox.in/shop-cart";
+      const CartUrl = `https://${process.env.FRONTEND_APP_URL}/shop-cart`;
 
       await this.mailerService.sendMail({
         to: email,
@@ -469,7 +469,7 @@ export class MailService {
   }
 
   async sendPermissionUserConfirmation(password: any, user: User, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`;
+    const url = `https://${process.env.FRONTEND_APP_URL}/auth/confirm?token=${token}`;
     const templatePath = path.join(__dirname, 'templates', 'userbyowner.hbs');
     try {
       await this.mailerService.sendMail({

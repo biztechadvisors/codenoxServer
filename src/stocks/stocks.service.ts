@@ -829,7 +829,7 @@ export class StocksService {
                 })
             );
 
-            const url = `/orders?search=${search}&limit=${limit}`;
+            const url = `/orders?search=${search || ''}&limit=${limit || 15}&customer_id=${customer_id || ''}&tracking_number=${tracking_number || ''}&shop_id=${shop_id || ''}&page=${page || 1}`;
             const paginatedResult = {
                 data: results,
                 ...paginate(totalCount, page, limit, results.length, url),

@@ -404,7 +404,17 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 productQueryBuilder.skip(startIndex).take(limit);
                 products = await productQueryBuilder.getMany();
             }
-            const url = `/products?search=${search}&limit=${limit}&page=${page}`;
+            const queryParams = [
+                shop_id ? `shop_id=${shop_id}` : '',
+                shopName ? `shopName=${encodeURIComponent(shopName)}` : '',
+                dealerId ? `dealerId=${dealerId}` : '',
+                search ? `search=${encodeURIComponent(search)}` : '',
+                `limit=${limit}`,
+                `page=${page}`,
+            ]
+                .filter(Boolean)
+                .join('&');
+            const url = `/products?${queryParams}`;
             const paginator = (0, paginate_1.paginate)(total, page, limit, products.length, url);
             const result = Object.assign({ data: products }, paginator);
             await this.cacheManager.set(cacheKey, result, 60);

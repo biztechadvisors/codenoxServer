@@ -44,7 +44,14 @@ let WishlistsService = class WishlistsService {
             data = data.filter(item => item.product.name.toLowerCase().includes(search.toLowerCase()));
         }
         const results = data.slice(startIndex, startIndex + limit);
-        const url = `/wishlists?with=shop&orderBy=created_at&sortedBy=desc`;
+        const withParam = 'shop';
+        const orderBy = 'created_at';
+        const sortedBy = 'desc';
+        const url = `/wishlists?${[
+            withParam ? `with=${withParam}` : '',
+            orderBy ? `orderBy=${orderBy}` : '',
+            sortedBy ? `sortedBy=${sortedBy}` : '',
+        ].filter(Boolean).join('&')}`;
         const paginatedData = Object.assign({ data: results }, (0, paginate_1.paginate)(data.length, page, limit, results.length, url));
         await this.cacheManager.set(cacheKey, paginatedData, 60);
         return paginatedData;

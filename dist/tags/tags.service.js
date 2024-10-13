@@ -133,7 +133,7 @@ let TagsService = class TagsService {
             var _a;
             return (Object.assign(Object.assign({}, item), { type_id: ((_a = item.type) === null || _a === void 0 ? void 0 : _a.id) || null }));
         });
-        const url = `/tags?search=${search}&limit=${numericLimit}&shopSlug=${shopSlug}&region_name=${regionNames.join(',')}`;
+        const url = `/tags?${search ? `search=${search}` : ''}${shopSlug ? `&shopSlug=${shopSlug}` : ''}${Array.isArray(region_name) && region_name.length ? `&region_name=${region_name.join(',')}` : region_name ? `&region_name=${region_name}` : ''}`.replace(/\?&/, '?').replace(/&$/, '');
         const response = Object.assign({ data: formattedData }, (0, paginate_1.paginate)(total, numericPage, numericLimit, formattedData.length, url));
         await this.cacheManager.set(cacheKey, response, 60);
         return response;

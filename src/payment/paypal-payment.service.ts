@@ -19,7 +19,7 @@ export class PaypalPaymentService {
       // process.env.NODE_ENV === 'production'
       //   ? process.env.PAYPAL_CLIENT_ID
       //   :
-        process.env.PAYPAL_SANDBOX_CLIENT_ID;
+      process.env.PAYPAL_SANDBOX_CLIENT_ID;
 
     this.clientSecret =
       // process.env.NODE_ENV === 'production'
@@ -83,7 +83,7 @@ export class PaypalPaymentService {
   }
 
   private getRequestBody(order: Order) {
-    const redirectUrl = process.env.SHOP_URL || 'http://localhost:3003';
+    const redirectUrl = process.env.FRONTEND_APP_URL;
     const reference_id = order.tracking_number || order.id?.toString() || uuidv4();
 
     return {

@@ -76,7 +76,7 @@ let MailService = class MailService {
         }
     }
     async sendUserConfirmation(userOrEmail, token) {
-        const url = `https://example.com/auth/confirm?token=${token}`;
+        const url = `https://${process.env.FRONTEND_APP_URL}/auth/confirm?token=${token}`;
         let email, name;
         if (typeof userOrEmail === 'string') {
             email = userOrEmail;
@@ -105,7 +105,7 @@ let MailService = class MailService {
         }
     }
     async resendUserConfirmation(user, token) {
-        const url = `example.com/auth/confirm?token=${token}`;
+        const url = `https://${process.env.FRONTEND_APP_URL}/auth/confirm?token=${token}`;
         try {
             await this.mailerService.sendMail({
                 to: user.email,
@@ -124,7 +124,7 @@ let MailService = class MailService {
         }
     }
     async forgetPasswordUserConfirmation(user, token) {
-        const url = `example.com/auth/confirm?token=${token}`;
+        const url = `https://${process.env.FRONTEND_APP_URL}/auth/confirm?token=${token}`;
         try {
             await this.mailerService.sendMail({
                 to: user.email,
@@ -386,7 +386,7 @@ let MailService = class MailService {
                 imageUrl: item.image,
                 slug: item.slug
             }));
-            const CartUrl = "https://www.Codenox.in/shop-cart";
+            const CartUrl = `https://${process.env.FRONTEND_APP_URL}/shop-cart`;
             await this.mailerService.sendMail({
                 to: email,
                 from: '"Support Team" <info@codenoxx.tech>',
@@ -404,7 +404,7 @@ let MailService = class MailService {
         }
     }
     async sendPermissionUserConfirmation(password, user, token) {
-        const url = `example.com/auth/confirm?token=${token}`;
+        const url = `https://${process.env.FRONTEND_APP_URL}/auth/confirm?token=${token}`;
         const templatePath = path_1.default.join(__dirname, 'templates', 'userbyowner.hbs');
         try {
             await this.mailerService.sendMail({

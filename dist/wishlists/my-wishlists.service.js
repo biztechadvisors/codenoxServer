@@ -42,7 +42,10 @@ let MyWishlistService = class MyWishlistService {
         };
         let data = await this.wishlistRepository.find(findOptions);
         const results = data.slice(startIndex, endIndex);
-        const url = `/wishlists?with=shop&orderBy=created_at&sortedBy=desc`;
+        const withParam = 'shop';
+        const orderBy = 'created_at';
+        const sortedBy = 'desc';
+        const url = `/wishlists?${withParam ? `with=${withParam}` : ''}${orderBy ? `&orderBy=${orderBy}` : ''}${sortedBy ? `&sortedBy=${sortedBy}` : ''}`.replace(/\?&/, '?').replace(/&$/, '');
         return Object.assign({ data: results }, (0, paginate_1.paginate)(data.length, page, limit, results.length, url));
     }
     findAMyWishlist(id) {

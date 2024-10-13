@@ -183,7 +183,20 @@ export class CategoriesService {
         order,
       });
 
-      const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}&shopSlug=${shopSlug}&shopId=${shopId}&language=${language}&region_name=${region_name}&type=${type}`;
+      const queryParams = [
+        search ? `search=${encodeURIComponent(search)}` : '',
+        numericLimit ? `limit=${numericLimit}` : '',
+        parent ? `parent=${parent}` : '',
+        shopSlug ? `shopSlug=${encodeURIComponent(shopSlug)}` : '',
+        shopId ? `shopId=${shopId}` : '',
+        language ? `language=${language}` : '',
+        region_name ? `region_name=${encodeURIComponent(region_name)}` : '',
+        type ? `type=${type}` : ''
+      ]
+        .filter(Boolean)
+        .join('&');
+
+      const url = `/categories?${queryParams}`;
 
       categories = {
         data,
@@ -491,7 +504,17 @@ export class CategoriesService {
         order,
       });
 
-      const url = `/subcategories?search=${search}&limit=${numericLimit}&categoryId=${categoryId}&shopSlug=${shopSlug}&regionName=${regionName}`;
+      const queryParams = [
+        search ? `search=${encodeURIComponent(search)}` : '',
+        numericLimit ? `limit=${numericLimit}` : '',
+        categoryId ? `categoryId=${categoryId}` : '',
+        shopSlug ? `shopSlug=${encodeURIComponent(shopSlug)}` : '',
+        regionName ? `regionName=${encodeURIComponent(regionName)}` : ''
+      ]
+        .filter(Boolean)
+        .join('&');
+
+      const url = `/subcategories?${queryParams}`;
 
       subCategories = {
         data,
