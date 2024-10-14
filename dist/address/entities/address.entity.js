@@ -59,7 +59,7 @@ UserAdd = __decorate([
 exports.UserAdd = UserAdd;
 let Add = class Add {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, title: { required: true, type: () => String }, type: { required: true, type: () => String }, default: { required: true, type: () => Boolean }, customer: { required: true, type: () => require("../../users/entities/user.entity").User }, address: { required: true, type: () => require("./address.entity").UserAdd } };
+        return { id: { required: true, type: () => Number }, title: { required: true, type: () => String }, type: { required: true, enum: require("./address.entity").AddressType }, default: { required: true, type: () => Boolean }, customer: { required: true, type: () => require("../../users/entities/user.entity").User }, address: { required: true, type: () => require("./address.entity").UserAdd } };
     }
 };
 __decorate([
@@ -67,15 +67,19 @@ __decorate([
     __metadata("design:type", Number)
 ], Add.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ length: 255 }),
     __metadata("design:type", String)
 ], Add.prototype, "title", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: AddressType,
+        default: AddressType.SHIPPING,
+    }),
     __metadata("design:type", String)
 ], Add.prototype, "type", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], Add.prototype, "default", void 0);
 __decorate([

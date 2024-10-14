@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto, UpdateQuantityDto } from './dto/update-product.dto';
 import { OrderProductPivot, Product, ProductType, Variation, VariationOption } from './entities/product.entity';
@@ -59,19 +59,14 @@ export class ProductsService {
   async updateProductStockStatus() {
     try {
       this.logger.debug('Updating product stock status...');
-
       const products = await this.productRepository.find();
-
       for (const product of products) {
         // Assume that 'in_stock' is a boolean property of the Product entity
         product.in_stock = product.quantity > 0;
       }
-
       await this.productRepository.save(products);
-
       this.logger.debug('Product stock status updated successfully');
     } catch (err) {
-      // Handle errors appropriately
       this.logger.error('Error updating product stock status:', err.message || err);
     }
   }
@@ -88,7 +83,9 @@ export class ProductsService {
       if (!shop) {
         throw new NotFoundException(`Shop with ID ${shopId} not found`);
       }
+
       const product = await this.productRepository.findOne({ where: { id: productId } });
+
       if (product) {
         // Product found, increase the products_count for the shop
         shop.products_count += 1;
@@ -96,11 +93,12 @@ export class ProductsService {
         // Product not found, decrease the products_count (if it's greater than 0)
         shop.products_count -= 1;
       }
+
       // Save the updated shop
       await this.shopRepository.save(shop);
     } catch (err) {
-      // Handle errors appropriately
-      throw err;
+      this.logger.error('Error updating shop products count:', err.message || err);
+      throw new BadRequestException('Error updating shop products count');
     }
   }
 
@@ -606,6 +604,8 @@ export class ProductsService {
           'tags',
           'gallery',
           'related_products',
+          'related_products.image',
+          'related_products.gallery',
           'variations.attribute',
           'variation_options.options',
         ],

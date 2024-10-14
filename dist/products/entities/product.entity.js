@@ -130,7 +130,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Product.prototype, "shop_id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => Product_1, { cascade: true }),
+    (0, typeorm_1.ManyToMany)(() => Product_1, { cascade: true, eager: true }),
     (0, typeorm_1.JoinTable)({ name: 'products_relatedProducts' }),
     __metadata("design:type", Array)
 ], Product.prototype, "related_products", void 0);

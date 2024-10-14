@@ -9,10 +9,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AddModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const cache_manager_1 = require("@nestjs/cache-manager");
 const address_entity_1 = require("./entities/address.entity");
 const user_entity_1 = require("../users/entities/user.entity");
-const shop_entity_1 = require("../shops/entities/shop.entity");
-const cache_manager_1 = require("@nestjs/cache-manager");
 const addresses_controller_1 = require("./addresses.controller");
 const addresses_service_1 = require("./addresses.service");
 const cacheService_1 = require("../helpers/cacheService");
@@ -21,8 +20,11 @@ let AddModule = class AddModule {
 AddModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([address_entity_1.Add, address_entity_1.UserAdd, user_entity_1.User, shop_entity_1.Shop]),
-            cache_manager_1.CacheModule.register(),
+            typeorm_1.TypeOrmModule.forFeature([address_entity_1.Add, address_entity_1.UserAdd, user_entity_1.User]),
+            cache_manager_1.CacheModule.register({
+                ttl: 3600,
+                max: 100,
+            }),
         ],
         controllers: [addresses_controller_1.AddressesController],
         providers: [addresses_service_1.AddressesService, cacheService_1.CacheService],

@@ -596,7 +596,7 @@ export class UploadXlService {
         await this.variationRepository.remove(variations);
         console.log('Variation options and variations deleted');
       }
-      
+
       product.name = createProductDto.name
       product.slug = createProductDto.name
         .toLowerCase()
@@ -724,9 +724,7 @@ export class UploadXlService {
           galleryAttachments.push(image)
         }
         product.gallery = galleryAttachments
-      }
-
-      ;
+      };
 
       // Handle variations
       if (createProductDto.variations && createProductDto.variations.length > 0) {

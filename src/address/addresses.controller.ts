@@ -17,12 +17,12 @@ import { CacheService } from '../helpers/cacheService';
 export class AddressesController {
   constructor(
     private readonly addressesService: AddressesService,
-    private readonly cacheService: CacheService
+    private readonly cacheService: CacheService,
   ) { }
 
   @Post()
   async createAddress(@Body() createAddressDto: CreateAddressDto) {
-    await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${createAddressDto.customer_id}`)
+    await this.invalidateAddressCache(createAddressDto.customer_id);
     return this.addressesService.create(createAddressDto);
   }
 
@@ -32,24 +32,33 @@ export class AddressesController {
   }
 
   @Get(':id')
-  async address(@Param('id') id: string) {
-    return this.addressesService.findOne(+id);
+  async address(@Param('id') id: number) {
+    return this.addressesService.findOne(id);
   }
 
   @Put(':id')
   async updateAddress(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Body() updateAddressDto: UpdateAddressDto,
   ) {
-    await this.cacheService.invalidateCacheBySubstring(`address:id:${id}`)
-    await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${updateAddressDto.customer_id}`)
-    return this.addressesService.update(+id, updateAddressDto);
+    await this.invalidateAddressCache(updateAddressDto.customer_id, id);
+    return this.addressesService.update(id, updateAddressDto);
   }
 
   @Delete(':id')
-  async deleteAddress(@Param('id') id: string) {
-    await this.cacheService.invalidateCacheBySubstring(`address:id:${id}`)
-    await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${id}`)
-    return this.addressesService.remove(+id);
+  async deleteAddress(@Param('id') id: number) {
+    const address = await this.addressesService.findOne(id);
+    if (address) {
+      await this.invalidateAddressCache(address.customer.id, id);
+    }
+    return this.addressesService.remove(id);
+  }
+
+  // Consolidated cache invalidation logic for better maintainability
+  private async invalidateAddressCache(userId: number, addressId?: number) {
+    if (addressId) {
+      await this.cacheService.invalidateCacheBySubstring(`address:id:${addressId}`);
+    }
+    await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${userId}`);
   }
 }

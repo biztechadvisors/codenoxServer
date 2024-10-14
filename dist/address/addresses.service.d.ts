@@ -15,4 +15,8 @@ export declare class AddressesService {
     findOne(id: number): Promise<Add>;
     update(id: number, updateAddressDto: UpdateAddressDto): Promise<Add>;
     remove(id: number): Promise<void>;
+    private getUserById;
+    private getAddressById;
+    private invalidateUserCache;
+    private invalidateAddressCache;
 }

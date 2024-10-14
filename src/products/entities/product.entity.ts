@@ -63,7 +63,6 @@ export class Product extends CoreEntity {
   })
   regions: Region[];
 
-
   @ManyToMany(() => Category, (category) => category.products, {
     eager: true,
     onDelete: 'CASCADE',
@@ -110,7 +109,7 @@ export class Product extends CoreEntity {
   @Column()
   shop_id: number
 
-  @ManyToMany(() => Product, { cascade: true })
+  @ManyToMany(() => Product, { cascade: true, eager: true })
   @JoinTable({ name: 'products_relatedProducts' })
   related_products?: Product[]
 

@@ -38,13 +38,17 @@ export class Add {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ length: 255 })
   title: string;
 
-  @Column()
-  type: string;
+  @Column({
+    type: 'enum',
+    enum: AddressType,
+    default: AddressType.SHIPPING,
+  })
+  type: AddressType;
 
-  @Column()
+  @Column({ default: false })
   default: boolean;
 
   @ManyToOne(() => User, (user) => user.adds)

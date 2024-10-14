@@ -8,7 +8,8 @@ export declare class AddressesController {
     constructor(addressesService: AddressesService, cacheService: CacheService);
     createAddress(createAddressDto: CreateAddressDto): Promise<import("./entities/address.entity").Add>;
     addresses(userId: number): Promise<import("./entities/address.entity").Add[]>;
-    address(id: string): Promise<import("./entities/address.entity").Add>;
-    updateAddress(id: string, updateAddressDto: UpdateAddressDto): Promise<import("./entities/address.entity").Add>;
-    deleteAddress(id: string): Promise<void>;
+    address(id: number): Promise<import("./entities/address.entity").Add>;
+    updateAddress(id: number, updateAddressDto: UpdateAddressDto): Promise<import("./entities/address.entity").Add>;
+    deleteAddress(id: number): Promise<void>;
+    private invalidateAddressCache;
 }

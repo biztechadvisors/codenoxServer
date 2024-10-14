@@ -93,7 +93,8 @@ let ProductsService = ProductsService_1 = class ProductsService {
             await this.shopRepository.save(shop);
         }
         catch (err) {
-            throw err;
+            this.logger.error('Error updating shop products count:', err.message || err);
+            throw new common_1.BadRequestException('Error updating shop products count');
         }
     }
     async create(createProductDto) {
@@ -452,6 +453,8 @@ let ProductsService = ProductsService_1 = class ProductsService {
                     'tags',
                     'gallery',
                     'related_products',
+                    'related_products.image',
+                    'related_products.gallery',
                     'variations.attribute',
                     'variation_options.options',
                 ],
