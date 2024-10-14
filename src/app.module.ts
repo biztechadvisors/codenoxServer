@@ -105,9 +105,7 @@ import { AddModule } from './address/addresses.module';
         port: configService.get<number>('REDIS_PORT'),
         auth_pass: configService.get<string>('REDIS_PASSWORD'),
         ttl: configService.get<number>('CACHE_TTL') || 3000, // Cache TTL in seconds
-        isGlobal: true, // Make the cache global across the application
-        // Uncomment if TLS is required
-        // tls: configService.get<boolean>('REDIS_TLS') ? {} : undefined,
+        isGlobal: true,
       }),
       inject: [ConfigService],
     }),
