@@ -29,7 +29,7 @@ let ProductsController = class ProductsController {
         this.cacheService = cacheService;
     }
     async createProduct(createProductDto) {
-        await this.cacheService.invalidateCacheBySubstring("products");
+        await this.cacheService.invalidateCacheBySubstring('products');
         return this.productsService.create(createProductDto);
     }
     async getProducts(query) {
@@ -38,7 +38,7 @@ let ProductsController = class ProductsController {
     async getProductBySlug(slug, shop_id, dealerId) {
         try {
             if (!slug || !shop_id) {
-                throw new common_1.NotFoundException(`Slug or Shop_Id is not defined`);
+                throw new common_1.NotFoundException('Slug or shop_id is missing');
             }
             return await this.productsService.getProductBySlug(slug, shop_id, dealerId);
         }
@@ -47,7 +47,7 @@ let ProductsController = class ProductsController {
         }
     }
     async update(id, updateProductDto) {
-        await this.cacheService.invalidateCacheBySubstring("products");
+        await this.cacheService.invalidateCacheBySubstring('products');
         return this.productsService.update(+id, updateProductDto);
     }
     async updateQuantity(id, updateQuantityDto) {
@@ -60,7 +60,7 @@ let ProductsController = class ProductsController {
         }
     }
     async remove(id) {
-        await this.cacheService.invalidateCacheBySubstring("products");
+        await this.cacheService.invalidateCacheBySubstring('products');
         return this.productsService.remove(+id);
     }
 };
@@ -84,7 +84,7 @@ __decorate([
     (0, common_1.Get)(':slug/:shop_id'),
     openapi.ApiResponse({ status: 200, type: require("./entities/product.entity").Product }),
     __param(0, (0, common_1.Param)('slug')),
-    __param(1, (0, common_1.Param)('shop_id')),
+    __param(1, (0, common_1.Param)('shop_id', common_1.ParseIntPipe)),
     __param(2, (0, common_1.Query)('dealerId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Number, Number]),

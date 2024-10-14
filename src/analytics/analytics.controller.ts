@@ -1,43 +1,80 @@
-import { BadRequestException, Body, Controller, ForbiddenException, Get, NotFoundException, Post, Query, Logger, Param } from '@nestjs/common';
-import { AnalyticsService } from './analytics.service';
-import { AnalyticsResponseDTO, GetAnalyticsDto, TopUsersQueryDto } from './dto/analytics.dto';
-import { ApiOperation } from '@nestjs/swagger';
-import { CreateAnalyticsDto } from './dto/create-analytics.dto';
-import { Analytics } from './entities/analytics.entity';
-import { CacheService } from '../helpers/cacheService';
+/* eslint-disable prettier/prettier */
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  NotFoundException,
+  Post,
+  Query,
+  Logger,
+  Param,
+} from '@nestjs/common'
+import { AnalyticsService } from './analytics.service'
+import {
+  AnalyticsResponseDTO,
+  GetAnalyticsDto,
+  TopUsersQueryDto,
+} from './dto/analytics.dto'
+import { ApiOperation } from '@nestjs/swagger'
+import { CreateAnalyticsDto } from './dto/create-analytics.dto'
+import { Analytics } from './entities/analytics.entity'
+import { CacheService } from '../helpers/cacheService'
 
 @Controller('analytics')
 export class AnalyticsController {
-  private readonly logger = new Logger(AnalyticsController.name);
+  private readonly logger = new Logger(AnalyticsController.name)
 
-  constructor(private readonly analyticsService: AnalyticsService,
-    private readonly cacheService: CacheService
-  ) { }
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Fetch analytics for a specific shop, customer, and state' })
-  async getAnalytics(@Body() query: GetAnalyticsDto): Promise<AnalyticsResponseDTO> {
+  @ApiOperation({
+    summary: 'Fetch analytics for a specific shop, customer, and state',
+  })
+  async getAnalytics(
+    @Body() query: GetAnalyticsDto,
+  ): Promise<AnalyticsResponseDTO> {
     try {
-      this.logger.log(`Fetching analytics for shop_id: ${query.shop_id}, customerId: ${query.customerId}, state: ${query.state}`);
+      if (!query.shop_id && !query.customerId) {
+        throw new BadRequestException(
+          'Either shop_id or customerId is required.',
+        )
+      }
 
-      const result = await this.analyticsService.findAll(query.shop_id, query.customerId, query.state);
+      this.logger.log(
+        `Fetching analytics for shop_id: ${query.shop_id}, customerId: ${query.customerId}, state: ${query.state}`,
+      )
+
+      const result = await this.analyticsService.findAll(
+        query.shop_id,
+        query.customerId,
+        query.state,
+        query.startDate,
+        query.endDate,
+      )
 
       if ('message' in result) {
-        // If the result has a message, it means an error occurred
-        throw new BadRequestException(result.message);
+        throw new BadRequestException(result.message)
       }
 
       if (!result) {
-        throw new NotFoundException('No analytics data found');
+        throw new NotFoundException('No analytics data found')
       }
 
-      return result;
+      return result
     } catch (error) {
-      this.logger.error('Error fetching analytics:', error.message);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
-        throw error; // Propagate specific HTTP exceptions
+      this.logger.error('Error fetching analytics:', error.message)
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error
       }
-      throw new BadRequestException('Error fetching analytics data');
+      throw new BadRequestException('Error fetching analytics data')
     }
   }
 
@@ -45,18 +82,20 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Get top customers based on the number of orders' })
   async getTopCustomers(@Query() query: TopUsersQueryDto) {
     try {
-      this.logger.log(`Fetching top customers for userId: ${query.userId}`);
+      this.logger.log(`Fetching top customers for userId: ${query.userId}`)
 
-      const result = await this.analyticsService.getTopUsersWithMaxOrders(+query.userId);
+      const result = await this.analyticsService.getTopUsersWithMaxOrders(
+        +query.userId,
+      )
 
       if (!result || result.length === 0) {
-        throw new NotFoundException('No top customers found');
+        throw new NotFoundException('No top customers found')
       }
 
-      return result;
+      return result
     } catch (error) {
-      this.logger.error('Error fetching top customers:', error.message);
-      throw new BadRequestException('Error fetching top customers');
+      this.logger.error('Error fetching top customers:', error.message)
+      throw new BadRequestException('Error fetching top customers')
     }
   }
 
@@ -64,35 +103,43 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Get top dealers' })
   async getTopDealer(@Query() query: TopUsersQueryDto) {
     try {
-      this.logger.log(`Fetching top dealers for userId: ${query.userId}`);
+      this.logger.log(`Fetching top dealers for userId: ${query.userId}`)
 
-      const result = await this.analyticsService.getTopDealer(+query.userId);
+      const result = await this.analyticsService.getTopDealer(+query.userId)
 
       if (!result || result.length === 0) {
-        throw new NotFoundException('No top dealers found');
+        throw new NotFoundException('No top dealers found')
       }
 
-      return result;
+      return result
     } catch (error) {
-      this.logger.error('Error fetching top dealers:', error.message);
-      throw new BadRequestException('Error fetching top dealers');
+      this.logger.error('Error fetching top dealers:', error.message)
+      throw new BadRequestException('Error fetching top dealers')
     }
   }
 
   @Post('create')
   async createAnalytics(
-    @Body() createAnalyticsDto: CreateAnalyticsDto
+    @Body() createAnalyticsDto: CreateAnalyticsDto,
   ): Promise<AnalyticsResponseDTO> {
-    const { analyticsData, saleData } = createAnalyticsDto;
-    const analytics: Analytics = await this.analyticsService.createAnalyticsWithTotalYearSale(analyticsData, saleData);
+    const { analyticsData, saleData } = createAnalyticsDto
+    const analytics: Analytics =
+      await this.analyticsService.createAnalyticsWithTotalYearSale(
+        analyticsData,
+        saleData,
+      )
     this.cacheService.invalidateCacheBySubstring('analytics/create')
-    return this.mapToResponseDTO(analytics);
+    return this.mapToResponseDTO(analytics)
   }
 
   @Get(':id')
-  async getAnalyticsById(@Param('id') id: number): Promise<AnalyticsResponseDTO> {
-    const analytics: Analytics = await this.analyticsService.getAnalyticsById(id); // Ensure this method is defined in the service
-    return this.mapToResponseDTO(analytics);
+  async getAnalyticsById(
+    @Param('id') id: number,
+  ): Promise<AnalyticsResponseDTO> {
+    const analytics: Analytics = await this.analyticsService.getAnalyticsById(
+      id,
+    ) // Ensure this method is defined in the service
+    return this.mapToResponseDTO(analytics)
   }
 
   private mapToResponseDTO(analytics: Analytics): AnalyticsResponseDTO {
@@ -104,6 +151,6 @@ export class AnalyticsController {
       todaysRevenue: analytics.todaysRevenue ?? 0,
       newCustomers: analytics.newCustomers ?? 0,
       totalYearSaleByMonth: analytics.totalYearSaleByMonth ?? [],
-    };
+    }
   }
 }

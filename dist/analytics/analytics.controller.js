@@ -29,8 +29,11 @@ let AnalyticsController = AnalyticsController_1 = class AnalyticsController {
     }
     async getAnalytics(query) {
         try {
+            if (!query.shop_id && !query.customerId) {
+                throw new common_1.BadRequestException('Either shop_id or customerId is required.');
+            }
             this.logger.log(`Fetching analytics for shop_id: ${query.shop_id}, customerId: ${query.customerId}, state: ${query.state}`);
-            const result = await this.analyticsService.findAll(query.shop_id, query.customerId, query.state);
+            const result = await this.analyticsService.findAll(query.shop_id, query.customerId, query.state, query.startDate, query.endDate);
             if ('message' in result) {
                 throw new common_1.BadRequestException(result.message);
             }
@@ -41,7 +44,8 @@ let AnalyticsController = AnalyticsController_1 = class AnalyticsController {
         }
         catch (error) {
             this.logger.error('Error fetching analytics:', error.message);
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Error fetching analytics data');
@@ -100,7 +104,9 @@ let AnalyticsController = AnalyticsController_1 = class AnalyticsController {
 };
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Fetch analytics for a specific shop, customer, and state' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Fetch analytics for a specific shop, customer, and state',
+    }),
     openapi.ApiResponse({ status: 201, type: require("./dto/analytics.dto").AnalyticsResponseDTO }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),

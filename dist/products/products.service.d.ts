@@ -44,6 +44,7 @@ export declare class ProductsService {
         message: string;
     }>;
     getProducts(query: GetProductsDto): Promise<ProductPaginator>;
+    private fetchDealerProducts;
     getProductBySlug(slug: string, shop_id: number, dealerId?: number): Promise<Product | undefined>;
     getPopularProducts(query: GetPopularProductsDto): Promise<Product[]>;
     update(id: number, updateProductDto: UpdateProductDto): Promise<Product>;

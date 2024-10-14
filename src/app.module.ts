@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   MiddlewareConsumer, Module, NestModule, RequestMethod
 } from '@nestjs/common';

@@ -83,7 +83,9 @@ let ProductsService = ProductsService_1 = class ProductsService {
             if (!shop) {
                 throw new common_1.NotFoundException(`Shop with ID ${shopId} not found`);
             }
-            const product = await this.productRepository.findOne({ where: { id: productId } });
+            const product = await this.productRepository.findOne({
+                where: { id: productId },
+            });
             if (product) {
                 shop.products_count += 1;
             }
@@ -98,10 +100,12 @@ let ProductsService = ProductsService_1 = class ProductsService {
         }
     }
     async create(createProductDto) {
-        const { name, slug, description, product_type, status, quantity, max_price, min_price, price, sale_price, unit, height, length, width, sku, language = 'en', translated_languages = ['en'], taxes, type_id, shop_id, categories, subCategories, tags, image, gallery, variations, variation_options, regionName } = createProductDto;
-        const existedProduct = await this.productRepository.findOne({ where: { name, slug } });
+        const { name, slug, description, product_type, status, quantity, max_price, min_price, price, sale_price, unit, height, length, width, sku, language = 'en', translated_languages = ['en'], taxes, type_id, shop_id, categories, subCategories, tags, image, gallery, variations, variation_options, regionName, } = createProductDto;
+        const existedProduct = await this.productRepository.findOne({
+            where: { name, slug },
+        });
         if (existedProduct) {
-            return { message: "Product already exists." };
+            return { message: 'Product already exists.' };
         }
         const product = this.productRepository.create({
             name,
@@ -120,7 +124,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
             width,
             sku,
             language,
-            translated_languages
+            translated_languages,
         });
         if (taxes) {
             const tax = await this.taxRepository.findOne({ where: { id: taxes.id } });
@@ -145,13 +149,19 @@ let ProductsService = ProductsService_1 = class ProductsService {
         }
         product.shop = shop;
         product.shop_id = shop.id;
-        const categoryEntities = categories ? await this.categoryRepository.findByIds(categories) : [];
-        const subCategoryEntities = subCategories ? await this.subCategoryRepository.findByIds(subCategories) : [];
+        const categoryEntities = categories
+            ? await this.categoryRepository.findByIds(categories)
+            : [];
+        const subCategoryEntities = subCategories
+            ? await this.subCategoryRepository.findByIds(subCategories)
+            : [];
         product.categories = categoryEntities;
         product.subCategories = subCategoryEntities;
         product.tags = await this.tagRepository.findByIds(tags || []);
         if (image) {
-            const imageEntity = await this.attachmentRepository.findOne({ where: { id: image.id } });
+            const imageEntity = await this.attachmentRepository.findOne({
+                where: { id: image.id },
+            });
             if (!imageEntity) {
                 throw new common_1.NotFoundException(`Image with ID ${image.id} not found`);
             }
@@ -159,7 +169,9 @@ let ProductsService = ProductsService_1 = class ProductsService {
         }
         if (gallery) {
             const galleryEntities = await Promise.all(gallery.map(async (galleryImage) => {
-                const imageEntity = await this.attachmentRepository.findOne({ where: { id: galleryImage.id } });
+                const imageEntity = await this.attachmentRepository.findOne({
+                    where: { id: galleryImage.id },
+                });
                 if (!imageEntity) {
                     throw new common_1.NotFoundException(`Gallery image with ID ${galleryImage.id} not found`);
                 }
@@ -169,14 +181,17 @@ let ProductsService = ProductsService_1 = class ProductsService {
         }
         if (variations) {
             product.variations = await Promise.all(variations.map(async (variation) => {
-                const attributeValue = await this.attributeValueRepository.findOne({ where: { id: variation.attribute_value_id } });
+                const attributeValue = await this.attributeValueRepository.findOne({
+                    where: { id: variation.attribute_value_id },
+                });
                 if (!attributeValue) {
                     throw new common_1.NotFoundException(`Attribute value with ID ${variation.attribute_value_id} not found`);
                 }
                 return attributeValue;
             }));
         }
-        if (product.product_type === product_entity_1.ProductType.VARIABLE && (variation_options === null || variation_options === void 0 ? void 0 : variation_options.upsert)) {
+        if (product.product_type === product_entity_1.ProductType.VARIABLE &&
+            (variation_options === null || variation_options === void 0 ? void 0 : variation_options.upsert)) {
             const variationOptions = await Promise.all(variation_options.upsert.map(async (variationDto) => {
                 const newVariation = this.variationRepository.create({
                     title: variationDto.title,
@@ -219,9 +234,11 @@ let ProductsService = ProductsService_1 = class ProductsService {
             product.variation_options = variationOptions;
         }
         if (regionName) {
-            const regions = await this.regionRepository.find({ where: { name: (0, typeorm_2.In)(regionName) } });
+            const regions = await this.regionRepository.find({
+                where: { name: (0, typeorm_2.In)(regionName) },
+            });
             if (regions.length !== regionName.length) {
-                const missingRegionNames = regionName.filter(name => !regions.some(region => region.name === name));
+                const missingRegionNames = regionName.filter((name) => !regions.some((region) => region.name === name));
                 throw new common_1.NotFoundException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
             }
             product.regions = regions;
@@ -231,10 +248,10 @@ let ProductsService = ProductsService_1 = class ProductsService {
         return product;
     }
     async getProducts(query) {
-        const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName, regionNames, minPrice, maxPrice } = query;
+        const { limit = 20, page = 1, search, filter, dealerId, shop_id, shopName, regionNames, minPrice, maxPrice, } = query;
         const startIndex = (page - 1) * limit;
         if (!shop_id && !shopName && !dealerId) {
-            const products = {
+            return {
                 data: [],
                 count: 0,
                 current_page: 1,
@@ -246,26 +263,22 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 first_page_url: '',
                 last_page_url: '',
                 next_page_url: '',
-                prev_page_url: ''
+                prev_page_url: '',
             };
-            return products;
         }
         const regionsArray = Array.isArray(regionNames)
             ? regionNames
-            : (typeof regionNames === 'string' && regionNames.length > 0
-                ? regionNames.split(",")
-                : []);
+            : typeof regionNames === 'string' && regionNames.length > 0
+                ? regionNames.split(',')
+                : [];
         const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '}:${filter || ' '}:${search || ' '}:${regionsArray.join(',')}:${page}:${limit}`;
-        this.logger.log(`Generated cache key: ${cacheKey}`);
         const cachedResult = await this.cacheManager.get(cacheKey);
         if (cachedResult) {
             this.logger.log(`Cache hit for key: ${cacheKey}`);
             return cachedResult;
         }
-        else {
-            this.logger.log(`Cache miss for key: ${cacheKey}`);
-        }
-        const productQueryBuilder = this.productRepository.createQueryBuilder('product')
+        const productQueryBuilder = this.productRepository
+            .createQueryBuilder('product')
             .leftJoinAndSelect('product.type', 'type')
             .leftJoinAndSelect('product.shop', 'shop')
             .leftJoinAndSelect('product.image', 'image')
@@ -288,7 +301,9 @@ let ProductsService = ProductsService_1 = class ProductsService {
             productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
         }
         if (regionsArray.length > 0) {
-            productQueryBuilder.andWhere('regions.name IN (:...regionsArray)', { regionsArray });
+            productQueryBuilder.andWhere('regions.name IN (:...regionsArray)', {
+                regionsArray,
+            });
         }
         if (minPrice !== undefined) {
             productQueryBuilder.andWhere('product.price >= :minPrice', { minPrice });
@@ -317,20 +332,10 @@ let ProductsService = ProductsService_1 = class ProductsService {
                             searchConditions.push('(subCategories.name LIKE :subCategorySearchTerm OR subCategories.slug LIKE :subCategorySearchTerm)');
                             searchParams.subCategorySearchTerm = searchTerm;
                             break;
-                        case 'type':
-                            searchConditions.push('(type.name LIKE :typeSearchTerm OR type.slug LIKE :typeSearchTerm)');
-                            searchParams.typeSearchTerm = searchTerm;
-                            break;
                         case 'tags':
                             const tagsArray = value.split(',');
                             searchConditions.push('tags.name IN (:...tagsArray)');
                             searchParams.tagsArray = tagsArray;
-                            break;
-                        case 'variations':
-                            const variationParams = value.split(',');
-                            const variationSearchTerm = variationParams.map((param) => param.split('=')[1]).join('/');
-                            searchConditions.push('(variation_options.title LIKE :variationSearchTerm)');
-                            searchParams.variationSearchTerm = `%${variationSearchTerm}%`;
                             break;
                         default:
                             break;
@@ -338,26 +343,17 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 });
             }
             if (search) {
-                const filterTerms = search.split(' ').map((term) => `%${term}%`);
-                const searchTermsConditions = filterTerms
-                    .map((_, index) => (`product.name LIKE :filterSearchTerm${index} OR
-        product.sku LIKE :filterSearchTerm${index} OR
-        categories.name LIKE :filterSearchTerm${index} OR
-        subCategories.name LIKE :filterSearchTerm${index} OR
-        type.name LIKE :filterSearchTerm${index} OR
-        tags.name LIKE :filterSearchTerm${index} OR
-        variation_options.title LIKE :filterSearchTerm${index}`))
-                    .join(' OR ');
-                filterTerms.forEach((term, index) => {
+                const searchTerms = search.split(' ').map((term) => `%${term}%`);
+                searchTerms.forEach((term, index) => {
                     searchParams[`filterSearchTerm${index}`] = term;
                 });
-                if (searchTermsConditions) {
-                    searchConditions.push(searchTermsConditions);
-                }
+                const searchConditionsString = searchTerms
+                    .map((_, index) => `product.name LIKE :filterSearchTerm${index} OR product.sku LIKE :filterSearchTerm${index}`)
+                    .join(' OR ');
+                searchConditions.push(searchConditionsString);
             }
             if (searchConditions.length > 0) {
-                const combinedConditions = searchConditions.join(' AND ');
-                productQueryBuilder.andWhere(combinedConditions, searchParams);
+                productQueryBuilder.andWhere(searchConditions.join(' AND '), searchParams);
             }
         }
         try {
@@ -366,38 +362,11 @@ let ProductsService = ProductsService_1 = class ProductsService {
             if (dealerId) {
                 const dealer = await this.dealerRepository.findOne({
                     where: { id: dealerId },
-                    relations: ['dealerProductMargins', 'dealerCategoryMargins'],
                 });
                 if (!dealer) {
                     throw new common_1.NotFoundException(`Dealer not found with id: ${dealerId}`);
                 }
-                const marginFind = await this.dealerProductMarginRepository.find({
-                    where: { dealer: { id: dealerId } },
-                    relations: ['product'],
-                });
-                marginFind.forEach(margin => {
-                    const product = margin.product;
-                    product.margin = margin.margin;
-                    products.push(product);
-                });
-                const categoryMargins = await this.dealerCategoryMarginRepository.find({
-                    where: { dealer: { id: dealerId } },
-                    relations: ['category'],
-                });
-                for (const categoryMargin of categoryMargins) {
-                    const foundCategory = await this.categoryRepository.findOne({
-                        where: { id: categoryMargin.category.id },
-                        relations: ['products'],
-                    });
-                    if (foundCategory && foundCategory.products) {
-                        const categoryProducts = foundCategory.products.map(product => {
-                            product.margin = categoryMargin.margin;
-                            return product;
-                        });
-                        products.push(...categoryProducts);
-                    }
-                }
-                products = products.filter((product, index, self) => index === self.findIndex(p => p.id === product.id));
+                products = await this.fetchDealerProducts(dealerId);
                 total = products.length;
             }
             else {
@@ -405,21 +374,10 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 productQueryBuilder.skip(startIndex).take(limit);
                 products = await productQueryBuilder.getMany();
             }
-            const queryParams = [
-                shop_id ? `shop_id=${shop_id}` : '',
-                shopName ? `shopName=${encodeURIComponent(shopName)}` : '',
-                dealerId ? `dealerId=${dealerId}` : '',
-                search ? `search=${encodeURIComponent(search)}` : '',
-                `limit=${limit}`,
-                `page=${page}`,
-            ]
-                .filter(Boolean)
-                .join('&');
-            const url = `/products?${queryParams}`;
+            const url = `/products?limit=${limit}&page=${page}&shop_id=${shop_id || ''}&dealerId=${dealerId || ''}`;
             const paginator = (0, paginate_1.paginate)(total, page, limit, products.length, url);
             const result = Object.assign({ data: products }, paginator);
-            await this.cacheManager.set(cacheKey, result, 60);
-            this.logger.log(`Data cached with key: ${cacheKey}`);
+            await this.cacheManager.set(cacheKey, result, 1800);
             return result;
         }
         catch (error) {
@@ -427,9 +385,16 @@ let ProductsService = ProductsService_1 = class ProductsService {
             throw new common_1.NotFoundException(error.message);
         }
     }
+    async fetchDealerProducts(dealerId) {
+        const marginFind = await this.dealerProductMarginRepository.find({
+            where: { dealer: { id: dealerId } },
+            relations: ['product'],
+        });
+        return marginFind.map((margin) => margin.product);
+    }
     async getProductBySlug(slug, shop_id, dealerId) {
         try {
-            const cacheKey = `productBySlug:${shop_id || ' '}:${slug || ' '}:${dealerId || ' '}`;
+            const cacheKey = `productBySlug:${shop_id}:${slug}:${dealerId || ' '}`;
             this.logger.log(`Generated cache key: ${cacheKey}`);
             const cachedResult = await this.cacheManager.get(cacheKey);
             if (cachedResult) {
@@ -444,7 +409,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 throw new common_1.NotFoundException(`Shop not found with id: ${shop_id}`);
             }
             const product = await this.productRepository.findOne({
-                where: { slug: slug, shop_id: shop_id },
+                where: { slug, shop_id },
                 relations: [
                     'type',
                     'image',
@@ -465,13 +430,13 @@ let ProductsService = ProductsService_1 = class ProductsService {
             if (dealerId) {
                 const dealer = await this.dealerRepository.findOne({
                     where: { id: dealerId },
-                    relations: ['dealerProductMargins', 'dealerCategoryMargins']
+                    relations: ['dealerProductMargins', 'dealerCategoryMargins'],
                 });
                 if (!dealer) {
                     throw new common_1.NotFoundException(`Dealer not found with id: ${dealerId}`);
                 }
                 const productMargin = await this.dealerProductMarginRepository.findOne({
-                    where: { dealer: { id: dealerId }, product: { id: product.id } }
+                    where: { dealer: { id: dealerId }, product: { id: product.id } },
                 });
                 if (productMargin) {
                     product.margin = productMargin.margin;
@@ -479,10 +444,11 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 else {
                     const categoryMargins = await this.dealerCategoryMarginRepository.find({
                         where: { dealer: { id: dealerId } },
-                        relations: ['category']
+                        relations: ['category'],
                     });
                     for (const categoryMargin of categoryMargins) {
-                        if (product.categories && product.categories.some(category => category.id === categoryMargin.category.id)) {
+                        if (product.categories &&
+                            product.categories.some((category) => category.id === categoryMargin.category.id)) {
                             product.margin = categoryMargin.margin;
                             break;
                         }
@@ -490,9 +456,14 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 }
             }
             if (product.type) {
-                const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
-                    .where('related_products.type_id = :type_id', { type_id: product.type.id })
-                    .andWhere('related_products.id != :productId', { productId: product.id })
+                const relatedProducts = await this.productRepository
+                    .createQueryBuilder('related_products')
+                    .where('related_products.type_id = :type_id', {
+                    type_id: product.type.id,
+                })
+                    .andWhere('related_products.id != :productId', {
+                    productId: product.id,
+                })
                     .limit(20)
                     .getMany();
                 product.related_products = relatedProducts;
@@ -500,7 +471,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
             else {
                 product.related_products = [];
             }
-            await this.cacheManager.set(cacheKey, product, 60);
+            await this.cacheManager.set(cacheKey, product, 60 * 30);
             this.logger.log(`Data cached with key: ${cacheKey}`);
             return product;
         }
@@ -509,6 +480,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 throw error;
             }
             else {
+                this.logger.error(`Error fetching product by slug: ${error.message}`, error.stack);
                 throw new common_1.InternalServerErrorException('An error occurred while fetching the product.');
             }
         }
@@ -568,7 +540,8 @@ let ProductsService = ProductsService_1 = class ProductsService {
         }
         const updatedProduct = Object.assign({}, product);
         for (const key in updateProductDto) {
-            if (updateProductDto.hasOwnProperty(key) && updateProductDto[key] !== updatedProduct[key]) {
+            if (updateProductDto.hasOwnProperty(key) &&
+                updateProductDto[key] !== updatedProduct[key]) {
                 updatedProduct[key] = updateProductDto[key];
             }
         }
@@ -587,24 +560,31 @@ let ProductsService = ProductsService_1 = class ProductsService {
         product.min_price = updateProductDto.min_price || product.min_price;
         product.unit = updateProductDto.unit || product.unit;
         product.language = updateProductDto.language || product.language;
-        product.translated_languages = updateProductDto.translated_languages || product.translated_languages;
+        product.translated_languages =
+            updateProductDto.translated_languages || product.translated_languages;
         product.height = updateProductDto.height;
         product.length = updateProductDto.length;
         product.width = updateProductDto.width;
         product.sku = updateProductDto.sku;
         if (updateProductDto.taxes) {
-            const tax = await this.taxRepository.findOne({ where: { id: updateProductDto.taxes.id } });
+            const tax = await this.taxRepository.findOne({
+                where: { id: updateProductDto.taxes.id },
+            });
             if (tax) {
                 product.taxes = updateProductDto.taxes;
             }
         }
         if (updateProductDto.type_id) {
-            const type = await this.typeRepository.findOne({ where: { id: updateProductDto.type_id } });
+            const type = await this.typeRepository.findOne({
+                where: { id: updateProductDto.type_id },
+            });
             product.type = type;
             product.type_id = type === null || type === void 0 ? void 0 : type.id;
         }
         if (updateProductDto.shop_id) {
-            const shop = await this.shopRepository.findOne({ where: { id: updateProductDto.shop_id } });
+            const shop = await this.shopRepository.findOne({
+                where: { id: updateProductDto.shop_id },
+            });
             product.shop = shop;
             product.shop_id = shop.id;
         }
@@ -630,7 +610,9 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 await this.attachmentRepository.remove(image);
             }
             if (!existingImage || existingImage !== updatedImage) {
-                const image = await this.attachmentRepository.findOne({ where: { id: updatedImage } });
+                const image = await this.attachmentRepository.findOne({
+                    where: { id: updatedImage },
+                });
                 product.image = image;
             }
         }
@@ -645,22 +627,32 @@ let ProductsService = ProductsService_1 = class ProductsService {
             }
             const newGalleryImages = updateProductDto.gallery.filter((galleryImage) => !existingGalleryImages.includes(galleryImage.id));
             for (const newGalleryImage of newGalleryImages) {
-                const image = await this.attachmentRepository.findOne({ where: { id: newGalleryImage.id } });
+                const image = await this.attachmentRepository.findOne({
+                    where: { id: newGalleryImage.id },
+                });
                 product.gallery.push(image);
             }
         }
         if (updateProductDto.variations) {
-            product.variations = Array.isArray(product.variations) ? product.variations : [];
+            product.variations = Array.isArray(product.variations)
+                ? product.variations
+                : [];
             const existingVariations = product.variations.map((variation) => variation.attribute_value_id);
-            const updateVariations = Array.isArray(updateProductDto.variations) ? updateProductDto.variations : [];
+            const updateVariations = Array.isArray(updateProductDto.variations)
+                ? updateProductDto.variations
+                : [];
             const newVariations = updateVariations.filter((variation) => !existingVariations.includes(variation.attribute_value_id));
             for (const newVariation of newVariations) {
-                const variation = await this.attributeValueRepository.findOne({ where: { id: newVariation.attribute_value_id } });
+                const variation = await this.attributeValueRepository.findOne({
+                    where: { id: newVariation.attribute_value_id },
+                });
                 if (variation) {
                     product.variations.push(variation);
                 }
             }
-            const variationsToRemove = existingVariations.filter((variation) => !updateVariations.map((v) => v.attribute_value_id).includes(variation));
+            const variationsToRemove = existingVariations.filter((variation) => !updateVariations
+                .map((v) => v.attribute_value_id)
+                .includes(variation));
             for (const variationId of variationsToRemove) {
                 const variationIndex = product.variations.findIndex((v) => v.attribute_value_id === variationId);
                 if (variationIndex !== -1) {
@@ -668,7 +660,8 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 }
             }
         }
-        if (updateProductDto.product_type === 'variable' && updateProductDto.variation_options) {
+        if (updateProductDto.product_type === 'variable' &&
+            updateProductDto.variation_options) {
             const existingVariations = product.variation_options.map((variation) => variation.id);
             const upsertVariations = Array.isArray(updateProductDto.variation_options.upsert)
                 ? updateProductDto.variation_options.upsert
@@ -689,7 +682,9 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 variation.sale_price = upsertVariationDto.sale_price;
                 variation.quantity = upsertVariationDto.quantity;
                 if (upsertVariationDto.image) {
-                    let image = await this.attachmentRepository.findOne({ where: { id: upsertVariationDto.image.id } });
+                    let image = await this.attachmentRepository.findOne({
+                        where: { id: upsertVariationDto.image.id },
+                    });
                     if (!image) {
                         image = new attachment_entity_1.Attachment();
                         image.id = upsertVariationDto.image.id;
@@ -699,7 +694,9 @@ let ProductsService = ProductsService_1 = class ProductsService {
                     }
                     variation.image = image;
                 }
-                variation.options = Array.isArray(variation.options) ? variation.options : [];
+                variation.options = Array.isArray(variation.options)
+                    ? variation.options
+                    : [];
                 const existingOptionIds = variation.options.map((option) => option.id);
                 const updatedOptionIds = upsertVariationDto.options.map((option) => option.id);
                 const optionsToRemove = existingOptionIds.filter((id) => !updatedOptionIds.includes(id));
@@ -740,21 +737,25 @@ let ProductsService = ProductsService_1 = class ProductsService {
             }
         }
         if (updateProductDto.variation) {
-            const variation = await this.variationRepository.findOne({ where: { id: updateProductDto.variation.id } });
+            const variation = await this.variationRepository.findOne({
+                where: { id: updateProductDto.variation.id },
+            });
             if (variation) {
                 product.variation = variation;
             }
         }
         if (updateProductDto.regionName) {
-            const regionNames = Array.isArray(updateProductDto.regionName) ? updateProductDto.regionName : [updateProductDto.regionName];
+            const regionNames = Array.isArray(updateProductDto.regionName)
+                ? updateProductDto.regionName
+                : [updateProductDto.regionName];
             if (regionNames && regionNames.length > 0) {
                 const regions = await this.regionRepository.find({
                     where: {
-                        name: (0, typeorm_2.In)(regionNames)
-                    }
+                        name: (0, typeorm_2.In)(regionNames),
+                    },
                 });
-                const existingRegionNames = regions.map(region => region.name);
-                const missingRegionNames = regionNames.filter(name => !existingRegionNames.includes(name));
+                const existingRegionNames = regions.map((region) => region.name);
+                const missingRegionNames = regionNames.filter((name) => !existingRegionNames.includes(name));
                 if (missingRegionNames.length > 0) {
                 }
                 product.regions = regions;
@@ -775,8 +776,8 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 'related_products',
                 'variations',
                 'variation_options',
-                'subCategories'
-            ]
+                'subCategories',
+            ],
         });
         if (!product) {
             throw new common_1.NotFoundException(`Product with ID ${id} not found`);
@@ -789,13 +790,13 @@ let ProductsService = ProductsService_1 = class ProductsService {
         if (product.categories) {
             await Promise.all(product.categories.map(async (category) => {
                 if (category.products) {
-                    category.products = category.products.filter(p => p.id !== product.id);
+                    category.products = category.products.filter((p) => p.id !== product.id);
                     await this.categoryRepository.save(category);
                 }
             }));
         }
         const relatedRecords = await this.dealerProductMarginRepository.find({
-            where: { product: { id: product.id } }
+            where: { product: { id: product.id } },
         });
         await Promise.all(relatedRecords.map(async (record) => {
             await this.dealerProductMarginRepository.delete(record.id);
@@ -803,7 +804,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
         if (product.subCategories) {
             await Promise.all(product.subCategories.map(async (subCategory) => {
                 if (subCategory.products) {
-                    subCategory.products = subCategory.products.filter(p => p.id !== product.id);
+                    subCategory.products = subCategory.products.filter((p) => p.id !== product.id);
                     await this.subCategoryRepository.save(subCategory);
                 }
             }));
@@ -812,18 +813,23 @@ let ProductsService = ProductsService_1 = class ProductsService {
             const image = product.image;
             product.image = null;
             await this.productRepository.save(product);
-            const V_image = await this.attachmentRepository.findOne({ where: { id: image.id } });
+            const V_image = await this.attachmentRepository.findOne({
+                where: { id: image.id },
+            });
             if (V_image) {
                 await this.attachmentRepository.remove(V_image);
             }
             await this.attachmentRepository.remove(image);
         }
         if (product.gallery && product.gallery.length > 0) {
-            const gallery = await this.attachmentRepository.findByIds(product.gallery.map(g => g.id));
+            const gallery = await this.attachmentRepository.findByIds(product.gallery.map((g) => g.id));
             await this.attachmentRepository.remove(gallery);
         }
         const variations = await Promise.all(product.variation_options.map(async (v) => {
-            const variation = await this.variationRepository.findOne({ where: { id: v.id }, relations: ['options', 'image'] });
+            const variation = await this.variationRepository.findOne({
+                where: { id: v.id },
+                relations: ['options', 'image'],
+            });
             if (!variation) {
                 throw new common_1.NotFoundException(`Variation with ID ${v.id} not found`);
             }
@@ -852,7 +858,9 @@ let ProductsService = ProductsService_1 = class ProductsService {
     }
     async updateQuantity(id, updateQuantityDto) {
         try {
-            await this.productRepository.update(id, { quantity: updateQuantityDto.quantity });
+            await this.productRepository.update(id, {
+                quantity: updateQuantityDto.quantity,
+            });
         }
         catch (err) {
             throw err;

@@ -49,7 +49,8 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 this.logger.log(`Cache hit for key: ${cacheKey}`);
                 return cachedResult;
             }
-            const orderQueryBuilder = this.orderRepository.createQueryBuilder('order')
+            const orderQueryBuilder = this.orderRepository
+                .createQueryBuilder('order')
                 .select(['customer', 'COUNT(order.id) AS orderCount'])
                 .leftJoin('order.customer', 'customer')
                 .groupBy('customer.createdBy.id')
@@ -60,7 +61,7 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 const usrByIdUsers = await this.userRepository.find({
                     where: { createdBy: { id: userId } },
                 });
-                const userIds = [userId, ...usrByIdUsers.map(u => u.id)];
+                const userIds = [userId, ...usrByIdUsers.map((u) => u.id)];
                 if (userIds.length > 0) {
                     const result = await orderQueryBuilder
                         .andWhere('customer.createdBy.id IN (:...userIds)', { userIds })
@@ -95,7 +96,9 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
             const dealerUsersQuery = (await this.userRepository.find({
                 where: { createdBy: { id: Number(userId) } },
                 relations: ['dealer'],
-            })).filter((dlr) => dlr.dealer !== null).flatMap((usr) => usr.id);
+            }))
+                .filter((dlr) => dlr.dealer !== null)
+                .flatMap((usr) => usr.id);
             const usrByDealer = (await this.orderRepository.find({
                 relations: ['customer', 'customer.createdBy'],
             })).filter((ordUsr) => dealerUsersQuery.includes(ordUsr.customer.createdBy.id));
@@ -104,11 +107,13 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 .select('customer.id', 'customerId')
                 .addSelect('COUNT(order.id)', 'orderCount')
                 .leftJoin('order.customer', 'customer')
-                .where('customer.createdBy IN (:...dealerUserIds)', { dealerUserIds: dealerUsersQuery })
+                .where('customer.createdBy IN (:...dealerUserIds)', {
+                dealerUserIds: dealerUsersQuery,
+            })
                 .groupBy('customer.id')
                 .orderBy('orderCount', 'DESC')
                 .getRawMany();
-            const customerIds = ordersByDealers.map(order => order.customerId);
+            const customerIds = ordersByDealers.map((order) => order.customerId);
             const topDealers = await this.userRepository
                 .createQueryBuilder('users')
                 .select('users', 'users')
@@ -154,13 +159,18 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 userId = order.dealer ? order.dealer.id : order.shop[0].owner_id;
             }
             else if (refund) {
-                userId = refund.customer.createdBy ? refund.customer.createdBy.id : refund.shop.owner_id;
+                userId = refund.customer.createdBy
+                    ? refund.customer.createdBy.id
+                    : refund.shop.owner_id;
             }
             else if (shop) {
                 userId = shop.owner_id ? shop.owner_id : shop.owner.id;
             }
             else if (user) {
-                userId = typeof user.createdBy === 'number' ? user.createdBy : user.createdBy.id;
+                userId =
+                    typeof user.createdBy === 'number'
+                        ? user.createdBy
+                        : user.createdBy.id;
             }
             let usrCrtBy;
             if (userId) {
@@ -207,7 +217,7 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
             if (user) {
                 user = await this.userRepository.findOne({
                     where: { id: user.id },
-                    relations: ['permission']
+                    relations: ['permission'],
                 });
                 const permissionName = (_a = user === null || user === void 0 ? void 0 : user.permission) === null || _a === void 0 ? void 0 : _a.type_name;
                 if (permissionName === user_entity_1.UserType.Dealer) {
@@ -228,7 +238,7 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 }
             }
             const currentMonth = (0, date_fns_1.format)(new Date(), 'MMMM');
-            let monthlySale = analytics.totalYearSaleByMonth.find(sale => sale.month === currentMonth);
+            let monthlySale = analytics.totalYearSaleByMonth.find((sale) => sale.month === currentMonth);
             const currentTotal = ((order === null || order === void 0 ? void 0 : order.total) || 0) - ((refund === null || refund === void 0 ? void 0 : refund.amount) || 0);
             if (!monthlySale) {
                 monthlySale = this.totalYearSaleByMonthRepository.create({
@@ -253,7 +263,7 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
     }
     async createAnalyticsWithTotalYearSale(analyticsData, saleData) {
         try {
-            const saleEntities = saleData.map(dto => this.totalYearSaleByMonthRepository.create(dto));
+            const saleEntities = saleData.map((dto) => this.totalYearSaleByMonthRepository.create(dto));
             const totalYearSaleByMonthRecords = await this.totalYearSaleByMonthRepository.save(saleEntities);
             const newAnalytics = this.analyticsRepository.create(Object.assign(Object.assign({}, analyticsData), { totalYearSaleByMonth: totalYearSaleByMonthRecords }));
             return await this.analyticsRepository.save(newAnalytics);
@@ -274,7 +284,7 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
             if (shop_id) {
                 shop = await this.shopRepository.findOne({
                     where: { id: shop_id },
-                    relations: ['owner', 'owner.permission']
+                    relations: ['owner', 'owner.permission'],
                 });
                 if (!shop) {
                     return { message: `Shop with ID ${shop_id} not found` };
@@ -290,20 +300,27 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
             if (!isOwnerMatch && customerId) {
                 user = await this.userRepository.findOne({
                     where: { id: customerId },
-                    relations: ['permission']
+                    relations: ['permission'],
                 });
                 if (!user) {
                     return { message: `User with ID ${customerId} not found` };
                 }
             }
-            const permissionName = ((_a = user === null || user === void 0 ? void 0 : user.permission) === null || _a === void 0 ? void 0 : _a.permission_name) || ((_c = (_b = shop === null || shop === void 0 ? void 0 : shop.owner) === null || _b === void 0 ? void 0 : _b.permission) === null || _c === void 0 ? void 0 : _c.permission_name);
-            const userPermissions = await this.permissionRepository.findOne({ where: { permission_name: permissionName } });
+            const permissionName = ((_a = user === null || user === void 0 ? void 0 : user.permission) === null || _a === void 0 ? void 0 : _a.permission_name) ||
+                ((_c = (_b = shop === null || shop === void 0 ? void 0 : shop.owner) === null || _b === void 0 ? void 0 : _b.permission) === null || _c === void 0 ? void 0 : _c.permission_name);
+            const userPermissions = await this.permissionRepository.findOne({
+                where: { permission_name: permissionName },
+            });
             if (!userPermissions) {
-                return { message: `User with ID ${customerId} does not have any permissions` };
+                return {
+                    message: `User with ID ${customerId} does not have permissions`,
+                };
             }
             const allowedPermissions = ['Admin', 'Super_Admin', 'Dealer', 'Company'];
             if (!allowedPermissions.includes(userPermissions.type_name)) {
-                return { message: `User with ID ${customerId} does not have permission to access analytics` };
+                return {
+                    message: `User with ID ${customerId} does not have permission to access analytics`,
+                };
             }
             let userIdArray = [];
             if (isOwnerMatch) {
@@ -313,9 +330,9 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 else if (userPermissions.type_name === 'Company') {
                     const userIds = await this.userRepository.find({
                         where: { createdBy: { id: shop === null || shop === void 0 ? void 0 : shop.owner_id } },
-                        select: ['id']
+                        select: ['id'],
                     });
-                    userIdArray = userIds.map(user => user.id);
+                    userIdArray = userIds.map((user) => user.id);
                     if ((shop === null || shop === void 0 ? void 0 : shop.owner_id) && !userIdArray.includes(shop.owner_id)) {
                         userIdArray.push(shop.owner_id);
                     }
@@ -328,10 +345,12 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 userIdArray.push(customerId);
             }
             if (userIdArray.length === 0) {
-                return { message: `No users found matching the criteria for shop ID ${shop_id} and customer ID ${customerId}` };
+                return {
+                    message: `No users found for shop ID ${shop_id} and customer ID ${customerId}`,
+                };
             }
             let whereClause = {
-                user_id: (0, typeorm_2.In)(userIdArray)
+                user_id: (0, typeorm_2.In)(userIdArray),
             };
             if (shop_id && isOwnerMatch) {
                 whereClause.shop_id = shop_id;
@@ -347,10 +366,12 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
             }
             const analyticsResponse = await this.analyticsRepository.find({
                 where: whereClause,
-                relations: ['totalYearSaleByMonth']
+                relations: ['totalYearSaleByMonth'],
             });
             if (analyticsResponse.length === 0) {
-                return { message: `No analytics found for shop ID ${shop_id} and customer ID ${customerId}` };
+                return {
+                    message: `No analytics found for shop ID ${shop_id} and customer ID ${customerId}`,
+                };
             }
             const aggregatedResponse = {
                 totalRevenue: 0,
@@ -359,19 +380,20 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 totalShops: 0,
                 todaysRevenue: 0,
                 newCustomers: 0,
-                totalYearSaleByMonth: this.initializeMonthlySales()
+                totalYearSaleByMonth: this.initializeMonthlySales(),
             };
             for (const analytics of analyticsResponse) {
-                aggregatedResponse.totalRevenue += parseFloat(((_d = analytics.totalRevenue) === null || _d === void 0 ? void 0 : _d.toString()) || "0");
+                aggregatedResponse.totalRevenue += parseFloat(((_d = analytics.totalRevenue) === null || _d === void 0 ? void 0 : _d.toString()) || '0');
                 aggregatedResponse.totalOrders += (_e = analytics.totalOrders) !== null && _e !== void 0 ? _e : 0;
-                aggregatedResponse.totalRefunds += parseFloat(((_f = analytics.totalRefunds) === null || _f === void 0 ? void 0 : _f.toString()) || "0");
+                aggregatedResponse.totalRefunds += parseFloat(((_f = analytics.totalRefunds) === null || _f === void 0 ? void 0 : _f.toString()) || '0');
                 aggregatedResponse.totalShops += (_g = analytics.totalShops) !== null && _g !== void 0 ? _g : 0;
-                aggregatedResponse.todaysRevenue += parseFloat(((_h = analytics.todaysRevenue) === null || _h === void 0 ? void 0 : _h.toString()) || "0");
+                aggregatedResponse.todaysRevenue += parseFloat(((_h = analytics.todaysRevenue) === null || _h === void 0 ? void 0 : _h.toString()) || '0');
                 aggregatedResponse.newCustomers += (_j = analytics.newCustomers) !== null && _j !== void 0 ? _j : 0;
                 (_k = analytics.totalYearSaleByMonth) === null || _k === void 0 ? void 0 : _k.forEach((monthSale) => {
                     var _a;
                     const monthIndex = this.getMonthIndex(monthSale.month);
-                    aggregatedResponse.totalYearSaleByMonth[monthIndex].total += parseFloat(((_a = monthSale.total) === null || _a === void 0 ? void 0 : _a.toString()) || "0");
+                    aggregatedResponse.totalYearSaleByMonth[monthIndex].total +=
+                        parseFloat(((_a = monthSale.total) === null || _a === void 0 ? void 0 : _a.toString()) || '0');
                 });
             }
             return aggregatedResponse;
@@ -383,15 +405,35 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
     }
     initializeMonthlySales() {
         const months = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
         ];
-        return months.map(month => ({ total: 0, month }));
+        return months.map((month) => ({ total: 0, month }));
     }
     getMonthIndex(month) {
         const months = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
         ];
         return months.indexOf(month);
     }
