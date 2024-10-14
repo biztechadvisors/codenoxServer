@@ -149,7 +149,14 @@ let ReviewService = class ReviewService {
         }
         const startIndex = (page - 1) * limit;
         const results = reviews.slice(startIndex, startIndex + limit);
-        const url = `/reviews?search=${search}&limit=${limit}&page=${page}`;
+        const params = new URLSearchParams();
+        if (search)
+            params.append('search', search);
+        if (limit)
+            params.append('limit', limit.toString());
+        if (page)
+            params.append('page', page.toString());
+        const url = `/reviews?${params.toString()}`;
         return Object.assign({ data: results }, (0, paginate_1.paginate)(reviews.length, page, limit, results.length, url));
     }
     async findReview(id) {

@@ -33,7 +33,12 @@ let ManufacturersService = class ManufacturersService {
             }
         }
         const results = data.slice(startIndex, endIndex);
-        const url = `/manufacturers?search=${search}&limit=${limit}`;
+        const params = new URLSearchParams();
+        if (search)
+            params.append('search', search);
+        if (limit)
+            params.append('limit', limit.toString());
+        const url = `/manufacturers?${params.toString()}`;
         return Object.assign({ data: results }, (0, paginate_1.paginate)(data.length, page, limit, results.length, url));
     }
     async getTopManufactures({ limit = 10, }) {

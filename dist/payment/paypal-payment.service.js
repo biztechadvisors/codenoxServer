@@ -94,7 +94,7 @@ let PaypalPaymentService = class PaypalPaymentService {
     }
     getRequestBody(order) {
         var _a;
-        const redirectUrl = process.env.SHOP_URL || 'http://localhost:3003';
+        const redirectUrl = process.env.FRONTEND_APP_URL;
         const reference_id = order.tracking_number || ((_a = order.id) === null || _a === void 0 ? void 0 : _a.toString()) || (0, uuid_1.v4)();
         return {
             intent: 'CAPTURE',

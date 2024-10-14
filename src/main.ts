@@ -23,8 +23,8 @@ async function bootstrap() {
   // Session handling
   app.use(
     session({
-      name: process.env.SESSION_NAME || 'sessionName',
-      secret: process.env.SESSION_SECRET || 'notagoodsecretnoreallydontusethisone',
+      name: process.env.SESSION_NAME,
+      secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
       cookie: {
@@ -58,7 +58,7 @@ async function bootstrap() {
   }
 
   // Starting the application
-  const PORT = process.env.PORT || 5000;
+  const PORT = process.env.PORT;
   await app.listen(PORT);
   Logger.log(`Application is running on: ${await app.getUrl()}/api`);
 }

@@ -109,7 +109,14 @@ export class AuthorsService {
 
 
     const results = data.slice(startIndex, endIndex)
-    const url = `/authors?search=${search}&limit=${limit}`
+    const queryParams = [
+      search ? `search=${encodeURIComponent(search)}` : '',
+      `limit=${limit}`
+    ]
+      .filter(Boolean)
+      .join('&');
+
+    const url = `/authors?${queryParams}`;
     return {
       data: results,
       ...paginate(data.length, page, limit, results.length, url),

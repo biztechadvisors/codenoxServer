@@ -95,7 +95,15 @@ export class CouponsService {
       .take(limit)
       .getManyAndCount();
 
-    const url = `/coupons?search=${search}&limit=${limit}`;
+    const queryParams = [
+      search ? `search=${encodeURIComponent(search)}` : '',
+      limit ? `limit=${limit}` : ''
+    ]
+      .filter(Boolean)
+      .join('&');
+
+    const url = `/coupons?${queryParams}`;
+
     const pagination = paginate(totalCount, page, limit, coupons.length, url);
 
     return {

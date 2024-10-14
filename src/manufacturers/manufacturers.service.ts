@@ -43,7 +43,13 @@ export class ManufacturersService {
     }
 
     const results = data.slice(startIndex, endIndex)
-    const url = `/manufacturers?search=${search}&limit=${limit}`
+    const params = new URLSearchParams();
+
+    if (search) params.append('search', search);
+    if (limit) params.append('limit', limit.toString());
+
+    const url = `/manufacturers?${params.toString()}`;
+
     return {
       data: results,
       ...paginate(data.length, page, limit, results.length, url),

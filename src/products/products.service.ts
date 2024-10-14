@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { GetProductsDto, ProductPaginator } from './dto/get-products.dto';
 import { UpdateProductDto, UpdateQuantityDto } from './dto/update-product.dto';
 import { OrderProductPivot, Product, ProductType, Variation, VariationOption } from './entities/product.entity';
@@ -59,19 +59,14 @@ export class ProductsService {
   async updateProductStockStatus() {
     try {
       this.logger.debug('Updating product stock status...');
-
       const products = await this.productRepository.find();
-
       for (const product of products) {
         // Assume that 'in_stock' is a boolean property of the Product entity
         product.in_stock = product.quantity > 0;
       }
-
       await this.productRepository.save(products);
-
       this.logger.debug('Product stock status updated successfully');
     } catch (err) {
-      // Handle errors appropriately
       this.logger.error('Error updating product stock status:', err.message || err);
     }
   }
@@ -88,7 +83,9 @@ export class ProductsService {
       if (!shop) {
         throw new NotFoundException(`Shop with ID ${shopId} not found`);
       }
+
       const product = await this.productRepository.findOne({ where: { id: productId } });
+
       if (product) {
         // Product found, increase the products_count for the shop
         shop.products_count += 1;
@@ -96,11 +93,12 @@ export class ProductsService {
         // Product not found, decrease the products_count (if it's greater than 0)
         shop.products_count -= 1;
       }
+
       // Save the updated shop
       await this.shopRepository.save(shop);
     } catch (err) {
-      // Handle errors appropriately
-      throw err;
+      this.logger.error('Error updating shop products count:', err.message || err);
+      throw new BadRequestException('Error updating shop products count');
     }
   }
 
@@ -235,39 +233,68 @@ export class ProductsService {
 
     // Handle variation options
     if (product.product_type === ProductType.VARIABLE && variation_options?.upsert) {
-      const variationOptions = await Promise.all(variation_options.upsert.map(async (variationDto) => {
-        const newVariation = this.variationRepository.create(variationDto);
-        const savedVariation = await this.variationRepository.save(newVariation);
+      const variationOptions = await Promise.all(
+        variation_options.upsert.map(async (variationDto) => {
+          // Create and save the variation
+          const newVariation = this.variationRepository.create({
+            title: variationDto.title,
+            name: variationDto.name,
+            slug: convertToSlug(variationDto.name),
+            price: variationDto.price,
+            sku: variationDto.sku,
+            is_disable: variationDto.is_disable,
+            sale_price: variationDto.sale_price,
+            quantity: variationDto.quantity,
+          });
+          const savedVariation = await this.variationRepository.save(newVariation);
 
-        if (variationDto?.image) {
-          let image = await this.attachmentRepository.findOne({ where: { id: variationDto.image.id } });
-          if (!image) {
-            image = this.attachmentRepository.create({
-              original: variationDto.image.original,
-              thumbnail: variationDto.image.thumbnail,
+          // Handle image association
+          if (variationDto?.image) {
+            let image = await this.attachmentRepository.findOne({
+              where: { id: variationDto.image.id },
             });
-            await this.attachmentRepository.save(image);
+
+            if (!image) {
+              // Create and save new image if not found
+              image = this.attachmentRepository.create({
+                original: variationDto.image.original,
+                thumbnail: variationDto.image.thumbnail,
+              });
+              await this.attachmentRepository.save(image);
+            }
+
+            // Associate the image with the variation
+            savedVariation.image = [image];
           }
-          savedVariation.image = image;
-        }
 
-        const variationOptionEntities = await Promise.all((variationDto.options || []).map(async (option) => {
-          const values = option.value.split(',');
-          return Promise.all(values.map(async (value) => {
-            const newVariationOption = this.variationOptionRepository.create({
-              name: option.name,
-              value: value.trim()
-            });
-            return this.variationOptionRepository.save(newVariationOption);
-          }));
-        }));
+          // Handle variation options
+          const variationOptionEntities = await Promise.all(
+            (variationDto.options || []).map(async (option) => {
+              const values = option.value.split(',');
+              return Promise.all(
+                values.map(async (value) => {
+                  const newVariationOption = this.variationOptionRepository.create({
+                    name: option.name,
+                    value: value.trim(),
+                  });
+                  return this.variationOptionRepository.save(newVariationOption);
+                })
+              );
+            })
+          );
 
-        savedVariation.options = [].concat(...variationOptionEntities); // Flatten the array
-        await this.variationRepository.save(savedVariation);
-        return savedVariation;
-      }));
+          // Flatten the array of variation options and assign them to the variation
+          savedVariation.options = ([] as VariationOption[]).concat(
+            ...variationOptionEntities
+          );
+          await this.variationRepository.save(savedVariation);
 
-      product.variation_options = variationOptions;
+          return savedVariation;
+        })
+      );
+
+      // Associate the variations with the product
+      product.variation_options = variationOptions as Variation[];
     }
 
     // Handle regions
@@ -307,7 +334,7 @@ export class ProductsService {
 
     const startIndex = (page - 1) * limit;
 
-    if (!shop_id && (!shopName && !dealerId)) {
+    if (!shop_id && !shopName && !dealerId) {
       const products: ProductPaginator = {
         data: [],
         count: 0,
@@ -358,18 +385,14 @@ export class ProductsService {
       .leftJoinAndSelect('product.variation_options', 'variation_options')
       .leftJoinAndSelect('product.gallery', 'gallery')
       .leftJoinAndSelect('product.my_review', 'my_review')
-      .leftJoinAndSelect('product.variations', 'attributeValues')
-      .leftJoinAndSelect('attributeValues.attribute', 'attribute')
-      .leftJoinAndSelect('product.regions', 'regions'); // Ensure proper join with region entity
+      .leftJoinAndSelect('product.regions', 'regions');
 
     // Add filters for shop or dealer
     if (shop_id) {
       productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
     } else if (shopName) {
-      productQueryBuilder.andWhere('(shop.name LIKE :shopName OR shop.slug LIKE :shopName)', { shopName: `%${shopName}%` });
-    }
-
-    if (dealerId) {
+      productQueryBuilder.andWhere('(shop.name = :shopName OR shop.slug = :shopName)', { shopName });
+    } else if (dealerId) {
       productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
     }
 
@@ -394,10 +417,9 @@ export class ProductsService {
       // Parse filter conditions
       if (filter) {
         const parseSearchParams = filter.split(';');
-        parseSearchParams.forEach(searchParam => {
+        parseSearchParams.forEach((searchParam) => {
           const [key, value] = searchParam.split(':');
           const searchTerm = `%${value}%`;
-
           switch (key) {
             case 'product':
               searchConditions.push('(product.name LIKE :productSearchTerm OR product.slug LIKE :productSearchTerm)');
@@ -422,7 +444,7 @@ export class ProductsService {
               break;
             case 'variations':
               const variationParams = value.split(',');
-              const variationSearchTerm = variationParams.map(param => param.split('=')[1]).join('/');
+              const variationSearchTerm = variationParams.map((param) => param.split('=')[1]).join('/');
               searchConditions.push('(variation_options.title LIKE :variationSearchTerm)');
               searchParams.variationSearchTerm = `%${variationSearchTerm}%`;
               break;
@@ -434,16 +456,18 @@ export class ProductsService {
 
       // Add general search conditions
       if (search) {
-        const filterTerms = search.split(' ').map(term => `%${term}%`);
-        const searchTermsConditions = filterTerms.map((_, index) =>
-          `(product.name LIKE :filterSearchTerm${index} OR ` +
-          `product.sku LIKE :filterSearchTerm${index} OR ` +
-          `categories.name LIKE :filterSearchTerm${index} OR ` +
-          `subCategories.name LIKE :filterSearchTerm${index} OR ` +
-          `type.name LIKE :filterSearchTerm${index} OR ` +
-          `tags.name LIKE :filterSearchTerm${index} OR ` +
-          `variation_options.title LIKE :filterSearchTerm${index})`
-        ).join(' OR ');
+        const filterTerms = search.split(' ').map((term) => `%${term}%`);
+        const searchTermsConditions = filterTerms
+          .map((_, index) => (
+            `product.name LIKE :filterSearchTerm${index} OR
+        product.sku LIKE :filterSearchTerm${index} OR
+        categories.name LIKE :filterSearchTerm${index} OR
+        subCategories.name LIKE :filterSearchTerm${index} OR
+        type.name LIKE :filterSearchTerm${index} OR
+        tags.name LIKE :filterSearchTerm${index} OR
+        variation_options.title LIKE :filterSearchTerm${index}`
+          ))
+          .join(' OR ');
 
         filterTerms.forEach((term, index) => {
           searchParams[`filterSearchTerm${index}`] = term;
@@ -518,7 +542,19 @@ export class ProductsService {
       }
 
       // Generate pagination data
-      const url = `/products?search=${search}&limit=${limit}&page=${page}`;
+      const queryParams = [
+        shop_id ? `shop_id=${shop_id}` : '',
+        shopName ? `shopName=${encodeURIComponent(shopName)}` : '',
+        dealerId ? `dealerId=${dealerId}` : '',
+        search ? `search=${encodeURIComponent(search)}` : '',
+        `limit=${limit}`,
+        `page=${page}`,
+      ]
+        .filter(Boolean) // Remove empty strings (falsey values)
+        .join('&'); // Join parameters with '&'
+
+      const url = `/products?${queryParams}`;
+
       const paginator = paginate(total, page, limit, products.length, url);
 
       const result = {
@@ -561,13 +597,15 @@ export class ProductsService {
         where: { slug: slug, shop_id: shop_id },
         relations: [
           'type',
-          'shop',
+          // 'shop',
           'image',
           'categories',
           'subCategories',
           'tags',
           'gallery',
           'related_products',
+          'related_products.image',
+          'related_products.gallery',
           'variations.attribute',
           'variation_options.options',
         ],
@@ -1053,21 +1091,32 @@ export class ProductsService {
       return variation;
     }));
 
+    // Handle removal of variations, images, and options
     await Promise.all([
-      ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+      ...variations.flatMap((v) =>
+        v.options ? [this.variationOptionRepository.remove(v.options)] : []
+      ),
       ...variations.map(async (v) => {
-        if (v.image) {
-          const image = v.image;
-          v.image = null;
+        if (v.image && v.image.length > 0) {
+          const images = v.image;
+          v.image = null; // Unlink the image from the variation
           await this.variationRepository.save(v);
-          const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
-          if (attachment) {
-            await this.attachmentRepository.remove(attachment);
-          }
+
+          // Remove images if they exist
+          await Promise.all(
+            images.map(async (image) => {
+              const attachment = await this.attachmentRepository.findOne({
+                where: { id: image.id },
+              });
+              if (attachment) {
+                await this.attachmentRepository.remove(attachment);
+              }
+            })
+          );
         }
       }),
-      this.variationRepository.remove(variations),
-      this.productRepository.remove(product),
+      this.variationRepository.remove(variations), // Remove the variations
+      this.productRepository.remove(product), // Remove the product
     ]);
 
   }

@@ -35,7 +35,7 @@ let StoreNoticesService = class StoreNoticesService {
             data = [];
         }
         const results = data.slice(startIndex, endIndex);
-        const url = `/store-notices?search=${search}&limit=${limit}`;
+        const url = `/store-notices?search=${search || ''}&limit=${limit || 15}`;
         return Object.assign({ data: results }, (0, paginate_1.paginate)(data.length, page, limit, results.length, url));
     }
     getStoreNotice(param, language) {

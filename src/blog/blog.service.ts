@@ -108,7 +108,7 @@ export class BlogService {
         }
 
         // Fetch the region by name (if provided)
-        let region = null;
+        let region;
         if (regionName) {
             region = await this.regionRepository.findOne({ where: { name: regionName } });
             if (!region) {

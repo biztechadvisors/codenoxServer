@@ -25,24 +25,31 @@ let AddressesController = class AddressesController {
         this.cacheService = cacheService;
     }
     async createAddress(createAddressDto) {
-        await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${createAddressDto.customer_id}`);
+        await this.invalidateAddressCache(createAddressDto.customer_id);
         return this.addressesService.create(createAddressDto);
     }
     addresses(userId) {
         return this.addressesService.findAll(userId);
     }
     async address(id) {
-        return this.addressesService.findOne(+id);
+        return this.addressesService.findOne(id);
     }
     async updateAddress(id, updateAddressDto) {
-        await this.cacheService.invalidateCacheBySubstring(`address:id:${id}`);
-        await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${updateAddressDto.customer_id}`);
-        return this.addressesService.update(+id, updateAddressDto);
+        await this.invalidateAddressCache(updateAddressDto.customer_id, id);
+        return this.addressesService.update(id, updateAddressDto);
     }
     async deleteAddress(id) {
-        await this.cacheService.invalidateCacheBySubstring(`address:id:${id}`);
-        await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${id}`);
-        return this.addressesService.remove(+id);
+        const address = await this.addressesService.findOne(id);
+        if (address) {
+            await this.invalidateAddressCache(address.customer.id, id);
+        }
+        return this.addressesService.remove(id);
+    }
+    async invalidateAddressCache(userId, addressId) {
+        if (addressId) {
+            await this.cacheService.invalidateCacheBySubstring(`address:id:${addressId}`);
+        }
+        await this.cacheService.invalidateCacheBySubstring(`addresses:userId:${userId}`);
     }
 };
 __decorate([
@@ -66,7 +73,7 @@ __decorate([
     openapi.ApiResponse({ status: 200, type: require("./entities/address.entity").Add }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AddressesController.prototype, "address", null);
 __decorate([
@@ -75,7 +82,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_address_dto_1.UpdateAddressDto]),
+    __metadata("design:paramtypes", [Number, update_address_dto_1.UpdateAddressDto]),
     __metadata("design:returntype", Promise)
 ], AddressesController.prototype, "updateAddress", null);
 __decorate([
@@ -83,7 +90,7 @@ __decorate([
     openapi.ApiResponse({ status: 200 }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AddressesController.prototype, "deleteAddress", null);
 AddressesController = __decorate([

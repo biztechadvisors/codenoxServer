@@ -81,14 +81,14 @@ let CategoriesService = class CategoriesService {
         return await this.categoryRepository.save(category);
     }
     async getCategories(query) {
-        const { limit = '10', page = '1', search, parent, shopSlug, shopId, language, orderBy = '', sortedBy = 'DESC', region_name, } = query;
+        const { limit = '10', page = '1', search, parent, shopSlug, shopId, language, orderBy = '', sortedBy = 'DESC', region_name, type, } = query;
         const numericPage = Number(page);
         const numericLimit = Number(limit);
         if (isNaN(numericPage) || isNaN(numericLimit)) {
             throw new common_1.BadRequestException('Page and limit values must be numbers');
         }
         const skip = (numericPage - 1) * numericLimit;
-        const cacheKey = `categories-${numericPage}-${numericLimit}-${search || 'all'}-${parent || 'all'}-${shopSlug || 'all'}-${shopId || 'all'}-${language || 'all'}-${orderBy || 'none'}-${sortedBy || 'none'}-${region_name || 'all'}`;
+        const cacheKey = `categories-${numericPage}-${numericLimit}-${search || 'all'}-${parent || 'all'}-${shopSlug || 'all'}-${shopId || 'all'}-${language || 'all'}-${orderBy || 'none'}-${sortedBy || 'none'}-${region_name || 'all'}-${type || 'all'}`;
         let categories = await this.cacheManager.get(cacheKey);
         if (!categories) {
             const where = {};
@@ -124,6 +124,15 @@ let CategoriesService = class CategoriesService {
                 }
                 where.regions = { id: region.id };
             }
+            if (type) {
+                const typeEntity = await this.typeRepository.findOne({
+                    where: { name: type },
+                });
+                if (!typeEntity) {
+                    throw new common_1.NotFoundException('Type not found');
+                }
+                where.type = { id: typeEntity.id };
+            }
             const order = orderBy && sortedBy ? { [orderBy]: sortedBy.toUpperCase() } : {};
             const [data, total] = await this.categoryRepository.findAndCount({
                 where,
@@ -132,7 +141,19 @@ let CategoriesService = class CategoriesService {
                 relations: ['type', 'image', 'subCategories', 'shop', 'regions'],
                 order,
             });
-            const url = `/categories?search=${search}&limit=${numericLimit}&parent=${parent}&shopSlug=${shopSlug}&shopId=${shopId}&language=${language}&region_name=${region_name}`;
+            const queryParams = [
+                search ? `search=${encodeURIComponent(search)}` : '',
+                numericLimit ? `limit=${numericLimit}` : '',
+                parent ? `parent=${parent}` : '',
+                shopSlug ? `shopSlug=${encodeURIComponent(shopSlug)}` : '',
+                shopId ? `shopId=${shopId}` : '',
+                language ? `language=${language}` : '',
+                region_name ? `region_name=${encodeURIComponent(region_name)}` : '',
+                type ? `type=${type}` : ''
+            ]
+                .filter(Boolean)
+                .join('&');
+            const url = `/categories?${queryParams}`;
             categories = Object.assign({ data }, (0, paginate_1.paginate)(total, numericPage, numericLimit, data.length, url));
             await this.cacheManager.set(cacheKey, categories, 60);
         }
@@ -342,7 +363,16 @@ let CategoriesService = class CategoriesService {
                 relations: ['category', 'image', 'shop', 'regions'],
                 order,
             });
-            const url = `/subcategories?search=${search}&limit=${numericLimit}&categoryId=${categoryId}&shopSlug=${shopSlug}&regionName=${regionName}`;
+            const queryParams = [
+                search ? `search=${encodeURIComponent(search)}` : '',
+                numericLimit ? `limit=${numericLimit}` : '',
+                categoryId ? `categoryId=${categoryId}` : '',
+                shopSlug ? `shopSlug=${encodeURIComponent(shopSlug)}` : '',
+                regionName ? `regionName=${encodeURIComponent(regionName)}` : ''
+            ]
+                .filter(Boolean)
+                .join('&');
+            const url = `/subcategories?${queryParams}`;
             subCategories = Object.assign({ data }, (0, paginate_1.paginate)(total, numericPage, numericLimit, data.length, url));
             await this.cacheManager.set(cacheKey, subCategories, 60);
         }

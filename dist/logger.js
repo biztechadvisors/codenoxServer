@@ -9,18 +9,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SilentLogger = void 0;
 const common_1 = require("@nestjs/common");
 let SilentLogger = class SilentLogger extends common_1.Logger {
-    logQuery(query, parameters, queryRunner) {
-    }
-    logQueryError(error, query, parameters, queryRunner) {
-    }
-    logQuerySlow(time, query, parameters, queryRunner) {
-    }
-    logSchemaBuild(message, queryRunner) {
-    }
-    logMigration(message, queryRunner) {
-    }
-    log(level, message, queryRunner) {
-    }
+    logQuery() { }
+    logQueryError() { }
+    logQuerySlow() { }
+    logSchemaBuild() { }
+    logMigration() { }
+    log() { }
 };
 SilentLogger = __decorate([
     (0, common_1.Injectable)()

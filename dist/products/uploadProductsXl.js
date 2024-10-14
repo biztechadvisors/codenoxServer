@@ -422,6 +422,11 @@ let UploadXlService = class UploadXlService {
                     'subCategories',
                 ],
             });
+            const incomingTagIds = createProductDto.tags.map(tag => tag);
+            const existingTagIds = existingProduct ? existingProduct.tags.map(tag => tag.id) : [];
+            const isSameTagAssociation = incomingTagIds.length === existingTagIds.length &&
+                incomingTagIds.every(id => existingTagIds.includes(id));
+            let product = isSameTagAssociation && existingProduct ? existingProduct : new product_entity_1.Product();
             if (existingProduct) {
                 const variations = await Promise.all(existingProduct.variation_options.map(async (v) => {
                     const variation = await this.variationRepository.findOne({
@@ -437,26 +442,24 @@ let UploadXlService = class UploadXlService {
                 existingProduct.variations = [];
                 await this.productRepository.save(existingProduct);
                 await Promise.all([
-                    ...variations.flatMap((v) => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+                    ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
                     ...variations.map(async (v) => {
                         if (v.image) {
                             const image = v.image;
                             v.image = null;
                             await this.variationRepository.save(v);
-                            const attachment = await this.attachmentRepository.findOne({
-                                where: { id: image.id },
-                            });
-                            if (attachment) {
-                                await this.attachmentRepository.remove(attachment);
+                            for (let i = 0; i < image.length; i++) {
+                                const attachment = await this.attachmentRepository.findOne({ where: { id: image[i].id } });
+                                if (attachment) {
+                                    await this.attachmentRepository.remove(attachment);
+                                }
                             }
                         }
                     }),
                 ]);
                 await this.variationRepository.remove(variations);
-                await this.productRepository.remove(existingProduct);
-                console.log('Variation options, variations, and product deleted');
+                console.log('Variation options and variations deleted');
             }
-            let product = existingProduct ? existingProduct : new product_entity_1.Product();
             product.name = createProductDto.name;
             product.slug = createProductDto.name
                 .toLowerCase()
@@ -551,8 +554,8 @@ let UploadXlService = class UploadXlService {
                 }
                 product.gallery = galleryAttachments;
             }
-            if (createProductDto.variations &&
-                createProductDto.variations.length > 0) {
+            ;
+            if (createProductDto.variations && createProductDto.variations.length > 0) {
                 try {
                     const attributeValueIds = [
                         ...new Set(createProductDto.variations.map((v) => v.attribute_value_id)),
@@ -617,7 +620,25 @@ let UploadXlService = class UploadXlService {
                             created_at: new Date(),
                             updated_at: new Date(),
                         });
-                        if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) {
+                        if ((variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) && Array.isArray(variationDto.image)) {
+                            const images = [];
+                            for (const img of variationDto.image) {
+                                let image = await this.attachmentRepository.findOne({
+                                    where: { id: img.id },
+                                });
+                                if (!image) {
+                                    image = this.attachmentRepository.create({
+                                        id: img.id,
+                                        original: img.original,
+                                        thumbnail: img.thumbnail,
+                                    });
+                                    await this.attachmentRepository.save(image);
+                                }
+                                images.push(image);
+                            }
+                            newVariation.image = images;
+                        }
+                        else if ((variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) && !Array.isArray(variationDto.image)) {
                             let image = await this.attachmentRepository.findOne({
                                 where: { id: variationDto.image.id },
                             });
@@ -629,7 +650,7 @@ let UploadXlService = class UploadXlService {
                                 });
                                 await this.attachmentRepository.save(image);
                             }
-                            newVariation.image = image;
+                            newVariation.image = [image];
                         }
                         const savedVariation = await this.variationRepository.save(newVariation);
                         const variationOptionEntities = await Promise.all((variationDto.options || []).map(async (option) => {
@@ -641,6 +662,28 @@ let UploadXlService = class UploadXlService {
                         }));
                         savedVariation.options = variationOptionEntities;
                         await this.variationRepository.save(savedVariation);
+                        await Promise.all(savedVariation.options.map(async (opt) => {
+                            const existingEntry = await this.variationOptionRepository
+                                .createQueryBuilder()
+                                .select()
+                                .from('variation_variationOption', 'vvo')
+                                .where('vvo.variationId = :variationId AND vvo.variationOptionId = :variationOptionId', {
+                                variationId: savedVariation.id,
+                                variationOptionId: opt.id,
+                            })
+                                .getOne();
+                            if (!existingEntry) {
+                                await this.variationOptionRepository
+                                    .createQueryBuilder()
+                                    .insert()
+                                    .into('variation_variationOption')
+                                    .values({
+                                    variationId: savedVariation.id,
+                                    variationOptionId: opt.id,
+                                })
+                                    .execute();
+                            }
+                        }));
                         return savedVariation;
                     }));
                     product.variation_options = variationOptions;

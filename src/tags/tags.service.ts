@@ -172,7 +172,8 @@ export class TagsService {
       type_id: item.type?.id || null,
     }));
 
-    const url = `/tags?search=${search}&limit=${numericLimit}&shopSlug=${shopSlug}&region_name=${regionNames.join(',')}`;
+    const url = `/tags?${search ? `search=${search}` : ''}${shopSlug ? `&shopSlug=${shopSlug}` : ''}${Array.isArray(region_name) && region_name.length ? `&region_name=${region_name.join(',')}` : region_name ? `&region_name=${region_name}` : ''}`.replace(/\?&/, '?').replace(/&$/, '');
+
     const response = {
       data: formattedData,
       ...paginate(total, numericPage, numericLimit, formattedData.length, url),

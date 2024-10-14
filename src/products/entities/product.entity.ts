@@ -63,7 +63,6 @@ export class Product extends CoreEntity {
   })
   regions: Region[];
 
-
   @ManyToMany(() => Category, (category) => category.products, {
     eager: true,
     onDelete: 'CASCADE',
@@ -110,7 +109,7 @@ export class Product extends CoreEntity {
   @Column()
   shop_id: number
 
-  @ManyToMany(() => Product, { cascade: true })
+  @ManyToMany(() => Product, { cascade: true, eager: true })
   @JoinTable({ name: 'products_relatedProducts' })
   related_products?: Product[]
 
@@ -261,9 +260,9 @@ export class Variation {
   @JoinTable({ name: 'variation_variationOption' })
   options: VariationOption[];
 
-  @ManyToOne(() => Attachment)
-  @JoinColumn({ name: 'image_id' })
-  image: Attachment;
+  @ManyToMany(() => Attachment, { eager: true })
+  @JoinTable({ name: 'Variation_image' })
+  image?: Attachment[]
 
   @Column()
   value: string;

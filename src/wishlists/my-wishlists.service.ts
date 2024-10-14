@@ -41,7 +41,12 @@ export class MyWishlistService {
     let data = await this.wishlistRepository.find(findOptions);
 
     const results = data.slice(startIndex, endIndex);
-    const url = `/wishlists?with=shop&orderBy=created_at&sortedBy=desc`;
+    const withParam = 'shop'; // or pass it as a variable if needed
+    const orderBy = 'created_at'; // or pass it as a variable if needed
+    const sortedBy = 'desc'; // or pass it as a variable if needed
+
+    const url = `/wishlists?${withParam ? `with=${withParam}` : ''}${orderBy ? `&orderBy=${orderBy}` : ''}${sortedBy ? `&sortedBy=${sortedBy}` : ''}`.replace(/\?&/, '?').replace(/&$/, '');
+
     return {
       data: results,
       ...paginate(data.length, page, limit, results.length, url),

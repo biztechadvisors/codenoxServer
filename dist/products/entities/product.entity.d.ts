@@ -91,7 +91,7 @@ export declare class Variation {
     sale_price?: number;
     quantity: number;
     options: VariationOption[];
-    image: Attachment;
+    image?: Attachment[];
     value: string;
     meta: string;
     created_at: Date;

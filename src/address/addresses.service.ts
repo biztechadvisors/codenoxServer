@@ -4,7 +4,6 @@ import { UpdateAddressDto } from './dto/update-address.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Add, UserAdd } from './entities/address.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Shop } from 'src/shops/entities/shop.entity';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Repository } from 'typeorm';
@@ -20,61 +19,34 @@ export class AddressesService {
     private readonly userRepository: Repository<User>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
-
   ) { }
 
+  // Create a new address
   async create(createAddressDto: CreateAddressDto): Promise<Add> {
-    // Fetch the user from the database using the provided customer ID
-    const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id } });
+    const user = await this.getUserById(createAddressDto.customer_id);
 
-    // If the user doesn't exist, throw a NotFoundException
-    if (!user) {
-      throw new NotFoundException('User does not exist');
-    }
-
-    // Create UserAdd (Address details) using the properties from createAddressDto.address
     const userAddress = this.userAddressRepository.create({
-      street_address: createAddressDto.address.street_address,
-      country: createAddressDto.address.country,
-      city: createAddressDto.address.city,
-      state: createAddressDto.address.state,
-      zip: createAddressDto.address.zip,
-      customer_id: user.id, // Set customer_id to the user's ID
+      ...createAddressDto.address,
+      customer_id: user.id,
     });
 
-    // Save the UserAdd entity to the database
     const savedUserAddress = await this.userAddressRepository.save(userAddress);
 
-    // Create the Add entity and link it to User and UserAdd
-    const addressOb = new Add();
-    addressOb.title = createAddressDto.title;
-    addressOb.type = createAddressDto.type;
-    addressOb.default = createAddressDto.default;
-    addressOb.address = savedUserAddress; // Link the saved address
+    const address = this.addressRepository.create({
+      ...createAddressDto,
+      address: savedUserAddress,
+      customer: user,
+    });
 
-    // Assign the user to the customer relation
-    addressOb.customer = user;
+    const savedAddress = await this.addressRepository.save(address);
 
-    // Save the Add entity to the database
-    const savedAddress = await this.addressRepository.save(addressOb);
+    // Invalidate user addresses cache after creation
+    await this.invalidateUserCache(user.id);
 
-    // Debug: Ensure the customer_id is saved
-    console.log('Saved Add:', savedAddress);
-
-    // Manually update and ensure relation
-    if (!savedAddress.customer) {
-      savedAddress.customer = user;
-      await this.addressRepository.save(savedAddress);
-    }
-
-    // Invalidate the cache for user addresses to ensure the data is fresh
-    await this.cacheManager.del(`addresses:userId:${user.id}`);
-
-    // Return the saved address entity
     return savedAddress;
   }
 
-  // Fetch all addresses for a user with caching
+  // Fetch all addresses for a specific user with caching
   async findAll(userId: number): Promise<Add[]> {
     const cacheKey = `addresses:userId:${userId}`;
     let addresses = await this.cacheManager.get<Add[]>(cacheKey);
@@ -85,7 +57,7 @@ export class AddressesService {
         relations: ['address'],
       });
 
-      if (addresses.length) {
+      if (addresses.length > 0) {
         await this.cacheManager.set(cacheKey, addresses, 3600);
       }
     }
@@ -116,48 +88,64 @@ export class AddressesService {
 
   // Update an address by ID
   async update(id: number, updateAddressDto: UpdateAddressDto): Promise<Add> {
-    const address = await this.addressRepository.findOne({
-      where: { id },
-      relations: ['address'],
-    });
+    const address = await this.getAddressById(id);
 
-    if (!address) {
-      throw new NotFoundException(`Address with ID ${id} not found`);
+    // Update UserAdd details if necessary
+    if (updateAddressDto.address && address.address) {
+      Object.assign(address.address, updateAddressDto.address);
+      await this.userAddressRepository.save(address.address);
     }
 
-    // Update UserAdd (Address details) if provided
-    const userAddress = address.address;
-    if (userAddress && updateAddressDto.address) {
-      Object.assign(userAddress, updateAddressDto.address);
-      await this.userAddressRepository.save(userAddress);
-    }
-
-    // Update Add (Address entity)
+    // Update the main address details
     Object.assign(address, updateAddressDto);
-    await this.addressRepository.save(address);
+    const updatedAddress = await this.addressRepository.save(address);
 
-    // Invalidate cache for user addresses and this specific address
-    await this.cacheManager.del(`addresses:userId:${address.customer.id}`);
-    await this.cacheManager.del(`address:id:${id}`);
+    // Invalidate caches for the updated address and user
+    await this.invalidateUserCache(address.customer.id);
+    await this.invalidateAddressCache(id);
 
-    return address;
+    return updatedAddress;
   }
 
   // Remove an address by ID
   async remove(id: number): Promise<void> {
+    const address = await this.getAddressById(id);
+
+    await this.addressRepository.remove(address);
+
+    // Invalidate caches for the deleted address and user
+    await this.invalidateUserCache(address.customer.id);
+    await this.invalidateAddressCache(id);
+  }
+
+  // Helper method to fetch a user by ID
+  private async getUserById(userId: number): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
+
+  // Helper method to fetch an address by ID
+  private async getAddressById(id: number): Promise<Add> {
     const address = await this.addressRepository.findOne({
       where: { id },
       relations: ['address', 'customer'],
     });
-
     if (!address) {
       throw new NotFoundException(`Address with ID ${id} not found`);
     }
+    return address;
+  }
 
-    await this.addressRepository.remove(address);
+  // Invalidate cache for user addresses
+  private async invalidateUserCache(userId: number): Promise<void> {
+    await this.cacheManager.del(`addresses:userId:${userId}`);
+  }
 
-    // Invalidate cache for user addresses and this specific address
-    await this.cacheManager.del(`addresses:userId:${address.customer.id}`);
-    await this.cacheManager.del(`address:id:${id}`);
+  // Invalidate cache for a specific address
+  private async invalidateAddressCache(addressId: number): Promise<void> {
+    await this.cacheManager.del(`address:id:${addressId}`);
   }
 }

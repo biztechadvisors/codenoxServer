@@ -605,7 +605,7 @@ let StocksService = class StocksService {
                     products: products,
                 };
             }));
-            const url = `/orders?search=${search}&limit=${limit}`;
+            const url = `/orders?search=${search || ''}&limit=${limit || 15}&customer_id=${customer_id || ''}&tracking_number=${tracking_number || ''}&shop_id=${shop_id || ''}&page=${page || 1}`;
             const paginatedResult = Object.assign({ data: results }, (0, paginate_1.paginate)(totalCount, page, limit, results.length, url));
             await this.cacheManager.set(cacheKey, paginatedResult, 60);
             return paginatedResult;

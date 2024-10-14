@@ -17,7 +17,7 @@ export declare class UserAdd extends CoreEntity {
 export declare class Add {
     id: number;
     title: string;
-    type: string;
+    type: AddressType;
     default: boolean;
     customer: User;
     address: UserAdd;

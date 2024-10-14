@@ -27,32 +27,12 @@ let AddressesService = class AddressesService {
         this.cacheManager = cacheManager;
     }
     async create(createAddressDto) {
-        const user = await this.userRepository.findOne({ where: { id: createAddressDto.customer_id } });
-        if (!user) {
-            throw new common_1.NotFoundException('User does not exist');
-        }
-        const userAddress = this.userAddressRepository.create({
-            street_address: createAddressDto.address.street_address,
-            country: createAddressDto.address.country,
-            city: createAddressDto.address.city,
-            state: createAddressDto.address.state,
-            zip: createAddressDto.address.zip,
-            customer_id: user.id,
-        });
+        const user = await this.getUserById(createAddressDto.customer_id);
+        const userAddress = this.userAddressRepository.create(Object.assign(Object.assign({}, createAddressDto.address), { customer_id: user.id }));
         const savedUserAddress = await this.userAddressRepository.save(userAddress);
-        const addressOb = new address_entity_1.Add();
-        addressOb.title = createAddressDto.title;
-        addressOb.type = createAddressDto.type;
-        addressOb.default = createAddressDto.default;
-        addressOb.address = savedUserAddress;
-        addressOb.customer = user;
-        const savedAddress = await this.addressRepository.save(addressOb);
-        console.log('Saved Add:', savedAddress);
-        if (!savedAddress.customer) {
-            savedAddress.customer = user;
-            await this.addressRepository.save(savedAddress);
-        }
-        await this.cacheManager.del(`addresses:userId:${user.id}`);
+        const address = this.addressRepository.create(Object.assign(Object.assign({}, createAddressDto), { address: savedUserAddress, customer: user }));
+        const savedAddress = await this.addressRepository.save(address);
+        await this.invalidateUserCache(user.id);
         return savedAddress;
     }
     async findAll(userId) {
@@ -63,7 +43,7 @@ let AddressesService = class AddressesService {
                 where: { customer: { id: userId } },
                 relations: ['address'],
             });
-            if (addresses.length) {
+            if (addresses.length > 0) {
                 await this.cacheManager.set(cacheKey, addresses, 3600);
             }
         }
@@ -85,25 +65,31 @@ let AddressesService = class AddressesService {
         return address;
     }
     async update(id, updateAddressDto) {
-        const address = await this.addressRepository.findOne({
-            where: { id },
-            relations: ['address'],
-        });
-        if (!address) {
-            throw new common_1.NotFoundException(`Address with ID ${id} not found`);
-        }
-        const userAddress = address.address;
-        if (userAddress && updateAddressDto.address) {
-            Object.assign(userAddress, updateAddressDto.address);
-            await this.userAddressRepository.save(userAddress);
+        const address = await this.getAddressById(id);
+        if (updateAddressDto.address && address.address) {
+            Object.assign(address.address, updateAddressDto.address);
+            await this.userAddressRepository.save(address.address);
         }
         Object.assign(address, updateAddressDto);
-        await this.addressRepository.save(address);
-        await this.cacheManager.del(`addresses:userId:${address.customer.id}`);
-        await this.cacheManager.del(`address:id:${id}`);
-        return address;
+        const updatedAddress = await this.addressRepository.save(address);
+        await this.invalidateUserCache(address.customer.id);
+        await this.invalidateAddressCache(id);
+        return updatedAddress;
     }
     async remove(id) {
+        const address = await this.getAddressById(id);
+        await this.addressRepository.remove(address);
+        await this.invalidateUserCache(address.customer.id);
+        await this.invalidateAddressCache(id);
+    }
+    async getUserById(userId) {
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        return user;
+    }
+    async getAddressById(id) {
         const address = await this.addressRepository.findOne({
             where: { id },
             relations: ['address', 'customer'],
@@ -111,9 +97,13 @@ let AddressesService = class AddressesService {
         if (!address) {
             throw new common_1.NotFoundException(`Address with ID ${id} not found`);
         }
-        await this.addressRepository.remove(address);
-        await this.cacheManager.del(`addresses:userId:${address.customer.id}`);
-        await this.cacheManager.del(`address:id:${id}`);
+        return address;
+    }
+    async invalidateUserCache(userId) {
+        await this.cacheManager.del(`addresses:userId:${userId}`);
+    }
+    async invalidateAddressCache(addressId) {
+        await this.cacheManager.del(`address:id:${addressId}`);
     }
 };
 AddressesService = __decorate([
