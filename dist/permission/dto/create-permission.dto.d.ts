@@ -3,7 +3,7 @@ declare const CreatePermissionDto_base: import("@nestjs/common").Type<Pick<Permi
 export declare class CreatePermissionDto extends CreatePermissionDto_base {
     permissions: CreatePermissionTypeDto[];
 }
-declare const CreatePermissionTypeDto_base: import("@nestjs/common").Type<Pick<PermissionType, "type" | "id" | "read" | "write">>;
+declare const CreatePermissionTypeDto_base: import("@nestjs/common").Type<Pick<PermissionType, "id" | "type" | "read" | "write">>;
 export declare class CreatePermissionTypeDto extends CreatePermissionTypeDto_base {
     permission: CreatePermissionDto;
 }

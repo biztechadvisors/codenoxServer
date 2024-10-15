@@ -6,9 +6,10 @@ import { RegionController } from './region.controller'
 import { RegionService } from './region.service'
 import { Shop } from '../shops/entities/shop.entity'
 import { CacheService } from '../helpers/cacheService'
+import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Region, Shop])],
+    imports: [TypeOrmModule.forFeature([Region, Shop]), CacheModule.register(),],
     controllers: [RegionController],
     providers: [RegionService, CacheService],
 })

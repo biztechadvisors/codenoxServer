@@ -582,12 +582,12 @@ export class UploadXlService {
               const image = v.image;
               v.image = null;
               await this.variationRepository.save(v);
-              for (let i = 0; i < image.length; i++) {
-                const attachment = await this.attachmentRepository.findOne({ where: { id: image[i].id } });
-                if (attachment) {
-                  await this.attachmentRepository.remove(attachment);
-                }
-              }
+              // for (let i = 0; i < image.length; i++) {
+              //   const attachment = await this.attachmentRepository.findOne({ where: { id: image[i].id } });
+              //   if (attachment) {
+              //     await this.attachmentRepository.remove(attachment);
+              //   }
+              // }
             }
           }),
         ]);
@@ -813,38 +813,39 @@ export class UploadXlService {
                 });
 
                 // Handle images if present
-                if (variationDto?.image && Array.isArray(variationDto.image)) {
-                  const images: Attachment[] = [];
-                  for (const img of variationDto.image) {
-                    let image = await this.attachmentRepository.findOne({
-                      where: { id: img.id },
-                    });
-                    if (!image) {
-                      image = this.attachmentRepository.create({
-                        id: img.id,
-                        original: img.original,
-                        thumbnail: img.thumbnail,
-                      });
-                      await this.attachmentRepository.save(image);
-                    }
-                    images.push(image);
-                  }
-                  newVariation.image = images; // Assign an array of images
-                } else if (variationDto?.image && !Array.isArray(variationDto.image)) {
-                  // Handle the case where a single image is provided instead of an array
-                  let image = await this.attachmentRepository.findOne({
-                    where: { id: variationDto.image.id },
-                  });
-                  if (!image) {
-                    image = this.attachmentRepository.create({
-                      id: variationDto.image.id,
-                      original: variationDto.image.original,
-                      thumbnail: variationDto.image.thumbnail,
-                    });
-                    await this.attachmentRepository.save(image);
-                  }
-                  newVariation.image = [image]; // Assign as an array with one image
-                }
+                // if (variationDto?.image && Array.isArray(variationDto.image)) {
+                //   const images: Attachment[] = [];
+                //   for (const img of variationDto.image) {
+                //     let image = await this.attachmentRepository.findOne({
+                //       where: { id: img.id },
+                //     });
+                //     if (!image) {
+                //       image = this.attachmentRepository.create({
+                //         id: img.id,
+                //         original: img.original,
+                //         thumbnail: img.thumbnail,
+                //       });
+                //       await this.attachmentRepository.save(image);
+                //     }
+                //     images.push(image);
+                //   }
+                //   newVariation.image = images; // Assign an array of images
+                // } 
+                // else if (variationDto?.image && !Array.isArray(variationDto.image)) {
+                //   // Handle the case where a single image is provided instead of an array
+                //   let image = await this.attachmentRepository.findOne({
+                //     where: { id: variationDto.image.id },
+                //   });
+                //   if (!image) {
+                //     image = this.attachmentRepository.create({
+                //       id: variationDto.image.id,
+                //       original: variationDto.image.original,
+                //       thumbnail: variationDto.image.thumbnail,
+                //     });
+                //     await this.attachmentRepository.save(image);
+                //   }
+                //   newVariation.image = [image]; // Assign as an array with one image
+                // }
 
                 const savedVariation = await this.variationRepository.save(
                   newVariation,

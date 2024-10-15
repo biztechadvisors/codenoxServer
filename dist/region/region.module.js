@@ -14,11 +14,12 @@ const region_controller_1 = require("./region.controller");
 const region_service_1 = require("./region.service");
 const shop_entity_1 = require("../shops/entities/shop.entity");
 const cacheService_1 = require("../helpers/cacheService");
+const cache_manager_1 = require("@nestjs/cache-manager");
 let RegionModule = class RegionModule {
 };
 RegionModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([region_entity_1.Region, shop_entity_1.Shop])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([region_entity_1.Region, shop_entity_1.Shop]), cache_manager_1.CacheModule.register(),],
         controllers: [region_controller_1.RegionController],
         providers: [region_service_1.RegionService, cacheService_1.CacheService],
     })

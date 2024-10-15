@@ -448,12 +448,6 @@ let UploadXlService = class UploadXlService {
                             const image = v.image;
                             v.image = null;
                             await this.variationRepository.save(v);
-                            for (let i = 0; i < image.length; i++) {
-                                const attachment = await this.attachmentRepository.findOne({ where: { id: image[i].id } });
-                                if (attachment) {
-                                    await this.attachmentRepository.remove(attachment);
-                                }
-                            }
                         }
                     }),
                 ]);
@@ -620,38 +614,6 @@ let UploadXlService = class UploadXlService {
                             created_at: new Date(),
                             updated_at: new Date(),
                         });
-                        if ((variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) && Array.isArray(variationDto.image)) {
-                            const images = [];
-                            for (const img of variationDto.image) {
-                                let image = await this.attachmentRepository.findOne({
-                                    where: { id: img.id },
-                                });
-                                if (!image) {
-                                    image = this.attachmentRepository.create({
-                                        id: img.id,
-                                        original: img.original,
-                                        thumbnail: img.thumbnail,
-                                    });
-                                    await this.attachmentRepository.save(image);
-                                }
-                                images.push(image);
-                            }
-                            newVariation.image = images;
-                        }
-                        else if ((variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) && !Array.isArray(variationDto.image)) {
-                            let image = await this.attachmentRepository.findOne({
-                                where: { id: variationDto.image.id },
-                            });
-                            if (!image) {
-                                image = this.attachmentRepository.create({
-                                    id: variationDto.image.id,
-                                    original: variationDto.image.original,
-                                    thumbnail: variationDto.image.thumbnail,
-                                });
-                                await this.attachmentRepository.save(image);
-                            }
-                            newVariation.image = [image];
-                        }
                         const savedVariation = await this.variationRepository.save(newVariation);
                         const variationOptionEntities = await Promise.all((variationDto.options || []).map(async (option) => {
                             const newVariationOption = this.variationOptionRepository.create({

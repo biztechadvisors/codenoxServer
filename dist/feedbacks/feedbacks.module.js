@@ -16,11 +16,14 @@ const question_entity_1 = require("../questions/entities/question.entity");
 const user_entity_1 = require("../users/entities/user.entity");
 const shop_entity_1 = require("../shops/entities/shop.entity");
 const cacheService_1 = require("../helpers/cacheService");
+const cache_manager_1 = require("@nestjs/cache-manager");
 let FeedbackModule = class FeedbackModule {
 };
 FeedbackModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([feedback_entity_1.Feedback, question_entity_1.Question, user_entity_1.User, shop_entity_1.Shop])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([feedback_entity_1.Feedback, question_entity_1.Question, user_entity_1.User, shop_entity_1.Shop]),
+            cache_manager_1.CacheModule.register(),
+        ],
         controllers: [feedbacks_controller_1.FeedbackController],
         providers: [feedbacks_service_1.FeedbackService, cacheService_1.CacheService],
     })

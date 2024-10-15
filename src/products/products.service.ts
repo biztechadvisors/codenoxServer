@@ -76,7 +76,7 @@ export class ProductsService {
     @InjectRepository(Region)
     private readonly regionRepository: Repository<Region>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-  ) {}
+  ) { }
 
   // Run this method when the application starts
   async onModuleInit() {
@@ -87,14 +87,15 @@ export class ProductsService {
   @Cron('0 * * * *')
   async updateProductStockStatus() {
     try {
-      this.logger.debug('Updating product stock status...')
-      const products = await this.productRepository.find()
-      for (const product of products) {
-        // Assume that 'in_stock' is a boolean property of the Product entity
-        product.in_stock = product.quantity > 0
-      }
-      await this.productRepository.save(products)
-      this.logger.debug('Product stock status updated successfully')
+      this.logger.debug('Updating product stock status...');
+      await this.productRepository.query(`
+      UPDATE product
+      SET in_stock = CASE
+        WHEN quantity > 0 THEN true
+        ELSE false
+      END
+    `);
+      this.logger.debug('Product stock status updated successfully');
     } catch (err) {
       this.logger.error(
         'Error updating product stock status:',
@@ -426,15 +427,14 @@ export class ProductsService {
     const regionsArray: string[] = Array.isArray(regionNames)
       ? regionNames
       : typeof regionNames === 'string' && regionNames.length > 0
-      ? regionNames.split(',')
-      : []
+        ? regionNames.split(',')
+        : []
 
     // Generate cache key for performance optimization
-    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${
-      dealerId || ' '
-    }:${filter || ' '}:${search || ' '}:${regionsArray.join(
-      ',',
-    )}:${page}:${limit}`
+    const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '
+      }:${filter || ' '}:${search || ' '}:${regionsArray.join(
+        ',',
+      )}:${page}:${limit}`
     const cachedResult: ProductPaginator | undefined =
       await this.cacheManager.get(cacheKey)
 
@@ -570,9 +570,8 @@ export class ProductsService {
         products = await productQueryBuilder.getMany()
       }
 
-      const url = `/products?limit=${limit}&page=${page}&shop_id=${
-        shop_id || ''
-      }&dealerId=${dealerId || ''}`
+      const url = `/products?limit=${limit}&page=${page}&shop_id=${shop_id || ''
+        }&dealerId=${dealerId || ''}`
       const paginator = paginate(total, page, limit, products.length, url)
 
       const result = {
@@ -731,9 +730,8 @@ export class ProductsService {
   async getPopularProducts(query: GetPopularProductsDto): Promise<Product[]> {
     const { limit = 10, type_slug, search, shopName, shop_id } = query
 
-    const cacheKey = `popularProducts:${shop_id || ''}:${shopName || ''}:${
-      type_slug || ''
-    }:${limit}`
+    const cacheKey = `popularProducts:${shop_id || ''}:${shopName || ''}:${type_slug || ''
+      }:${limit}`
     this.logger.log(`Generated cache key: ${cacheKey}`)
 
     // Check if the data is already cached
@@ -827,9 +825,9 @@ export class ProductsService {
     product.name = updateProductDto.name || product.name
     product.slug = updateProductDto.name
       ? updateProductDto.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
       : product.slug
     product.description = updateProductDto.description || product.description
     product.product_type = updateProductDto.product_type || product.product_type

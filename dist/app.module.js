@@ -121,6 +121,8 @@ AppModule = __decorate([
                         queueLimit: 0,
                         connectTimeout: 10000,
                         acquireTimeout: 30000,
+                        max: 20,
+                        idleTimeoutMillis: 30000
                     },
                     ssl: configService.get('DB_SSL') ? { rejectUnauthorized: false } : false,
                     autoLoadEntities: true,
@@ -134,6 +136,7 @@ AppModule = __decorate([
             platform_express_1.MulterModule.register({ dest: './uploads' }),
             cache_manager_1.CacheModule.registerAsync({
                 imports: [config_1.ConfigModule],
+                inject: [config_1.ConfigService],
                 useFactory: async (configService) => ({
                     store: redisStore,
                     host: configService.get('REDIS_HOST'),
@@ -142,7 +145,6 @@ AppModule = __decorate([
                     ttl: configService.get('CACHE_TTL') || 3000,
                     isGlobal: true,
                 }),
-                inject: [config_1.ConfigService],
             }),
             users_module_1.UsersModule,
             mail_module_1.MailModule,

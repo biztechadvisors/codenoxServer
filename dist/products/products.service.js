@@ -61,11 +61,13 @@ let ProductsService = ProductsService_1 = class ProductsService {
     async updateProductStockStatus() {
         try {
             this.logger.debug('Updating product stock status...');
-            const products = await this.productRepository.find();
-            for (const product of products) {
-                product.in_stock = product.quantity > 0;
-            }
-            await this.productRepository.save(products);
+            await this.productRepository.query(`
+      UPDATE product
+      SET in_stock = CASE
+        WHEN quantity > 0 THEN true
+        ELSE false
+      END
+    `);
             this.logger.debug('Product stock status updated successfully');
         }
         catch (err) {

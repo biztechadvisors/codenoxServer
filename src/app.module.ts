@@ -87,6 +87,8 @@ import { AddModule } from './address/addresses.module';
           queueLimit: 0,
           connectTimeout: 10000,
           acquireTimeout: 30000,
+          max: 20, // Increase this to allow more concurrent connections
+          idleTimeoutMillis: 30000
         },
         ssl: configService.get('DB_SSL') ? { rejectUnauthorized: false } : false,
         autoLoadEntities: true,
@@ -100,6 +102,7 @@ import { AddModule } from './address/addresses.module';
     MulterModule.register({ dest: './uploads' }),
     CacheModule.registerAsync({
       imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         store: redisStore,
         host: configService.get<string>('REDIS_HOST'),
@@ -108,7 +111,6 @@ import { AddModule } from './address/addresses.module';
         ttl: configService.get<number>('CACHE_TTL') || 3000, // Cache TTL in seconds
         isGlobal: true,
       }),
-      inject: [ConfigService],
     }),
     // Import all feature modules
     UsersModule,
