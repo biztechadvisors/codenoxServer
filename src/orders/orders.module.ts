@@ -17,7 +17,6 @@ import { User } from 'src/users/entities/user.entity';
 import { File, OrderProductPivot, Product, Variation } from 'src/products/entities/product.entity';
 import { Coupon } from 'src/coupons/entities/coupon.entity';
 import { PaymentIntent, PaymentIntentInfo } from 'src/payment-intent/entries/payment-intent.entity';
-import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 import { ShiprocketService } from 'src/orders/shiprocket.service';
 import { HttpModule } from '@nestjs/axios';
 import { MailService } from 'src/mail/mail.service';

@@ -9,7 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AiRepository = void 0;
 const typeorm_1 = require("typeorm");
 const ai_entity_1 = require("./entities/ai.entity");
-const typeorm_ex_decorator_1 = require("../typeorm-ex/typeorm-ex.decorator");
+const typeorm_ex_decorator_1 = require("src/typeorm-ex/typeorm-ex.decorator");
 let AiRepository = class AiRepository extends typeorm_1.Repository {
 };
 AiRepository = __decorate([

@@ -112,31 +112,28 @@ export class ProductsService {
 
   async updateShopProductsCount(shopId: number, productId: number) {
     try {
-      const shop = await this.shopRepository.findOne({ where: { id: shopId } })
+      console.log("115", shopId)
+      console.log("116", productId)
+
+      const shop = await this.shopRepository.findOne({ where: { id: shopId } });
+
       if (!shop) {
-        throw new NotFoundException(`Shop with ID ${shopId} not found`)
+        throw new NotFoundException(`Shop with ID ${shopId} not found`);
       }
 
-      const product = await this.productRepository.findOne({
-        where: { id: productId },
-      })
+      const productExists = await this.productRepository.findOne({ where: { id: productId } });
 
-      if (product) {
-        // Product found, increase the products_count for the shop
-        shop.products_count += 1
-      } else if (shop.products_count > 0) {
-        // Product not found, decrease the products_count (if it's greater than 0)
-        shop.products_count -= 1
-      }
+      shop.products_count = productExists ? shop.products_count + 1 : Math.max(0, shop.products_count - 1);
 
-      // Save the updated shop
-      await this.shopRepository.save(shop)
+      console.log("128")
+
+      await this.shopRepository.save(shop);
+
+      console.log("131")
+
     } catch (err) {
-      this.logger.error(
-        'Error updating shop products count:',
-        err.message || err,
-      )
-      throw new BadRequestException('Error updating shop products count')
+      this.logger.error('Error updating shop products count:', err.message || err);
+      throw new BadRequestException('Error updating shop products count');
     }
   }
 
@@ -402,9 +399,9 @@ export class ProductsService {
       regionNames,
       minPrice,
       maxPrice,
-    } = query
+    } = query;
 
-    const startIndex = (page - 1) * limit
+    const startIndex = (page - 1) * limit;
 
     // Early return if no shop_id, shopName, or dealerId
     if (!shop_id && !shopName && !dealerId) {
@@ -421,26 +418,25 @@ export class ProductsService {
         last_page_url: '',
         next_page_url: '',
         prev_page_url: '',
-      }
+      };
     }
 
     const regionsArray: string[] = Array.isArray(regionNames)
       ? regionNames
       : typeof regionNames === 'string' && regionNames.length > 0
         ? regionNames.split(',')
-        : []
+        : [];
 
     // Generate cache key for performance optimization
     const cacheKey = `products:${shop_id || ' '}:${shopName || ' '}:${dealerId || ' '
-      }:${filter || ' '}:${search || ' '}:${regionsArray.join(
-        ',',
-      )}:${page}:${limit}`
+      }:${filter || ' '}:${search || ' '}:${regionsArray.join(',')}:${page}:${limit}`;
+
     const cachedResult: ProductPaginator | undefined =
-      await this.cacheManager.get(cacheKey)
+      await this.cacheManager.get(cacheKey);
 
     if (cachedResult) {
-      this.logger.log(`Cache hit for key: ${cacheKey}`)
-      return cachedResult
+      this.logger.log(`Cache hit for key: ${cacheKey}`);
+      return cachedResult;
     }
 
     // Query builder initialization
@@ -457,136 +453,137 @@ export class ProductsService {
       .leftJoinAndSelect('product.variation_options', 'variation_options')
       .leftJoinAndSelect('product.gallery', 'gallery')
       .leftJoinAndSelect('product.my_review', 'my_review')
-      .leftJoinAndSelect('product.regions', 'regions')
+      .leftJoinAndSelect('product.regions', 'regions');
 
     // Filters for shop, dealer, and region
     if (shop_id) {
-      productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id })
+      productQueryBuilder.andWhere('shop.id = :shop_id', { shop_id });
     } else if (shopName) {
       productQueryBuilder.andWhere(
         '(shop.name = :shopName OR shop.slug = :shopName)',
         { shopName },
-      )
+      );
     } else if (dealerId) {
-      productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId })
+      productQueryBuilder.andWhere('product.dealerId = :dealerId', { dealerId });
     }
 
     if (regionsArray.length > 0) {
       productQueryBuilder.andWhere('regions.name IN (:...regionsArray)', {
         regionsArray,
-      })
+      });
     }
 
     // Price filter
     if (minPrice !== undefined) {
-      productQueryBuilder.andWhere('product.price >= :minPrice', { minPrice })
+      productQueryBuilder.andWhere('product.price >= :minPrice', { minPrice });
     }
     if (maxPrice !== undefined) {
-      productQueryBuilder.andWhere('product.price <= :maxPrice', { maxPrice })
+      productQueryBuilder.andWhere('product.price <= :maxPrice', { maxPrice });
     }
 
     // Search and filter conditions
     if (search || filter) {
-      const searchConditions: string[] = []
-      const searchParams: Record<string, any> = {}
+      const searchConditions: string[] = [];
+      const searchParams: Record<string, any> = {};
 
-      if (filter) {
-        const parseSearchParams = filter.split(';')
+      // Ensure 'filter' is a string before using it
+      if (filter && typeof filter === 'string') {
+        const parseSearchParams = filter.split(';');
         parseSearchParams.forEach((searchParam) => {
-          const [key, value] = searchParam.split(':')
-          const searchTerm = `%${value}%`
+          const [key, value] = searchParam.split(':');
+          const searchTerm = `%${value}%`;
           switch (key) {
             case 'product':
               searchConditions.push(
                 '(product.name LIKE :productSearchTerm OR product.slug LIKE :productSearchTerm)',
-              )
-              searchParams.productSearchTerm = searchTerm
-              break
+              );
+              searchParams.productSearchTerm = searchTerm;
+              break;
             case 'category':
               searchConditions.push(
                 '(categories.name LIKE :categorySearchTerm OR categories.slug LIKE :categorySearchTerm)',
-              )
-              searchParams.categorySearchTerm = searchTerm
-              break
+              );
+              searchParams.categorySearchTerm = searchTerm;
+              break;
             case 'subCategories':
               searchConditions.push(
                 '(subCategories.name LIKE :subCategorySearchTerm OR subCategories.slug LIKE :subCategorySearchTerm)',
-              )
-              searchParams.subCategorySearchTerm = searchTerm
-              break
+              );
+              searchParams.subCategorySearchTerm = searchTerm;
+              break;
             case 'tags':
-              const tagsArray = value.split(',')
-              searchConditions.push('tags.name IN (:...tagsArray)')
-              searchParams.tagsArray = tagsArray
-              break
+              const tagsArray = value.split(',');
+              searchConditions.push('tags.name IN (:...tagsArray)');
+              searchParams.tagsArray = tagsArray;
+              break;
             default:
-              break
+              break;
           }
-        })
+        });
       }
 
       if (search) {
-        const searchTerms = search.split(' ').map((term) => `%${term}%`)
+        const searchTerms = search.split(' ').map((term) => `%${term}%`);
         searchTerms.forEach((term, index) => {
-          searchParams[`filterSearchTerm${index}`] = term
-        })
+          searchParams[`filterSearchTerm${index}`] = term;
+        });
         const searchConditionsString = searchTerms
           .map(
             (_, index) =>
               `product.name LIKE :filterSearchTerm${index} OR product.sku LIKE :filterSearchTerm${index}`,
           )
-          .join(' OR ')
-        searchConditions.push(searchConditionsString)
+          .join(' OR ');
+        searchConditions.push(searchConditionsString);
       }
 
       if (searchConditions.length > 0) {
         productQueryBuilder.andWhere(
           searchConditions.join(' AND '),
           searchParams,
-        )
+        );
       }
     }
 
     try {
-      let products: Product[] = []
-      let total: number
+      let products: Product[] = [];
+      let total: number;
 
       // Dealer-specific handling
       if (dealerId) {
         const dealer = await this.dealerRepository.findOne({
           where: { id: dealerId },
-        })
+        });
 
         if (!dealer) {
-          throw new NotFoundException(`Dealer not found with id: ${dealerId}`)
+          throw new NotFoundException(`Dealer not found with id: ${dealerId}`);
         }
 
         // Fetch dealer-specific products with margins
-        products = await this.fetchDealerProducts(dealerId)
-        total = products.length
+        products = await this.fetchDealerProducts(dealerId);
+        total = products.length;
       } else {
-        total = await productQueryBuilder.getCount()
-        productQueryBuilder.skip(startIndex).take(limit)
-        products = await productQueryBuilder.getMany()
+        total = await productQueryBuilder.getCount();
+        productQueryBuilder.skip(startIndex).take(limit);
+        products = await productQueryBuilder.getMany();
       }
 
       const url = `/products?limit=${limit}&page=${page}&shop_id=${shop_id || ''
-        }&dealerId=${dealerId || ''}`
-      const paginator = paginate(total, page, limit, products.length, url)
+        }&dealerId=${dealerId || ''}`;
+      const paginator = paginate(total, page, limit, products.length, url);
 
       const result = {
         data: products,
         ...paginator,
-      }
+      };
 
-      await this.cacheManager.set(cacheKey, result, 1800) // Cache for 30 minutes
-      return result
+      await this.cacheManager.set(cacheKey, result, 1800); // Cache for 30 minutes
+      return result;
     } catch (error) {
       this.logger.error(
         `Error fetching products: ${error.message}`,
         error.stack,
-      )
-      throw new NotFoundException(error.message)
+      );
+      throw new NotFoundException(error.message);
     }
   }
 

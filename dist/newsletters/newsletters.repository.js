@@ -9,7 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.NewsLetterRepository = void 0;
 const typeorm_1 = require("typeorm");
 const newsletters_entity_1 = require("./entities/newsletters.entity");
-const typeorm_ex_decorator_1 = require("../typeorm-ex/typeorm-ex.decorator");
+const typeorm_ex_decorator_1 = require("src/typeorm-ex/typeorm-ex.decorator");
 let NewsLetterRepository = class NewsLetterRepository extends typeorm_1.Repository {
 };
 NewsLetterRepository = __decorate([

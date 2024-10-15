@@ -12,13 +12,11 @@ const ai_controller_1 = require("./ai.controller");
 const ai_service_1 = require("./ai.service");
 const typeorm_1 = require("@nestjs/typeorm");
 const ai_entity_1 = require("./entities/ai.entity");
-const typeorm_ex_module_1 = require("../typeorm-ex/typeorm-ex.module");
-const ai_repository_1 = require("./ai.repository");
 let AiModule = class AiModule {
 };
 AiModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_ex_module_1.TypeOrmExModule.forCustomRepository([ai_repository_1.AiRepository]), typeorm_1.TypeOrmModule.forFeature([ai_entity_1.Ai])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([ai_entity_1.Ai]), typeorm_1.TypeOrmModule.forFeature([ai_entity_1.Ai])],
         controllers: [ai_controller_1.AiController],
         providers: [ai_service_1.AiService],
     })

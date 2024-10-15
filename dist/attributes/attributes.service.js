@@ -120,7 +120,7 @@ let AttributesService = AttributesService_1 = class AttributesService {
                 })),
             };
         });
-        await this.cacheManager.set(cacheKey, formattedAttributes, 60);
+        await this.cacheManager.set(cacheKey, formattedAttributes, 1800);
         this.logger.log(`Data cached with key: ${cacheKey}`);
         return formattedAttributes;
     }

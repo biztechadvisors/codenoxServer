@@ -16,7 +16,6 @@ exports.AbandonedCartService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const cart_entity_1 = require("./entities/cart.entity");
-const carts_repository_1 = require("./carts.repository");
 const typeorm_2 = require("typeorm");
 const mail_service_1 = require("../mail/mail.service");
 let AbandonedCartService = class AbandonedCartService {
@@ -31,12 +30,16 @@ let AbandonedCartService = class AbandonedCartService {
             acc += quantity;
             return acc;
         }, 0);
-        const existingCart = await this.cartRepository.findOne({ where: {
+        const existingCart = await this.cartRepository.findOne({
+            where: {
                 email: createCartDto.email
-            } });
+            }
+        });
         if (existingCart) {
-            await this.cartRepository.update({ id: existingCart.id }, { cartData: JSON.stringify(createCartDto.cartData),
-                cartQuantity: totalQuantity });
+            await this.cartRepository.update({ id: existingCart.id }, {
+                cartData: JSON.stringify(createCartDto.cartData),
+                cartQuantity: totalQuantity
+            });
         }
         else {
             const newCart = new cart_entity_1.Cart();
@@ -171,8 +174,8 @@ let AbandonedCartService = class AbandonedCartService {
 };
 AbandonedCartService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(carts_repository_1.CartRepository)),
-    __metadata("design:paramtypes", [carts_repository_1.CartRepository,
+    __param(0, (0, typeorm_1.InjectRepository)(cart_entity_1.Cart)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
         mail_service_1.MailService])
 ], AbandonedCartService);
 exports.AbandonedCartService = AbandonedCartService;

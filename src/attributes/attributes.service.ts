@@ -102,7 +102,6 @@ export class AttributesService {
     // Generate a cache key based on the parameters
     const cacheKey = `attributes:${JSON.stringify(params)}`;
     const cachedResult = await this.cacheManager.get<any[]>(cacheKey);
-
     if (cachedResult) {
       this.logger.log(`Cache hit for key: ${cacheKey}`);
       return cachedResult;
@@ -150,9 +149,8 @@ export class AttributesService {
     });
 
     // Cache the result for future requests
-    await this.cacheManager.set(cacheKey, formattedAttributes, 60); // Cache for 30 minutes
+    await this.cacheManager.set(cacheKey, formattedAttributes, 1800); // Cache for 30 minutes
     this.logger.log(`Data cached with key: ${cacheKey}`);
-
     return formattedAttributes;
   }
 

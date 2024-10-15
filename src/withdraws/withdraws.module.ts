@@ -4,7 +4,6 @@ import { WithdrawsService } from './withdraws.service'
 import { WithdrawsController } from './withdraws.controller'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Withdraw } from './entities/withdraw.entity'
-import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
 import { Balance } from 'src/shops/entities/balance.entity'
 import { Shop } from 'src/shops/entities/shop.entity'
 

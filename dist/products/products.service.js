@@ -81,20 +81,17 @@ let ProductsService = ProductsService_1 = class ProductsService {
     }
     async updateShopProductsCount(shopId, productId) {
         try {
+            console.log("115", shopId);
+            console.log("116", productId);
             const shop = await this.shopRepository.findOne({ where: { id: shopId } });
             if (!shop) {
                 throw new common_1.NotFoundException(`Shop with ID ${shopId} not found`);
             }
-            const product = await this.productRepository.findOne({
-                where: { id: productId },
-            });
-            if (product) {
-                shop.products_count += 1;
-            }
-            else if (shop.products_count > 0) {
-                shop.products_count -= 1;
-            }
+            const productExists = await this.productRepository.findOne({ where: { id: productId } });
+            shop.products_count = productExists ? shop.products_count + 1 : Math.max(0, shop.products_count - 1);
+            console.log("128");
             await this.shopRepository.save(shop);
+            console.log("131");
         }
         catch (err) {
             this.logger.error('Error updating shop products count:', err.message || err);
@@ -316,7 +313,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
         if (search || filter) {
             const searchConditions = [];
             const searchParams = {};
-            if (filter) {
+            if (filter && typeof filter === 'string') {
                 const parseSearchParams = filter.split(';');
                 parseSearchParams.forEach((searchParam) => {
                     const [key, value] = searchParam.split(':');

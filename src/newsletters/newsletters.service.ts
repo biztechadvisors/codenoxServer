@@ -2,26 +2,26 @@
 import { Injectable } from '@nestjs/common'
 import { CreateNewSubscriberDto } from './dto/create-new-subscriber.dto'
 import { InjectRepository } from '@nestjs/typeorm'
-import { NewsLetterRepository } from './newsletters.repository'
 import { NewsLetter } from './entities/newsletters.entity'
+import { Repository } from 'typeorm'
 
 @Injectable()
 export class NewslettersService {
   constructor(
-    @InjectRepository(NewsLetterRepository)
-    private newsLetterRepository: NewsLetterRepository
-  ){}
+    @InjectRepository(NewsLetter)
+    private newsLetterRepository: Repository<NewsLetter>
+  ) { }
 
   async subscribeToNewsletter({ email }: CreateNewSubscriberDto) {
     const newLetter = new NewsLetter()
 
     const findEmail = await this.newsLetterRepository.find({
-      where: {email: email}
+      where: { email: email }
     })
 
-    if(findEmail){
+    if (findEmail) {
 
-       return `Your email is already subscribed to our newsletter.`
+      return `Your email is already subscribed to our newsletter.`
 
     } else {
       try {
@@ -29,10 +29,10 @@ export class NewslettersService {
         await this.newsLetterRepository.save(newLetter)
         return `Your email successfully subscribed to our newsletter.`
 
-      } catch(error){
+      } catch (error) {
         console.error(error);
       }
-      
+
 
     }
   }

@@ -16,7 +16,6 @@ exports.AiService = void 0;
 const common_1 = require("@nestjs/common");
 const ai_entity_1 = require("./entities/ai.entity");
 const typeorm_1 = require("@nestjs/typeorm");
-const ai_repository_1 = require("./ai.repository");
 const generative_ai_1 = require("@google/generative-ai");
 const typeorm_2 = require("typeorm");
 let AiService = class AiService {
@@ -50,7 +49,7 @@ let AiService = class AiService {
 AiService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(ai_entity_1.Ai)),
-    __metadata("design:paramtypes", [ai_repository_1.AiRepository])
+    __metadata("design:paramtypes", [typeorm_2.Repository])
 ], AiService);
 exports.AiService = AiService;
 //# sourceMappingURL=ai.service.js.map

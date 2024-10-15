@@ -11,7 +11,6 @@ import {
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { PaymentInfo, Shop } from './entities/shop.entity'
 import { Balance } from './entities/balance.entity'
-import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module'
 import { Add, UserAdd } from 'src/address/entities/address.entity'
 import { Location, ShopSocials } from 'src/settings/entities/setting.entity'
 import { User } from 'src/users/entities/user.entity'

@@ -15,8 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.NewslettersService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const newsletters_repository_1 = require("./newsletters.repository");
 const newsletters_entity_1 = require("./entities/newsletters.entity");
+const typeorm_2 = require("typeorm");
 let NewslettersService = class NewslettersService {
     constructor(newsLetterRepository) {
         this.newsLetterRepository = newsLetterRepository;
@@ -43,8 +43,8 @@ let NewslettersService = class NewslettersService {
 };
 NewslettersService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(newsletters_repository_1.NewsLetterRepository)),
-    __metadata("design:paramtypes", [newsletters_repository_1.NewsLetterRepository])
+    __param(0, (0, typeorm_1.InjectRepository)(newsletters_entity_1.NewsLetter)),
+    __metadata("design:paramtypes", [typeorm_2.Repository])
 ], NewslettersService);
 exports.NewslettersService = NewslettersService;
 //# sourceMappingURL=newsletters.service.js.map

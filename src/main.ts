@@ -11,8 +11,8 @@ import compression from 'compression';
 import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: false });
-
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: true });
+  
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.use(cookieParser());
 
@@ -37,7 +37,7 @@ async function bootstrap() {
 
   // CORS setup - Allowing all origins for API access
   app.enableCors({
-    origin: '*',
+    origin: true, // This allows all origins
     credentials: true,
   });
 

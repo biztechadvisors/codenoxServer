@@ -3,44 +3,49 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Cart } from './entities/cart.entity'
 import { CreateCartDto } from './dto/create-cart.dto'
-import { CartRepository } from './carts.repository'
 import { GetCartData } from './dto/get-cart.dto'
 import { Interval } from '@nestjs/schedule';
-import { LessThan } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import { MailService } from 'src/mail/mail.service'
 
 
 @Injectable()
 export class AbandonedCartService {
- 
+
   constructor(
     // private readonly scheduler: ScheduleModule,
-    @InjectRepository(CartRepository)
-    private cartRepository: CartRepository,
+    @InjectRepository(Cart)
+    private cartRepository: Repository<Cart>,
     private mailService: MailService,
-  ) {}
+  ) { }
 
   // -------------------------------CREATE CART------------------------------------------------
 
-  async create(createCartDto: CreateCartDto ): Promise<Cart> {
+  async create(createCartDto: CreateCartDto): Promise<Cart> {
 
     const cartItems = Object.values(createCartDto.cartData)
     const totalQuantity = cartItems.reduce((acc: any, item: any) => {
-    const quantity= item.quantity
-        acc += quantity;
-          return acc}, 0)
+      const quantity = item.quantity
+      acc += quantity;
+      return acc
+    }, 0)
 
-    const existingCart = await this.cartRepository.findOne({ where: { 
-        email: createCartDto.email }})
+    const existingCart = await this.cartRepository.findOne({
+      where: {
+        email: createCartDto.email
+      }
+    })
 
 
-        if (existingCart) {
+    if (existingCart) {
 
-          await this.cartRepository.update(
-            { id: existingCart.id },
-            { cartData: JSON.stringify(createCartDto.cartData), 
-              cartQuantity: totalQuantity },
-          );
+      await this.cartRepository.update(
+        { id: existingCart.id },
+        {
+          cartData: JSON.stringify(createCartDto.cartData),
+          cartQuantity: totalQuantity
+        },
+      );
 
     } else {
       const newCart = new Cart()
@@ -72,7 +77,7 @@ export class AbandonedCartService {
 
     let existingCartData = {};
     try {
-       const exist = JSON.stringify(existingCart.cartData)
+      const exist = JSON.stringify(existingCart.cartData)
       existingCartData = JSON.parse(exist);
 
     } catch (err) {
@@ -104,45 +109,29 @@ export class AbandonedCartService {
     if (!existingCart) {
       return { error: 'Cart not found for the provided email' }; // Handle non-existent cart
     }
-  
-    const quantity = query.quantity; 
+
+    const quantity = query.quantity;
     let existingCartData: any = {};
 
     try {
-  
+
       if (typeof existingCart.cartData === 'object') {
         existingCartData = existingCart.cartData;
       } else {
         existingCartData = JSON.parse(existingCart.cartData);
       }
-      
+
     } catch (err) {
       console.error(`Error parsing cart data: ${err.message}`);
       return null; // Handle error parsing cart data
     }
-  
+
     let itemRemoved = false;
     let cartQuantity = existingCart.cartQuantity;
 
-    if(quantity){
-      for(let i=0; i < quantity; i++) {
+    if (quantity) {
+      for (let i = 0; i < quantity; i++) {
 
-          if (existingCartData[itemsId]) {
-            if (existingCartData[itemsId].quantity > 1) {
-              existingCartData[itemsId].quantity -= 1;
-              cartQuantity -= 1;
-         
-            } else {
-              delete existingCartData[itemsId];
-              cartQuantity -= 1;
-            }
-            itemRemoved = true;
-          }
-        }
-       }
-
-
-       if (!quantity) {
         if (existingCartData[itemsId]) {
           if (existingCartData[itemsId].quantity > 1) {
             existingCartData[itemsId].quantity -= 1;
@@ -155,20 +144,36 @@ export class AbandonedCartService {
           itemRemoved = true;
         }
       }
-    
+    }
+
+
+    if (!quantity) {
+      if (existingCartData[itemsId]) {
+        if (existingCartData[itemsId].quantity > 1) {
+          existingCartData[itemsId].quantity -= 1;
+          cartQuantity -= 1;
+
+        } else {
+          delete existingCartData[itemsId];
+          cartQuantity -= 1;
+        }
+        itemRemoved = true;
+      }
+    }
+
     if (!itemRemoved) {
       return { error: 'Item not found in cart' }; // Handle item not found
     }
-    
+
     await this.cartRepository.update({ email: query.email }, {
       cartData: JSON.stringify(existingCartData),
       cartQuantity: cartQuantity,
     });
-    
+
     return { updatedCart: existingCartData }; // Return updated cart data
-  }    
-  
-// -----------------------------------------CLREA CART -------------------------------------------------
+  }
+
+  // -----------------------------------------CLREA CART -------------------------------------------------
 
   async clearCart(email: string): Promise<string> {
     const updatedRows = await this.cartRepository.update(
@@ -182,41 +187,41 @@ export class AbandonedCartService {
       throw new NotFoundException('Cart not found');
     }
   }
-  
-// ----------------------------ABANDONED CART REMINDER------------------------------------
 
-// @Interval(600000)
-async sendAbandonedCartReminder() {
-  // console.log("@working@")
-  try {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  // ----------------------------ABANDONED CART REMINDER------------------------------------
 
-    const abandonedCartData = await this.cartRepository.find({
-      where: {
-        updated_at: LessThan(twentyFourHoursAgo),
-       
-      },
-    });
+  // @Interval(600000)
+  async sendAbandonedCartReminder() {
+    // console.log("@working@")
+    try {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    // console.log("@working@", abandonedCartData)
+      const abandonedCartData = await this.cartRepository.find({
+        where: {
+          updated_at: LessThan(twentyFourHoursAgo),
 
-    for (const cart of abandonedCartData) {
-  console.log("@working fine for cart data", cart)
-   
-      try {
-        const pro = JSON.stringify(cart.cartData)
-        const products = JSON.parse(pro);
-        const email = cart.email;  
-  // console.log("r#tr============", pro, products)
+        },
+      });
 
-        await this.mailService.sendAbandonmenCartReminder(email, products);
-   
-      } catch (error) {
-        console.log("erroor___________", error)
+      // console.log("@working@", abandonedCartData)
+
+      for (const cart of abandonedCartData) {
+        console.log("@working fine for cart data", cart)
+
+        try {
+          const pro = JSON.stringify(cart.cartData)
+          const products = JSON.parse(pro);
+          const email = cart.email;
+          // console.log("r#tr============", pro, products)
+
+          await this.mailService.sendAbandonmenCartReminder(email, products);
+
+        } catch (error) {
+          console.log("erroor___________", error)
+        }
       }
-    }  
-  } catch (error) {
-    console.log('Failed to send abandoned cart reminder emails');
+    } catch (error) {
+      console.log('Failed to send abandoned cart reminder emails');
+    }
   }
-}
 }

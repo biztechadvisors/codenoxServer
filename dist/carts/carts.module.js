@@ -10,8 +10,6 @@ exports.CartsModule = void 0;
 const common_1 = require("@nestjs/common");
 const carts_controller_1 = require("./carts.controller");
 const carts_service_1 = require("./carts.service");
-const carts_repository_1 = require("./carts.repository");
-const typeorm_ex_module_1 = require("../typeorm-ex/typeorm-ex.module");
 const typeorm_1 = require("@nestjs/typeorm");
 const cart_entity_1 = require("./entities/cart.entity");
 const mail_service_1 = require("../mail/mail.service");
@@ -20,7 +18,6 @@ let CartsModule = class CartsModule {
 CartsModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_ex_module_1.TypeOrmExModule.forCustomRepository([carts_repository_1.CartRepository]),
             typeorm_1.TypeOrmModule.forFeature([cart_entity_1.Cart]),
         ],
         controllers: [carts_controller_1.AbandonedCartController],

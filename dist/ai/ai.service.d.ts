@@ -1,9 +1,9 @@
 import { CreateAiDto } from './dto/create-ai.dto';
 import { Ai } from './entities/ai.entity';
-import { AiRepository } from './ai.repository';
+import { Repository } from 'typeorm';
 export declare class AiService {
     private aiRepository;
-    constructor(aiRepository: AiRepository);
+    constructor(aiRepository: Repository<Ai>);
     create(createAiDto: CreateAiDto): Promise<Ai>;
     remove(): Promise<void>;
 }

@@ -51,6 +51,7 @@ const category_entity_1 = require("../categories/entities/category.entity");
 const dealer_entity_1 = require("../users/entities/dealer.entity");
 const user_entity_1 = require("../users/entities/user.entity");
 const typeorm_2 = require("typeorm");
+const helpers_1 = require("../helpers");
 let UploadXlService = class UploadXlService {
     constructor(productsService, productRepository, orderProductPivotRepository, variationRepository, variationOptionRepository, attachmentRepository, tagRepository, typeRepository, shopRepository, categoryRepository, attributeValueRepository, dealerRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, userRepository, taxRepository, subCategoryRepository) {
         this.productsService = productsService;
@@ -404,6 +405,7 @@ let UploadXlService = class UploadXlService {
     async saveProducts(createProductDto) {
         var _a, _b, _c;
         try {
+            console.log("528");
             const existingProduct = await this.productRepository.findOne({
                 where: [
                     { name: createProductDto.name },
@@ -422,11 +424,8 @@ let UploadXlService = class UploadXlService {
                     'subCategories',
                 ],
             });
-            const incomingTagIds = createProductDto.tags.map(tag => tag);
-            const existingTagIds = existingProduct ? existingProduct.tags.map(tag => tag.id) : [];
-            const isSameTagAssociation = incomingTagIds.length === existingTagIds.length &&
-                incomingTagIds.every(id => existingTagIds.includes(id));
-            let product = isSameTagAssociation && existingProduct ? existingProduct : new product_entity_1.Product();
+            let product = existingProduct ? existingProduct : new product_entity_1.Product();
+            console.log("549");
             if (existingProduct) {
                 const variations = await Promise.all(existingProduct.variation_options.map(async (v) => {
                     const variation = await this.variationRepository.findOne({
@@ -442,45 +441,45 @@ let UploadXlService = class UploadXlService {
                 existingProduct.variations = [];
                 await this.productRepository.save(existingProduct);
                 await Promise.all([
-                    ...variations.flatMap(v => v.options ? [this.variationOptionRepository.remove(v.options)] : []),
+                    ...variations.flatMap(v => v.options ? v.options.map(option => this.variationOptionRepository.remove(option)) : []),
                     ...variations.map(async (v) => {
                         if (v.image) {
-                            const image = v.image;
+                            const images = Array.isArray(v.image) ? v.image : [v.image];
                             v.image = null;
                             await this.variationRepository.save(v);
+                            for (const image of images) {
+                                const attachment = await this.attachmentRepository.findOne({ where: { id: image.id } });
+                                if (attachment) {
+                                    await this.attachmentRepository.remove(attachment);
+                                }
+                            }
                         }
                     }),
                 ]);
                 await this.variationRepository.remove(variations);
-                console.log('Variation options and variations deleted');
             }
-            product.name = createProductDto.name;
-            product.slug = createProductDto.name
+            console.log("593");
+            product.name = createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.name;
+            product.slug = (createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.name) ? (0, helpers_1.convertToSlug)(createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.name) : ""
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)/g, '');
-            product.description = createProductDto.description;
-            product.product_type = createProductDto.product_type;
-            product.status = createProductDto.status;
-            product.quantity = this.validateNumber(createProductDto.quantity);
-            product.max_price =
-                this.validateNumber(createProductDto.max_price) ||
-                    this.validateNumber(createProductDto.price);
-            product.min_price =
-                this.validateNumber(createProductDto.min_price) ||
-                    this.validateNumber(createProductDto.sale_price);
-            product.price = this.validateNumber(createProductDto.price);
-            product.sale_price = this.validateNumber(createProductDto.sale_price);
-            product.unit = createProductDto.unit ? createProductDto.unit : 1;
-            product.height = createProductDto.height ? createProductDto.height : 1;
-            product.length = createProductDto.length ? createProductDto.length : 1;
-            product.width = createProductDto.width ? createProductDto.width : 1;
-            product.sku = createProductDto.sku;
-            product.language = createProductDto.language || 'en';
-            product.translated_languages = createProductDto.translated_languages || [
-                'en',
-            ];
-            if (createProductDto.taxes) {
+            product.description = createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.description;
+            product.product_type = createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.product_type;
+            product.status = createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.status;
+            product.quantity = this.validateNumber(createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.quantity);
+            product.max_price = this.validateNumber(createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.max_price) || this.validateNumber(createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.price);
+            product.min_price = this.validateNumber(createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.min_price) || this.validateNumber(createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.sale_price);
+            product.price = this.validateNumber(createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.price);
+            product.sale_price = this.validateNumber(createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.sale_price);
+            product.unit = createProductDto.unit || 1;
+            product.height = createProductDto.height || 1;
+            product.length = createProductDto.length || 1;
+            product.width = createProductDto.width || 1;
+            product.sku = createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.sku;
+            product.language = (createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.language) || 'en';
+            product.translated_languages = (createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.translated_languages) || ['en'];
+            if (createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.taxes) {
                 const tax = await this.taxRepository.findOne({
                     where: { id: createProductDto.taxes.id },
                 });
@@ -488,7 +487,7 @@ let UploadXlService = class UploadXlService {
                     product.taxes = tax;
                 }
             }
-            if (createProductDto.type_id) {
+            if (createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.type_id) {
                 const type = await this.typeRepository.findOne({
                     where: { id: createProductDto.type_id },
                 });
@@ -498,7 +497,7 @@ let UploadXlService = class UploadXlService {
                 product.type = type;
                 product.type_id = type.id;
             }
-            if (createProductDto.shop_id) {
+            if (createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.shop_id) {
                 const shop = await this.shopRepository.findOne({
                     where: { id: createProductDto.shop_id },
                 });
@@ -508,19 +507,19 @@ let UploadXlService = class UploadXlService {
                 product.shop = shop;
                 product.shop_id = shop.id;
             }
-            if (createProductDto.category) {
+            if (createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.category) {
                 const categories = await this.categoryRepository.findByIds(createProductDto.category);
                 product.categories = categories;
             }
-            if (createProductDto.subCategories) {
+            if (createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.subCategories) {
                 const subCategories = await this.subCategoryRepository.findByIds(createProductDto.subCategories);
                 product.subCategories = subCategories;
             }
-            if (createProductDto.tags) {
+            if (createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.tags) {
                 const tags = await this.tagRepository.findByIds(createProductDto.tags);
                 product.tags = tags;
             }
-            if (createProductDto.shop_id) {
+            if (createProductDto === null || createProductDto === void 0 ? void 0 : createProductDto.shop_id) {
                 const shop = await this.shopRepository.findOne({
                     where: { id: createProductDto.shop_id },
                 });
@@ -549,6 +548,7 @@ let UploadXlService = class UploadXlService {
                 product.gallery = galleryAttachments;
             }
             ;
+            console.log("719");
             if (createProductDto.variations && createProductDto.variations.length > 0) {
                 try {
                     const attributeValueIds = [
@@ -590,18 +590,17 @@ let UploadXlService = class UploadXlService {
             else {
                 console.warn('No variations provided in createProductDto');
             }
-            if (product.product_type === product_entity_1.ProductType.VARIABLE &&
-                ((_c = createProductDto.variation_options) === null || _c === void 0 ? void 0 : _c.upsert)) {
+            console.log("774");
+            if (product.product_type === product_entity_1.ProductType.VARIABLE && ((_c = createProductDto.variation_options) === null || _c === void 0 ? void 0 : _c.upsert)) {
                 try {
                     const variationOptions = await Promise.all(createProductDto.variation_options.upsert.map(async (variationDto) => {
                         const existingVariations = await this.variationRepository.find({
                             where: { title: variationDto.title },
                             relations: ['options'],
                         });
-                        for (const existingVariation of existingVariations) {
-                            for (const option of existingVariation.options) {
-                                await this.variationOptionRepository.delete(option.id);
-                            }
+                        const existingOptionIds = existingVariations.flatMap(variation => variation.options.map(option => option.id));
+                        if (existingOptionIds.length) {
+                            await this.variationOptionRepository.delete(existingOptionIds);
                         }
                         const newVariation = this.variationRepository.create({
                             title: variationDto.title,
@@ -614,8 +613,42 @@ let UploadXlService = class UploadXlService {
                             created_at: new Date(),
                             updated_at: new Date(),
                         });
+                        if ((variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) && Array.isArray(variationDto.image)) {
+                            const images = [];
+                            for (const img of variationDto.image) {
+                                let image = await this.attachmentRepository.findOne({ where: { id: img.id } });
+                                if (!image) {
+                                    image = this.attachmentRepository.create({
+                                        id: img.id,
+                                        original: img.original,
+                                        thumbnail: img.thumbnail,
+                                    });
+                                    await this.attachmentRepository.save(image);
+                                }
+                                images.push(image);
+                            }
+                            newVariation.image = images;
+                        }
+                        else if (variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) {
+                            let image = await this.attachmentRepository.findOne({ where: { id: variationDto.image.id } });
+                            if (!image) {
+                                image = this.attachmentRepository.create({
+                                    id: variationDto.image.id,
+                                    original: variationDto.image.original,
+                                    thumbnail: variationDto.image.thumbnail,
+                                });
+                                await this.attachmentRepository.save(image);
+                            }
+                            newVariation.image = [image];
+                        }
                         const savedVariation = await this.variationRepository.save(newVariation);
                         const variationOptionEntities = await Promise.all((variationDto.options || []).map(async (option) => {
+                            const existingOption = await this.variationOptionRepository.findOne({
+                                where: { name: option.name, value: option.value },
+                            });
+                            if (existingOption) {
+                                return existingOption;
+                            }
                             const newVariationOption = this.variationOptionRepository.create({
                                 name: option.name,
                                 value: option.value,
@@ -624,28 +657,19 @@ let UploadXlService = class UploadXlService {
                         }));
                         savedVariation.options = variationOptionEntities;
                         await this.variationRepository.save(savedVariation);
-                        await Promise.all(savedVariation.options.map(async (opt) => {
-                            const existingEntry = await this.variationOptionRepository
-                                .createQueryBuilder()
-                                .select()
-                                .from('variation_variationOption', 'vvo')
-                                .where('vvo.variationId = :variationId AND vvo.variationOptionId = :variationOptionId', {
-                                variationId: savedVariation.id,
-                                variationOptionId: opt.id,
-                            })
-                                .getOne();
-                            if (!existingEntry) {
-                                await this.variationOptionRepository
-                                    .createQueryBuilder()
-                                    .insert()
-                                    .into('variation_variationOption')
-                                    .values({
-                                    variationId: savedVariation.id,
-                                    variationOptionId: opt.id,
-                                })
-                                    .execute();
-                            }
+                        const variationOptionEntries = variationOptionEntities.map(opt => ({
+                            variationId: savedVariation.id,
+                            variationOptionId: opt.id,
                         }));
+                        if (variationOptionEntries.length) {
+                            await this.variationOptionRepository
+                                .createQueryBuilder()
+                                .insert()
+                                .into('variation_variationOption')
+                                .values(variationOptionEntries)
+                                .orIgnore()
+                                .execute();
+                        }
                         return savedVariation;
                     }));
                     product.variation_options = variationOptions;
@@ -659,9 +683,11 @@ let UploadXlService = class UploadXlService {
             else {
                 console.warn('No variation options provided in createProductDto');
             }
+            console.log("893");
             if (product) {
                 await this.productsService.updateShopProductsCount(product.shop_id, product.id);
             }
+            console.log("893");
             return product;
         }
         catch (error) {

@@ -3,22 +3,21 @@ import { Injectable } from '@nestjs/common'
 import { CreateAiDto } from './dto/create-ai.dto'
 import { Ai } from './entities/ai.entity'
 import { InjectRepository } from '@nestjs/typeorm'
-import { AiRepository } from './ai.repository'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { Interval } from '@nestjs/schedule'
-import { LessThan } from 'typeorm'
+import { LessThan, Repository } from 'typeorm'
 
 @Injectable()
 export class AiService {
 
   constructor(
     @InjectRepository(Ai)
-    private aiRepository: AiRepository
-  ){}
+    private aiRepository: Repository<Ai>
+  ) { }
   async create(createAiDto: CreateAiDto): Promise<Ai> {
 
     const newPrompt = new Ai()
-    
+
     const genAI = new GoogleGenerativeAI(process.env.API_KEY)
     const model = genAI.getGenerativeModel({ model: "gemini-pro" })
 
@@ -31,7 +30,7 @@ export class AiService {
     newPrompt.status = 'success'
 
     const newAddPrompt = await this.aiRepository.save(newPrompt)
-    
+
     return newAddPrompt
   }
 
@@ -41,15 +40,15 @@ export class AiService {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const aiData = await this.aiRepository.find({
       where: {
-        updated_at: LessThan(twentyFourHoursAgo), 
-       
+        updated_at: LessThan(twentyFourHoursAgo),
+
       },
     });
 
     for (const data of aiData) {
 
-    const removed = await this.aiRepository.delete(data.id)
+      const removed = await this.aiRepository.delete(data.id)
 
+    }
   }
-}
 }

@@ -5,7 +5,6 @@ import { PaypalPaymentService } from './paypal-payment.service';
 import { StripePaymentService } from './stripe-payment.service';
 import { RazorpayService } from './razorpay-payment.service';
 import { Card, Payment } from './entity/razorpay.entity';
-import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 import { OrderProductPivot } from '../products/entities/product.entity';
 
 @Module({

@@ -6,7 +6,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { MailModule } from 'src/mail/mail.module';
 import { NotificationModule } from 'src/notifications/notifications.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import { TypeOrmExModule } from 'src/typeorm-ex/typeorm-ex.module';
 import { User } from 'src/users/entities/user.entity';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { JwtStrategy } from './auth-helper/jwt.strategy';

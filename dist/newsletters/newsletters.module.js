@@ -10,8 +10,6 @@ exports.NewslettersModule = void 0;
 const common_1 = require("@nestjs/common");
 const newsletters_controller_1 = require("./newsletters.controller");
 const newsletters_service_1 = require("./newsletters.service");
-const typeorm_ex_module_1 = require("../typeorm-ex/typeorm-ex.module");
-const newsletters_repository_1 = require("./newsletters.repository");
 const newsletters_entity_1 = require("./entities/newsletters.entity");
 const typeorm_1 = require("@nestjs/typeorm");
 let NewslettersModule = class NewslettersModule {
@@ -19,9 +17,6 @@ let NewslettersModule = class NewslettersModule {
 NewslettersModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_ex_module_1.TypeOrmExModule.forCustomRepository([
-                newsletters_repository_1.NewsLetterRepository
-            ]),
             typeorm_1.TypeOrmModule.forFeature([newsletters_entity_1.NewsLetter]),
         ],
         controllers: [newsletters_controller_1.NewslettersController],
