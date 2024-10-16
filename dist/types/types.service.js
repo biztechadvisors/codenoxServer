@@ -64,7 +64,8 @@ let TypesService = class TypesService {
             queryBuilder.andWhere('type.shopId = :shopId', { shopId: shop_id });
         }
         else if (shopSlug) {
-            queryBuilder.andWhere('type.shopSlug = :shopSlug', { shopSlug });
+            const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+            queryBuilder.andWhere('type.shopId = :shopId', { shopId: shop.id });
         }
         if (region_name) {
             queryBuilder.andWhere('regions.name = :regionName', { regionName: region_name });

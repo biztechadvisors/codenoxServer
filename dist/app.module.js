@@ -135,6 +135,7 @@ AppModule = __decorate([
                 apiVersion: '2022-11-15',
             }),
             platform_express_1.MulterModule.register({ dest: './uploads' }),
+            platform_express_1.MulterModule.register({ dest: './uploads' }),
             cache_manager_1.CacheModule.registerAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
@@ -143,24 +144,37 @@ AppModule = __decorate([
                     const port = configService.get('REDIS_PORT');
                     const password = configService.get('REDIS_PASSWORD');
                     const ttl = configService.get('CACHE_TTL') || 3000;
-                    try {
-                        const client = (0, redis_1.createClient)({ url: `redis://${host}:${port}`, password });
-                        await client.connect();
-                        client.on('error', (err) => {
-                            console.error('Redis Client Error', err);
-                        });
-                        return {
-                            store: redisStore,
-                            url: `redis://${host}:${port}`,
-                            auth_pass: password,
-                            ttl,
-                            isGlobal: true,
-                        };
+                    const client = (0, redis_1.createClient)({ url: `redis://${host}:${port}`, password });
+                    const retryCount = 5;
+                    const retryDelay = 2000;
+                    let attempts = 0;
+                    while (attempts < retryCount) {
+                        try {
+                            await client.connect();
+                            break;
+                        }
+                        catch (error) {
+                            attempts++;
+                            console.error(`Attempt ${attempts}: Failed to connect to Redis:`, error);
+                            if (attempts < retryCount) {
+                                console.log(`Retrying in ${retryDelay / 1000} seconds...`);
+                                await new Promise((resolve) => setTimeout(resolve, retryDelay));
+                            }
+                            else {
+                                console.error('Max retry attempts reached. Continuing without Redis connection.');
+                            }
+                        }
                     }
-                    catch (error) {
-                        console.error('Failed to connect to Redis:', error);
-                        throw new Error('Redis connection error');
-                    }
+                    client.on('error', (err) => {
+                        console.warn('Redis Client Error', err);
+                    });
+                    return {
+                        store: redisStore,
+                        url: `redis://${host}:${port}`,
+                        auth_pass: password,
+                        ttl,
+                        isGlobal: true,
+                    };
                 },
             }),
             users_module_1.UsersModule,

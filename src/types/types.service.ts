@@ -66,7 +66,8 @@ export class TypesService {
     if (shop_id) {
       queryBuilder.andWhere('type.shopId = :shopId', { shopId: shop_id });
     } else if (shopSlug) {
-      queryBuilder.andWhere('type.shopSlug = :shopSlug', { shopSlug });
+      const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } })
+      queryBuilder.andWhere('type.shopId = :shopId', { shopId: shop.id });
     }
 
     // Filter by region name if provided
