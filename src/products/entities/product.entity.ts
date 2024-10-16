@@ -49,13 +49,11 @@ export class Product extends CoreEntity {
   @Column()
   product_type: ProductType
 
-  @ManyToOne(() => Type, (type) => type.products, {
-    eager: true
-  })
+  @ManyToOne(() => Type, (type) => type.products)
   @JoinColumn({ name: 'typeId' })
   type: Type | null
 
-  @ManyToMany(() => Region, (region) => region.products, { eager: true, nullable: true })
+  @ManyToMany(() => Region, (region) => region.products, { nullable: true })
   @JoinTable({
     name: 'product_regions',
     joinColumn: { name: 'productId', referencedColumnName: 'id' },
@@ -64,26 +62,26 @@ export class Product extends CoreEntity {
   regions: Region[];
 
   @ManyToMany(() => Category, (category) => category.products, {
-    eager: true,
+
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })
   @JoinTable({ name: 'product_category' })
   categories: Category[]
 
-  @ManyToMany(() => SubCategory, (subCategory) => subCategory.products, { eager: true })
+  @ManyToMany(() => SubCategory, (subCategory) => subCategory.products)
   @JoinTable({ name: 'product_subcategory' })
   subCategories: SubCategory[]
 
-  @ManyToMany(() => Tag, (tag) => tag.products, { eager: true, cascade: true })
+  @ManyToMany(() => Tag, (tag) => tag.products, { cascade: true })
   @JoinTable({ name: 'product_tags' })
   tags: Tag[]
 
-  @ManyToMany(() => AttributeValue, { eager: true })
+  @ManyToMany(() => AttributeValue)
   @JoinTable({ name: 'products_attributeValue' })
   variations?: AttributeValue[];
 
-  @ManyToMany(() => Variation, { eager: true, cascade: true, onDelete: 'CASCADE' })
+  @ManyToMany(() => Variation, { cascade: true, onDelete: 'CASCADE' })
   @JoinTable({
     name: 'products_variationOptions',
     joinColumn: { name: 'productId', referencedColumnName: 'id' },
@@ -109,21 +107,21 @@ export class Product extends CoreEntity {
   @Column()
   shop_id: number
 
-  @ManyToMany(() => Product, { cascade: true, eager: true })
+  @ManyToMany(() => Product, { cascade: true })
   @JoinTable({ name: 'products_relatedProducts' })
   related_products?: Product[]
 
-  @OneToMany(() => Review, (review) => review.product, { eager: true, onDelete: "CASCADE" })
+  @OneToMany(() => Review, (review) => review.product, { onDelete: "CASCADE" })
   my_review?: Review[]
 
-  @ManyToOne(() => Tax, (tax) => tax.products, { eager: true })
+  @ManyToOne(() => Tax, (tax) => tax.products)
   taxes: Tax
 
-  @ManyToMany(() => Attachment, { eager: true })
+  @ManyToMany(() => Attachment)
   @JoinTable({ name: 'products_gallery' })
   gallery?: Attachment[]
 
-  @ManyToOne(() => Attachment, { eager: true, nullable: true })
+  @ManyToOne(() => Attachment, { nullable: true })
   @JoinColumn({ name: 'image_id' })
   image?: Attachment
 
@@ -195,7 +193,7 @@ export class OrderProductPivot extends CoreEntity {
 
   @ManyToOne(() => Product, (product) => product.pivot, {
     cascade: true,
-    eager: true,
+
   })
   @JoinColumn({ name: 'product_id' })
   product: Product
@@ -211,7 +209,7 @@ export class File extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number
 
-  @ManyToMany(() => Attachment, { eager: true })
+  @ManyToMany(() => Attachment)
   @JoinTable({ name: 'products_gallery' })
   gallery?: Attachment[]
   @ManyToMany(() => Attachment)
@@ -255,12 +253,12 @@ export class Variation {
   @ManyToMany(() => VariationOption, {
     onDelete: 'CASCADE',
     cascade: ['insert', 'update'],
-    eager: true,
+
   })
   @JoinTable({ name: 'variation_variationOption' })
   options: VariationOption[];
 
-  @ManyToMany(() => Attachment, { eager: true })
+  @ManyToMany(() => Attachment)
   @JoinTable({ name: 'Variation_image' })
   image?: Attachment[]
 

@@ -79,7 +79,7 @@ __decorate([
     __metadata("design:type", String)
 ], Order.prototype, "customer_contact", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.orders, { eager: true, cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.orders, { cascade: true }),
     (0, typeorm_1.JoinColumn)({ name: 'customerId' }),
     __metadata("design:type", user_entity_1.User)
 ], Order.prototype, "customer", void 0);
@@ -93,7 +93,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Order.prototype, "children", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => order_status_entity_1.OrderStatus, (orderStatus) => orderStatus.order, { eager: true, nullable: true, cascade: ['insert', 'update'] }),
+    (0, typeorm_1.ManyToOne)(() => order_status_entity_1.OrderStatus, (orderStatus) => orderStatus.order, { nullable: true, cascade: ['insert', 'update'] }),
     (0, typeorm_1.JoinColumn)({ name: 'statusId' }),
     __metadata("design:type", order_status_entity_1.OrderStatus)
 ], Order.prototype, "status", void 0);
@@ -165,7 +165,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Order.prototype, "products", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => product_entity_1.OrderProductPivot, (pivot) => pivot.order, { eager: true, cascade: ['insert', 'update'] }),
+    (0, typeorm_1.OneToMany)(() => product_entity_1.OrderProductPivot, (pivot) => pivot.order, { cascade: ['insert', 'update'] }),
     __metadata("design:type", Array)
 ], Order.prototype, "orderProductPivots", void 0);
 __decorate([

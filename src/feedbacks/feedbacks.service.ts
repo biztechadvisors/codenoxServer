@@ -29,27 +29,37 @@ export class FeedbackService {
 
     if (shopSlug) {
       const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
-      if (shop) {
-        query.andWhere('feedback.shop_id = :shopId', { shopId: shop.id });
-      } else {
+      if (!shop) {
         throw new NotFoundException('Shop not found');
       }
+      query.andWhere('feedback.shop_id = :shopId', { shopId: shop.id });
     }
 
     if (search) {
-      query.andWhere('feedback.model_type LIKE :search OR feedback.model_id LIKE :search', { search: `%${search}%` });
+      query.andWhere(
+        'feedback.model_type LIKE :search OR feedback.model_id LIKE :search',
+        { search: `%${search}%` }
+      );
     }
 
-    return await query.getMany();
+    return await query.cache(50000).getMany();
   }
-
 
   async findFeedBack(id: number) {
-    return await this.feedbackRepository.findOne({
-      where: { id },
-      relations: ['user']
-    })
+    const feedback = await this.feedbackRepository.createQueryBuilder('feedback')
+      .leftJoinAndSelect('feedback.user', 'user')
+      .where('feedback.id = :id', { id })
+      .cache(50000)
+      .getOne();
+
+    if (!feedback) {
+      throw new NotFoundException(`Feedback with ID ${id} not found`);
+    }
+
+    return feedback;
   }
+
+
 
   async create(createFeedBackDto: CreateFeedBackDto) {
     const feedback = new Feedback();

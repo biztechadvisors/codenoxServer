@@ -41,6 +41,9 @@ export declare class UsersService {
     constructor(userRepository: Repository<User>, addressRepository: Repository<Add>, profileRepository: Repository<Profile>, attachmentRepository: Repository<Attachment>, dealerRepository: Repository<Dealer>, productRepository: Repository<Product>, categoryRepository: Repository<Category>, dealerProductMarginRepository: Repository<DealerProductMargin>, dealerCategoryMarginRepository: Repository<DealerCategoryMargin>, shopRepository: Repository<Shop>, socialRepository: Repository<Social>, permissionRepository: Repository<Permission>, dealerEnquiryRepository: Repository<DealerEnquiry>, cacheManager: Cache, analyticsService: AnalyticsService, authService: AuthService, addressesService: AddressesService);
     create(createUserDto: CreateUserDto): Promise<User>;
     getUsers({ searchJoin, limit, page, name, orderBy, sortedBy, usrById, search, type, }: GetUsersDto): Promise<UserPaginator>;
+    private createEmptyUserPaginator;
+    private constructSearchParams;
+    private prepareUserPaginatorResponse;
     findOne(id: number): Promise<User>;
     update(id: number, updateUserDto: UpdateUserDto): Promise<User>;
     removeUser(id: number): Promise<string>;

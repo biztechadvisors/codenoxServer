@@ -9,46 +9,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StripePaymentIntent = exports.PaymentIntentMetadata = exports.StripePaymentMethod = exports.StripeCustomer = exports.InvoiceSettings = exports.Card = exports.BillingDetails = exports.Metadata = exports.Address = void 0;
+exports.StripePaymentIntent = exports.PaymentIntentMetadata = exports.StripePaymentMethod = exports.StripeCustomer = exports.InvoiceSettings = exports.Card = exports.BillingDetails = exports.Metadata = void 0;
 const openapi = require("@nestjs/swagger");
+const address_entity_1 = require("../../address/entities/address.entity");
 const typeorm_1 = require("typeorm");
-let Address = class Address {
-    static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, city: { required: true, type: () => String }, country: { required: true, type: () => String }, line1: { required: true, type: () => String }, line2: { required: true, type: () => String }, postal_code: { required: true, type: () => String }, state: { required: true, type: () => String } };
-    }
-};
-__decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)(),
-    __metadata("design:type", Number)
-], Address.prototype, "id", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Address.prototype, "city", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Address.prototype, "country", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Address.prototype, "line1", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Address.prototype, "line2", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Address.prototype, "postal_code", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Address.prototype, "state", void 0);
-Address = __decorate([
-    (0, typeorm_1.Entity)()
-], Address);
-exports.Address = Address;
 let Metadata = class Metadata {
     static _OPENAPI_METADATA_FACTORY() {
         return { id: { required: true, type: () => Number }, order_tracking_number: { required: true, type: () => Number } };
@@ -68,7 +32,7 @@ Metadata = __decorate([
 exports.Metadata = Metadata;
 let BillingDetails = class BillingDetails {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, address: { required: true, type: () => require("./stripe.entity").Address }, email: { required: true, type: () => String }, name: { required: true, type: () => String }, phone: { required: true, type: () => String } };
+        return { id: { required: true, type: () => Number }, address: { required: true, type: () => require("../../address/entities/address.entity").Add }, email: { required: true, type: () => String }, name: { required: true, type: () => String }, phone: { required: true, type: () => String } };
     }
 };
 __decorate([
@@ -76,8 +40,8 @@ __decorate([
     __metadata("design:type", Number)
 ], BillingDetails.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => Address, { cascade: true, eager: true }),
-    __metadata("design:type", Address)
+    (0, typeorm_1.ManyToOne)(() => address_entity_1.Add, { cascade: true }),
+    __metadata("design:type", address_entity_1.Add)
 ], BillingDetails.prototype, "address", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
@@ -167,7 +131,7 @@ InvoiceSettings = __decorate([
 exports.InvoiceSettings = InvoiceSettings;
 let StripeCustomer = class StripeCustomer {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, object: { required: true, type: () => String }, address: { required: true, type: () => require("./stripe.entity").Address }, balance: { required: false, type: () => Number }, created: { required: false, type: () => Number }, currency: { required: false, type: () => String }, default_source: { required: false, type: () => String }, delinquent: { required: false, type: () => Boolean }, description: { required: false, type: () => String }, discount: { required: false, type: () => String }, email: { required: false, type: () => String }, invoice_prefix: { required: false, type: () => String }, invoice_settings: { required: false, type: () => require("./stripe.entity").InvoiceSettings }, livemode: { required: false, type: () => Boolean }, metadata: { required: false, type: () => require("./stripe.entity").Metadata }, name: { required: false, type: () => String }, next_invoice_sequence: { required: false, type: () => Number }, phone: { required: false, type: () => String }, tax_exempt: { required: false, type: () => String } };
+        return { id: { required: true, type: () => Number }, object: { required: true, type: () => String }, address: { required: true, type: () => require("../../address/entities/address.entity").Add }, balance: { required: false, type: () => Number }, created: { required: false, type: () => Number }, currency: { required: false, type: () => String }, default_source: { required: false, type: () => String }, delinquent: { required: false, type: () => Boolean }, description: { required: false, type: () => String }, discount: { required: false, type: () => String }, email: { required: false, type: () => String }, invoice_prefix: { required: false, type: () => String }, invoice_settings: { required: false, type: () => require("./stripe.entity").InvoiceSettings }, livemode: { required: false, type: () => Boolean }, metadata: { required: false, type: () => require("./stripe.entity").Metadata }, name: { required: false, type: () => String }, next_invoice_sequence: { required: false, type: () => Number }, phone: { required: false, type: () => String }, tax_exempt: { required: false, type: () => String } };
     }
 };
 __decorate([
@@ -179,8 +143,8 @@ __decorate([
     __metadata("design:type", String)
 ], StripeCustomer.prototype, "object", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => Address, { cascade: true, eager: true }),
-    __metadata("design:type", Address)
+    (0, typeorm_1.OneToOne)(() => address_entity_1.Add, { cascade: true }),
+    __metadata("design:type", address_entity_1.Add)
 ], StripeCustomer.prototype, "address", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 12, scale: 2, nullable: true }),
@@ -219,7 +183,7 @@ __decorate([
     __metadata("design:type", String)
 ], StripeCustomer.prototype, "invoice_prefix", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => InvoiceSettings, { eager: true, cascade: true }),
+    (0, typeorm_1.OneToOne)(() => InvoiceSettings, { cascade: true }),
     __metadata("design:type", InvoiceSettings)
 ], StripeCustomer.prototype, "invoice_settings", void 0);
 __decorate([
@@ -227,7 +191,7 @@ __decorate([
     __metadata("design:type", Boolean)
 ], StripeCustomer.prototype, "livemode", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => Metadata, { eager: true, cascade: true }),
+    (0, typeorm_1.OneToOne)(() => Metadata, { cascade: true }),
     __metadata("design:type", Metadata)
 ], StripeCustomer.prototype, "metadata", void 0);
 __decorate([
@@ -264,11 +228,11 @@ __decorate([
     __metadata("design:type", String)
 ], StripePaymentMethod.prototype, "object", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => BillingDetails, { cascade: true, eager: true }),
+    (0, typeorm_1.ManyToOne)(() => BillingDetails, { cascade: true, }),
     __metadata("design:type", BillingDetails)
 ], StripePaymentMethod.prototype, "billing_details", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => Card, { cascade: true, eager: true }),
+    (0, typeorm_1.ManyToOne)(() => Card, { cascade: true, }),
     __metadata("design:type", Card)
 ], StripePaymentMethod.prototype, "card", void 0);
 __decorate([
@@ -284,7 +248,7 @@ __decorate([
     __metadata("design:type", Boolean)
 ], StripePaymentMethod.prototype, "livemode", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => Metadata, { eager: true, cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => Metadata, { cascade: true }),
     __metadata("design:type", Metadata)
 ], StripePaymentMethod.prototype, "metadata", void 0);
 __decorate([
@@ -342,7 +306,7 @@ __decorate([
     __metadata("design:type", String)
 ], StripePaymentIntent.prototype, "customer", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => PaymentIntentMetadata, { eager: true, cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => PaymentIntentMetadata, { cascade: true }),
     __metadata("design:type", PaymentIntentMetadata)
 ], StripePaymentIntent.prototype, "metadata", void 0);
 __decorate([

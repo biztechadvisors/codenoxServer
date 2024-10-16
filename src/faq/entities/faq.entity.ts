@@ -15,7 +15,7 @@ export class FAQ {
     @Column()
     description: string;
 
-    @ManyToMany(() => Attachment, { eager: true })
+    @ManyToMany(() => Attachment)
     @JoinTable({
         name: 'faq_images',
         joinColumn: { name: 'faqId', referencedColumnName: 'id' },

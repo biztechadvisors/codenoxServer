@@ -63,7 +63,7 @@ __decorate([
     __metadata("design:type", String)
 ], Category.prototype, "details", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true, nullable: true }),
+    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", nullable: true }),
     (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", attachment_entity_1.Attachment)
 ], Category.prototype, "image", void 0);
@@ -143,7 +143,7 @@ __decorate([
     __metadata("design:type", String)
 ], SubCategory.prototype, "details", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true, nullable: true }),
+    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", nullable: true }),
     (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", attachment_entity_1.Attachment)
 ], SubCategory.prototype, "image", void 0);

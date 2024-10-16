@@ -30,7 +30,7 @@ export class ProductsController {
   constructor(
     private readonly productsService: ProductsService,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   @Post()
   async createProduct(@Body() createProductDto: CreateProductDto) {
@@ -97,7 +97,7 @@ export class ProductsController {
 
 @Controller('popular-products')
 export class PopularProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(private readonly productsService: ProductsService) { }
   @Get()
   async getProducts(@Query() query: GetPopularProductsDto): Promise<Product[]> {
     return this.productsService.getPopularProducts(query)
@@ -109,7 +109,7 @@ export class UploadProductsXl {
   constructor(
     private readonly uploadXlService: UploadXlService,
     private readonly cacheService: CacheService, // Properly inject the cache service
-  ) {}
+  ) { }
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))

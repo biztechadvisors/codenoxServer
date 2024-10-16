@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const user_entity_1 = require("./entities/user.entity");
-const paginate_1 = require("../common/pagination/paginate");
 const typeorm_1 = require("@nestjs/typeorm");
 const profile_entity_1 = require("./entities/profile.entity");
 const attachment_entity_1 = require("../common/entities/attachment.entity");
@@ -105,115 +104,101 @@ let UsersService = class UsersService {
         console.log("usrById", usrById);
         console.log("type", type);
         if (!usrById && !type) {
-            const emptyUserPaginator = {
-                data: [],
-                count: 0,
-                current_page: 1,
-                firstItem: null,
-                lastItem: null,
-                last_page: 1,
-                per_page: 10,
-                total: 0,
-                first_page_url: null,
-                last_page_url: null,
-                next_page_url: null,
-                prev_page_url: null,
-            };
-            return emptyUserPaginator;
+            return this.createEmptyUserPaginator();
         }
-        const limitNum = limit;
-        const pageNum = page;
-        const startIndex = (pageNum - 1) * limitNum;
-        const cacheKey = `users_${JSON.stringify({
-            searchJoin,
-            limit,
-            page,
-            name,
-            orderBy,
-            sortedBy,
-            usrById,
-            search,
-            type,
-        })}`;
+        const startIndex = (page - 1) * limit;
+        const cacheKey = `users_${JSON.stringify({ searchJoin, limit, page, name, orderBy, sortedBy, usrById, search, type })}`;
         const cachedData = await this.cacheManager.get(cacheKey);
         if (cachedData) {
             return cachedData;
         }
-        let user;
-        if (usrById) {
-            user = await this.userRepository.findOne({
-                where: { id: Number(usrById) },
-                relations: [
-                    'profile',
-                    'dealer',
-                    'owned_shops',
-                    'managed_shop',
-                    'adds',
-                    'permission',
-                ],
-            });
-            if (!user) {
-                throw new common_1.NotFoundException(`User with ID ${usrById} not found`);
-            }
-        }
-        const queryBuilder = this.userRepository.createQueryBuilder('user');
-        queryBuilder
+        const queryBuilder = this.userRepository.createQueryBuilder('user')
             .leftJoinAndSelect('user.profile', 'profile')
             .leftJoinAndSelect('user.dealer', 'dealer')
             .leftJoinAndSelect('user.owned_shops', 'owned_shops')
             .leftJoinAndSelect('user.managed_shop', 'managed_shop')
             .leftJoinAndSelect('user.adds', 'adds')
-            .leftJoinAndSelect('user.permission', 'permission');
-        queryBuilder.skip(startIndex).take(limitNum);
-        if (orderBy && sortedBy) {
-            queryBuilder.addOrderBy(`user.${orderBy}`, sortedBy.toUpperCase());
-        }
+            .leftJoinAndSelect('user.permission', 'permission')
+            .skip(startIndex)
+            .take(limit);
+        let user;
         if (usrById) {
-            queryBuilder.andWhere('user.createdById = :usrById', { usrById });
-            if (type) {
-                const permissions = await this.permissionRepository.find({
-                    where: {
-                        type_name: type,
-                        user: Number(usrById),
-                    },
-                });
-                if (permissions.length === 0) {
-                    throw new common_1.NotFoundException(`Permission for type "${type}" not found.`);
-                }
-                const permissionIds = permissions.map((p) => p.id);
-                queryBuilder.andWhere('user.permission_id IN (:...permissionIds)', { permissionIds });
+            user = await queryBuilder.where('user.id = :usrById', { usrById }).getOne();
+            if (!user) {
+                throw new common_1.NotFoundException(`User with ID ${usrById} not found`);
             }
+        }
+        if (type) {
+            const permissions = await this.permissionRepository.find({ where: { type_name: type, user: Number(usrById) } });
+            if (permissions.length === 0) {
+                throw new common_1.NotFoundException(`Permission for type "${type}" not found.`);
+            }
+            queryBuilder.andWhere('user.permission_id IN (:...permissionIds)', { permissionIds: permissions.map(p => p.id) });
         }
         if (name) {
             queryBuilder.andWhere('user.name LIKE :name', { name: `%${name}%` });
         }
         if (search) {
-            const searchConditions = [];
-            const searchParams = {};
-            const filterTerms = search.split(' ');
-            filterTerms.forEach((term, index) => {
-                const searchTermKey = `searchTerm${index}`;
-                const searchTermValue = `%${term}%`;
-                searchConditions.push(`(user.name LIKE :${searchTermKey} OR user.email LIKE :${searchTermKey} OR user.contact LIKE :${searchTermKey})`);
-                searchParams[searchTermKey] = searchTermValue;
-            });
+            const searchParams = this.constructSearchParams(search, searchJoin, queryBuilder);
             if (searchJoin.toLowerCase() === 'or') {
-                queryBuilder.andWhere(new typeorm_2.Brackets(qb => {
-                    qb.where(searchConditions.join(' OR '), searchParams);
-                }));
+                queryBuilder.andWhere(new typeorm_2.Brackets(qb => qb.where(searchParams.conditions.join(' OR '), searchParams.params)));
             }
             else {
-                searchConditions.forEach((condition, index) => {
-                    queryBuilder.andWhere(condition, searchParams);
+                searchParams.conditions.forEach((condition, index) => {
+                    queryBuilder.andWhere(condition, searchParams.params);
                 });
             }
         }
         const [users, total] = await queryBuilder.getManyAndCount();
-        const isCompanyOrStaff = user && (user.permission.type_name === user_entity_1.UserType.Company || user.permission.type_name === user_entity_1.UserType.Staff);
-        const url = `/users?type=${type || 'customer'}&limit=${limitNum}`;
-        const result = Object.assign({ data: isCompanyOrStaff ? [...users] : [user, ...users] }, (0, paginate_1.paginate)(total, pageNum, limitNum, total, url));
+        const result = this.prepareUserPaginatorResponse(users, user, total, page, limit);
         await this.cacheManager.set(cacheKey, result, 60);
         return result;
+    }
+    createEmptyUserPaginator() {
+        return {
+            data: [],
+            count: 0,
+            current_page: 1,
+            firstItem: null,
+            lastItem: null,
+            last_page: 1,
+            per_page: 10,
+            total: 0,
+            first_page_url: null,
+            last_page_url: null,
+            next_page_url: null,
+            prev_page_url: null,
+        };
+    }
+    constructSearchParams(search, searchJoin, queryBuilder) {
+        const filterTerms = search.split(' ');
+        const searchConditions = [];
+        const searchParams = {};
+        filterTerms.forEach((term, index) => {
+            const searchTermKey = `searchTerm${index}`;
+            const searchTermValue = `%${term}%`;
+            searchConditions.push(`(user.name LIKE :${searchTermKey} OR user.email LIKE :${searchTermKey} OR user.contact LIKE :${searchTermKey})`);
+            searchParams[searchTermKey] = searchTermValue;
+        });
+        return { conditions: searchConditions, params: searchParams };
+    }
+    prepareUserPaginatorResponse(users, user, total, page, limit) {
+        const isCompanyOrStaff = user && (user.permission.type_name === user_entity_1.UserType.Company || user.permission.type_name === user_entity_1.UserType.Staff);
+        const url = `/users?type=${(user === null || user === void 0 ? void 0 : user.permission.type_name) || 'customer'}&limit=${limit}`;
+        return {
+            data: isCompanyOrStaff ? [...users] : [user, ...users],
+            count: users.length,
+            current_page: page,
+            firstItem: users.length > 0 ? users[0].id : null,
+            lastItem: users.length > 0 ? users[users.length - 1].id : null,
+            last_page: Math.ceil(total / limit),
+            per_page: limit,
+            total: total,
+            first_page_url: url + '&page=1',
+            last_page_url: url + `&page=${Math.ceil(total / limit)}`,
+            next_page_url: page < Math.ceil(total / limit) ? url + `&page=${page + 1}` : null,
+            prev_page_url: page > 1 ? url + `&page=${page - 1}` : null,
+        };
     }
     async findOne(id) {
         const cacheKey = `user_${id}`;
@@ -221,11 +206,13 @@ let UsersService = class UsersService {
         if (cachedUser) {
             return cachedUser;
         }
-        const user = await this.userRepository.findOne({
-            where: { id },
-            relations: ['profile', 'adds', 'owned_shops',
-                'adds.address', 'permission'],
-        });
+        const user = await this.userRepository.createQueryBuilder('user')
+            .leftJoinAndSelect('user.profile', 'profile')
+            .leftJoinAndSelect('user.adds', 'adds')
+            .leftJoinAndSelect('user.owned_shops', 'owned_shops')
+            .leftJoinAndSelect('user.permission', 'permission')
+            .where('user.id = :id', { id })
+            .getOne();
         if (!user) {
             throw new common_1.NotFoundException(`User with id ${id} not found`);
         }
@@ -399,23 +386,20 @@ let UsersService = class UsersService {
         const cacheKey = `dealers_${createdBy || 'all'}`;
         let dealers = await this.cacheManager.get(cacheKey);
         if (!dealers) {
-            const findOptions = {
-                relations: [
-                    'user',
-                    'dealerProductMargins',
-                    'dealerProductMargins.product',
-                    'dealerCategoryMargins',
-                    'dealerCategoryMargins.category'
-                ],
-            };
+            const queryBuilder = this.dealerRepository.createQueryBuilder('dealer')
+                .leftJoinAndSelect('dealer.user', 'user')
+                .leftJoinAndSelect('dealer.dealerProductMargins', 'dealerProductMargins')
+                .leftJoinAndSelect('dealerProductMargins.product', 'product')
+                .leftJoinAndSelect('dealer.dealerCategoryMargins', 'dealerCategoryMargins')
+                .leftJoinAndSelect('dealerCategoryMargins.category', 'category');
             if (createdBy) {
                 const user = await this.userRepository.findOne({ where: { id: createdBy } });
                 if (!user) {
                     throw new common_1.NotFoundException(`User with ID ${createdBy} not found`);
                 }
-                findOptions['where'] = { user: { createdBy: { id: createdBy } } };
+                queryBuilder.where('user.createdById = :createdById', { createdById: createdBy });
             }
-            dealers = await this.dealerRepository.find(findOptions);
+            dealers = await queryBuilder.getMany();
             await this.cacheManager.set(cacheKey, dealers, 60);
         }
         return dealers;
@@ -424,16 +408,14 @@ let UsersService = class UsersService {
         const cacheKey = `dealer_${id}`;
         let dealer = await this.cacheManager.get(cacheKey);
         if (!dealer) {
-            dealer = await this.dealerRepository.findOne({
-                where: { user: { id } },
-                relations: [
-                    'user',
-                    'dealerProductMargins',
-                    'dealerProductMargins.product',
-                    'dealerCategoryMargins',
-                    'dealerCategoryMargins.category',
-                ],
-            });
+            dealer = await this.dealerRepository.createQueryBuilder('dealer')
+                .leftJoinAndSelect('dealer.user', 'user')
+                .leftJoinAndSelect('dealer.dealerProductMargins', 'dealerProductMargins')
+                .leftJoinAndSelect('dealerProductMargins.product', 'product')
+                .leftJoinAndSelect('dealer.dealerCategoryMargins', 'dealerCategoryMargins')
+                .leftJoinAndSelect('dealerCategoryMargins.category', 'category')
+                .where('user.id = :id', { id })
+                .getOne();
             if (!dealer) {
                 throw new common_1.NotFoundException(`Dealer with user ID ${id} not found`);
             }

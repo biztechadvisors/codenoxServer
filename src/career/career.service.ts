@@ -74,16 +74,24 @@ export class CareerService {
         // Try to get the data from cache first
         let career = await this.cacheManager.get<Career>(cacheKey);
         if (!career) {
-            career = await this.careerRepository.findOne({ where: { id }, relations: ['shop', 'vacancy'] });
+            // Using QueryBuilder for flexibility
+            career = await this.careerRepository.createQueryBuilder('career')
+                .leftJoinAndSelect('career.shop', 'shop')
+                .leftJoinAndSelect('career.vacancy', 'vacancy')
+                .where('career.id = :id', { id })
+                .cache(50000)
+                .getOne();
+
             if (!career) {
                 throw new NotFoundException(`Career with ID ${id} not found`);
             }
 
-            // Cache the result
-            await this.cacheManager.set(cacheKey, career, 300); // Cache for 5 minutes
+            // Cache the result for 5 minutes (300 seconds)
+            await this.cacheManager.set(cacheKey, career, 300);
         }
         return career;
     }
+
 
     async findAllByShop(
         shopSlug: string,
@@ -102,36 +110,53 @@ export class CareerService {
         }
 
         const offset = (page - 1) * limit;
-        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+
+        // Using QueryBuilder to fetch the shop
+        const shop = await this.shopRepository.createQueryBuilder('shop')
+            .where('shop.slug = :shopSlug', { shopSlug })
+            .getOne();
+
         if (!shop) {
             throw new NotFoundException(`Shop with slug ${shopSlug} not found`);
         }
 
+        // Build the query for careers
         const queryBuilder = this.careerRepository.createQueryBuilder('career')
             .leftJoinAndSelect('career.vacancy', 'vacancy')
-            .where('career.shop = :shopId', { shopId: shop.id });
+            .where('career.shopId = :shopId', { shopId: shop.id });
 
+        // Apply location filter if provided
         if (location) {
             queryBuilder.andWhere('career.location = :location', { location });
         }
 
+        // Apply vacancy title filter if provided
         if (vacancyTitle) {
             queryBuilder.andWhere('vacancy.title ILIKE :vacancyTitle', { vacancyTitle: `%${vacancyTitle}%` });
         }
 
+        // Apply position filter if provided
         if (position) {
             queryBuilder.andWhere('career.position ILIKE :position', { position: `%${position}%` });
         }
 
+        // Get the total count for pagination
         const count = await queryBuilder.getCount();
-        const data = await queryBuilder.skip(offset).take(limit).getMany();
 
-        // Cache the result
+        // Fetch the paginated data
+        const data = await queryBuilder
+            .skip(offset)
+            .take(limit)
+            .cache(50000)
+            .getMany();
+
+        // Cache the result for 5 minutes (300 seconds)
         cachedResult = { data, count };
-        await this.cacheManager.set(cacheKey, cachedResult, 300); // Cache for 5 minutes
+        await this.cacheManager.set(cacheKey, cachedResult, 300);
 
         return cachedResult;
     }
+
     async deleteCareer(id: number): Promise<void> {
         const career = await this.getCareerById(id);
         await this.careerRepository.remove(career);
@@ -219,16 +244,25 @@ export class CareerService {
         // Try to get the data from cache first
         let vacancy = await this.cacheManager.get<Vacancy>(cacheKey);
         if (!vacancy) {
-            vacancy = await this.vacancyRepository.findOne({ where: { id }, relations: ['location', 'shop', 'career'] });
+            // Using QueryBuilder to retrieve vacancy by id with relations
+            vacancy = await this.vacancyRepository.createQueryBuilder('vacancy')
+                .leftJoinAndSelect('vacancy.location', 'location')
+                .leftJoinAndSelect('vacancy.shop', 'shop')
+                .leftJoinAndSelect('vacancy.career', 'career')
+                .where('vacancy.id = :id', { id })
+                .cache(50000)
+                .getOne();
+
             if (!vacancy) {
                 throw new NotFoundException('Vacancy not found');
             }
 
-            // Cache the result
-            await this.cacheManager.set(cacheKey, vacancy, 300); // Cache for 5 minutes
+            // Cache the result for 5 minutes (300 seconds)
+            await this.cacheManager.set(cacheKey, vacancy, 300);
         }
         return vacancy;
     }
+
 
     async deleteVacancy(id: number): Promise<void> {
         const result = await this.vacancyRepository.delete(id);
@@ -237,7 +271,7 @@ export class CareerService {
         }
     }
 
-    async findAllVacancies(page: number, limit: number, city?: string): Promise<{ data: Vacancy[], count: number }> {
+    async findAllVacancies(page: number = 1, limit: number = 10, city?: string): Promise<{ data: Vacancy[], count: number }> {
         const cacheKey = `vacancies_${page}_${limit}_${city || 'all'}`;
 
         // Try to get the data from cache first
@@ -246,22 +280,28 @@ export class CareerService {
             return cachedResult;
         }
 
+        const offset = (page - 1) * limit;
+
+        // Building query with optional city filter
         const queryBuilder = this.vacancyRepository.createQueryBuilder('vacancy')
-            .leftJoinAndSelect('vacancy.location', 'address')
+            .leftJoinAndSelect('vacancy.location', 'location')
             .leftJoinAndSelect('vacancy.shop', 'shop');
 
+        // Apply city filter if provided
         if (city) {
-            queryBuilder.andWhere('address.city = :city', { city });
+            queryBuilder.andWhere('location.city = :city', { city });
         }
 
+        // Execute the query to get data and count
         const [data, count] = await queryBuilder
-            .skip((page - 1) * limit)
+            .skip(offset)
             .take(limit)
+            .cache(50000)
             .getManyAndCount();
 
-        // Cache the result
+        // Cache the result for 5 minutes (300 seconds)
         cachedResult = { data, count };
-        await this.cacheManager.set(cacheKey, cachedResult, 300); // Cache for 5 minutes
+        await this.cacheManager.set(cacheKey, cachedResult, 300);
 
         return cachedResult;
     }

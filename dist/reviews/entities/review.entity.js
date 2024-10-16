@@ -52,7 +52,7 @@ __decorate([
     __metadata("design:type", order_entity_1.Order)
 ], Review.prototype, "order", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { cascade: true, eager: true }),
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { cascade: true }),
     (0, typeorm_1.JoinTable)({ name: 'review_attachment' }),
     __metadata("design:type", Array)
 ], Review.prototype, "photos", void 0);

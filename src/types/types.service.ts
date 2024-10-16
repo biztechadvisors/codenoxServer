@@ -44,7 +44,6 @@ export class TypesService {
 
   async findAll(query: GetTypesDto) {
     const { text, search, shop_id, shopSlug, region_name } = query;
-    let data: Type[];
 
     // Generate a unique cache key based on query parameters
     const cacheKey = `types_${shop_id || 'none'}_${shopSlug || 'none'}_${text || 'none'}_${search || 'none'}_${region_name || 'none'}`;
@@ -55,41 +54,52 @@ export class TypesService {
       return cachedData;
     }
 
-    // Fetch data from the database
-    const queryOptions: any = {
-      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'regions']
-    };
+    // Initialize the query builder
+    const queryBuilder = this.typeRepository.createQueryBuilder('type')
+      .leftJoinAndSelect('type.settings', 'settings')
+      .leftJoinAndSelect('type.promotional_sliders', 'promotional_sliders')
+      .leftJoinAndSelect('type.banners', 'banners')
+      .leftJoinAndSelect('banners.image', 'banner_image')
+      .leftJoinAndSelect('type.regions', 'regions');
 
-    if (shop_id || shopSlug) {
-      queryOptions.where = { shop: shop_id ? { id: shop_id } : { slug: shopSlug } };
+    // Add conditions based on shop_id or shopSlug
+    if (shop_id) {
+      queryBuilder.andWhere('type.shopId = :shopId', { shopId: shop_id });
+    } else if (shopSlug) {
+      queryBuilder.andWhere('type.shopSlug = :shopSlug', { shopSlug });
     }
 
+    // Filter by region name if provided
     if (region_name) {
-      queryOptions.where = { ...queryOptions.where, regions: { name: region_name } };
+      queryBuilder.andWhere('regions.name = :regionName', { regionName: region_name });
     }
 
-    data = await this.typeRepository.find(queryOptions);
+    // Execute the query
+    let data: Type[] = await queryBuilder.getMany();
 
+    // Use Fuse.js for searching
     const fuse = new Fuse(data, { keys: ['name', 'slug'] });
 
-    if (text?.replace(/%/g, '')) {
+    // Apply text search if provided
+    if (text && text.replace(/%/g, '').length) {
       data = fuse.search(text).map(({ item }) => item);
     }
 
+    // Handle search parameters
     if (search) {
       const parseSearchParams = search.split(';');
-      const searchText: any = [];
+      const searchConditions: any[] = [];
       for (const searchParam of parseSearchParams) {
         const [key, value] = searchParam.split(':');
         if (key !== 'slug') {
-          searchText.push({ [key]: value });
+          searchConditions.push({ [key]: value });
         }
       }
-      data = fuse.search({ $and: searchText }).map(({ item }) => item);
+      data = fuse.search({ $and: searchConditions }).map(({ item }) => item);
     }
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, data, 60); // Cache for 1 hour
+    await this.cacheManager.set(cacheKey, data, 3600); // Cache for 1 hour
 
     return data;
   }
@@ -104,21 +114,26 @@ export class TypesService {
       return cachedType;
     }
 
-    // Fetch data from the database
-    const type = await this.typeRepository.findOne({
-      where: { slug: slug },
-      relations: ['settings', 'promotional_sliders', 'banners', 'banners.image', 'products']
-    });
+    // Fetch data from the database using QueryBuilder
+    const type = await this.typeRepository.createQueryBuilder('type')
+      .leftJoinAndSelect('type.settings', 'settings')
+      .leftJoinAndSelect('type.promotional_sliders', 'promotional_sliders')
+      .leftJoinAndSelect('type.banners', 'banners')
+      .leftJoinAndSelect('banners.image', 'banner_image')
+      .leftJoinAndSelect('type.products', 'products')
+      .where('type.slug = :slug', { slug })
+      .getOne();
 
     if (!type) {
       throw new NotFoundException(`Type with slug ${slug} not found`);
     }
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, type, 60); // Cache for 5 minutes
+    await this.cacheManager.set(cacheKey, type, 300); // Cache for 5 minutes
 
     return type;
   }
+
 
   async create(data: CreateTypeDto) {
     // Create and save TypeSettings

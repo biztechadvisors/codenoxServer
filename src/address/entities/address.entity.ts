@@ -55,7 +55,7 @@ export class Add {
   @JoinColumn({ name: 'customer_id' })
   customer: User;
 
-  @OneToOne(() => UserAdd, { onDelete: "CASCADE", eager: true })
+  @OneToOne(() => UserAdd, { onDelete: "CASCADE" })
   @JoinColumn({ name: 'address_id' })
   address: UserAdd;
 }

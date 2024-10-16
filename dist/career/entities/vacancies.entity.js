@@ -42,7 +42,7 @@ __decorate([
     __metadata("design:type", String)
 ], Vacancy.prototype, "salaryRange", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => address_entity_1.Add, { eager: true, onDelete: "CASCADE" }),
+    (0, typeorm_1.ManyToOne)(() => address_entity_1.Add, { onDelete: "CASCADE" }),
     (0, typeorm_1.JoinColumn)({ name: 'address_id' }),
     __metadata("design:type", address_entity_1.Add)
 ], Vacancy.prototype, "location", void 0);

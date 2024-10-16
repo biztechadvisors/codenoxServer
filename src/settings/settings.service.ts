@@ -337,13 +337,14 @@ export class SettingsService {
 
     if (!mergedData) {
       // Fetch the shop details using the shop slug
-      let shop;
-      if (shop_slug) {
-        shop = await this.shopRepository.findOne({
-          where: { slug: shop_slug },
-          relations: ['additionalPermissions', 'additionalPermissions.permissions', 'permission', 'permission.permissions'],
-        });
-      }
+      const shop = await this.shopRepository
+        .createQueryBuilder('shop')
+        .leftJoinAndSelect('shop.additionalPermissions', 'additionalPermissions')
+        .leftJoinAndSelect('additionalPermissions.permissions', 'permissions')
+        .leftJoinAndSelect('shop.permission', 'shopPermission')
+        .leftJoinAndSelect('shopPermission.permissions', 'shopPermissions')
+        .where('shop.slug = :shop_slug', { shop_slug })
+        .getOne();
 
       // If the shop is not found, return null
       if (!shop) {
@@ -351,45 +352,41 @@ export class SettingsService {
       }
 
       // Fetch the settings using the shop ID
-      const settingData = await this.settingRepository.findOne({
-        where: { shop: { id: shop.id } },
-        relations: [
-          'options.contactDetails',
-          'options.contactDetails.socials',
-          'options.contactDetails.location',
-          'options.currencyOptions',
-          'options.emailEvent',
-          'options.emailEvent.admin',
-          'options.emailEvent.vendor',
-          'options.emailEvent.customer',
-          'options.smsEvent',
-          'options.smsEvent.admin',
-          'options.smsEvent.vendor',
-          'options.smsEvent.customer',
-          'options.seo',
-          'options.seo.ogImage',
-          'options.deliveryTime',
-          'options.paymentGateway',
-          'options.logo',
-          'options.server_info',
-        ],
-      });
+      const settingData = await this.settingRepository
+        .createQueryBuilder('setting')
+        .leftJoinAndSelect('setting.shop', 'shop')
+        .leftJoinAndSelect('setting.options', 'options')
+        .leftJoinAndSelect('options.contactDetails', 'contactDetails')
+        .leftJoinAndSelect('contactDetails.socials', 'socials')
+        .leftJoinAndSelect('contactDetails.location', 'location')
+        .leftJoinAndSelect('options.currencyOptions', 'currencyOptions')
+        .leftJoinAndSelect('options.emailEvent', 'emailEvent')
+        .leftJoinAndSelect('emailEvent.admin', 'emailAdmin')
+        .leftJoinAndSelect('emailEvent.vendor', 'emailVendor')
+        .leftJoinAndSelect('emailEvent.customer', 'emailCustomer')
+        .leftJoinAndSelect('options.smsEvent', 'smsEvent')
+        .leftJoinAndSelect('smsEvent.admin', 'smsAdmin')
+        .leftJoinAndSelect('smsEvent.vendor', 'smsVendor')
+        .leftJoinAndSelect('smsEvent.customer', 'smsCustomer')
+        .leftJoinAndSelect('options.seo', 'seo')
+        .leftJoinAndSelect('seo.ogImage', 'ogImage')
+        .leftJoinAndSelect('options.deliveryTime', 'deliveryTime')
+        .leftJoinAndSelect('options.paymentGateway', 'paymentGateway')
+        .leftJoinAndSelect('options.logo', 'logo')
+        .leftJoinAndSelect('options.server_info', 'serverInfo')
+        .where('setting.shopId = :shopId', { shopId: shop.id })
+        .getOne();
 
-      if (!settingData && shop) {
-        mergedData = shop;
-      } else {
-        mergedData = {
-          ...settingData,
-          shop,
-        };
-      }
+      // Merge the shop and setting data
+      mergedData = settingData ? { ...settingData, shop } : shop;
 
       // Store the merged data in the cache with a TTL of 5 minutes
-      await this.cacheManager.set(cacheKey, mergedData, 60);
+      await this.cacheManager.set(cacheKey, mergedData, 60 * 5);
     }
 
     return mergedData;
   }
+
 
   //update setting
   async update(id: number, updateSettingDto: UpdateSettingDto) {

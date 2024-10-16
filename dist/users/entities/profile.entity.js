@@ -46,7 +46,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Profile.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { eager: true, nullable: true, onDelete: 'SET NULL' }),
+    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { nullable: true, onDelete: 'SET NULL' }),
     (0, typeorm_1.JoinColumn)({ name: 'avatarId' }),
     __metadata("design:type", attachment_entity_1.Attachment)
 ], Profile.prototype, "avatar", void 0);

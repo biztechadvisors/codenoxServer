@@ -33,8 +33,7 @@ __decorate([
 ], TotalYearSaleByMonth.prototype, "month", void 0);
 __decorate([
     (0, typeorm_1.ManyToMany)(() => Analytics, (analytics) => analytics.totalYearSaleByMonth, {
-        onDelete: 'CASCADE',
-        eager: false,
+        onDelete: 'CASCADE'
     }),
     __metadata("design:type", Array)
 ], TotalYearSaleByMonth.prototype, "analytics", void 0);
@@ -89,7 +88,6 @@ __decorate([
 ], Analytics.prototype, "newCustomers", void 0);
 __decorate([
     (0, typeorm_1.ManyToMany)(() => TotalYearSaleByMonth, (totalYearSaleByMonth) => totalYearSaleByMonth.analytics, {
-        eager: true,
         cascade: true,
         onDelete: 'CASCADE',
     }),

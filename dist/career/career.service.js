@@ -74,7 +74,12 @@ let CareerService = class CareerService {
         const cacheKey = `career_${id}`;
         let career = await this.cacheManager.get(cacheKey);
         if (!career) {
-            career = await this.careerRepository.findOne({ where: { id }, relations: ['shop', 'vacancy'] });
+            career = await this.careerRepository.createQueryBuilder('career')
+                .leftJoinAndSelect('career.shop', 'shop')
+                .leftJoinAndSelect('career.vacancy', 'vacancy')
+                .where('career.id = :id', { id })
+                .cache(50000)
+                .getOne();
             if (!career) {
                 throw new common_1.NotFoundException(`Career with ID ${id} not found`);
             }
@@ -89,13 +94,15 @@ let CareerService = class CareerService {
             return cachedResult;
         }
         const offset = (page - 1) * limit;
-        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        const shop = await this.shopRepository.createQueryBuilder('shop')
+            .where('shop.slug = :shopSlug', { shopSlug })
+            .getOne();
         if (!shop) {
             throw new common_1.NotFoundException(`Shop with slug ${shopSlug} not found`);
         }
         const queryBuilder = this.careerRepository.createQueryBuilder('career')
             .leftJoinAndSelect('career.vacancy', 'vacancy')
-            .where('career.shop = :shopId', { shopId: shop.id });
+            .where('career.shopId = :shopId', { shopId: shop.id });
         if (location) {
             queryBuilder.andWhere('career.location = :location', { location });
         }
@@ -106,7 +113,11 @@ let CareerService = class CareerService {
             queryBuilder.andWhere('career.position ILIKE :position', { position: `%${position}%` });
         }
         const count = await queryBuilder.getCount();
-        const data = await queryBuilder.skip(offset).take(limit).getMany();
+        const data = await queryBuilder
+            .skip(offset)
+            .take(limit)
+            .cache(50000)
+            .getMany();
         cachedResult = { data, count };
         await this.cacheManager.set(cacheKey, cachedResult, 300);
         return cachedResult;
@@ -170,7 +181,13 @@ let CareerService = class CareerService {
         const cacheKey = `vacancy_${id}`;
         let vacancy = await this.cacheManager.get(cacheKey);
         if (!vacancy) {
-            vacancy = await this.vacancyRepository.findOne({ where: { id }, relations: ['location', 'shop', 'career'] });
+            vacancy = await this.vacancyRepository.createQueryBuilder('vacancy')
+                .leftJoinAndSelect('vacancy.location', 'location')
+                .leftJoinAndSelect('vacancy.shop', 'shop')
+                .leftJoinAndSelect('vacancy.career', 'career')
+                .where('vacancy.id = :id', { id })
+                .cache(50000)
+                .getOne();
             if (!vacancy) {
                 throw new common_1.NotFoundException('Vacancy not found');
             }
@@ -184,21 +201,23 @@ let CareerService = class CareerService {
             throw new common_1.NotFoundException('Vacancy not found');
         }
     }
-    async findAllVacancies(page, limit, city) {
+    async findAllVacancies(page = 1, limit = 10, city) {
         const cacheKey = `vacancies_${page}_${limit}_${city || 'all'}`;
         let cachedResult = await this.cacheManager.get(cacheKey);
         if (cachedResult) {
             return cachedResult;
         }
+        const offset = (page - 1) * limit;
         const queryBuilder = this.vacancyRepository.createQueryBuilder('vacancy')
-            .leftJoinAndSelect('vacancy.location', 'address')
+            .leftJoinAndSelect('vacancy.location', 'location')
             .leftJoinAndSelect('vacancy.shop', 'shop');
         if (city) {
-            queryBuilder.andWhere('address.city = :city', { city });
+            queryBuilder.andWhere('location.city = :city', { city });
         }
         const [data, count] = await queryBuilder
-            .skip((page - 1) * limit)
+            .skip(offset)
             .take(limit)
+            .cache(50000)
             .getManyAndCount();
         cachedResult = { data, count };
         await this.cacheManager.set(cacheKey, cachedResult, 300);

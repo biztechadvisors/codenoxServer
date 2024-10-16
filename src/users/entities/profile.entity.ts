@@ -21,7 +21,7 @@ export class Profile extends CoreEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => Attachment, { eager: true, nullable: true, onDelete: 'SET NULL' })
+    @ManyToOne(() => Attachment, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'avatarId' })
     avatar: Attachment;
 

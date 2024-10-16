@@ -68,21 +68,22 @@ let OrdersService = class OrdersService {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.startTransaction();
         try {
-            const shop = await this.shopRepository.findOne({ where: { id: orderDto.shop_id } });
+            const shop = await queryRunner.manager.findOne(shop_entity_1.Shop, { where: { id: orderDto.shop_id } });
             if (!shop) {
                 throw new common_1.NotFoundException(`Shop with ID ${orderDto.shop_id} not found`);
             }
             shop.orders_count += 1;
             const productIds = orderDto.products.map(p => p.product_id);
-            const products = await this.productRepository.find({
+            const products = await queryRunner.manager.find(product_entity_1.Product, {
                 where: { id: (0, typeorm_2.In)(productIds) },
                 relations: ['variation_options'],
             });
             if (products.length === 0) {
-                throw new common_1.NotFoundException('Products not found');
+                throw new common_1.NotFoundException('No products found');
             }
+            const productMap = new Map(products.map(product => [product.id, product]));
             for (const orderedProduct of orderDto.products) {
-                const product = products.find(p => p.id === orderedProduct.product_id);
+                const product = productMap.get(orderedProduct.product_id);
                 if (!product) {
                     throw new common_1.NotFoundException(`Product with ID ${orderedProduct.product_id} not found`);
                 }
@@ -414,111 +415,112 @@ let OrdersService = class OrdersService {
         };
     }
     async getOrders(getOrdersDto) {
-        try {
-            const { limit = 15, page = 1, customer_id, tracking_number, search, shop_id, shopSlug, soldByUserAddress, type, startDate, endDate, } = getOrdersDto;
-            if (!shop_id && (!shopSlug && !customer_id && !tracking_number && !soldByUserAddress)) {
-                const order = {
-                    data: [],
-                    count: 0,
-                    current_page: 1,
-                    firstItem: null,
-                    lastItem: null,
-                    last_page: 1,
-                    per_page: 10,
-                    total: 0,
-                    first_page_url: null,
-                    last_page_url: null,
-                    next_page_url: null,
-                    prev_page_url: null,
-                };
-                return order;
-            }
-            const startIndex = (page - 1) * limit;
-            const cacheKey = `orders-${page}-${limit}-${customer_id}-${tracking_number}-${search}-${shop_id}-${shopSlug}-${soldByUserAddress}-${type}-${startDate}-${endDate}`;
-            let ordersCache = await this.cacheManager.get(cacheKey);
-            if (!ordersCache) {
-                let query = this.orderRepository.createQueryBuilder('order')
-                    .leftJoinAndSelect('order.status', 'status')
-                    .leftJoinAndSelect('order.dealer', 'dealer')
-                    .leftJoinAndSelect('order.billing_address', 'billing_address')
-                    .leftJoinAndSelect('order.shipping_address', 'shipping_address')
-                    .leftJoinAndSelect('order.customer', 'customer')
-                    .leftJoinAndSelect('order.products', 'products')
-                    .leftJoinAndSelect('order.orderProductPivots', 'orderProductPivots')
-                    .leftJoinAndSelect('products.pivot', 'pivot')
-                    .leftJoinAndSelect('products.taxes', 'taxes')
-                    .leftJoinAndSelect('products.variation_options', 'variation_options')
-                    .leftJoinAndSelect('order.payment_intent', 'payment_intent')
-                    .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
-                    .leftJoinAndSelect('order.shop', 'shop')
-                    .leftJoinAndSelect('order.coupon', 'coupon');
-                if (customer_id) {
-                    query = query.andWhere('order.customer.id = :customerId', { customerId: Number(customer_id) });
-                }
-                if (type) {
-                    query = query.andWhere('order.type = :type', { type });
-                }
-                if (tracking_number) {
-                    query = query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
-                }
-                if (soldByUserAddress) {
-                    query = query.andWhere('order.soldByUserAddress = :soldByUserAddress', { soldByUserAddress });
-                }
-                if (shop_id) {
-                    query = query.andWhere('shop.id = :shopId', { shopId: Number(shop_id) });
-                }
-                else if (shopSlug) {
-                    const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
-                    if (!shop)
-                        throw new common_1.NotFoundException('Shop not found');
-                    query = query.andWhere('shop.id = :shopId', { shopId: shop.id });
-                }
-                if (search) {
-                    query = query.andWhere('(status.name LIKE :searchValue OR order.tracking_number LIKE :searchValue)', {
-                        searchValue: `%${search}%`,
-                    });
-                }
-                if (startDate && endDate) {
-                    query = query.andWhere('order.created_at BETWEEN :startDate AND :endDate', { startDate, endDate });
-                }
-                const [data, totalCount] = await query
-                    .skip(startIndex)
-                    .take(limit)
-                    .getManyAndCount();
-                const results = await Promise.all(data.map(async (order) => {
-                    const products = await Promise.all(order.products.map(async (product) => {
-                        let pivot = await this.orderProductPivotRepository.findOne({
-                            where: {
-                                product: { id: product.id },
-                                Ord_Id: order.id,
-                            },
-                        });
-                        const transformedPivot = pivot
-                            ? {
-                                id: pivot.id,
-                                variation_option_id: pivot.variation_option_id,
-                                order_quantity: pivot.order_quantity,
-                                unit_price: pivot.unit_price,
-                                subtotal: pivot.subtotal,
-                                Ord_Id: pivot.Ord_Id,
-                                created_at: pivot.created_at,
-                                updated_at: pivot.updated_at,
-                            }
-                            : null;
-                        return transformedPivot ? Object.assign(Object.assign({}, product), { pivot: transformedPivot }) : null;
-                    }));
-                    return Object.assign(Object.assign({}, order), { products: products.filter((p) => p !== null) });
-                }));
-                const url = `/orders?search=${search || ''}&limit=${limit}`;
-                ordersCache = Object.assign({ data: results }, (0, paginate_1.paginate)(totalCount, page, limit, results.length, url));
-                await this.cacheManager.set(cacheKey, ordersCache, 60);
-            }
-            return ordersCache;
+        const { limit = 15, page = 1, customer_id, tracking_number, search, shop_id, shopSlug, soldByUserAddress, type, startDate, endDate, } = getOrdersDto;
+        if (!shop_id && !shopSlug && !customer_id && !tracking_number && !soldByUserAddress) {
+            return this.createEmptyOrderPaginator();
         }
-        catch (error) {
-            console.error('Error in getOrders:', error);
-            throw new common_1.InternalServerErrorException('Failed to retrieve orders');
+        const startIndex = (page - 1) * limit;
+        const cacheKey = this.createCacheKey(getOrdersDto);
+        let ordersCache = await this.cacheManager.get(cacheKey);
+        if (!ordersCache) {
+            const query = await this.buildOrderQuery(getOrdersDto);
+            const [data, totalCount] = await query.skip(startIndex).take(limit).getManyAndCount();
+            const results = await Promise.all(data.map(order => this.transformOrderWithProducts(order)));
+            const url = `/orders?search=${search || ''}&limit=${limit}`;
+            ordersCache = Object.assign({ data: results }, (0, paginate_1.paginate)(totalCount, page, limit, results.length, url));
+            await this.cacheManager.set(cacheKey, ordersCache, 60);
         }
+        return ordersCache;
+    }
+    createEmptyOrderPaginator() {
+        return {
+            data: [],
+            count: 0,
+            current_page: 1,
+            firstItem: null,
+            lastItem: null,
+            last_page: 1,
+            per_page: 10,
+            total: 0,
+            first_page_url: null,
+            last_page_url: null,
+            next_page_url: null,
+            prev_page_url: null,
+        };
+    }
+    createCacheKey(dto) {
+        const { limit, page, customer_id, tracking_number, search, shop_id, shopSlug, soldByUserAddress, type, startDate, endDate } = dto;
+        return `orders-${page}-${limit}-${customer_id}-${tracking_number}-${search}-${shop_id}-${shopSlug}-${soldByUserAddress}-${type}-${startDate}-${endDate}`;
+    }
+    async buildOrderQuery(getOrdersDto) {
+        const { customer_id, tracking_number, shop_id, shopSlug, soldByUserAddress, type, search, startDate, endDate, } = getOrdersDto;
+        let query = this.orderRepository.createQueryBuilder('order')
+            .leftJoinAndSelect('order.status', 'status')
+            .leftJoinAndSelect('order.dealer', 'dealer')
+            .leftJoinAndSelect('order.billing_address', 'billing_address')
+            .leftJoinAndSelect('order.shipping_address', 'shipping_address')
+            .leftJoinAndSelect('order.customer', 'customer')
+            .leftJoinAndSelect('order.products', 'products')
+            .leftJoinAndSelect('order.orderProductPivots', 'orderProductPivots')
+            .leftJoinAndSelect('products.pivot', 'pivot')
+            .leftJoinAndSelect('products.taxes', 'taxes')
+            .leftJoinAndSelect('products.variation_options', 'variation_options')
+            .leftJoinAndSelect('order.payment_intent', 'payment_intent')
+            .leftJoinAndSelect('payment_intent.payment_intent_info', 'payment_intent_info')
+            .leftJoinAndSelect('order.shop', 'shop')
+            .leftJoinAndSelect('order.coupon', 'coupon');
+        if (customer_id) {
+            query.andWhere('order.customer.id = :customerId', { customerId: Number(customer_id) });
+        }
+        if (type) {
+            query.andWhere('order.type = :type', { type });
+        }
+        if (tracking_number) {
+            query.andWhere('order.tracking_number = :trackingNumber', { trackingNumber: tracking_number });
+        }
+        if (soldByUserAddress) {
+            query.andWhere('order.soldByUserAddress = :soldByUserAddress', { soldByUserAddress });
+        }
+        if (shop_id) {
+            query.andWhere('shop.id = :shopId', { shopId: Number(shop_id) });
+        }
+        else if (shopSlug) {
+            const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+            if (!shop)
+                throw new common_1.NotFoundException('Shop not found');
+            query.andWhere('shop.id = :shopId', { shopId: shop.id });
+        }
+        if (search) {
+            query.andWhere('(status.name LIKE :searchValue OR order.tracking_number LIKE :searchValue)', {
+                searchValue: `%${search}%`,
+            });
+        }
+        if (startDate && endDate) {
+            query.andWhere('order.created_at BETWEEN :startDate AND :endDate', { startDate, endDate });
+        }
+        return query;
+    }
+    async transformOrderWithProducts(order) {
+        const products = await Promise.all(order.products.map(async (product) => {
+            const pivot = await this.orderProductPivotRepository.findOne({
+                where: {
+                    product: { id: product.id },
+                    Ord_Id: order.id,
+                },
+            });
+            const transformedPivot = pivot ? {
+                id: pivot.id,
+                variation_option_id: pivot.variation_option_id,
+                order_quantity: pivot.order_quantity,
+                unit_price: pivot.unit_price,
+                subtotal: pivot.subtotal,
+                Ord_Id: pivot.Ord_Id,
+                created_at: pivot.created_at,
+                updated_at: pivot.updated_at,
+            } : null;
+            return transformedPivot ? Object.assign(Object.assign({}, product), { pivot: transformedPivot }) : null;
+        }));
+        return Object.assign(Object.assign({}, order), { products: products.filter((p) => p !== null) });
     }
     async updateOrderInDatabase(id, updateOrderDto) {
         try {
@@ -579,9 +581,11 @@ let OrdersService = class OrdersService {
                     .leftJoinAndSelect('order.parentOrder', 'parentOrder')
                     .leftJoinAndSelect('order.children', 'children')
                     .leftJoinAndSelect('order.coupon', 'coupon')
-                    .leftJoinAndSelect('order.products', 'products')
-                    .where('order.id = :id', { id })
-                    .orWhere('order.tracking_number = :tracking_number', { tracking_number: id.toString() })
+                    .where('order.id = :id OR order.tracking_number = :tracking_number', {
+                    id,
+                    tracking_number: id.toString()
+                })
+                    .cache(50000)
                     .getOne();
                 if (!fetchedOrder) {
                     throw new common_1.NotFoundException('Order not found');

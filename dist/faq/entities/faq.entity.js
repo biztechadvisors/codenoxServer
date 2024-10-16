@@ -33,7 +33,7 @@ __decorate([
     __metadata("design:type", String)
 ], FAQ.prototype, "description", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { eager: true }),
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment),
     (0, typeorm_1.JoinTable)({
         name: 'faq_images',
         joinColumn: { name: 'faqId', referencedColumnName: 'id' },

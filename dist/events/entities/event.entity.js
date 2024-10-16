@@ -57,7 +57,7 @@ __decorate([
     __metadata("design:type", shop_entity_1.Shop)
 ], Event.prototype, "shop", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { cascade: true, eager: true }),
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { cascade: true }),
     (0, typeorm_1.JoinTable)({
         name: 'event_attachments',
         joinColumn: { name: 'eventId', referencedColumnName: 'id' },

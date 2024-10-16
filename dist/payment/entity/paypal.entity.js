@@ -9,8 +9,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Capture = exports.SellerReceivableBreakdown = exports.NetAmount = exports.PaypalFee = exports.GrossAmount = exports.SellerProtection = exports.Amount = exports.PurchaseUnit = exports.Payments = exports.Shipping = exports.Address2 = exports.Name2 = exports.PaypalCaptureOrderResponse = exports.Payer = exports.Link2 = exports.AccessToken = exports.Link = exports.PaypalOrderResponse = exports.PaymentSource = exports.Paypal = exports.Address = exports.Name = void 0;
+exports.Capture = exports.SellerReceivableBreakdown = exports.NetAmount = exports.PaypalFee = exports.GrossAmount = exports.SellerProtection = exports.Amount = exports.PurchaseUnit = exports.Payments = exports.Shipping = exports.Address2 = exports.Name2 = exports.PaypalCaptureOrderResponse = exports.Payer = exports.Link2 = exports.AccessToken = exports.Link = exports.PaypalOrderResponse = exports.PaymentSource = exports.Paypal = exports.Name = void 0;
 const openapi = require("@nestjs/swagger");
+const address_entity_1 = require("../../address/entities/address.entity");
 const typeorm_1 = require("typeorm");
 let Name = class Name {
     static _OPENAPI_METADATA_FACTORY() {
@@ -33,26 +34,9 @@ Name = __decorate([
     (0, typeorm_1.Entity)()
 ], Name);
 exports.Name = Name;
-let Address = class Address {
-    static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, country_code: { required: true, type: () => String } };
-    }
-};
-__decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)(),
-    __metadata("design:type", Number)
-], Address.prototype, "id", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
-], Address.prototype, "country_code", void 0);
-Address = __decorate([
-    (0, typeorm_1.Entity)()
-], Address);
-exports.Address = Address;
 let Paypal = class Paypal {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, email_address: { required: true, type: () => String }, account_id: { required: true, type: () => String }, name: { required: true, type: () => require("./paypal.entity").Name }, address: { required: true, type: () => require("./paypal.entity").Address } };
+        return { id: { required: true, type: () => Number }, email_address: { required: true, type: () => String }, account_id: { required: true, type: () => String }, name: { required: true, type: () => require("./paypal.entity").Name }, address: { required: true, type: () => require("../../address/entities/address.entity").Add } };
     }
 };
 __decorate([
@@ -72,8 +56,8 @@ __decorate([
     __metadata("design:type", Name)
 ], Paypal.prototype, "name", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => Address),
-    __metadata("design:type", Address)
+    (0, typeorm_1.ManyToOne)(() => address_entity_1.Add),
+    __metadata("design:type", address_entity_1.Add)
 ], Paypal.prototype, "address", void 0);
 Paypal = __decorate([
     (0, typeorm_1.Entity)()
@@ -211,7 +195,7 @@ Link2 = __decorate([
 exports.Link2 = Link2;
 let Payer = class Payer {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, name: { required: true, type: () => require("./paypal.entity").Name }, email_address: { required: true, type: () => String }, payer_id: { required: true, type: () => String }, address: { required: true, type: () => require("./paypal.entity").Address } };
+        return { id: { required: true, type: () => Number }, name: { required: true, type: () => require("./paypal.entity").Name }, email_address: { required: true, type: () => String }, payer_id: { required: true, type: () => String }, address: { required: true, type: () => require("../../address/entities/address.entity").Add } };
     }
 };
 __decorate([
@@ -231,8 +215,8 @@ __decorate([
     __metadata("design:type", String)
 ], Payer.prototype, "payer_id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => Address),
-    __metadata("design:type", Address)
+    (0, typeorm_1.ManyToOne)(() => address_entity_1.Add),
+    __metadata("design:type", address_entity_1.Add)
 ], Payer.prototype, "address", void 0);
 Payer = __decorate([
     (0, typeorm_1.Entity)()

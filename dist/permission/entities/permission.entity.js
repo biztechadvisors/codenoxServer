@@ -31,7 +31,7 @@ __decorate([
     __metadata("design:type", String)
 ], Permission.prototype, "permission_name", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => PermissionType, (permissionType) => permissionType.permissions, { eager: true, cascade: true, onDelete: "CASCADE" }),
+    (0, typeorm_1.OneToMany)(() => PermissionType, (permissionType) => permissionType.permissions, { cascade: true, onDelete: "CASCADE" }),
     __metadata("design:type", Array)
 ], Permission.prototype, "permissions", void 0);
 __decorate([

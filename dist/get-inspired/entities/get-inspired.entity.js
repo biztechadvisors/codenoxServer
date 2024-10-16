@@ -37,7 +37,7 @@ __decorate([
     __metadata("design:type", shop_entity_1.Shop)
 ], GetInspired.prototype, "shop", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { cascade: true, eager: true }),
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { cascade: true }),
     (0, typeorm_1.JoinTable)({
         name: 'get_inspired_images',
         joinColumn: { name: 'getInspiredId', referencedColumnName: 'id' },
@@ -46,7 +46,7 @@ __decorate([
     __metadata("design:type", Array)
 ], GetInspired.prototype, "images", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => tag_entity_1.Tag, { cascade: true, eager: true }),
+    (0, typeorm_1.ManyToMany)(() => tag_entity_1.Tag, { cascade: true }),
     (0, typeorm_1.JoinTable)({
         name: 'get_inspired_tags',
         joinColumn: { name: 'get_inspiredId', referencedColumnName: 'id' },

@@ -114,7 +114,7 @@ __decorate([
     __metadata("design:type", Boolean)
 ], User.prototype, "is_active", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => address_entity_1.Add, (add) => add.customer, { onDelete: "CASCADE", eager: true }),
+    (0, typeorm_1.OneToMany)(() => address_entity_1.Add, (add) => add.customer, { onDelete: "CASCADE" }),
     __metadata("design:type", Array)
 ], User.prototype, "adds", void 0);
 __decorate([
@@ -131,8 +131,7 @@ __decorate([
 ], User.prototype, "stocksSellOrd", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => permission_entity_1.Permission, {
-        nullable: true,
-        eager: true
+        nullable: true
     }),
     (0, typeorm_1.JoinColumn)({ name: 'permission_id' }),
     __metadata("design:type", permission_entity_1.Permission)

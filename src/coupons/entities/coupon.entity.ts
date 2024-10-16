@@ -35,7 +35,7 @@ export class Coupon extends CoreEntity {
   @Column()
   type: CouponType;
 
-  @OneToOne(() => Attachment, { cascade: true, eager: true })
+  @OneToOne(() => Attachment, { cascade: true })
   @JoinColumn()
   image?: Attachment;
 

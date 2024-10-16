@@ -36,7 +36,7 @@ export class SeoSettings {
   @Column({ nullable: true })
   ogDescription?: string;
 
-  @OneToOne(() => Attachment, { cascade: true, eager: true, onDelete: 'CASCADE' })
+  @OneToOne(() => Attachment, { cascade: true, onDelete: 'CASCADE' })
   @JoinColumn()
   ogImage?: Attachment;
 
@@ -350,7 +350,7 @@ export class SettingsOptions extends CoreEntity {
   @Column()
   isProductReview: boolean;
 
-  @ManyToOne(() => LogoSettings, { cascade: true, eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => LogoSettings, { cascade: true, onDelete: 'CASCADE' })
   @JoinColumn()
   logo: LogoSettings;
 

@@ -1,30 +1,6 @@
 /* eslint-disable prettier/prettier */
+import { Add } from '@db/src/address/entities/address.entity';
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, OneToOne } from 'typeorm';
-
-// Address Entity
-@Entity()
-export class Address {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ nullable: true })
-  city: string;
-
-  @Column({ nullable: true })
-  country: string;
-
-  @Column({ nullable: true })
-  line1: string;
-
-  @Column({ nullable: true })
-  line2: string;
-
-  @Column({ nullable: true })
-  postal_code: string;
-
-  @Column({ nullable: true })
-  state: string;
-}
 
 // Metadata Entity
 @Entity()
@@ -42,8 +18,8 @@ export class BillingDetails {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Address, { cascade: true, eager: true })
-  address: Address;
+  @ManyToOne(() => Add, { cascade: true })
+  address: Add;
 
   @Column({ nullable: true })
   email: string;
@@ -110,8 +86,8 @@ export class StripeCustomer {
   @Column()
   object: string;
 
-  @OneToOne(() => Address, { cascade: true, eager: true })
-  address: Address;
+  @OneToOne(() => Add, { cascade: true })
+  address: Add;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   balance?: number;
@@ -140,13 +116,13 @@ export class StripeCustomer {
   @Column({ nullable: true })
   invoice_prefix?: string;
 
-  @OneToOne(() => InvoiceSettings, { eager: true, cascade: true })
+  @OneToOne(() => InvoiceSettings, { cascade: true })
   invoice_settings?: InvoiceSettings;
 
   @Column({ nullable: true })
   livemode?: boolean;
 
-  @OneToOne(() => Metadata, { eager: true, cascade: true })
+  @OneToOne(() => Metadata, { cascade: true })
   metadata?: Metadata;
 
   @Column({ nullable: true })
@@ -170,10 +146,10 @@ export class StripePaymentMethod {
   @Column()
   object: string;
 
-  @ManyToOne(() => BillingDetails, { cascade: true, eager: true })
+  @ManyToOne(() => BillingDetails, { cascade: true, })
   billing_details: BillingDetails;
 
-  @ManyToOne(() => Card, { cascade: true, eager: true })
+  @ManyToOne(() => Card, { cascade: true, })
   card: Card;
 
   @Column({ nullable: true })
@@ -185,7 +161,7 @@ export class StripePaymentMethod {
   @Column({ nullable: true })
   livemode: boolean;
 
-  @ManyToOne(() => Metadata, { eager: true, cascade: true })
+  @ManyToOne(() => Metadata, { cascade: true })
   metadata: Metadata;
 
   @Column({ nullable: true })
@@ -223,7 +199,7 @@ export class StripePaymentIntent {
   @Column({ nullable: true })
   customer: string;
 
-  @ManyToOne(() => PaymentIntentMetadata, { eager: true, cascade: true })
+  @ManyToOne(() => PaymentIntentMetadata, { cascade: true })
   metadata: PaymentIntentMetadata;
 
   @Column('simple-array', { nullable: true })

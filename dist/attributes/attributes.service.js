@@ -93,10 +93,10 @@ let AttributesService = AttributesService_1 = class AttributesService {
             .leftJoinAndSelect('attribute.values', 'value')
             .leftJoinAndSelect('attribute.shop', 'shop');
         if (shop_id) {
-            query.where('attribute.shop_id = :shop_id', { shop_id });
+            query.andWhere('attribute.shop_id = :shop_id', { shop_id });
         }
-        else if (shopSlug) {
-            query.where('shop.slug = :shopSlug', { shopSlug });
+        if (shopSlug) {
+            query.andWhere('shop.slug = :shopSlug', { shopSlug });
         }
         if (language) {
             query.andWhere('attribute.language = :language', { language });
@@ -107,19 +107,20 @@ let AttributesService = AttributesService_1 = class AttributesService {
         if (orderBy && sortedBy) {
             query.orderBy(`attribute.${orderBy}`, sortedBy.toUpperCase());
         }
+        else {
+            query.orderBy('attribute.created_at', 'DESC');
+        }
         const attributes = await query.getMany();
-        const formattedAttributes = attributes.map((attribute) => {
-            return {
-                id: attribute.id,
-                name: attribute.name,
-                slug: attribute.slug,
-                values: attribute.values.map((value) => ({
-                    id: value.id,
-                    value: value.value,
-                    meta: value.meta,
-                })),
-            };
-        });
+        const formattedAttributes = attributes.map(attribute => ({
+            id: attribute.id,
+            name: attribute.name,
+            slug: attribute.slug,
+            values: attribute.values.map(value => ({
+                id: value.id,
+                value: value.value,
+                meta: value.meta,
+            })),
+        }));
         await this.cacheManager.set(cacheKey, formattedAttributes, 1800);
         this.logger.log(`Data cached with key: ${cacheKey}`);
         return formattedAttributes;
@@ -131,21 +132,22 @@ let AttributesService = AttributesService_1 = class AttributesService {
             this.logger.log(`Cache hit for key: ${cacheKey}`);
             return cachedResult;
         }
-        const result = await this.attributeRepository.findOne({
-            where: [
-                { id: param.id },
-                { slug: param.slug },
-            ],
-            relations: ['values'],
-        });
+        const query = this.attributeRepository.createQueryBuilder('attribute')
+            .leftJoinAndSelect('attribute.values', 'value');
+        if (param.id) {
+            query.where('attribute.id = :id', { id: param.id });
+        }
+        if (param.slug) {
+            query.orWhere('attribute.slug = :slug', { slug: param.slug });
+        }
+        const result = await query.getOne();
         if (result) {
-            await this.cacheManager.set(cacheKey, result, 60);
+            await this.cacheManager.set(cacheKey, result, 3600);
             this.logger.log(`Data cached with key: ${cacheKey}`);
             return result;
         }
         else {
-            const notFoundMessage = { message: "Attribute Not Found" };
-            await this.cacheManager.set(cacheKey, notFoundMessage, 60);
+            const notFoundMessage = { message: 'Attribute Not Found' };
             this.logger.log(`Data cached with key: ${cacheKey}`);
             return notFoundMessage;
         }

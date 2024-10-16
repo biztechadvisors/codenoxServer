@@ -51,7 +51,7 @@ __decorate([
     __metadata("design:type", product_entity_1.Variation)
 ], Stocks.prototype, "variation_options", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { eager: true, onDelete: "SET NULL", onUpdate: "CASCADE" }),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { onDelete: "SET NULL", onUpdate: "CASCADE" }),
     (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", user_entity_1.User)
 ], Stocks.prototype, "user", void 0);

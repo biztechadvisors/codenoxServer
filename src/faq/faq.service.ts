@@ -39,16 +39,19 @@ export class FAQService {
         let faq = await this.cacheManager.get<FAQ>(cacheKey);
 
         if (!faq) {
-            faq = await this.faqRepository.findOne({
-                where: { id },
-                relations: ['shop', 'images', 'qnas'],
-            });
+            faq = await this.faqRepository.createQueryBuilder('faq')
+                .leftJoinAndSelect('faq.shop', 'shop')
+                .leftJoinAndSelect('faq.images', 'images')
+                .leftJoinAndSelect('faq.qnas', 'qnas')
+                .where('faq.id = :id', { id })
+                .cache(50000)
+                .getOne();
 
             if (!faq) {
                 throw new NotFoundException(`FAQ with ID ${id} not found`);
             }
 
-            await this.cacheManager.set(cacheKey, faq, 60); // Cache for 1 hour
+            await this.cacheManager.set(cacheKey, faq, 3600); // Cache for 1 hour
         }
 
         return faq;
@@ -60,28 +63,26 @@ export class FAQService {
         limit: number = 10
     ): Promise<{ data: FAQ[], total: number, page: number, limit: number }> {
         const cacheKey = `faqs-${shopSlug}-page-${page}-limit-${limit}`;
-        let cachedResult = await this.cacheManager.get<{ data: FAQ[], total: number }>(cacheKey);
+        const cachedResult = await this.cacheManager.get<{ data: FAQ[], total: number }>(cacheKey);
 
         if (cachedResult) {
-            return {
-                ...cachedResult,
-                page,
-                limit
-            };
+            return { ...cachedResult, page, limit };
         }
 
-        const [data, total] = await this.faqRepository
-            .createQueryBuilder('faq')
+        const skip = (page - 1) * limit;
+
+        const [data, total] = await this.faqRepository.createQueryBuilder('faq')
             .innerJoinAndSelect('faq.shop', 'shop', 'shop.slug = :slug', { slug: shopSlug })
             .leftJoinAndSelect('faq.images', 'images')
             .leftJoinAndSelect('faq.qnas', 'qnas')
-            .skip((page - 1) * limit)
+            .skip(skip)
             .take(limit)
+            .cache(50000) // Caches this query for 50 seconds
             .getManyAndCount();
 
         const result = { data, total, page, limit };
 
-        await this.cacheManager.set(cacheKey, result, 60); // Cache for 1 hour
+        await this.cacheManager.set(cacheKey, result, 3600); // Cache for 1 hour
 
         return result;
     }
@@ -155,34 +156,32 @@ export class FAQService {
 
         return qnas;
     }
+
     async getQnAsByShopId(
         shopSlug: string,
         page: number = 1,
         limit: number = 10
     ): Promise<{ data: QnA[], total: number, page: number, limit: number }> {
         const cacheKey = `qnas-shop-${shopSlug}-page-${page}-limit-${limit}`;
-        let cachedResult = await this.cacheManager.get<{ data: QnA[], total: number }>(cacheKey);
+        const cachedResult = await this.cacheManager.get<{ data: QnA[], total: number }>(cacheKey);
 
         if (cachedResult) {
-            return {
-                ...cachedResult,
-                page,
-                limit
-            };
+            return { ...cachedResult, page, limit };
         }
 
-        const faqs = await this.getFAQsByShopSlug(shopSlug);
+        const faqs = await this.getFAQsByShopSlug(shopSlug); // Fetch FAQs using the previously optimized method
         const faqIds = faqs.data.map(faq => faq.id);
 
-        const [data, total] = await this.qnaRepository.findAndCount({
-            where: { faq: { id: In(faqIds) } },
-            skip: (page - 1) * limit,
-            take: limit,
-        });
+        const [data, total] = await this.qnaRepository.createQueryBuilder('qna')
+            .innerJoin('qna.faq', 'faq')
+            .where('faq.id IN (:...faqIds)', { faqIds }) // Use parameterized query for safety
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getManyAndCount();
 
         const result = { data, total, page, limit };
 
-        await this.cacheManager.set(cacheKey, result, 60); // Cache for 1 hour
+        await this.cacheManager.set(cacheKey, result, 3600); // Cache for 1 hour
 
         return result;
     }

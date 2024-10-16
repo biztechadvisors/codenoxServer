@@ -87,21 +87,20 @@ export class TagsService {
   }
 
   async findAll(query: GetTagsDto) {
-    let { limit = '10', page = '1', search, shopSlug, region_name } = query;
+    const { limit = '10', page = '1', search, shopSlug, region_name } = query;
 
-    // Convert to numbers
+    // Convert to numbers and handle invalid values
     const numericPage = Number(page);
     const numericLimit = Number(limit);
 
-    // Handle invalid values
     if (isNaN(numericPage) || isNaN(numericLimit) || numericPage < 1 || numericLimit < 1) {
       throw new BadRequestException('Page and limit values must be positive numbers');
     }
 
     const skip = (numericPage - 1) * numericLimit;
 
-    // Convert region_name to an array if it's a string with length greater than 1, or leave it as an empty array if undefined
-    const regionNames = typeof region_name === 'string' && region_name.trim().length > 1 ? [region_name] : Array.isArray(region_name) ? region_name : [];
+    // Convert region_name to an array if it's a valid string
+    const regionNames = Array.isArray(region_name) ? region_name : (typeof region_name === 'string' && region_name.trim() ? [region_name] : []);
 
     // Generate a unique cache key based on the query parameters
     const cacheKey = `tags_${numericPage}_${numericLimit}_${search || 'none'}_${shopSlug || 'none'}_${regionNames.join(',')}`;
@@ -126,27 +125,24 @@ export class TagsService {
 
     // Find regions by names if provided
     if (regionNames.length > 0) {
-      const regions = await this.regionRepository.find({
-        where: { name: In(regionNames) },
-      });
+      const regions = await this.regionRepository.find({ where: { name: In(regionNames) } });
 
-      // Check if all requested regions were found
       if (regions.length !== regionNames.length) {
-        const missingRegionNames = regionNames.filter(
-          (name) => !regions.some((region) => region.name === name)
-        );
+        const missingRegionNames = regionNames.filter(name => !regions.some(region => region.name === name));
         throw new BadRequestException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
       }
       regionIds = regions.map(region => region.id);
     }
 
-    const queryBuilder: SelectQueryBuilder<Tag> = this.tagRepository.createQueryBuilder('tag')
+    // Create QueryBuilder for fetching tags
+    const queryBuilder = this.tagRepository.createQueryBuilder('tag')
       .leftJoinAndSelect('tag.image', 'image')
       .leftJoinAndSelect('tag.type', 'type')
       .leftJoinAndSelect('tag.regions', 'region')
       .take(numericLimit)
       .skip(skip);
 
+    // Add conditions based on shopId and regionIds
     if (shopId) {
       queryBuilder.andWhere('tag.shopId = :shopId', { shopId });
     }
@@ -156,23 +152,20 @@ export class TagsService {
     }
 
     if (search) {
-      // Ensure search is correctly formatted
-      const searchPattern = `%${search.toLowerCase()}%`;
-      queryBuilder.andWhere('LOWER(tag.name) LIKE :search', { search: searchPattern });
+      queryBuilder.andWhere('LOWER(tag.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
     }
 
-    // Debugging: print generated SQL query
-    console.log(queryBuilder.getSql());
-
+    // Fetch data and count
     const [data, total] = await queryBuilder.getManyAndCount();
 
-    // Add type_id field to each item in the data array
-    const formattedData = data.map((item) => ({
+    // Format data to include type_id
+    const formattedData = data.map(item => ({
       ...item,
       type_id: item.type?.id || null,
     }));
 
-    const url = `/tags?${search ? `search=${search}` : ''}${shopSlug ? `&shopSlug=${shopSlug}` : ''}${Array.isArray(region_name) && region_name.length ? `&region_name=${region_name.join(',')}` : region_name ? `&region_name=${region_name}` : ''}`.replace(/\?&/, '?').replace(/&$/, '');
+    // Build the response URL for pagination
+    const url = `/tags?${search ? `search=${search}` : ''}${shopSlug ? `&shopSlug=${shopSlug}` : ''}${regionNames.length ? `&region_name=${regionNames.join(',')}` : ''}`.replace(/\?&/, '?').replace(/&$/, '');
 
     const response = {
       data: formattedData,
@@ -180,10 +173,11 @@ export class TagsService {
     };
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, response, 60); // Cache for 1 hour
+    await this.cacheManager.set(cacheKey, response, 60 * 5); // Cache for 5 minutes
 
     return response;
   }
+
 
   async findOne(param: string, language: string): Promise<Tag> {
     // Generate a unique cache key based on the tag identifier and language
@@ -195,23 +189,26 @@ export class TagsService {
       return cachedTag;
     }
 
-    const isNumeric = !isNaN(parseFloat(param)) && isFinite(Number(param));
+    const isNumeric = !isNaN(Number(param));
     const whereCondition = isNumeric ? { id: Number(param) } : { slug: param };
 
-    const tag = await this.tagRepository.findOne({
-      where: whereCondition,
-      relations: ['image', 'type'],
-    });
+    // Use QueryBuilder for fetching the tag
+    const tag = await this.tagRepository.createQueryBuilder('tag')
+      .leftJoinAndSelect('tag.image', 'image')
+      .leftJoinAndSelect('tag.type', 'type')
+      .where(whereCondition)
+      .getOne();
 
     if (!tag) {
       throw new Error(`Tag with ID or slug ${param} not found`);
     }
 
     // Cache the result
-    await this.cacheManager.set(cacheKey, tag, 60); // Cache for 5 minutes
+    await this.cacheManager.set(cacheKey, tag, 60 * 5); // Cache for 5 minutes
 
     return tag;
   }
+
 
   async update(id: number, updateTagDto: UpdateTagDto): Promise<Tag> {
     // Find the existing tag with related entities

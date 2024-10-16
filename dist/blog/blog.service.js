@@ -57,14 +57,18 @@ let BlogService = class BlogService {
         const cacheKey = `blog-${id}`;
         let blog = await this.cacheManager.get(cacheKey);
         if (!blog) {
-            blog = await this.blogRepository.findOne({
-                where: { id },
-                relations: ['shop', 'attachments', 'tags', 'region'],
-            });
+            blog = await this.blogRepository.createQueryBuilder('blog')
+                .leftJoinAndSelect('blog.shop', 'shop')
+                .leftJoinAndSelect('blog.attachments', 'attachments')
+                .leftJoinAndSelect('blog.tags', 'tags')
+                .leftJoinAndSelect('blog.region', 'region')
+                .where('blog.id = :id', { id })
+                .cache(50000)
+                .getOne();
             if (!blog) {
                 throw new common_1.NotFoundException(`Blog with ID ${id} not found`);
             }
-            await this.cacheManager.set(cacheKey, blog, 60);
+            await this.cacheManager.set(cacheKey, blog, 3600);
         }
         return blog;
     }
@@ -75,13 +79,17 @@ let BlogService = class BlogService {
         if (cachedData) {
             return cachedData;
         }
-        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        const shop = await this.shopRepository.createQueryBuilder('shop')
+            .where('shop.slug = :shopSlug', { shopSlug })
+            .getOne();
         if (!shop) {
             throw new common_1.NotFoundException(`Shop with slug '${shopSlug}' not found`);
         }
         let region;
         if (regionName) {
-            region = await this.regionRepository.findOne({ where: { name: regionName } });
+            region = await this.regionRepository.createQueryBuilder('region')
+                .where('region.name = :regionName', { regionName })
+                .getOne();
             if (!region) {
                 console.warn(`Warning: Region with name '${regionName}' not found. Proceeding without region filter.`);
             }
@@ -108,9 +116,10 @@ let BlogService = class BlogService {
         const data = await queryBuilder
             .skip(offset)
             .take(limit)
+            .cache(50000)
             .getMany();
         cachedData = { data, count };
-        await this.cacheManager.set(cacheKey, cachedData, 60);
+        await this.cacheManager.set(cacheKey, cachedData, 3600);
         return cachedData;
     }
     async updateBlog(id, updateBlogDto) {

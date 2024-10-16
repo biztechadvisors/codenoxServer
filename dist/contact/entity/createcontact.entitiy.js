@@ -43,7 +43,7 @@ __decorate([
     __metadata("design:type", String)
 ], Contact.prototype, "message", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => shop_entity_1.Shop, { eager: true }),
+    (0, typeorm_1.ManyToOne)(() => shop_entity_1.Shop),
     (0, typeorm_1.JoinColumn)({ name: 'shop_id' }),
     __metadata("design:type", shop_entity_1.Shop)
 ], Contact.prototype, "shop", void 0);

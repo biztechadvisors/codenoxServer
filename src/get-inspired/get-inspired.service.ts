@@ -10,6 +10,7 @@ import { Shop } from 'src/shops/entities/shop.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Tag } from '../tags/entities/tag.entity';
+import { cache } from 'sharp';
 
 @Injectable()
 export class GetInspiredService {
@@ -57,14 +58,10 @@ export class GetInspiredService {
         limit: number = 10
     ): Promise<{ data: GetInspired[], total: number, page: number, limit: number }> {
         const cacheKey = `get-inspired-shop-${shopSlug}-type-${type || 'all'}-tags-${tagIds.join(',')}-page-${page}-limit-${limit}`;
-        let cachedResult = await this.cacheManager.get<{ data: GetInspired[], total: number }>(cacheKey);
+        const cachedResult = await this.cacheManager.get<{ data: GetInspired[], total: number }>(cacheKey);
 
         if (cachedResult) {
-            return {
-                ...cachedResult,
-                page,
-                limit
-            };
+            return { ...cachedResult, page, limit };
         }
 
         // Create query builder for filtering by shop, type, and tags
@@ -90,35 +87,41 @@ export class GetInspiredService {
         const [data, total] = await queryBuilder
             .skip(skip)
             .take(limit)
+            .cache(50000)
             .getManyAndCount();
 
         const result = { data, total, page, limit };
 
         // Cache the result for 1 hour
-        await this.cacheManager.set(cacheKey, result, 60);
+        await this.cacheManager.set(cacheKey, result, 3600); // Cache for 1 hour
 
         return result;
     }
 
     async getGetInspiredById(id: number): Promise<GetInspired> {
         const cacheKey = `get-inspired-${id}`;
-        let getInspired = await this.cacheManager.get<GetInspired>(cacheKey);
+        const cachedGetInspired = await this.cacheManager.get<GetInspired>(cacheKey);
+
+        if (cachedGetInspired) {
+            return cachedGetInspired;
+        }
+
+        const getInspired = await this.getInspiredRepository.createQueryBuilder('getInspired')
+            .leftJoinAndSelect('getInspired.shop', 'shop')
+            .leftJoinAndSelect('getInspired.images', 'images')
+            .where('getInspired.id = :id', { id })
+            .cache(50000)
+            .getOne();
 
         if (!getInspired) {
-            getInspired = await this.getInspiredRepository.findOne({
-                where: { id },
-                relations: ['shop', 'images'],
-            });
-
-            if (!getInspired) {
-                throw new NotFoundException(`GetInspired with ID ${id} not found`);
-            }
-
-            await this.cacheManager.set(cacheKey, getInspired, 60); // Cache for 1 hour
+            throw new NotFoundException(`GetInspired with ID ${id} not found`);
         }
+
+        await this.cacheManager.set(cacheKey, getInspired, 3600); // Cache for 1 hour
 
         return getInspired;
     }
+
 
     async updateGetInspired(id: number, updateGetInspiredDto: UpdateGetInspiredDto): Promise<GetInspired> {
         const getInspired = await this.getInspiredRepository.findOne({ where: { id }, relations: ['tags'] });

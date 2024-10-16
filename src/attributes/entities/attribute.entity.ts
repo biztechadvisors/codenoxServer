@@ -21,9 +21,7 @@ export class Attribute extends CoreEntity {
   @Column()
   slug: string;
 
-  @OneToMany(() => AttributeValue, attributeValue => attributeValue.attribute, {
-    onDelete: 'CASCADE', eager: true
-  })
+  @OneToMany(() => AttributeValue, attributeValue => attributeValue.attribute)
   values: AttributeValue[];
 
   @Column()

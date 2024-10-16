@@ -28,7 +28,6 @@ export declare class AttributesService {
             id: number;
             value: string;
             meta?: string;
-            language?: string;
         }[];
     }[]>;
     findOne(param: GetAttributeArgs): Promise<{

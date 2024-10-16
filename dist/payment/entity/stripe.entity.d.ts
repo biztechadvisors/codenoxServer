@@ -1,19 +1,11 @@
-export declare class Address {
-    id: number;
-    city: string;
-    country: string;
-    line1: string;
-    line2: string;
-    postal_code: string;
-    state: string;
-}
+import { Add } from '@db/src/address/entities/address.entity';
 export declare class Metadata {
     id: number;
     order_tracking_number: number;
 }
 export declare class BillingDetails {
     id: number;
-    address: Address;
+    address: Add;
     email: string;
     name: string;
     phone: string;
@@ -39,7 +31,7 @@ export declare class InvoiceSettings {
 export declare class StripeCustomer {
     id: number;
     object: string;
-    address: Address;
+    address: Add;
     balance?: number;
     created?: number;
     currency?: string;

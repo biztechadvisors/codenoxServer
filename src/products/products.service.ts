@@ -564,7 +564,7 @@ export class ProductsService {
       } else {
         total = await productQueryBuilder.getCount();
         productQueryBuilder.skip(startIndex).take(limit);
-        products = await productQueryBuilder.getMany();
+        products = await productQueryBuilder.cache(10000).getMany();
       }
 
       const url = `/products?limit=${limit}&page=${page}&shop_id=${shop_id || ''
@@ -602,188 +602,155 @@ export class ProductsService {
     dealerId?: number,
   ): Promise<Product | undefined> {
     try {
-      const cacheKey = `productBySlug:${shop_id}:${slug}:${dealerId || ' '}`
-
-      this.logger.log(`Generated cache key: ${cacheKey}`)
+      const cacheKey = `productBySlug:${shop_id}:${slug}:${dealerId || ' '}`;
+      this.logger.log(`Generated cache key: ${cacheKey}`);
 
       // Check cache
-      const cachedResult: Product | undefined = await this.cacheManager.get(
-        cacheKey,
-      )
+      const cachedResult: Product | undefined = await this.cacheManager.get(cacheKey);
       if (cachedResult) {
-        this.logger.log(`Cache hit for key: ${cacheKey}`)
-        return cachedResult
+        this.logger.log(`Cache hit for key: ${cacheKey}`);
+        return cachedResult;
       } else {
-        this.logger.log(`Cache miss for key: ${cacheKey}`)
+        this.logger.log(`Cache miss for key: ${cacheKey}`);
       }
 
-      // Fetch the shop
-      const shop = await this.shopRepository.findOne({ where: { id: shop_id } })
-      if (!shop) {
-        throw new NotFoundException(`Shop not found with id: ${shop_id}`)
-      }
-
-      // Fetch the product
-      const product = await this.productRepository.findOne({
-        where: { slug, shop_id },
-        relations: [
-          'type',
-          'image',
-          'categories',
-          'subCategories',
-          'tags',
-          'gallery',
-          'related_products',
-          'related_products.image',
-          'related_products.gallery',
-          'variations.attribute',
-          'variation_options.options',
-        ],
-      })
+      // Fetch the product with all necessary relations
+      const product = await this.productRepository.createQueryBuilder('product')
+        .leftJoinAndSelect('product.type', 'type')
+        .leftJoinAndSelect('product.shop', 'shop')
+        .leftJoinAndSelect('product.image', 'image')
+        .leftJoinAndSelect('product.categories', 'categories')
+        .leftJoinAndSelect('product.subCategories', 'subCategories')
+        .leftJoinAndSelect('product.tags', 'tags')
+        .leftJoinAndSelect('product.related_products', 'related_products')
+        .leftJoinAndSelect('related_products.image', 'related_products_image')
+        .leftJoinAndSelect('related_products.gallery', 'related_products_gallery')
+        .leftJoinAndSelect('product.variations', 'variations')
+        .leftJoinAndSelect('product.variation_options', 'variation_options')
+        .leftJoinAndSelect('product.gallery', 'gallery')
+        .leftJoinAndSelect('product.my_review', 'my_review')
+        .leftJoinAndSelect('product.regions', 'regions')
+        .where('product.slug = :slug', { slug })
+        .andWhere('product.shop_id = :shop_id', { shop_id })
+        .cache(50000)
+        .getOne();
 
       if (!product) {
-        throw new NotFoundException(`Product not found with slug: ${slug}`)
+        throw new NotFoundException(`Product not found with slug: ${slug}`);
       }
 
       // If dealerId is present, apply dealer-specific margins
       if (dealerId) {
-        const dealer = await this.dealerRepository.findOne({
-          where: { id: dealerId },
-          relations: ['dealerProductMargins', 'dealerCategoryMargins'],
-        })
+        const dealerProductMargins = await this.dealerProductMarginRepository.createQueryBuilder('margin')
+          .leftJoinAndSelect('margin.product', 'productMargin')
+          .where('margin.dealerId = :dealerId', { dealerId })
+          .andWhere('productMargin.id = :productId', { productId: product.id })
+          .getOne();
 
-        if (!dealer) {
-          throw new NotFoundException(`Dealer not found with id: ${dealerId}`)
-        }
-
-        // Product-specific margin
-        const productMargin = await this.dealerProductMarginRepository.findOne({
-          where: { dealer: { id: dealerId }, product: { id: product.id } },
-        })
-
-        if (productMargin) {
-          product.margin = productMargin.margin
+        if (dealerProductMargins) {
+          product.margin = dealerProductMargins.margin;
         } else {
-          // Category-specific margin if product margin is not available
-          const categoryMargins =
-            await this.dealerCategoryMarginRepository.find({
-              where: { dealer: { id: dealerId } },
-              relations: ['category'],
-            })
+          // Fetch category-specific margins if product-specific margin is not available
+          const categoryMargins = await this.dealerCategoryMarginRepository.createQueryBuilder('categoryMargin')
+            .leftJoin('categoryMargin.category', 'category')
+            .where('categoryMargin.dealerId = :dealerId', { dealerId })
+            .andWhere('category.id IN (:...categoryIds)', { categoryIds: product.categories.map(c => c.id) })
+            .getMany();
 
-          for (const categoryMargin of categoryMargins) {
-            if (
-              product.categories &&
-              product.categories.some(
-                (category) => category.id === categoryMargin.category.id,
-              )
-            ) {
-              product.margin = categoryMargin.margin
-              break
-            }
+          const matchingMargin = categoryMargins.find(cm =>
+            product.categories.some(category => category.id === cm.category.id)
+          );
+
+          if (matchingMargin) {
+            product.margin = matchingMargin.margin;
           }
         }
       }
 
       // Fetch related products only if the product type exists
       if (product.type) {
-        const relatedProducts = await this.productRepository
-          .createQueryBuilder('related_products')
-          .where('related_products.type_id = :type_id', {
-            type_id: product.type.id,
-          })
-          .andWhere('related_products.id != :productId', {
-            productId: product.id,
-          })
+        const relatedProducts = await this.productRepository.createQueryBuilder('related_products')
+          .where('related_products.type_id = :type_id', { type_id: product.type.id })
+          .andWhere('related_products.id != :productId', { productId: product.id })
           .limit(20)
-          .getMany()
+          .getMany();
 
-        product.related_products = relatedProducts
+        product.related_products = relatedProducts;
       } else {
-        product.related_products = []
+        product.related_products = [];
       }
 
       // Cache the product result for 30 minutes
-      await this.cacheManager.set(cacheKey, product, 60 * 30)
-      this.logger.log(`Data cached with key: ${cacheKey}`)
+      await this.cacheManager.set(cacheKey, product, 60 * 30);
+      this.logger.log(`Data cached with key: ${cacheKey}`);
 
-      return product
+      return product;
     } catch (error) {
       // Handle known errors or throw internal error for unexpected issues
       if (error instanceof NotFoundException) {
-        throw error
+        throw error;
       } else {
-        this.logger.error(
-          `Error fetching product by slug: ${error.message}`,
-          error.stack,
-        )
-        throw new InternalServerErrorException(
-          'An error occurred while fetching the product.',
-        )
+        this.logger.error(`Error fetching product by slug: ${error.message}`, error.stack);
+        throw new InternalServerErrorException('An error occurred while fetching the product.');
       }
     }
   }
 
-  async getPopularProducts(query: GetPopularProductsDto): Promise<Product[]> {
-    const { limit = 10, type_slug, search, shopName, shop_id } = query
 
-    const cacheKey = `popularProducts:${shop_id || ''}:${shopName || ''}:${type_slug || ''
-      }:${limit}`
-    this.logger.log(`Generated cache key: ${cacheKey}`)
+  async getPopularProducts(query: GetPopularProductsDto): Promise<Product[]> {
+    const { limit = 10, type_slug, search, shopName, shop_id } = query;
+
+    const cacheKey = `popularProducts:${shop_id || ''}:${shopName || ''}:${type_slug || ''}:${limit}`;
+    this.logger.log(`Generated cache key: ${cacheKey}`);
 
     // Check if the data is already cached
-    const cachedResult: Product[] | undefined = await this.cacheManager.get(
-      cacheKey,
-    )
+    const cachedResult: Product[] | undefined = await this.cacheManager.get(cacheKey);
     if (cachedResult) {
-      this.logger.log(`Cache hit for key: ${cacheKey}`)
-      return cachedResult
+      this.logger.log(`Cache hit for key: ${cacheKey}`);
+      return cachedResult;
     } else {
-      this.logger.log(`Cache miss for key: ${cacheKey}`)
+      this.logger.log(`Cache miss for key: ${cacheKey}`);
     }
 
     // Build the query for fetching products
-    const productsQueryBuilder =
-      this.productRepository.createQueryBuilder('product')
-
-    if (type_slug) {
-      productsQueryBuilder.innerJoinAndSelect(
-        'product.type',
-        'type',
-        'type.slug = :typeSlug',
-        { typeSlug: type_slug },
-      )
-    }
-
-    if (shop_id) {
-      productsQueryBuilder.andWhere('product.shop_id = :shop_id', { shop_id })
-    }
-
-    if (shopName) {
-      productsQueryBuilder.innerJoin(
-        'product.shop',
-        'shop',
-        '(shop.name = :shopName OR shop.slug = :shopName)',
-        { shopName },
-      )
-    }
-
-    productsQueryBuilder
+    const productsQueryBuilder = this.productRepository.createQueryBuilder('product')
       .leftJoinAndSelect('product.image', 'image')
       .leftJoinAndSelect('product.categories', 'categories')
       .leftJoinAndSelect('product.tags', 'tags')
       .leftJoinAndSelect('product.related_products', 'related_products')
       .leftJoinAndSelect('product.variations', 'variations')
-      .leftJoinAndSelect('product.variation_options', 'variation_options')
+      .leftJoinAndSelect('variations.variation_options', 'variation_options');
 
-    const products = await productsQueryBuilder.limit(limit).getMany()
+    // Apply filters
+    if (type_slug) {
+      productsQueryBuilder.innerJoin('product.type', 'type')
+        .where('type.slug = :typeSlug', { typeSlug: type_slug });
+    }
+
+    if (shop_id) {
+      productsQueryBuilder.andWhere('product.shop_id = :shop_id', { shop_id });
+    }
+
+    if (shopName) {
+      productsQueryBuilder.innerJoin('product.shop', 'shop')
+        .andWhere('(shop.name = :shopName OR shop.slug = :shopName)', { shopName });
+    }
+
+    // Optionally include a search filter if provided
+    if (search) {
+      productsQueryBuilder.andWhere('product.name LIKE :search', { search: `%${search}%` });
+    }
+
+    // Fetch products with limit
+    const products = await productsQueryBuilder.limit(limit).getMany();
 
     // Cache the result for 30 minutes (1800 seconds)
-    await this.cacheManager.set(cacheKey, products, 60)
-    this.logger.log(`Data cached with key: ${cacheKey}`)
+    await this.cacheManager.set(cacheKey, products, 60 * 30);
+    this.logger.log(`Data cached with key: ${cacheKey}`);
 
-    return products
+    return products;
   }
+
 
   async update(
     id: number,

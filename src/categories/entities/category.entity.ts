@@ -39,7 +39,7 @@ export class Category extends CoreEntity {
   @Column({ nullable: true })
   details?: string;
 
-  @ManyToOne(() => Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true, nullable: true })
+  @ManyToOne(() => Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", nullable: true })
   @JoinColumn()
   image?: Attachment;
 
@@ -97,7 +97,7 @@ export class SubCategory extends CoreEntity {
   @Column()
   details?: string;
 
-  @ManyToOne(() => Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true, nullable: true })
+  @ManyToOne(() => Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", nullable: true })
   @JoinColumn()
   image?: Attachment;
 

@@ -65,7 +65,7 @@ export class Shop extends CoreEntity {
   @Column({ nullable: true, type: 'text' })
   description?: string;
 
-  @ManyToMany(() => Attachment, { cascade: true, eager: true })
+  @ManyToMany(() => Attachment, { cascade: true })
   @JoinTable({
     name: 'shop_cover_image',
     joinColumn: { name: 'shopId', referencedColumnName: 'id' },
@@ -73,7 +73,7 @@ export class Shop extends CoreEntity {
   })
   cover_image?: Attachment[];
 
-  @ManyToOne(() => Attachment, { nullable: true, eager: true })
+  @ManyToOne(() => Attachment, { nullable: true })
   @JoinColumn()
   logo?: Attachment;
 
@@ -97,11 +97,11 @@ export class Shop extends CoreEntity {
   @ManyToMany(() => Order, (order) => order.shop, { nullable: true, onDelete: "CASCADE" })
   orders: Order[];
 
-  @ManyToOne(() => Permission, (permission) => permission.shop, { onDelete: "CASCADE", eager: true })
+  @ManyToOne(() => Permission, (permission) => permission.shop, { onDelete: "CASCADE" })
   @JoinColumn({ name: 'permission_id' })
   permission?: Permission;
 
-  @ManyToMany(() => Permission, (permission) => permission.shops, { onDelete: "CASCADE", eager: true })
+  @ManyToMany(() => Permission, (permission) => permission.shops, { onDelete: "CASCADE" })
   @JoinTable({ name: 'shop_additional_permission' })
   additionalPermissions: Permission[];
 
@@ -111,7 +111,7 @@ export class Shop extends CoreEntity {
   @OneToMany(() => Event, (event) => event.shop, { onDelete: "CASCADE" })
   events: Event[];
 
-  @ManyToMany(() => Region, (region) => region.shops, { onDelete: "CASCADE", eager: true })
+  @ManyToMany(() => Region, (region) => region.shops, { onDelete: "CASCADE" })
   regions: Region[];
 }
 

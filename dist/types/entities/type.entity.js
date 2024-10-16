@@ -148,7 +148,7 @@ __decorate([
     __metadata("design:type", Type)
 ], Banner.prototype, "type", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { cascade: true, eager: true, onDelete: 'SET NULL' }),
+    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { cascade: true, onDelete: 'SET NULL' }),
     (0, typeorm_1.JoinColumn)({ name: 'imageId' }),
     __metadata("design:type", attachment_entity_1.Attachment)
 ], Banner.prototype, "image", void 0);

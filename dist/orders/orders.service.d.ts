@@ -56,6 +56,10 @@ export declare class OrdersService {
     private applyCoupon;
     private createOrderData;
     getOrders(getOrdersDto: GetOrdersDto): Promise<OrderPaginator>;
+    private createEmptyOrderPaginator;
+    private createCacheKey;
+    private buildOrderQuery;
+    private transformOrderWithProducts;
     updateOrderInDatabase(id: number, updateOrderDto: UpdateOrderDto): Promise<Order>;
     getOrderByIdOrTrackingNumber(id: number): Promise<any>;
     private transformOrder;

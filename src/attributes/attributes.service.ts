@@ -94,12 +94,11 @@ export class AttributesService {
       id: number;
       value: string;
       meta?: string;
-      language?: string;
     }[];
   }[]> {
     const { search, orderBy, sortedBy, language, shopSlug, shop_id } = params;
 
-    // Generate a cache key based on the parameters
+    // Generate cache key based on parameters
     const cacheKey = `attributes:${JSON.stringify(params)}`;
     const cachedResult = await this.cacheManager.get<any[]>(cacheKey);
     if (cachedResult) {
@@ -107,14 +106,18 @@ export class AttributesService {
       return cachedResult;
     }
 
+    // Start query
     const query = this.attributeRepository.createQueryBuilder('attribute')
-      .leftJoinAndSelect('attribute.values', 'value') // Join the 'values' relation from Attribute
-      .leftJoinAndSelect('attribute.shop', 'shop');
+      .leftJoinAndSelect('attribute.values', 'value') // Join with 'values'
+      .leftJoinAndSelect('attribute.shop', 'shop'); // Join with 'shop'
 
+    // Apply conditions
     if (shop_id) {
-      query.where('attribute.shop_id = :shop_id', { shop_id });
-    } else if (shopSlug) {
-      query.where('shop.slug = :shopSlug', { shopSlug });
+      query.andWhere('attribute.shop_id = :shop_id', { shop_id });
+    }
+
+    if (shopSlug) {
+      query.andWhere('shop.slug = :shopSlug', { shopSlug });
     }
 
     if (language) {
@@ -122,7 +125,6 @@ export class AttributesService {
     }
 
     if (search) {
-      // Add search condition for both attribute.name and value.value
       query.andWhere(
         '(attribute.name LIKE :search OR value.value LIKE :search)',
         { search: `%${search}%` }
@@ -131,31 +133,34 @@ export class AttributesService {
 
     if (orderBy && sortedBy) {
       query.orderBy(`attribute.${orderBy}`, sortedBy.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      query.orderBy('attribute.created_at', 'DESC'); // Default sorting if none provided
     }
 
+    // Fetch results
     const attributes = await query.getMany();
 
-    const formattedAttributes = attributes.map((attribute) => {
-      return {
-        id: attribute.id,
-        name: attribute.name,
-        slug: attribute.slug,
-        values: attribute.values.map((value) => ({
-          id: value.id,
-          value: value.value,
-          meta: value.meta,
-        })),
-      };
-    });
+    // Format response
+    const formattedAttributes = attributes.map(attribute => ({
+      id: attribute.id,
+      name: attribute.name,
+      slug: attribute.slug,
+      values: attribute.values.map(value => ({
+        id: value.id,
+        value: value.value,
+        meta: value.meta,
+      })),
+    }));
 
-    // Cache the result for future requests
-    await this.cacheManager.set(cacheKey, formattedAttributes, 1800); // Cache for 30 minutes
+    // Cache the result
+    await this.cacheManager.set(cacheKey, formattedAttributes, 1800); // 30 minutes
     this.logger.log(`Data cached with key: ${cacheKey}`);
+
     return formattedAttributes;
   }
 
   async findOne(param: GetAttributeArgs): Promise<{ message: string } | Attribute | undefined> {
-    // Generate a cache key based on the parameters
+    // Generate a cache key
     const cacheKey = `attribute:${param.id || param.slug}`;
     const cachedResult = await this.cacheManager.get<Attribute | { message: string }>(cacheKey);
 
@@ -164,23 +169,30 @@ export class AttributesService {
       return cachedResult;
     }
 
-    const result = await this.attributeRepository.findOne({
-      where: [
-        { id: param.id },
-        { slug: param.slug },
-      ],
-      relations: ['values'],
-    });
+    // Create the query builder
+    const query = this.attributeRepository.createQueryBuilder('attribute')
+      .leftJoinAndSelect('attribute.values', 'value');
+
+    // Add condition for id or slug
+    if (param.id) {
+      query.where('attribute.id = :id', { id: param.id });
+    }
+
+    if (param.slug) {
+      query.orWhere('attribute.slug = :slug', { slug: param.slug });
+    }
+
+    // Fetch the attribute
+    const result = await query.getOne();
 
     if (result) {
-      // Cache the found attribute
-      await this.cacheManager.set(cacheKey, result, 60); // Cache for 30 minutes
+      // Cache found result for 60 minutes
+      await this.cacheManager.set(cacheKey, result, 3600);
       this.logger.log(`Data cached with key: ${cacheKey}`);
       return result;
     } else {
-      const notFoundMessage = { message: "Attribute Not Found" };
-      // Cache the not found message to avoid repeated DB hits for the same query
-      await this.cacheManager.set(cacheKey, notFoundMessage, 60);
+      // Return not found message and cache it
+      const notFoundMessage = { message: 'Attribute Not Found' };
       this.logger.log(`Data cached with key: ${cacheKey}`);
       return notFoundMessage;
     }

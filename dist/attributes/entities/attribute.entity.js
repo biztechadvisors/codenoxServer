@@ -42,9 +42,7 @@ __decorate([
     __metadata("design:type", String)
 ], Attribute.prototype, "slug", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => attribute_value_entity_1.AttributeValue, attributeValue => attributeValue.attribute, {
-        onDelete: 'CASCADE', eager: true
-    }),
+    (0, typeorm_1.OneToMany)(() => attribute_value_entity_1.AttributeValue, attributeValue => attributeValue.attribute),
     __metadata("design:type", Array)
 ], Attribute.prototype, "values", void 0);
 __decorate([

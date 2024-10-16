@@ -88,6 +88,7 @@ const career_module_1 = require("./career/career.module");
 const contact_module_1 = require("./contact/contact.module");
 const region_module_1 = require("./region/region.module");
 const addresses_module_1 = require("./address/addresses.module");
+const redis_1 = require("redis");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer
@@ -137,14 +138,30 @@ AppModule = __decorate([
             cache_manager_1.CacheModule.registerAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
-                useFactory: async (configService) => ({
-                    store: redisStore,
-                    host: configService.get('REDIS_HOST'),
-                    port: configService.get('REDIS_PORT'),
-                    auth_pass: configService.get('REDIS_PASSWORD'),
-                    ttl: configService.get('CACHE_TTL') || 3000,
-                    isGlobal: true,
-                }),
+                useFactory: async (configService) => {
+                    const host = configService.get('REDIS_HOST');
+                    const port = configService.get('REDIS_PORT');
+                    const password = configService.get('REDIS_PASSWORD');
+                    const ttl = configService.get('CACHE_TTL') || 3000;
+                    try {
+                        const client = (0, redis_1.createClient)({ url: `redis://${host}:${port}`, password });
+                        await client.connect();
+                        client.on('error', (err) => {
+                            console.error('Redis Client Error', err);
+                        });
+                        return {
+                            store: redisStore,
+                            url: `redis://${host}:${port}`,
+                            auth_pass: password,
+                            ttl,
+                            isGlobal: true,
+                        };
+                    }
+                    catch (error) {
+                        console.error('Failed to connect to Redis:', error);
+                        throw new Error('Redis connection error');
+                    }
+                },
             }),
             users_module_1.UsersModule,
             mail_module_1.MailModule,

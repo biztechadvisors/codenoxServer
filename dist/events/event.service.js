@@ -58,10 +58,12 @@ let EventService = class EventService {
         const cacheKey = `event-${id}`;
         let event = await this.cacheManager.get(cacheKey);
         if (!event) {
-            event = await this.eventRepository.findOne({
-                where: { id },
-                relations: ['shop', 'images'],
-            });
+            event = await this.eventRepository.createQueryBuilder('event')
+                .leftJoinAndSelect('event.shop', 'shop')
+                .leftJoinAndSelect('event.images', 'images')
+                .where('event.id = :id', { id })
+                .cache(50000)
+                .getOne();
             if (!event) {
                 throw new common_1.NotFoundException(`Event with ID ${id} not found`);
             }
@@ -70,43 +72,38 @@ let EventService = class EventService {
         return event;
     }
     async getAllEvents(shopSlug, regionName, page = 1, limit = 10, filter, startDate, endDate, location) {
-        const cacheKey = `events-${shopSlug}-${regionName}-page-${page}-limit-${limit}-filter-${filter}-startDate-${startDate}-endDate-${endDate}-location-${location}`;
+        const cacheKey = `events-${shopSlug}-${regionName || 'all'}-page-${page}-limit-${limit}-filter-${filter || 'all'}-startDate-${startDate || 'none'}-endDate-${endDate || 'none'}-location-${location || 'none'}`;
         const cachedResult = await this.cacheManager.get(cacheKey);
         if (cachedResult) {
-            return Object.assign(Object.assign({}, cachedResult), { page,
-                limit });
+            return Object.assign(Object.assign({}, cachedResult), { page, limit });
         }
         const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
         if (!shop) {
             throw new common_1.NotFoundException(`Shop with slug '${shopSlug}' not found`);
-        }
-        let region = null;
-        if (regionName) {
-            region = await this.regionRepository.findOne({ where: { name: regionName } });
-            if (!region) {
-                console.warn(`Warning: Region with name '${regionName}' not found. Proceeding without region filter.`);
-            }
         }
         const now = new Date();
         const skip = (page - 1) * limit;
         const queryBuilder = this.eventRepository.createQueryBuilder('event')
             .leftJoinAndSelect('event.shop', 'shop')
             .leftJoinAndSelect('event.images', 'images')
-            .leftJoinAndSelect('event.region', 'region')
             .where('event.shopId = :shopId', { shopId: shop.id });
-        if (region) {
-            queryBuilder.andWhere('event.regionId = :regionId', { regionId: region.id });
+        if (regionName) {
+            const region = await this.regionRepository.findOne({ where: { name: regionName } });
+            if (region) {
+                queryBuilder.andWhere('event.regionId = :regionId', { regionId: region.id });
+            }
+            else {
+                console.warn(`Warning: Region with name '${regionName}' not found. Proceeding without region filter.`);
+            }
         }
-        switch (filter) {
-            case 'upcoming':
-                queryBuilder.andWhere('event.date > :now', { now });
-                break;
-            case 'past':
-                queryBuilder.andWhere('event.date < :now', { now });
-                break;
-            case 'latest':
-                queryBuilder.orderBy('event.date', 'DESC');
-                break;
+        if (filter === 'upcoming') {
+            queryBuilder.andWhere('event.date > :now', { now });
+        }
+        else if (filter === 'past') {
+            queryBuilder.andWhere('event.date < :now', { now });
+        }
+        else if (filter === 'latest') {
+            queryBuilder.orderBy('event.date', 'DESC');
         }
         if (startDate) {
             queryBuilder.andWhere('event.date >= :startDate', { startDate });
@@ -120,9 +117,10 @@ let EventService = class EventService {
         const [data, total] = await queryBuilder
             .skip(skip)
             .take(limit)
+            .cache(50000)
             .getManyAndCount();
         const result = { data, total, page, limit };
-        await this.cacheManager.set(cacheKey, result, 60);
+        await this.cacheManager.set(cacheKey, result, 3600);
         return result;
     }
     async updateEvent(id, updateEventDto) {

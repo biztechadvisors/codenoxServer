@@ -43,34 +43,37 @@ let FAQService = class FAQService {
         const cacheKey = `faq-${id}`;
         let faq = await this.cacheManager.get(cacheKey);
         if (!faq) {
-            faq = await this.faqRepository.findOne({
-                where: { id },
-                relations: ['shop', 'images', 'qnas'],
-            });
+            faq = await this.faqRepository.createQueryBuilder('faq')
+                .leftJoinAndSelect('faq.shop', 'shop')
+                .leftJoinAndSelect('faq.images', 'images')
+                .leftJoinAndSelect('faq.qnas', 'qnas')
+                .where('faq.id = :id', { id })
+                .cache(50000)
+                .getOne();
             if (!faq) {
                 throw new common_1.NotFoundException(`FAQ with ID ${id} not found`);
             }
-            await this.cacheManager.set(cacheKey, faq, 60);
+            await this.cacheManager.set(cacheKey, faq, 3600);
         }
         return faq;
     }
     async getFAQsByShopSlug(shopSlug, page = 1, limit = 10) {
         const cacheKey = `faqs-${shopSlug}-page-${page}-limit-${limit}`;
-        let cachedResult = await this.cacheManager.get(cacheKey);
+        const cachedResult = await this.cacheManager.get(cacheKey);
         if (cachedResult) {
-            return Object.assign(Object.assign({}, cachedResult), { page,
-                limit });
+            return Object.assign(Object.assign({}, cachedResult), { page, limit });
         }
-        const [data, total] = await this.faqRepository
-            .createQueryBuilder('faq')
+        const skip = (page - 1) * limit;
+        const [data, total] = await this.faqRepository.createQueryBuilder('faq')
             .innerJoinAndSelect('faq.shop', 'shop', 'shop.slug = :slug', { slug: shopSlug })
             .leftJoinAndSelect('faq.images', 'images')
             .leftJoinAndSelect('faq.qnas', 'qnas')
-            .skip((page - 1) * limit)
+            .skip(skip)
             .take(limit)
+            .cache(50000)
             .getManyAndCount();
         const result = { data, total, page, limit };
-        await this.cacheManager.set(cacheKey, result, 60);
+        await this.cacheManager.set(cacheKey, result, 3600);
         return result;
     }
     async updateFAQ(id, updateFAQDto) {
@@ -135,20 +138,20 @@ let FAQService = class FAQService {
     }
     async getQnAsByShopId(shopSlug, page = 1, limit = 10) {
         const cacheKey = `qnas-shop-${shopSlug}-page-${page}-limit-${limit}`;
-        let cachedResult = await this.cacheManager.get(cacheKey);
+        const cachedResult = await this.cacheManager.get(cacheKey);
         if (cachedResult) {
-            return Object.assign(Object.assign({}, cachedResult), { page,
-                limit });
+            return Object.assign(Object.assign({}, cachedResult), { page, limit });
         }
         const faqs = await this.getFAQsByShopSlug(shopSlug);
         const faqIds = faqs.data.map(faq => faq.id);
-        const [data, total] = await this.qnaRepository.findAndCount({
-            where: { faq: { id: (0, typeorm_2.In)(faqIds) } },
-            skip: (page - 1) * limit,
-            take: limit,
-        });
+        const [data, total] = await this.qnaRepository.createQueryBuilder('qna')
+            .innerJoin('qna.faq', 'faq')
+            .where('faq.id IN (:...faqIds)', { faqIds })
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getManyAndCount();
         const result = { data, total, page, limit };
-        await this.cacheManager.set(cacheKey, result, 60);
+        await this.cacheManager.set(cacheKey, result, 3600);
         return result;
     }
 };

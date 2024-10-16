@@ -48,10 +48,9 @@ let GetInspiredService = class GetInspiredService {
     }
     async getAllGetInspired(shopSlug, type, tagIds = [], page = 1, limit = 10) {
         const cacheKey = `get-inspired-shop-${shopSlug}-type-${type || 'all'}-tags-${tagIds.join(',')}-page-${page}-limit-${limit}`;
-        let cachedResult = await this.cacheManager.get(cacheKey);
+        const cachedResult = await this.cacheManager.get(cacheKey);
         if (cachedResult) {
-            return Object.assign(Object.assign({}, cachedResult), { page,
-                limit });
+            return Object.assign(Object.assign({}, cachedResult), { page, limit });
         }
         const queryBuilder = this.getInspiredRepository.createQueryBuilder('getInspired')
             .innerJoinAndSelect('getInspired.shop', 'shop', 'shop.slug = :slug', { slug: shopSlug })
@@ -67,24 +66,28 @@ let GetInspiredService = class GetInspiredService {
         const [data, total] = await queryBuilder
             .skip(skip)
             .take(limit)
+            .cache(50000)
             .getManyAndCount();
         const result = { data, total, page, limit };
-        await this.cacheManager.set(cacheKey, result, 60);
+        await this.cacheManager.set(cacheKey, result, 3600);
         return result;
     }
     async getGetInspiredById(id) {
         const cacheKey = `get-inspired-${id}`;
-        let getInspired = await this.cacheManager.get(cacheKey);
-        if (!getInspired) {
-            getInspired = await this.getInspiredRepository.findOne({
-                where: { id },
-                relations: ['shop', 'images'],
-            });
-            if (!getInspired) {
-                throw new common_1.NotFoundException(`GetInspired with ID ${id} not found`);
-            }
-            await this.cacheManager.set(cacheKey, getInspired, 60);
+        const cachedGetInspired = await this.cacheManager.get(cacheKey);
+        if (cachedGetInspired) {
+            return cachedGetInspired;
         }
+        const getInspired = await this.getInspiredRepository.createQueryBuilder('getInspired')
+            .leftJoinAndSelect('getInspired.shop', 'shop')
+            .leftJoinAndSelect('getInspired.images', 'images')
+            .where('getInspired.id = :id', { id })
+            .cache(50000)
+            .getOne();
+        if (!getInspired) {
+            throw new common_1.NotFoundException(`GetInspired with ID ${id} not found`);
+        }
+        await this.cacheManager.set(cacheKey, getInspired, 3600);
         return getInspired;
     }
     async updateGetInspired(id, updateGetInspiredDto) {

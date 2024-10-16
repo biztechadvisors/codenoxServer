@@ -21,7 +21,7 @@ export class Vacancy extends CoreEntity {
     @Column()
     salaryRange: string;  // Example: "50,000 - 70,000"
 
-    @ManyToOne(() => Add, { eager: true, onDelete: "CASCADE" })
+    @ManyToOne(() => Add, { onDelete: "CASCADE" })
     @JoinColumn({ name: 'address_id' })
     location: Add;
 

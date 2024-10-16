@@ -66,7 +66,7 @@ __decorate([
     __metadata("design:type", String)
 ], SeoSettings.prototype, "ogDescription", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => attachment_entity_1.Attachment, { cascade: true, eager: true, onDelete: 'CASCADE' }),
+    (0, typeorm_1.OneToOne)(() => attachment_entity_1.Attachment, { cascade: true, onDelete: 'CASCADE' }),
     (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", attachment_entity_1.Attachment)
 ], SeoSettings.prototype, "ogImage", void 0);
@@ -595,7 +595,7 @@ __decorate([
     __metadata("design:type", Boolean)
 ], SettingsOptions.prototype, "isProductReview", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => LogoSettings, { cascade: true, eager: true, onDelete: 'CASCADE' }),
+    (0, typeorm_1.ManyToOne)(() => LogoSettings, { cascade: true, onDelete: 'CASCADE' }),
     (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", LogoSettings)
 ], SettingsOptions.prototype, "logo", void 0);

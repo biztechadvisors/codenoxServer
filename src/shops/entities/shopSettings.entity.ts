@@ -14,7 +14,7 @@ export class ShopSettings {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToMany(() => ShopSocials, { onUpdate: "CASCADE", eager: true })
+  @ManyToMany(() => ShopSocials, { onUpdate: "CASCADE" })
   @JoinTable({ name: "shopSettings_shopSocials" })
   socials: ShopSocials[];
 

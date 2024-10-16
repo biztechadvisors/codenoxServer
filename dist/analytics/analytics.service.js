@@ -282,10 +282,12 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
             let user, shop;
             let isOwnerMatch = false;
             if (shop_id) {
-                shop = await this.shopRepository.findOne({
-                    where: { id: shop_id },
-                    relations: ['owner', 'owner.permission'],
-                });
+                shop = await this.shopRepository
+                    .createQueryBuilder('shop')
+                    .leftJoinAndSelect('shop.owner', 'owner')
+                    .leftJoinAndSelect('owner.permission', 'permission')
+                    .where('shop.id = :shop_id', { shop_id })
+                    .getOne();
                 if (!shop) {
                     return { message: `Shop with ID ${shop_id} not found` };
                 }
@@ -298,19 +300,21 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 }
             }
             if (!isOwnerMatch && customerId) {
-                user = await this.userRepository.findOne({
-                    where: { id: customerId },
-                    relations: ['permission'],
-                });
+                user = await this.userRepository
+                    .createQueryBuilder('user')
+                    .leftJoinAndSelect('user.permission', 'permission')
+                    .where('user.id = :customerId', { customerId })
+                    .getOne();
                 if (!user) {
                     return { message: `User with ID ${customerId} not found` };
                 }
             }
             const permissionName = ((_a = user === null || user === void 0 ? void 0 : user.permission) === null || _a === void 0 ? void 0 : _a.permission_name) ||
                 ((_c = (_b = shop === null || shop === void 0 ? void 0 : shop.owner) === null || _b === void 0 ? void 0 : _b.permission) === null || _c === void 0 ? void 0 : _c.permission_name);
-            const userPermissions = await this.permissionRepository.findOne({
-                where: { permission_name: permissionName },
-            });
+            const userPermissions = await this.permissionRepository
+                .createQueryBuilder('permission')
+                .where('permission.permission_name = :permissionName', { permissionName })
+                .getOne();
             if (!userPermissions) {
                 return {
                     message: `User with ID ${customerId} does not have permissions`,
@@ -328,10 +332,11 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                     userIdArray.push(customerId);
                 }
                 else if (userPermissions.type_name === 'Company') {
-                    const userIds = await this.userRepository.find({
-                        where: { createdBy: { id: shop === null || shop === void 0 ? void 0 : shop.owner_id } },
-                        select: ['id'],
-                    });
+                    const userIds = await this.userRepository
+                        .createQueryBuilder('user')
+                        .select('user.id')
+                        .where('user.createdBy = :ownerId', { ownerId: shop === null || shop === void 0 ? void 0 : shop.owner_id })
+                        .getMany();
                     userIdArray = userIds.map((user) => user.id);
                     if ((shop === null || shop === void 0 ? void 0 : shop.owner_id) && !userIdArray.includes(shop.owner_id)) {
                         userIdArray.push(shop.owner_id);
@@ -349,7 +354,7 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                     message: `No users found for shop ID ${shop_id} and customer ID ${customerId}`,
                 };
             }
-            let whereClause = {
+            const whereClause = {
                 user_id: (0, typeorm_2.In)(userIdArray),
             };
             if (shop_id && isOwnerMatch) {
@@ -359,15 +364,14 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 whereClause.state = state;
             }
             if (startDate && endDate) {
-                whereClause.created_at = {
-                    $gte: new Date(startDate),
-                    $lte: new Date(endDate),
-                };
+                whereClause.created_at = (0, typeorm_2.Between)(new Date(startDate), new Date(endDate));
             }
-            const analyticsResponse = await this.analyticsRepository.find({
-                where: whereClause,
-                relations: ['totalYearSaleByMonth'],
-            });
+            const analyticsResponse = await this.analyticsRepository
+                .createQueryBuilder('analytics')
+                .leftJoinAndSelect('analytics.totalYearSaleByMonth', 'totalYearSaleByMonth')
+                .where(whereClause)
+                .cache(50000)
+                .getMany();
             if (analyticsResponse.length === 0) {
                 return {
                     message: `No analytics found for shop ID ${shop_id} and customer ID ${customerId}`,

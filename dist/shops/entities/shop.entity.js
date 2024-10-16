@@ -82,7 +82,7 @@ __decorate([
     __metadata("design:type", String)
 ], Shop.prototype, "description", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { cascade: true, eager: true }),
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { cascade: true }),
     (0, typeorm_1.JoinTable)({
         name: 'shop_cover_image',
         joinColumn: { name: 'shopId', referencedColumnName: 'id' },
@@ -91,7 +91,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Shop.prototype, "cover_image", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { nullable: true, eager: true }),
+    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { nullable: true }),
     (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", attachment_entity_1.Attachment)
 ], Shop.prototype, "logo", void 0);
@@ -122,12 +122,12 @@ __decorate([
     __metadata("design:type", Array)
 ], Shop.prototype, "orders", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => permission_entity_1.Permission, (permission) => permission.shop, { onDelete: "CASCADE", eager: true }),
+    (0, typeorm_1.ManyToOne)(() => permission_entity_1.Permission, (permission) => permission.shop, { onDelete: "CASCADE" }),
     (0, typeorm_1.JoinColumn)({ name: 'permission_id' }),
     __metadata("design:type", permission_entity_1.Permission)
 ], Shop.prototype, "permission", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => permission_entity_1.Permission, (permission) => permission.shops, { onDelete: "CASCADE", eager: true }),
+    (0, typeorm_1.ManyToMany)(() => permission_entity_1.Permission, (permission) => permission.shops, { onDelete: "CASCADE" }),
     (0, typeorm_1.JoinTable)({ name: 'shop_additional_permission' }),
     __metadata("design:type", Array)
 ], Shop.prototype, "additionalPermissions", void 0);
@@ -140,7 +140,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Shop.prototype, "events", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => region_entity_1.Region, (region) => region.shops, { onDelete: "CASCADE", eager: true }),
+    (0, typeorm_1.ManyToMany)(() => region_entity_1.Region, (region) => region.shops, { onDelete: "CASCADE" }),
     __metadata("design:type", Array)
 ], Shop.prototype, "regions", void 0);
 Shop = __decorate([

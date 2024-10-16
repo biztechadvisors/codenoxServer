@@ -24,7 +24,7 @@ export class Contact {
     @Column({ type: 'text' })
     message: string;
 
-    @ManyToOne(() => Shop, { eager: true }) // Load related Shop data eagerly
-    @JoinColumn({ name: 'shop_id' }) // Name of the foreign key column in the Contact table
+    @ManyToOne(() => Shop)
+    @JoinColumn({ name: 'shop_id' })
     shop: Shop;
 }

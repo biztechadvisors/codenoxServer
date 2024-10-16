@@ -14,8 +14,7 @@ export class TotalYearSaleByMonth extends CoreEntity {
   month: string;
 
   @ManyToMany(() => Analytics, (analytics) => analytics.totalYearSaleByMonth, {
-    onDelete: 'CASCADE',
-    eager: false,
+    onDelete: 'CASCADE'
   })
   analytics: Analytics[];
 }
@@ -54,7 +53,6 @@ export class Analytics extends CoreEntity {
   newCustomers: number;
 
   @ManyToMany(() => TotalYearSaleByMonth, (totalYearSaleByMonth) => totalYearSaleByMonth.analytics, {
-    eager: true,
     cascade: true,
     onDelete: 'CASCADE',
   })

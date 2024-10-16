@@ -22,7 +22,7 @@ export class Blog {
     @ManyToOne(() => Shop, { nullable: false, onDelete: 'CASCADE', onUpdate: "CASCADE" })
     shop: Shop;
 
-    @ManyToMany(() => Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true })
+    @ManyToMany(() => Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinTable({
         name: 'blog_attachments',
         joinColumn: { name: 'blogId', referencedColumnName: 'id' },
@@ -33,7 +33,7 @@ export class Blog {
     @ManyToOne(() => Region, (region) => region.blogs, { nullable: true, onDelete: "CASCADE", onUpdate: "CASCADE" })
     region: Region;
 
-    @ManyToMany(() => Tag, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true })
+    @ManyToMany(() => Tag, { onDelete: "CASCADE", onUpdate: "CASCADE" })
     @JoinTable({
         name: 'blog_tags',
         joinColumn: { name: 'blogId', referencedColumnName: 'id' },

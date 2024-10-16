@@ -68,20 +68,27 @@ export class BlogService {
         let blog = await this.cacheManager.get<Blog>(cacheKey);
 
         if (!blog) {
-            blog = await this.blogRepository.findOne({
-                where: { id },
-                relations: ['shop', 'attachments', 'tags', 'region'], // Include tags in relations
-            });
+            // Using createQueryBuilder for more control
+            blog = await this.blogRepository.createQueryBuilder('blog')
+                .leftJoinAndSelect('blog.shop', 'shop')
+                .leftJoinAndSelect('blog.attachments', 'attachments')
+                .leftJoinAndSelect('blog.tags', 'tags')
+                .leftJoinAndSelect('blog.region', 'region')
+                .where('blog.id = :id', { id })
+                .cache(50000)
+                .getOne();
 
             if (!blog) {
                 throw new NotFoundException(`Blog with ID ${id} not found`);
             }
 
-            await this.cacheManager.set(cacheKey, blog, 60); // Cache for 1 hour
+            // Cache for 1 hour (3600 seconds)
+            await this.cacheManager.set(cacheKey, blog, 3600);
         }
 
         return blog;
     }
+
 
     async getAllBlogs(
         shopSlug: string,
@@ -101,22 +108,28 @@ export class BlogService {
             return cachedData;
         }
 
-        // Fetch the shop by slug
-        const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
+        // Fetch shop by slug using QueryBuilder
+        const shop = await this.shopRepository.createQueryBuilder('shop')
+            .where('shop.slug = :shopSlug', { shopSlug })
+            .getOne();
+
         if (!shop) {
             throw new NotFoundException(`Shop with slug '${shopSlug}' not found`);
         }
 
-        // Fetch the region by name (if provided)
+        // Fetch region by name (if provided)
         let region;
         if (regionName) {
-            region = await this.regionRepository.findOne({ where: { name: regionName } });
+            region = await this.regionRepository.createQueryBuilder('region')
+                .where('region.name = :regionName', { regionName })
+                .getOne();
+
             if (!region) {
                 console.warn(`Warning: Region with name '${regionName}' not found. Proceeding without region filter.`);
             }
         }
 
-        // Build the query
+        // Build the query for blogs
         const queryBuilder = this.blogRepository.createQueryBuilder('blog')
             .leftJoinAndSelect('blog.shop', 'shop')
             .leftJoinAndSelect('blog.attachments', 'attachments')
@@ -124,39 +137,40 @@ export class BlogService {
             .leftJoinAndSelect('blog.region', 'region')
             .where('blog.shopId = :shopId', { shopId: shop.id });
 
-        // Apply region filter if region exists
+        // Apply filters
         if (region) {
             queryBuilder.andWhere('blog.regionId = :regionId', { regionId: region.id });
         }
 
-        // Apply tag filter if tagName is provided
         if (tagName) {
             queryBuilder.andWhere('tags.name = :tagName', { tagName });
         }
 
-        // Apply date range filters if provided
         if (startDate) {
             queryBuilder.andWhere('blog.date >= :startDate', { startDate });
         }
+
         if (endDate) {
             queryBuilder.andWhere('blog.date <= :endDate', { endDate });
         }
 
-        // Get the total count before pagination
+        // Get the total count for pagination
         const count = await queryBuilder.getCount();
 
-        // Fetch data with pagination
+        // Fetch the paginated data
         const data = await queryBuilder
             .skip(offset)
             .take(limit)
+            .cache(50000)
             .getMany();
 
         // Cache the result for 1 hour (3600 seconds)
         cachedData = { data, count };
-        await this.cacheManager.set(cacheKey, cachedData, 60);
+        await this.cacheManager.set(cacheKey, cachedData, 3600);
 
         return cachedData;
     }
+
 
     async updateBlog(id: number, updateBlogDto: UpdateBlogDto): Promise<Blog> {
         const blog = await this.getBlogById(id);

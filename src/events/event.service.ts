@@ -66,10 +66,12 @@ export class EventService {
         let event = await this.cacheManager.get<Event>(cacheKey);
 
         if (!event) {
-            event = await this.eventRepository.findOne({
-                where: { id },
-                relations: ['shop', 'images'],
-            });
+            event = await this.eventRepository.createQueryBuilder('event')
+                .leftJoinAndSelect('event.shop', 'shop')
+                .leftJoinAndSelect('event.images', 'images')
+                .where('event.id = :id', { id })
+                .cache(50000)
+                .getOne();
 
             if (!event) {
                 throw new NotFoundException(`Event with ID ${id} not found`);
@@ -83,7 +85,7 @@ export class EventService {
 
     async getAllEvents(
         shopSlug: string,
-        regionName: string | any,
+        regionName?: string,
         page: number = 1,
         limit: number = 10,
         filter?: 'upcoming' | 'latest' | 'past',
@@ -91,31 +93,16 @@ export class EventService {
         endDate?: string,
         location?: string
     ): Promise<{ data: Event[], total: number, page: number, limit: number }> {
-        const cacheKey = `events-${shopSlug}-${regionName}-page-${page}-limit-${limit}-filter-${filter}-startDate-${startDate}-endDate-${endDate}-location-${location}`;
+        const cacheKey = `events-${shopSlug}-${regionName || 'all'}-page-${page}-limit-${limit}-filter-${filter || 'all'}-startDate-${startDate || 'none'}-endDate-${endDate || 'none'}-location-${location || 'none'}`;
 
-        // Attempt to retrieve from cache
         const cachedResult = await this.cacheManager.get<{ data: Event[], total: number }>(cacheKey);
         if (cachedResult) {
-            return {
-                ...cachedResult,
-                page,
-                limit
-            };
+            return { ...cachedResult, page, limit };
         }
 
-        // Fetch shop by slug
         const shop = await this.shopRepository.findOne({ where: { slug: shopSlug } });
         if (!shop) {
             throw new NotFoundException(`Shop with slug '${shopSlug}' not found`);
-        }
-
-        // Fetch region by name (if provided)
-        let region = null;
-        if (regionName) {
-            region = await this.regionRepository.findOne({ where: { name: regionName } });
-            if (!region) {
-                console.warn(`Warning: Region with name '${regionName}' not found. Proceeding without region filter.`);
-            }
         }
 
         const now = new Date();
@@ -125,25 +112,25 @@ export class EventService {
         const queryBuilder = this.eventRepository.createQueryBuilder('event')
             .leftJoinAndSelect('event.shop', 'shop')
             .leftJoinAndSelect('event.images', 'images')
-            .leftJoinAndSelect('event.region', 'region')
             .where('event.shopId = :shopId', { shopId: shop.id });
 
-        // Apply region filter if region exists
-        if (region) {
-            queryBuilder.andWhere('event.regionId = :regionId', { regionId: region.id });
+        // Apply region filter if regionName is provided
+        if (regionName) {
+            const region = await this.regionRepository.findOne({ where: { name: regionName } });
+            if (region) {
+                queryBuilder.andWhere('event.regionId = :regionId', { regionId: region.id });
+            } else {
+                console.warn(`Warning: Region with name '${regionName}' not found. Proceeding without region filter.`);
+            }
         }
 
         // Apply filters based on the filter parameter
-        switch (filter) {
-            case 'upcoming':
-                queryBuilder.andWhere('event.date > :now', { now });
-                break;
-            case 'past':
-                queryBuilder.andWhere('event.date < :now', { now });
-                break;
-            case 'latest':
-                queryBuilder.orderBy('event.date', 'DESC');
-                break;
+        if (filter === 'upcoming') {
+            queryBuilder.andWhere('event.date > :now', { now });
+        } else if (filter === 'past') {
+            queryBuilder.andWhere('event.date < :now', { now });
+        } else if (filter === 'latest') {
+            queryBuilder.orderBy('event.date', 'DESC');
         }
 
         // Apply date range filter if provided
@@ -163,16 +150,17 @@ export class EventService {
         const [data, total] = await queryBuilder
             .skip(skip)
             .take(limit)
+            .cache(50000)
             .getManyAndCount();
 
-        // Structure the result
         const result = { data, total, page, limit };
 
         // Cache the result for 1 hour (3600 seconds)
-        await this.cacheManager.set(cacheKey, result, 60);
+        await this.cacheManager.set(cacheKey, result, 3600); // Cache for 1 hour
 
         return result;
     }
+
 
     async updateEvent(id: number, updateEventDto: UpdateEventDto): Promise<Event> {
         const event = await this.getEventById(id);

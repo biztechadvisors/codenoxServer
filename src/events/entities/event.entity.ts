@@ -33,7 +33,7 @@ export class Event {
     @ManyToOne(() => Shop, (shop) => shop.events, { onDelete: "CASCADE" })
     shop: Shop;
 
-    @ManyToMany(() => Attachment, { cascade: true, eager: true })
+    @ManyToMany(() => Attachment, { cascade: true })
     @JoinTable({
         name: 'event_attachments',
         joinColumn: { name: 'eventId', referencedColumnName: 'id' },

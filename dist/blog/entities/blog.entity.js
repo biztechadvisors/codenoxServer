@@ -42,7 +42,7 @@ __decorate([
     __metadata("design:type", shop_entity_1.Shop)
 ], Blog.prototype, "shop", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true }),
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { onDelete: "CASCADE", onUpdate: "CASCADE" }),
     (0, typeorm_1.JoinTable)({
         name: 'blog_attachments',
         joinColumn: { name: 'blogId', referencedColumnName: 'id' },
@@ -55,7 +55,7 @@ __decorate([
     __metadata("design:type", region_entity_1.Region)
 ], Blog.prototype, "region", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => tag_entity_1.Tag, { onDelete: "CASCADE", onUpdate: "CASCADE", eager: true }),
+    (0, typeorm_1.ManyToMany)(() => tag_entity_1.Tag, { onDelete: "CASCADE", onUpdate: "CASCADE" }),
     (0, typeorm_1.JoinTable)({
         name: 'blog_tags',
         joinColumn: { name: 'blogId', referencedColumnName: 'id' },

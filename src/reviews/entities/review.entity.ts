@@ -31,7 +31,7 @@ export class Review extends CoreEntity {
   @JoinColumn({ name: 'order_id' }) // Since this should refer to one specific order, use ManyToOne
   order: Order;
 
-  @ManyToMany(() => Attachment, { cascade: true, eager: true })
+  @ManyToMany(() => Attachment, { cascade: true })
   @JoinTable({ name: 'review_attachment' })
   photos: Attachment[];
 

@@ -15,7 +15,7 @@ export declare class EventService {
     constructor(eventRepository: Repository<Event>, shopRepository: Repository<Shop>, regionRepository: Repository<Region>, attachmentRepository: Repository<Attachment>, cacheManager: Cache);
     createEvent(createEventDto: CreateEventDto): Promise<Event>;
     getEventById(id: number): Promise<Event>;
-    getAllEvents(shopSlug: string, regionName: string | any, page?: number, limit?: number, filter?: 'upcoming' | 'latest' | 'past', startDate?: string, endDate?: string, location?: string): Promise<{
+    getAllEvents(shopSlug: string, regionName?: string, page?: number, limit?: number, filter?: 'upcoming' | 'latest' | 'past', startDate?: string, endDate?: string, location?: string): Promise<{
         data: Event[];
         total: number;
         page: number;

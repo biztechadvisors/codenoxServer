@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+import { Add } from "@db/src/address/entities/address.entity";
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
@@ -10,13 +11,7 @@ export class Name {
     @Column()
     surname: string;
 }
-@Entity()
-export class Address {
-    @PrimaryGeneratedColumn()
-    id: number;
-    @Column()
-    country_code: string;
-}
+
 @Entity()
 export class Paypal {
     @PrimaryGeneratedColumn()
@@ -27,8 +22,8 @@ export class Paypal {
     account_id: string;
     @ManyToOne(() => Name)
     name: Name;
-    @ManyToOne(() => Address)
-    address: Address;
+    @ManyToOne(() => Add)
+    address: Add;
 }
 @Entity()
 export class PaymentSource {
@@ -98,8 +93,8 @@ export class Payer {
     email_address: string;
     @Column()
     payer_id: string;
-    @ManyToOne(() => Address)
-    address: Address;
+    @ManyToOne(() => Add)
+    address: Add;
 }
 @Entity()
 export class PaypalCaptureOrderResponse {

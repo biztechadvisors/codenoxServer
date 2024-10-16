@@ -39,10 +39,12 @@ let AddressesService = class AddressesService {
         const cacheKey = `addresses:userId:${userId}`;
         let addresses = await this.cacheManager.get(cacheKey);
         if (!addresses) {
-            addresses = await this.addressRepository.find({
-                where: { customer: { id: userId } },
-                relations: ['address'],
-            });
+            addresses = await this.addressRepository
+                .createQueryBuilder('address')
+                .innerJoinAndSelect('address.customer', 'customer')
+                .where('customer.id = :userId', { userId })
+                .cache(50000)
+                .getMany();
             if (addresses.length > 0) {
                 await this.cacheManager.set(cacheKey, addresses, 3600);
             }
@@ -53,10 +55,12 @@ let AddressesService = class AddressesService {
         const cacheKey = `address:id:${id}`;
         let address = await this.cacheManager.get(cacheKey);
         if (!address) {
-            address = await this.addressRepository.findOne({
-                where: { id },
-                relations: ['address', 'customer'],
-            });
+            address = await this.addressRepository
+                .createQueryBuilder('address')
+                .leftJoinAndSelect('address.customer', 'customer')
+                .where('address.id = :id', { id })
+                .cache(50000)
+                .getOne();
             if (!address) {
                 throw new common_1.NotFoundException(`Address with ID ${id} not found`);
             }
@@ -90,10 +94,11 @@ let AddressesService = class AddressesService {
         return user;
     }
     async getAddressById(id) {
-        const address = await this.addressRepository.findOne({
-            where: { id },
-            relations: ['address', 'customer'],
-        });
+        const address = await this.addressRepository
+            .createQueryBuilder('address')
+            .leftJoinAndSelect('address.customer', 'customer')
+            .where('address.id = :id', { id })
+            .getOne();
         if (!address) {
             throw new common_1.NotFoundException(`Address with ID ${id} not found`);
         }

@@ -19,7 +19,7 @@ export class GetInspired {
     @ManyToOne(() => Shop)
     shop: Shop;
 
-    @ManyToMany(() => Attachment, { cascade: true, eager: true })
+    @ManyToMany(() => Attachment, { cascade: true })
     @JoinTable({
         name: 'get_inspired_images',
         joinColumn: { name: 'getInspiredId', referencedColumnName: 'id' },
@@ -27,7 +27,7 @@ export class GetInspired {
     })
     images: Attachment[];
 
-    @ManyToMany(() => Tag, { cascade: true, eager: true })
+    @ManyToMany(() => Tag, { cascade: true })
     @JoinTable({
         name: 'get_inspired_tags',
         joinColumn: { name: 'get_inspiredId', referencedColumnName: 'id' },

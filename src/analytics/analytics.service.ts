@@ -11,7 +11,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { In, Repository } from 'typeorm'
+import { Between, In, Repository } from 'typeorm'
 import { Order } from 'src/orders/entities/order.entity'
 import { AnalyticsResponseDTO } from './dto/analytics.dto'
 import { Shop } from 'src/shops/entities/shop.entity'
@@ -49,7 +49,7 @@ export class AnalyticsService {
     private readonly totalYearSaleByMonthRepository: Repository<TotalYearSaleByMonth>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   async getTopUsersWithMaxOrders(userId: number): Promise<any[]> {
     try {
@@ -400,12 +400,14 @@ export class AnalyticsService {
       let user, shop
       let isOwnerMatch = false
 
-      // Step 1: If shop_id is provided, fetch the shop
+      // Step 1: If shop_id is provided, fetch the shop using QueryBuilder
       if (shop_id) {
-        shop = await this.shopRepository.findOne({
-          where: { id: shop_id },
-          relations: ['owner', 'owner.permission'],
-        })
+        shop = await this.shopRepository
+          .createQueryBuilder('shop')
+          .leftJoinAndSelect('shop.owner', 'owner')
+          .leftJoinAndSelect('owner.permission', 'permission')
+          .where('shop.id = :shop_id', { shop_id })
+          .getOne()
 
         if (!shop) {
           return { message: `Shop with ID ${shop_id} not found` }
@@ -420,25 +422,27 @@ export class AnalyticsService {
         }
       }
 
-      // Step 2: If customerId does not match shop owner, fetch the user
+      // Step 2: If customerId does not match shop owner, fetch the user using QueryBuilder
       if (!isOwnerMatch && customerId) {
-        user = await this.userRepository.findOne({
-          where: { id: customerId },
-          relations: ['permission'],
-        })
+        user = await this.userRepository
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.permission', 'permission')
+          .where('user.id = :customerId', { customerId })
+          .getOne()
 
         if (!user) {
           return { message: `User with ID ${customerId} not found` }
         }
       }
 
-      // Step 3: Check permissions
+      // Step 3: Check permissions using QueryBuilder
       const permissionName =
         user?.permission?.permission_name ||
         shop?.owner?.permission?.permission_name
-      const userPermissions = await this.permissionRepository.findOne({
-        where: { permission_name: permissionName },
-      })
+      const userPermissions = await this.permissionRepository
+        .createQueryBuilder('permission')
+        .where('permission.permission_name = :permissionName', { permissionName })
+        .getOne()
 
       if (!userPermissions) {
         return {
@@ -453,16 +457,18 @@ export class AnalyticsService {
         }
       }
 
-      // Step 4: Build userIdArray based on permissions
+      // Step 4: Build userIdArray based on permissions using QueryBuilder
       let userIdArray: number[] = []
       if (isOwnerMatch) {
         if (userPermissions.type_name === 'Dealer') {
           userIdArray.push(customerId)
         } else if (userPermissions.type_name === 'Company') {
-          const userIds = await this.userRepository.find({
-            where: { createdBy: { id: shop?.owner_id } },
-            select: ['id'],
-          })
+          const userIds = await this.userRepository
+            .createQueryBuilder('user')
+            .select('user.id')
+            .where('user.createdBy = :ownerId', { ownerId: shop?.owner_id })
+            .getMany()
+
           userIdArray = userIds.map((user) => user.id)
           if (shop?.owner_id && !userIdArray.includes(shop.owner_id)) {
             userIdArray.push(shop.owner_id)
@@ -480,8 +486,8 @@ export class AnalyticsService {
         }
       }
 
-      // Step 5: Build whereClause
-      let whereClause: any = {
+      // Step 5: Build whereClause for the analytics query
+      const whereClause: any = {
         user_id: In(userIdArray),
       }
 
@@ -494,18 +500,16 @@ export class AnalyticsService {
       }
 
       if (startDate && endDate) {
-        whereClause.created_at = {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate),
-        }
+        whereClause.created_at = Between(new Date(startDate), new Date(endDate))
       }
 
-      // Step 6: Retrieve analytics
-      const analyticsResponse: Analytics[] =
-        await this.analyticsRepository.find({
-          where: whereClause,
-          relations: ['totalYearSaleByMonth'],
-        })
+      // Step 6: Retrieve analytics using QueryBuilder
+      const analyticsResponse = await this.analyticsRepository
+        .createQueryBuilder('analytics')
+        .leftJoinAndSelect('analytics.totalYearSaleByMonth', 'totalYearSaleByMonth')
+        .where(whereClause)
+        .cache(50000)
+        .getMany()
 
       if (analyticsResponse.length === 0) {
         return {
@@ -589,4 +593,5 @@ export class AnalyticsService {
     ]
     return months.indexOf(month)
   }
+
 }

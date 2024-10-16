@@ -61,6 +61,7 @@ import { CareerModule } from './career/career.module';
 import { ContactModule } from './contact/contact.module';
 import { RegionModule } from './region/region.module';
 import { AddModule } from './address/addresses.module';
+import { createClient } from 'redis';
 
 @Module({
   imports: [
@@ -103,14 +104,34 @@ import { AddModule } from './address/addresses.module';
     CacheModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        store: redisStore,
-        host: configService.get<string>('REDIS_HOST'),
-        port: configService.get<number>('REDIS_PORT'),
-        auth_pass: configService.get<string>('REDIS_PASSWORD'),
-        ttl: configService.get<number>('CACHE_TTL') || 3000, // Cache TTL in seconds
-        isGlobal: true,
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const host = configService.get<string>('REDIS_HOST');
+        const port = configService.get<number>('REDIS_PORT');
+        const password = configService.get<string>('REDIS_PASSWORD');
+        const ttl = configService.get<number>('CACHE_TTL') || 3000;
+
+        // Check DNS resolution
+        try {
+          const client = createClient({ url: `redis://${host}:${port}`, password });
+          await client.connect();
+
+          // Optionally add error handling for connection
+          client.on('error', (err) => {
+            console.error('Redis Client Error', err);
+          });
+
+          return {
+            store: redisStore,
+            url: `redis://${host}:${port}`, // Use the full URL for cache-manager
+            auth_pass: password,
+            ttl, // Cache TTL in seconds
+            isGlobal: true,
+          };
+        } catch (error) {
+          console.error('Failed to connect to Redis:', error);
+          throw new Error('Redis connection error');
+        }
+      },
     }),
     // Import all feature modules
     UsersModule,

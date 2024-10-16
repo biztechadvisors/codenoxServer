@@ -25,7 +25,7 @@ export declare class CareerService {
     updateVacancy(id: number, updateVacancyDto: UpdateVacancyDto): Promise<Vacancy>;
     findVacancyById(id: number): Promise<Vacancy>;
     deleteVacancy(id: number): Promise<void>;
-    findAllVacancies(page: number, limit: number, city?: string): Promise<{
+    findAllVacancies(page?: number, limit?: number, city?: string): Promise<{
         data: Vacancy[];
         count: number;
     }>;

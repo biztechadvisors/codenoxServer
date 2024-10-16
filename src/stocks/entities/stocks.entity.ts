@@ -29,7 +29,7 @@ export class Stocks {
     @JoinColumn()
     variation_options: Variation;
 
-    @ManyToOne(() => User, { eager: true, onDelete: "SET NULL", onUpdate: "CASCADE" })
+    @ManyToOne(() => User, { onDelete: "SET NULL", onUpdate: "CASCADE" })
     @JoinColumn() // Specify the join column
     user: User;
 

@@ -1,18 +1,15 @@
+import { Add } from "@db/src/address/entities/address.entity";
 export declare class Name {
     id: number;
     given_name: string;
     surname: string;
-}
-export declare class Address {
-    id: number;
-    country_code: string;
 }
 export declare class Paypal {
     id: number;
     email_address: string;
     account_id: string;
     name: Name;
-    address: Address;
+    address: Add;
 }
 export declare class PaymentSource {
     id: number;
@@ -50,7 +47,7 @@ export declare class Payer {
     name: Name;
     email_address: string;
     payer_id: string;
-    address: Address;
+    address: Add;
 }
 export declare class PaypalCaptureOrderResponse {
     id: string;

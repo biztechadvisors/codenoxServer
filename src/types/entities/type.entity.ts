@@ -104,7 +104,7 @@ export class Banner {
   @ManyToOne(() => Type, (type) => type.banners, { onDelete: "SET NULL" })
   type: Type;
 
-  @ManyToOne(() => Attachment, { cascade: true, eager: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Attachment, { cascade: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'imageId' })
   image: Attachment | null;
 }

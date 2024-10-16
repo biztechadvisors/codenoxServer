@@ -44,7 +44,7 @@ __decorate([
     __metadata("design:type", String)
 ], Tag.prototype, "details", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { cascade: true, eager: true, onDelete: "CASCADE" }),
+    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment, { cascade: true, onDelete: "CASCADE" }),
     (0, typeorm_1.JoinColumn)({ name: 'imageId', referencedColumnName: 'id' }),
     __metadata("design:type", attachment_entity_1.Attachment)
 ], Tag.prototype, "image", void 0);

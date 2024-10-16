@@ -23,7 +23,7 @@ __decorate([
     __metadata("design:type", Number)
 ], ShopSettings.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => setting_entity_1.ShopSocials, { onUpdate: "CASCADE", eager: true }),
+    (0, typeorm_1.ManyToMany)(() => setting_entity_1.ShopSocials, { onUpdate: "CASCADE" }),
     (0, typeorm_1.JoinTable)({ name: "shopSettings_shopSocials" }),
     __metadata("design:type", Array)
 ], ShopSettings.prototype, "socials", void 0);

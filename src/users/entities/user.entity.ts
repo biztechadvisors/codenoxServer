@@ -82,7 +82,7 @@ export class User extends CoreEntity {
   @Column({ default: true })
   is_active: boolean;
 
-  @OneToMany(() => Add, (add) => add.customer, { onDelete: "CASCADE", eager: true })
+  @OneToMany(() => Add, (add) => add.customer, { onDelete: "CASCADE" })
   adds: Add[];
 
   @OneToMany(() => Order, order => order.customer, { onDelete: "CASCADE" })
@@ -95,8 +95,7 @@ export class User extends CoreEntity {
   stocksSellOrd: StocksSellOrd[];
 
   @ManyToOne(() => Permission, {
-    nullable: true,
-    eager: true
+    nullable: true
   })
   @JoinColumn({ name: 'permission_id' })
   permission: Permission;

@@ -24,7 +24,7 @@ export class Tag extends CoreEntity {
   @Column({ nullable: true })
   details: string;
 
-  @ManyToOne(() => Attachment, { cascade: true, eager: true, onDelete: "CASCADE" })
+  @ManyToOne(() => Attachment, { cascade: true, onDelete: "CASCADE" })
   @JoinColumn({ name: 'imageId', referencedColumnName: 'id' })
   image: Attachment | null;
 

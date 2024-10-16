@@ -13,7 +13,7 @@ export class Permission {
   @Column()
   permission_name: string;
 
-  @OneToMany(() => PermissionType, (permissionType) => permissionType.permissions, { eager: true, cascade: true, onDelete: "CASCADE" })
+  @OneToMany(() => PermissionType, (permissionType) => permissionType.permissions, { cascade: true, onDelete: "CASCADE" })
   permissions: PermissionType[];
 
   @Column()

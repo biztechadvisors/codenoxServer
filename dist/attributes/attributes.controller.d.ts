@@ -21,7 +21,6 @@ export declare class AttributesController {
             id: number;
             value: string;
             meta?: string;
-            language?: string;
         }[];
     }[]>;
     findOne(param: GetAttributeArgs): Promise<{

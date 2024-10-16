@@ -79,14 +79,14 @@ let TagsService = class TagsService {
         return await this.tagRepository.save(tag);
     }
     async findAll(query) {
-        let { limit = '10', page = '1', search, shopSlug, region_name } = query;
+        const { limit = '10', page = '1', search, shopSlug, region_name } = query;
         const numericPage = Number(page);
         const numericLimit = Number(limit);
         if (isNaN(numericPage) || isNaN(numericLimit) || numericPage < 1 || numericLimit < 1) {
             throw new common_1.BadRequestException('Page and limit values must be positive numbers');
         }
         const skip = (numericPage - 1) * numericLimit;
-        const regionNames = typeof region_name === 'string' && region_name.trim().length > 1 ? [region_name] : Array.isArray(region_name) ? region_name : [];
+        const regionNames = Array.isArray(region_name) ? region_name : (typeof region_name === 'string' && region_name.trim() ? [region_name] : []);
         const cacheKey = `tags_${numericPage}_${numericLimit}_${search || 'none'}_${shopSlug || 'none'}_${regionNames.join(',')}`;
         const cachedData = await this.cacheManager.get(cacheKey);
         if (cachedData) {
@@ -102,11 +102,9 @@ let TagsService = class TagsService {
             shopId = shop.id;
         }
         if (regionNames.length > 0) {
-            const regions = await this.regionRepository.find({
-                where: { name: (0, typeorm_2.In)(regionNames) },
-            });
+            const regions = await this.regionRepository.find({ where: { name: (0, typeorm_2.In)(regionNames) } });
             if (regions.length !== regionNames.length) {
-                const missingRegionNames = regionNames.filter((name) => !regions.some((region) => region.name === name));
+                const missingRegionNames = regionNames.filter(name => !regions.some(region => region.name === name));
                 throw new common_1.BadRequestException(`Regions with names '${missingRegionNames.join(', ')}' not found`);
             }
             regionIds = regions.map(region => region.id);
@@ -124,18 +122,16 @@ let TagsService = class TagsService {
             queryBuilder.andWhere('region.id IN (:...regionIds)', { regionIds });
         }
         if (search) {
-            const searchPattern = `%${search.toLowerCase()}%`;
-            queryBuilder.andWhere('LOWER(tag.name) LIKE :search', { search: searchPattern });
+            queryBuilder.andWhere('LOWER(tag.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
         }
-        console.log(queryBuilder.getSql());
         const [data, total] = await queryBuilder.getManyAndCount();
-        const formattedData = data.map((item) => {
+        const formattedData = data.map(item => {
             var _a;
             return (Object.assign(Object.assign({}, item), { type_id: ((_a = item.type) === null || _a === void 0 ? void 0 : _a.id) || null }));
         });
-        const url = `/tags?${search ? `search=${search}` : ''}${shopSlug ? `&shopSlug=${shopSlug}` : ''}${Array.isArray(region_name) && region_name.length ? `&region_name=${region_name.join(',')}` : region_name ? `&region_name=${region_name}` : ''}`.replace(/\?&/, '?').replace(/&$/, '');
+        const url = `/tags?${search ? `search=${search}` : ''}${shopSlug ? `&shopSlug=${shopSlug}` : ''}${regionNames.length ? `&region_name=${regionNames.join(',')}` : ''}`.replace(/\?&/, '?').replace(/&$/, '');
         const response = Object.assign({ data: formattedData }, (0, paginate_1.paginate)(total, numericPage, numericLimit, formattedData.length, url));
-        await this.cacheManager.set(cacheKey, response, 60);
+        await this.cacheManager.set(cacheKey, response, 60 * 5);
         return response;
     }
     async findOne(param, language) {
@@ -144,16 +140,17 @@ let TagsService = class TagsService {
         if (cachedTag) {
             return cachedTag;
         }
-        const isNumeric = !isNaN(parseFloat(param)) && isFinite(Number(param));
+        const isNumeric = !isNaN(Number(param));
         const whereCondition = isNumeric ? { id: Number(param) } : { slug: param };
-        const tag = await this.tagRepository.findOne({
-            where: whereCondition,
-            relations: ['image', 'type'],
-        });
+        const tag = await this.tagRepository.createQueryBuilder('tag')
+            .leftJoinAndSelect('tag.image', 'image')
+            .leftJoinAndSelect('tag.type', 'type')
+            .where(whereCondition)
+            .getOne();
         if (!tag) {
             throw new Error(`Tag with ID or slug ${param} not found`);
         }
-        await this.cacheManager.set(cacheKey, tag, 60);
+        await this.cacheManager.set(cacheKey, tag, 60 * 5);
         return tag;
     }
     async update(id, updateTagDto) {

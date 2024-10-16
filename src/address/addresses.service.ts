@@ -46,45 +46,50 @@ export class AddressesService {
     return savedAddress;
   }
 
-  // Fetch all addresses for a specific user with caching
+  // Fetch all addresses for a specific user with caching using QueryBuilder
   async findAll(userId: number): Promise<Add[]> {
     const cacheKey = `addresses:userId:${userId}`;
     let addresses = await this.cacheManager.get<Add[]>(cacheKey);
 
     if (!addresses) {
-      addresses = await this.addressRepository.find({
-        where: { customer: { id: userId } },
-        relations: ['address'],
-      });
+      addresses = await this.addressRepository
+        .createQueryBuilder('address')
+        .innerJoinAndSelect('address.customer', 'customer')
+        .where('customer.id = :userId', { userId })
+        .cache(50000)
+        .getMany();
 
       if (addresses.length > 0) {
-        await this.cacheManager.set(cacheKey, addresses, 3600);
+        await this.cacheManager.set(cacheKey, addresses, 3600); // Cache for 1 hour
       }
     }
 
     return addresses;
   }
 
-  // Fetch a specific address by ID with caching
+  // Fetch a specific address by ID with caching using QueryBuilder
   async findOne(id: number): Promise<Add> {
     const cacheKey = `address:id:${id}`;
     let address = await this.cacheManager.get<Add>(cacheKey);
 
     if (!address) {
-      address = await this.addressRepository.findOne({
-        where: { id },
-        relations: ['address', 'customer'],
-      });
+      address = await this.addressRepository
+        .createQueryBuilder('address')
+        .leftJoinAndSelect('address.customer', 'customer')
+        .where('address.id = :id', { id })
+        .cache(50000)
+        .getOne();
 
       if (!address) {
         throw new NotFoundException(`Address with ID ${id} not found`);
       }
 
-      await this.cacheManager.set(cacheKey, address, 3600);
+      await this.cacheManager.set(cacheKey, address, 3600); // Cache for 1 hour
     }
 
     return address;
   }
+
 
   // Update an address by ID
   async update(id: number, updateAddressDto: UpdateAddressDto): Promise<Add> {
@@ -127,15 +132,18 @@ export class AddressesService {
     return user;
   }
 
-  // Helper method to fetch an address by ID
+  // Helper method to fetch an address by ID using QueryBuilder
   private async getAddressById(id: number): Promise<Add> {
-    const address = await this.addressRepository.findOne({
-      where: { id },
-      relations: ['address', 'customer'],
-    });
+    const address = await this.addressRepository
+      .createQueryBuilder('address')
+      .leftJoinAndSelect('address.customer', 'customer')
+      .where('address.id = :id', { id })
+      .getOne();
+
     if (!address) {
       throw new NotFoundException(`Address with ID ${id} not found`);
     }
+
     return address;
   }
 
