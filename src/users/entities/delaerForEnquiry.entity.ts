@@ -18,7 +18,7 @@ export class DealerEnquiry extends CoreEntity {
     shop: Shop;
 
     @Column()
-    phone: number;
+    phone: string;
     @Column()
     email: string;
     @Column()

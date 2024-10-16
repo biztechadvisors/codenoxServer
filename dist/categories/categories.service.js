@@ -105,36 +105,27 @@ let CategoriesService = class CategoriesService {
                 if (!shop) {
                     throw new common_1.NotFoundException('Shop not found');
                 }
-                queryBuilder.andWhere('category.shop = :shopId', { shopId: shop.id });
+                queryBuilder.andWhere('category.shopId = :shopId', { shopId: shop.id });
             }
             else if (shopId) {
-                queryBuilder.andWhere('category.shop = :shopId', { shopId });
-            }
-            if (parent && parent !== 'null') {
-                queryBuilder.andWhere('category.parent = :parentId', { parentId: parent });
-            }
-            else if (parent === 'null') {
-                queryBuilder.andWhere('category.parent IS NULL');
+                queryBuilder.andWhere('category.shopId = :shopId', { shopId });
             }
             if (language) {
                 queryBuilder.andWhere('category.language = :language', { language });
             }
             if (region_name) {
-                const region = await this.regionRepository.findOne({
-                    where: { name: region_name },
-                    relations: ['categories'],
-                });
+                const region = await this.regionRepository.findOne({ where: { name: region_name }, relations: ['categories'] });
                 if (!region) {
                     throw new common_1.NotFoundException('Region not found');
                 }
-                queryBuilder.andWhere('category.regions = :regionId', { regionId: region.id });
+                queryBuilder.andWhere('regions.id = :regionId', { regionId: region.id });
             }
             if (type) {
                 const typeEntity = await this.typeRepository.findOne({ where: { name: type } });
                 if (!typeEntity) {
                     throw new common_1.NotFoundException('Type not found');
                 }
-                queryBuilder.andWhere('category.type = :typeId', { typeId: typeEntity.id });
+                queryBuilder.andWhere('category.typeId = :typeId', { typeId: typeEntity.id });
             }
             const validSortOrders = ['ASC', 'DESC'];
             const order = orderBy && sortedBy && validSortOrders.includes(sortedBy.toUpperCase())

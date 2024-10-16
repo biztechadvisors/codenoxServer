@@ -45,14 +45,14 @@ export class TypesService {
   async findAll(query: GetTypesDto) {
     const { text, search, shop_id, shopSlug, region_name } = query;
 
-    // Generate a unique cache key based on query parameters
-    const cacheKey = `types_${shop_id || 'none'}_${shopSlug || 'none'}_${text || 'none'}_${search || 'none'}_${region_name || 'none'}`;
+    // // Generate a unique cache key based on query parameters
+    // const cacheKey = `types_${shop_id || 'none'}_${shopSlug || 'none'}_${text || 'none'}_${search || 'none'}_${region_name || 'none'}`;
 
-    // Check if the data is cached
-    const cachedData = await this.cacheManager.get<Type[]>(cacheKey);
-    if (cachedData) {
-      return cachedData;
-    }
+    // // Check if the data is cached
+    // const cachedData = await this.cacheManager.get<Type[]>(cacheKey);
+    // if (cachedData) {
+    //   return cachedData;
+    // }
 
     // Initialize the query builder
     const queryBuilder = this.typeRepository.createQueryBuilder('type')
@@ -99,8 +99,8 @@ export class TypesService {
       data = fuse.search({ $and: searchConditions }).map(({ item }) => item);
     }
 
-    // Cache the result
-    await this.cacheManager.set(cacheKey, data, 3600); // Cache for 1 hour
+    // // Cache the result
+    // await this.cacheManager.set(cacheKey, data, 3600); // Cache for 1 hour
 
     return data;
   }

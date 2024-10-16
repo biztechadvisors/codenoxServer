@@ -49,11 +49,6 @@ let TypesService = class TypesService {
     }
     async findAll(query) {
         const { text, search, shop_id, shopSlug, region_name } = query;
-        const cacheKey = `types_${shop_id || 'none'}_${shopSlug || 'none'}_${text || 'none'}_${search || 'none'}_${region_name || 'none'}`;
-        const cachedData = await this.cacheManager.get(cacheKey);
-        if (cachedData) {
-            return cachedData;
-        }
         const queryBuilder = this.typeRepository.createQueryBuilder('type')
             .leftJoinAndSelect('type.settings', 'settings')
             .leftJoinAndSelect('type.promotional_sliders', 'promotional_sliders')
@@ -86,7 +81,6 @@ let TypesService = class TypesService {
             }
             data = fuse.search({ $and: searchConditions }).map(({ item }) => item);
         }
-        await this.cacheManager.set(cacheKey, data, 3600);
         return data;
     }
     async getTypeBySlug(slug) {

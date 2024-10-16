@@ -336,6 +336,12 @@ let ProductsService = ProductsService_1 = class ProductsService {
                             searchConditions.push('tags.name IN (:...tagsArray)');
                             searchParams.tagsArray = tagsArray;
                             break;
+                        case 'variations':
+                            const variationParams = value.split(',');
+                            const variationSearchTerm = variationParams.map(param => param.split('=')[1]).join('/');
+                            searchConditions.push('(variation_options.title LIKE :variationSearchTerm)');
+                            searchParams.variationSearchTerm = `%${variationSearchTerm}%`;
+                            break;
                         default:
                             break;
                     }

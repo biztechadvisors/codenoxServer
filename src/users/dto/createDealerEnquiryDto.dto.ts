@@ -9,8 +9,7 @@ export class CreateDealerEnquiryDto {
     lastname: string;
 
     @IsNotEmpty()
-    @IsNumber()
-    phone: number;
+    phone: string;
 
     @IsEmail()
     email: string;
@@ -42,8 +41,7 @@ export class UpdateDealerEnquiryDto {
     lastname?: string;
 
     @IsNotEmpty()
-    @IsNumber()
-    phone?: number;
+    phone?: string;
 
     @IsEmail()
     email?: string;

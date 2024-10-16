@@ -141,17 +141,17 @@ export class CategoriesService {
         if (!shop) {
           throw new NotFoundException('Shop not found');
         }
-        queryBuilder.andWhere('category.shop = :shopId', { shopId: shop.id });
+        queryBuilder.andWhere('category.shopId = :shopId', { shopId: shop.id });
       } else if (shopId) {
-        queryBuilder.andWhere('category.shop = :shopId', { shopId });
+        queryBuilder.andWhere('category.shopId = :shopId', { shopId });
       }
 
-      // Apply parent category filter
-      if (parent && parent !== 'null') {
-        queryBuilder.andWhere('category.parent = :parentId', { parentId: parent });
-      } else if (parent === 'null') {
-        queryBuilder.andWhere('category.parent IS NULL');
-      }
+      // Apply parent category filter (commented out since no parentId column was defined)
+      // if (parent && parent !== 'null') {
+      //   queryBuilder.andWhere('category.parentId = :parentId', { parentId: parent }); // Ensure using parentId
+      // } else if (parent === 'null') {
+      //   queryBuilder.andWhere('category.parentId IS NULL'); // Ensure using parentId
+      // }
 
       // Apply language filter
       if (language) {
@@ -160,14 +160,11 @@ export class CategoriesService {
 
       // Apply region filter
       if (region_name) {
-        const region = await this.regionRepository.findOne({
-          where: { name: region_name },
-          relations: ['categories'],
-        });
+        const region = await this.regionRepository.findOne({ where: { name: region_name }, relations: ['categories'] });
         if (!region) {
           throw new NotFoundException('Region not found');
         }
-        queryBuilder.andWhere('category.regions = :regionId', { regionId: region.id });
+        queryBuilder.andWhere('regions.id = :regionId', { regionId: region.id });
       }
 
       // Apply type filter
@@ -176,7 +173,7 @@ export class CategoriesService {
         if (!typeEntity) {
           throw new NotFoundException('Type not found');
         }
-        queryBuilder.andWhere('category.type = :typeId', { typeId: typeEntity.id });
+        queryBuilder.andWhere('category.typeId = :typeId', { typeId: typeEntity.id });
       }
 
       // Define valid values for sorting
@@ -191,7 +188,6 @@ export class CategoriesService {
       if (Object.keys(order).length > 0) {
         queryBuilder.orderBy(`category.${orderBy}`, order[orderBy]);
       }
-
 
       // Apply pagination
       queryBuilder.skip(skip).take(numericLimit);
@@ -212,7 +208,6 @@ export class CategoriesService {
       ].filter(Boolean).join('&');
 
       const url = `/categories?${queryParams}`;
-
       categories = {
         data,
         ...paginate(total, numericPage, numericLimit, data.length, url),
@@ -221,9 +216,9 @@ export class CategoriesService {
       // Cache the result for 1 hour
       await this.cacheManager.set(cacheKey, categories, 3600);
     }
-
     return categories;
   }
+
 
   async getCategory(param: string, language: string, shopId: number): Promise<Category> {
     const cacheKey = `category-${param}-${language}-${shopId}`;
