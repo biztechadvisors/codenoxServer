@@ -283,7 +283,7 @@ OrderProductPivot = __decorate([
 exports.OrderProductPivot = OrderProductPivot;
 let File = class File extends core_entity_1.CoreEntity {
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, gallery: { required: false, type: () => [require("../../common/entities/attachment.entity").Attachment] }, attachment_id: { required: true, type: () => Number }, url: { required: true, type: () => String }, fileable_id: { required: true, type: () => Number } };
+        return { id: { required: true, type: () => Number }, attachment_id: { required: true, type: () => require("../../common/entities/attachment.entity").Attachment }, url: { required: true, type: () => String }, fileable_id: { required: true, type: () => Number } };
     }
 };
 __decorate([
@@ -291,13 +291,8 @@ __decorate([
     __metadata("design:type", Number)
 ], File.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment),
-    (0, typeorm_1.JoinTable)({ name: 'products_gallery' }),
-    __metadata("design:type", Array)
-], File.prototype, "gallery", void 0);
-__decorate([
-    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment),
-    __metadata("design:type", Number)
+    (0, typeorm_1.ManyToOne)(() => attachment_entity_1.Attachment),
+    __metadata("design:type", attachment_entity_1.Attachment)
 ], File.prototype, "attachment_id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),

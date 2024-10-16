@@ -420,6 +420,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 .leftJoinAndSelect('related_products.image', 'related_products_image')
                 .leftJoinAndSelect('related_products.gallery', 'related_products_gallery')
                 .leftJoinAndSelect('product.variations', 'variations')
+                .leftJoinAndSelect('variations.attribute', 'attribute')
                 .leftJoinAndSelect('product.variation_options', 'variation_options')
                 .leftJoinAndSelect('product.gallery', 'gallery')
                 .leftJoinAndSelect('product.my_review', 'my_review')

@@ -1,12 +1,12 @@
 import { CoreMutationOutput } from 'src/common/dto/core-mutation-output.dto';
 import { Permission } from 'src/permission/entities/permission.entity';
 import { User } from 'src/users/entities/user.entity';
-declare const RegisterDto_base: import("@nestjs/common").Type<Pick<User, "name" | "password" | "email" | "createdBy" | "permission" | "contact">>;
+declare const RegisterDto_base: import("@nestjs/common").Type<Pick<User, "name" | "email" | "password" | "createdBy" | "permission" | "contact">>;
 export declare class RegisterDto extends RegisterDto_base {
     permission: Permission;
     isVerified: boolean;
 }
-declare const LoginDto_base: import("@nestjs/common").Type<Partial<Pick<User, "id" | "password" | "email" | "contact">>>;
+declare const LoginDto_base: import("@nestjs/common").Type<Partial<Pick<User, "id" | "email" | "password" | "contact">>>;
 export declare class LoginDto extends LoginDto_base {
 }
 export declare class SocialLoginDto {

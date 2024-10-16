@@ -209,11 +209,8 @@ export class File extends CoreEntity {
   @PrimaryGeneratedColumn()
   id: number
 
-  @ManyToMany(() => Attachment)
-  @JoinTable({ name: 'products_gallery' })
-  gallery?: Attachment[]
-  @ManyToMany(() => Attachment)
-  attachment_id: number
+  @ManyToOne(() => Attachment)
+  attachment_id: Attachment
 
   @Column({ nullable: true })
   url: string

@@ -75,8 +75,7 @@ export declare class OrderProductPivot extends CoreEntity {
 }
 export declare class File extends CoreEntity {
     id: number;
-    gallery?: Attachment[];
-    attachment_id: number;
+    attachment_id: Attachment;
     url: string;
     fileable_id: number;
 }
