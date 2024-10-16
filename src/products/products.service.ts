@@ -624,23 +624,27 @@ export class ProductsService {
       const product = await this.productRepository.createQueryBuilder('product')
         .leftJoinAndSelect('product.type', 'type')
         .leftJoinAndSelect('product.shop', 'shop')
-        .leftJoinAndSelect('product.image', 'image')
+        .leftJoinAndSelect('product.image', 'image') // Join product image
         .leftJoinAndSelect('product.categories', 'categories')
         .leftJoinAndSelect('product.subCategories', 'subCategories')
         .leftJoinAndSelect('product.tags', 'tags')
+
+        // Join related products, images, and galleries
         .leftJoinAndSelect('product.related_products', 'related_products')
-        .leftJoinAndSelect('related_products.image', 'related_products_image')
-        .leftJoinAndSelect('related_products.gallery', 'related_products_gallery')
+        .leftJoinAndSelect('related_products.image', 'related_product_image') // related products' image
+        .leftJoinAndSelect('related_products.gallery', 'related_product_gallery') // related products' gallery
+
         .leftJoinAndSelect('product.variations', 'variations')
         .leftJoinAndSelect('variations.attribute', 'attribute')
         .leftJoinAndSelect('product.variation_options', 'variation_options')
-        .leftJoinAndSelect('product.gallery', 'gallery')
+        .leftJoinAndSelect('product.gallery', 'gallery') // product's own gallery
         .leftJoinAndSelect('product.my_review', 'my_review')
         .leftJoinAndSelect('product.regions', 'regions')
         .where('product.slug = :slug', { slug })
         .andWhere('product.shop_id = :shop_id', { shop_id })
-        .cache(50000)
+        .cache(20000)
         .getOne();
+
 
       if (!product) {
         throw new NotFoundException(`Product not found with slug: ${slug}`);

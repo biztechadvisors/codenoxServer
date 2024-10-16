@@ -417,8 +417,8 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 .leftJoinAndSelect('product.subCategories', 'subCategories')
                 .leftJoinAndSelect('product.tags', 'tags')
                 .leftJoinAndSelect('product.related_products', 'related_products')
-                .leftJoinAndSelect('related_products.image', 'related_products_image')
-                .leftJoinAndSelect('related_products.gallery', 'related_products_gallery')
+                .leftJoinAndSelect('related_products.image', 'related_product_image')
+                .leftJoinAndSelect('related_products.gallery', 'related_product_gallery')
                 .leftJoinAndSelect('product.variations', 'variations')
                 .leftJoinAndSelect('variations.attribute', 'attribute')
                 .leftJoinAndSelect('product.variation_options', 'variation_options')
@@ -427,7 +427,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 .leftJoinAndSelect('product.regions', 'regions')
                 .where('product.slug = :slug', { slug })
                 .andWhere('product.shop_id = :shop_id', { shop_id })
-                .cache(50000)
+                .cache(20000)
                 .getOne();
             if (!product) {
                 throw new common_1.NotFoundException(`Product not found with slug: ${slug}`);

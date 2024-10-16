@@ -21,10 +21,7 @@ import {
 } from 'typeorm'
 import { Tax } from 'src/taxes/entities/tax.entity'
 import { StocksSellOrd } from 'src/stocks/entities/stocksOrd.entity'
-import { Attribute } from 'src/attributes/entities/attribute.entity'
-import { Stocks } from 'src/stocks/entities/stocks.entity'
 import { Region } from '@db/src/region/entities/region.entity'
-import { User } from '@db/src/users/entities/user.entity'
 
 enum ProductStatus {
   PUBLISH = 'Publish',
@@ -62,7 +59,6 @@ export class Product extends CoreEntity {
   regions: Region[];
 
   @ManyToMany(() => Category, (category) => category.products, {
-
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })
@@ -109,7 +105,7 @@ export class Product extends CoreEntity {
 
   @ManyToMany(() => Product, { cascade: true })
   @JoinTable({ name: 'products_relatedProducts' })
-  related_products?: Product[]
+  related_products: Product[];
 
   @OneToMany(() => Review, (review) => review.product, { onDelete: "CASCADE" })
   my_review?: Review[]
@@ -119,11 +115,11 @@ export class Product extends CoreEntity {
 
   @ManyToMany(() => Attachment)
   @JoinTable({ name: 'products_gallery' })
-  gallery?: Attachment[]
+  gallery: Attachment[]
 
   @ManyToOne(() => Attachment, { nullable: true })
   @JoinColumn({ name: 'image_id' })
-  image?: Attachment
+  image: Attachment
 
   // @ManyToOne(() => User, { nullable: true, cascade: true })
   // @JoinColumn({ name: 'addedByUserId' })

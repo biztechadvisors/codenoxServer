@@ -37,11 +37,11 @@ export declare class Product extends CoreEntity {
     stocksSellOrders: StocksSellOrd[];
     shop: Shop;
     shop_id: number;
-    related_products?: Product[];
+    related_products: Product[];
     my_review?: Review[];
     taxes: Tax;
-    gallery?: Attachment[];
-    image?: Attachment;
+    gallery: Attachment[];
+    image: Attachment;
     description: string;
     in_stock: boolean;
     is_taxable: boolean;
