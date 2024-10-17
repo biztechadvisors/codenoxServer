@@ -725,12 +725,19 @@ export class ProductsService {
 
     // Build the query for fetching products
     const productsQueryBuilder = this.productRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.type', 'type')
+      .leftJoinAndSelect('product.shop', 'shop')
       .leftJoinAndSelect('product.image', 'image')
       .leftJoinAndSelect('product.categories', 'categories')
+      .leftJoinAndSelect('product.subCategories', 'subCategories')
       .leftJoinAndSelect('product.tags', 'tags')
       .leftJoinAndSelect('product.related_products', 'related_products')
       .leftJoinAndSelect('product.variations', 'variations')
-      .leftJoinAndSelect('variations.variation_options', 'variation_options');
+      .leftJoinAndSelect('product.variation_options', 'variation_options')
+      .leftJoinAndSelect('product.gallery', 'gallery')
+      .leftJoinAndSelect('product.my_review', 'my_review')
+      .leftJoinAndSelect('product.regions', 'regions');
+
 
     // Apply filters
     if (type_slug) {
