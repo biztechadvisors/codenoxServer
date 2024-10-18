@@ -140,8 +140,12 @@ __decorate([
     __metadata("design:type", tax_entity_1.Tax)
 ], Product.prototype, "taxes", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment),
-    (0, typeorm_1.JoinTable)({ name: 'products_gallery' }),
+    (0, typeorm_1.ManyToMany)(() => attachment_entity_1.Attachment, { cascade: true, onDelete: 'CASCADE' }),
+    (0, typeorm_1.JoinTable)({
+        name: 'products_gallery',
+        joinColumn: { name: 'productId', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'attachmentId', referencedColumnName: 'id' },
+    }),
     __metadata("design:type", Array)
 ], Product.prototype, "gallery", void 0);
 __decorate([

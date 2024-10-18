@@ -112,8 +112,6 @@ export class ProductsService {
 
   async updateShopProductsCount(shopId: number, productId: number) {
     try {
-      console.log("115", shopId)
-      console.log("116", productId)
 
       const shop = await this.shopRepository.findOne({ where: { id: shopId } });
 
@@ -125,11 +123,7 @@ export class ProductsService {
 
       shop.products_count = productExists ? shop.products_count + 1 : Math.max(0, shop.products_count - 1);
 
-      console.log("128")
-
       await this.shopRepository.save(shop);
-
-      console.log("131")
 
     } catch (err) {
       this.logger.error('Error updating shop products count:', err.message || err);
@@ -645,9 +639,20 @@ export class ProductsService {
         .cache(20000)
         .getOne();
 
-
       if (!product) {
         throw new NotFoundException(`Product not found with slug: ${slug}`);
+      }
+
+      // Fetch gallery only if product exists
+      if (product.gallery) {
+        // Check if gallery has a valid productId
+        const galleryCheck = await this.productRepository.createQueryBuilder('gallery')
+          .where('gallery.productId = :productId', { productId: product.id })
+          .getOne();
+
+        if (!galleryCheck) {
+          throw new Error(`Gallery for product with id ${product.id} does not exist`);
+        }
       }
 
       // If dealerId is present, apply dealer-specific margins

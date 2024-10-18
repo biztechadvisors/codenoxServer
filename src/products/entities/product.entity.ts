@@ -113,9 +113,14 @@ export class Product extends CoreEntity {
   @ManyToOne(() => Tax, (tax) => tax.products)
   taxes: Tax
 
-  @ManyToMany(() => Attachment)
-  @JoinTable({ name: 'products_gallery' })
-  gallery: Attachment[]
+  @ManyToMany(() => Attachment, { cascade: true, onDelete: 'CASCADE' })
+  @JoinTable({
+    name: 'products_gallery',
+    joinColumn: { name: 'productId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'attachmentId', referencedColumnName: 'id' },
+  })
+  gallery: Attachment[];
+
 
   @ManyToOne(() => Attachment, { nullable: true })
   @JoinColumn({ name: 'image_id' })
@@ -267,7 +272,6 @@ export class Variation {
   @Column()
   updated_at: Date;
 }
-
 
 @Entity()
 export class VariationOption {

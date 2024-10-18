@@ -79,7 +79,7 @@ import { createClient } from 'redis';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        synchronize: true,
+        // synchronize: true,
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         logging: ['error'],
         extra: {

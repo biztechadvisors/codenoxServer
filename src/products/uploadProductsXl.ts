@@ -36,6 +36,7 @@ import {
 import { User } from 'src/users/entities/user.entity'
 import { Repository } from 'typeorm'
 import { convertToSlug } from '../helpers'
+import { error } from 'console'
 
 @Injectable()
 export class UploadXlService {
@@ -525,7 +526,6 @@ export class UploadXlService {
 
   async saveProducts(createProductDto: CreateProductDto): Promise<Product> {
     try {
-      console.log("528")
 
       const existingProduct = await this.productRepository.findOne({
         where: [
@@ -547,8 +547,6 @@ export class UploadXlService {
       });
 
       let product = existingProduct ? existingProduct : new Product();
-
-      console.log("549")
 
       if (existingProduct) {
         // Fetch related variations and their options
@@ -590,8 +588,6 @@ export class UploadXlService {
         // Remove all the variations
         await this.variationRepository.remove(variations);
       }
-
-      console.log("593")
 
       // Populate product fields from the DTO
       product.name = createProductDto?.name;
@@ -717,8 +713,6 @@ export class UploadXlService {
         product.gallery = galleryAttachments
       };
 
-      console.log("719")
-
       // Handle variations
       if (createProductDto.variations && createProductDto.variations.length > 0) {
         try {
@@ -772,8 +766,6 @@ export class UploadXlService {
         console.warn('No variations provided in createProductDto');
       }
 
-      console.log("774")
-
       // Handle variation options
       if (product.product_type === ProductType.VARIABLE && createProductDto.variation_options?.upsert) {
         try {
@@ -784,12 +776,14 @@ export class UploadXlService {
                 where: { title: variationDto.title },
                 relations: ['options'],
               });
-
+              console.log("778", existingVariations)
               // Collect existing option IDs for bulk deletion
               const existingOptionIds = existingVariations.flatMap(variation => variation.options.map(option => option.id));
               if (existingOptionIds.length) {
                 await this.variationOptionRepository.delete(existingOptionIds);
               }
+
+              console.log("784", existingOptionIds)
 
               // Create new variation
               const newVariation = this.variationRepository.create({
@@ -803,6 +797,7 @@ export class UploadXlService {
                 created_at: new Date(),
                 updated_at: new Date(),
               });
+              console.log("799", newVariation)
 
               // Handle images if present
               if (variationDto?.image && Array.isArray(variationDto.image)) {
@@ -836,6 +831,7 @@ export class UploadXlService {
 
               // Save the new variation
               const savedVariation = await this.variationRepository.save(newVariation);
+              console.log("833", savedVariation)
 
               // Handle variation options
               const variationOptionEntities = await Promise.all(
@@ -843,6 +839,7 @@ export class UploadXlService {
                   const existingOption = await this.variationOptionRepository.findOne({
                     where: { name: option.name, value: option.value },
                   });
+                  console.log("841", existingOption)
 
                   if (existingOption) {
                     return existingOption; // Return existing option instead of creating a new one
@@ -852,9 +849,12 @@ export class UploadXlService {
                     name: option.name,
                     value: option.value,
                   });
+                  console.log("851", newVariationOption)
                   return await this.variationOptionRepository.save(newVariationOption);
                 }),
               );
+
+              console.log("856", variationOptionEntities)
 
               savedVariation.options = variationOptionEntities;
               await this.variationRepository.save(savedVariation);
@@ -864,6 +864,7 @@ export class UploadXlService {
                 variationId: savedVariation.id,
                 variationOptionId: opt.id,
               }));
+              console.log("866", variationOptionEntries)
 
               if (variationOptionEntries.length) {
                 await this.variationOptionRepository
@@ -871,14 +872,12 @@ export class UploadXlService {
                   .insert()
                   .into('variation_variationOption')
                   .values(variationOptionEntries)
-                  .orIgnore() // Prevent errors on duplicate entries
-                  .execute();
+                  .execute(); // Correctly execute the insertion
               }
-
               return savedVariation;
             }),
           );
-
+          console.log("879", variationOptions)
           product.variation_options = variationOptions;
           await this.productRepository.save(product);
         } catch (error) {
@@ -890,18 +889,14 @@ export class UploadXlService {
       } else {
         console.warn('No variation options provided in createProductDto');
       }
-
-      console.log("893")
-
+      console.log("891-final")
       if (product) {
         await this.productsService.updateShopProductsCount(
           product.shop_id,
           product.id,
         );
       }
-
-      console.log("893")
-
+      throw error
       return product;
     } catch (error) {
       console.log('error', error);
