@@ -776,14 +776,12 @@ export class UploadXlService {
                 where: { title: variationDto.title },
                 relations: ['options'],
               });
-              console.log("778", existingVariations)
+
               // Collect existing option IDs for bulk deletion
               const existingOptionIds = existingVariations.flatMap(variation => variation.options.map(option => option.id));
               if (existingOptionIds.length) {
                 await this.variationOptionRepository.delete(existingOptionIds);
               }
-
-              console.log("784", existingOptionIds)
 
               // Create new variation
               const newVariation = this.variationRepository.create({
@@ -797,7 +795,6 @@ export class UploadXlService {
                 created_at: new Date(),
                 updated_at: new Date(),
               });
-              console.log("799", newVariation)
 
               // Handle images if present
               if (variationDto?.image && Array.isArray(variationDto.image)) {
@@ -831,7 +828,6 @@ export class UploadXlService {
 
               // Save the new variation
               const savedVariation = await this.variationRepository.save(newVariation);
-              console.log("833", savedVariation)
 
               // Handle variation options
               const variationOptionEntities = await Promise.all(
@@ -839,7 +835,6 @@ export class UploadXlService {
                   const existingOption = await this.variationOptionRepository.findOne({
                     where: { name: option.name, value: option.value },
                   });
-                  console.log("841", existingOption)
 
                   if (existingOption) {
                     return existingOption; // Return existing option instead of creating a new one
@@ -849,12 +844,10 @@ export class UploadXlService {
                     name: option.name,
                     value: option.value,
                   });
-                  console.log("851", newVariationOption)
+
                   return await this.variationOptionRepository.save(newVariationOption);
                 }),
               );
-
-              console.log("856", variationOptionEntities)
 
               savedVariation.options = variationOptionEntities;
               await this.variationRepository.save(savedVariation);
@@ -864,7 +857,8 @@ export class UploadXlService {
                 variationId: savedVariation.id,
                 variationOptionId: opt.id,
               }));
-              console.log("866", variationOptionEntries)
+
+              console.log("867", variationOptionEntries)
 
               if (variationOptionEntries.length) {
                 await this.variationOptionRepository
@@ -874,6 +868,9 @@ export class UploadXlService {
                   .values(variationOptionEntries)
                   .execute(); // Correctly execute the insertion
               }
+
+              console.log("878", variationOptionEntries)
+
               return savedVariation;
             }),
           );
@@ -896,7 +893,7 @@ export class UploadXlService {
           product.id,
         );
       }
-      throw error
+      console.log("896")
       return product;
     } catch (error) {
       console.log('error', error);

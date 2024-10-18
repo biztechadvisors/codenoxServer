@@ -52,7 +52,6 @@ const dealer_entity_1 = require("../users/entities/dealer.entity");
 const user_entity_1 = require("../users/entities/user.entity");
 const typeorm_2 = require("typeorm");
 const helpers_1 = require("../helpers");
-const console_1 = require("console");
 let UploadXlService = class UploadXlService {
     constructor(productsService, productRepository, orderProductPivotRepository, variationRepository, variationOptionRepository, attachmentRepository, tagRepository, typeRepository, shopRepository, categoryRepository, attributeValueRepository, dealerRepository, dealerProductMarginRepository, dealerCategoryMarginRepository, userRepository, taxRepository, subCategoryRepository) {
         this.productsService = productsService;
@@ -594,12 +593,10 @@ let UploadXlService = class UploadXlService {
                             where: { title: variationDto.title },
                             relations: ['options'],
                         });
-                        console.log("778", existingVariations);
                         const existingOptionIds = existingVariations.flatMap(variation => variation.options.map(option => option.id));
                         if (existingOptionIds.length) {
                             await this.variationOptionRepository.delete(existingOptionIds);
                         }
-                        console.log("784", existingOptionIds);
                         const newVariation = this.variationRepository.create({
                             title: variationDto.title,
                             name: variationDto.name,
@@ -611,7 +608,6 @@ let UploadXlService = class UploadXlService {
                             created_at: new Date(),
                             updated_at: new Date(),
                         });
-                        console.log("799", newVariation);
                         if ((variationDto === null || variationDto === void 0 ? void 0 : variationDto.image) && Array.isArray(variationDto.image)) {
                             const images = [];
                             for (const img of variationDto.image) {
@@ -641,12 +637,10 @@ let UploadXlService = class UploadXlService {
                             newVariation.image = [image];
                         }
                         const savedVariation = await this.variationRepository.save(newVariation);
-                        console.log("833", savedVariation);
                         const variationOptionEntities = await Promise.all((variationDto.options || []).map(async (option) => {
                             const existingOption = await this.variationOptionRepository.findOne({
                                 where: { name: option.name, value: option.value },
                             });
-                            console.log("841", existingOption);
                             if (existingOption) {
                                 return existingOption;
                             }
@@ -654,17 +648,15 @@ let UploadXlService = class UploadXlService {
                                 name: option.name,
                                 value: option.value,
                             });
-                            console.log("851", newVariationOption);
                             return await this.variationOptionRepository.save(newVariationOption);
                         }));
-                        console.log("856", variationOptionEntities);
                         savedVariation.options = variationOptionEntities;
                         await this.variationRepository.save(savedVariation);
                         const variationOptionEntries = variationOptionEntities.map(opt => ({
                             variationId: savedVariation.id,
                             variationOptionId: opt.id,
                         }));
-                        console.log("866", variationOptionEntries);
+                        console.log("867", variationOptionEntries);
                         if (variationOptionEntries.length) {
                             await this.variationOptionRepository
                                 .createQueryBuilder()
@@ -673,6 +665,7 @@ let UploadXlService = class UploadXlService {
                                 .values(variationOptionEntries)
                                 .execute();
                         }
+                        console.log("878", variationOptionEntries);
                         return savedVariation;
                     }));
                     console.log("879", variationOptions);
@@ -691,7 +684,7 @@ let UploadXlService = class UploadXlService {
             if (product) {
                 await this.productsService.updateShopProductsCount(product.shop_id, product.id);
             }
-            throw console_1.error;
+            console.log("896");
             return product;
         }
         catch (error) {

@@ -249,21 +249,24 @@ export class ProductsService {
 
     // Handle gallery
     if (gallery) {
-      const galleryEntities = await Promise.all(
-        gallery.map(async (galleryImage) => {
-          const imageEntity = await this.attachmentRepository.findOne({
-            where: { id: galleryImage.id },
-          })
-          if (!imageEntity) {
-            throw new NotFoundException(
-              `Gallery image with ID ${galleryImage.id} not found`,
-            )
-          }
-          return imageEntity
-        }),
-      )
-      product.gallery = galleryEntities
+      // Fetch all gallery images in one query
+      const galleryIds = gallery.map(galleryImage => galleryImage.id);
+
+      // Find all gallery images by their IDs
+      const galleryEntities = await this.attachmentRepository.findBy({
+        id: In(galleryIds), // Uses the "IN" query to find all gallery images in one call
+      });
+
+      // Validate if all requested images were found
+      if (galleryEntities.length !== gallery.length) {
+        const missingIds = galleryIds.filter(id => !galleryEntities.some(entity => entity.id === id));
+        throw new NotFoundException(`Gallery image(s) with ID(s) ${missingIds.join(', ')} not found`);
+      }
+
+      // Assign the gallery images to the product
+      product.gallery = galleryEntities;
     }
+
 
     // Handle variations
     if (variations) {
@@ -641,18 +644,6 @@ export class ProductsService {
 
       if (!product) {
         throw new NotFoundException(`Product not found with slug: ${slug}`);
-      }
-
-      // Fetch gallery only if product exists
-      if (product.gallery) {
-        // Check if gallery has a valid productId
-        const galleryCheck = await this.productRepository.createQueryBuilder('gallery')
-          .where('gallery.productId = :productId', { productId: product.id })
-          .getOne();
-
-        if (!galleryCheck) {
-          throw new Error(`Gallery for product with id ${product.id} does not exist`);
-        }
       }
 
       // If dealerId is present, apply dealer-specific margins

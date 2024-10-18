@@ -163,15 +163,14 @@ let ProductsService = ProductsService_1 = class ProductsService {
             product.image = imageEntity;
         }
         if (gallery) {
-            const galleryEntities = await Promise.all(gallery.map(async (galleryImage) => {
-                const imageEntity = await this.attachmentRepository.findOne({
-                    where: { id: galleryImage.id },
-                });
-                if (!imageEntity) {
-                    throw new common_1.NotFoundException(`Gallery image with ID ${galleryImage.id} not found`);
-                }
-                return imageEntity;
-            }));
+            const galleryIds = gallery.map(galleryImage => galleryImage.id);
+            const galleryEntities = await this.attachmentRepository.findBy({
+                id: (0, typeorm_2.In)(galleryIds),
+            });
+            if (galleryEntities.length !== gallery.length) {
+                const missingIds = galleryIds.filter(id => !galleryEntities.some(entity => entity.id === id));
+                throw new common_1.NotFoundException(`Gallery image(s) with ID(s) ${missingIds.join(', ')} not found`);
+            }
             product.gallery = galleryEntities;
         }
         if (variations) {
@@ -427,14 +426,6 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 .getOne();
             if (!product) {
                 throw new common_1.NotFoundException(`Product not found with slug: ${slug}`);
-            }
-            if (product.gallery) {
-                const galleryCheck = await this.productRepository.createQueryBuilder('gallery')
-                    .where('gallery.productId = :productId', { productId: product.id })
-                    .getOne();
-                if (!galleryCheck) {
-                    throw new Error(`Gallery for product with id ${product.id} does not exist`);
-                }
             }
             if (dealerId) {
                 const dealerProductMargins = await this.dealerProductMarginRepository.createQueryBuilder('margin')
